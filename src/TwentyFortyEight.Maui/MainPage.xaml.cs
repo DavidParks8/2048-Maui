@@ -5,12 +5,15 @@ namespace TwentyFortyEight.Maui;
 
 public partial class MainPage : ContentPage
 {
-    private GameViewModel ViewModel => (GameViewModel)BindingContext;
+    private readonly GameViewModel _viewModel;
     private Point _swipeStartPoint;
 
-    public MainPage()
+    public MainPage(GameViewModel viewModel)
     {
         InitializeComponent();
+        
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
         
         // Add tiles to the grid
         CreateTiles();
@@ -48,9 +51,9 @@ public partial class MainPage : ContentPage
 
     private void CreateTiles()
     {
-        for (int i = 0; i < ViewModel.Tiles.Count; i++)
+        for (int i = 0; i < _viewModel.Tiles.Count; i++)
         {
-            var tile = ViewModel.Tiles[i];
+            var tile = _viewModel.Tiles[i];
             var border = new Border
             {
                 Stroke = Colors.Transparent,
@@ -97,7 +100,7 @@ public partial class MainPage : ContentPage
             _ => Direction.Up
         };
 
-        ViewModel.MoveCommand.Execute(direction);
+        _viewModel.MoveCommand.Execute(direction);
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -119,7 +122,7 @@ public partial class MainPage : ContentPage
                     if (Math.Abs(deltaX) > 50) // Minimum swipe distance
                     {
                         var direction = deltaX > 0 ? Direction.Right : Direction.Left;
-                        ViewModel.MoveCommand.Execute(direction);
+                        _viewModel.MoveCommand.Execute(direction);
                     }
                     // Do nothing if swipe distance is too small
                 }
@@ -129,7 +132,7 @@ public partial class MainPage : ContentPage
                     if (Math.Abs(deltaY) > 50) // Minimum swipe distance
                     {
                         var direction = deltaY > 0 ? Direction.Down : Direction.Up;
-                        ViewModel.MoveCommand.Execute(direction);
+                        _viewModel.MoveCommand.Execute(direction);
                     }
                     // Do nothing if swipe distance is too small
                 }
@@ -137,8 +140,8 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnKeyUp() => ViewModel.MoveCommand.Execute(Direction.Up);
-    private void OnKeyDown() => ViewModel.MoveCommand.Execute(Direction.Down);
-    private void OnKeyLeft() => ViewModel.MoveCommand.Execute(Direction.Left);
-    private void OnKeyRight() => ViewModel.MoveCommand.Execute(Direction.Right);
+    private void OnKeyUp() => _viewModel.MoveCommand.Execute(Direction.Up);
+    private void OnKeyDown() => _viewModel.MoveCommand.Execute(Direction.Down);
+    private void OnKeyLeft() => _viewModel.MoveCommand.Execute(Direction.Left);
+    private void OnKeyRight() => _viewModel.MoveCommand.Execute(Direction.Right);
 }

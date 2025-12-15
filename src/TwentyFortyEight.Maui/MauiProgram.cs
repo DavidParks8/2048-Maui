@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
 
@@ -18,6 +19,10 @@ public static class MauiProgram
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
+
+        // Register services for dependency injection
+        builder.Services.AddSingleton<GameViewModel>();
+        builder.Services.AddTransient<MainPage>();
 
         return builder.Build();
     }

@@ -4,11 +4,8 @@
              xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              x:Class="TwentyFortyEight.Maui.MainPage"
+             x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
-
-    <ContentPage.BindingContext>
-        <local:GameViewModel />
-    </ContentPage.BindingContext>
 
     <Grid Padding="20" RowSpacing="20">
         <Grid.RowDefinitions>

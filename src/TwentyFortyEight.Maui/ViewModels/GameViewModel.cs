@@ -1,86 +1,49 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Models;
+using TwentyFortyEight.Maui.Serialization;
 
 namespace TwentyFortyEight.Maui.ViewModels;
 
 /// <summary>
-/// JSON serialization context for GameStateDto.
-/// </summary>
-[JsonSerializable(typeof(GameStateDto))]
-internal partial class GameSerializationContext : JsonSerializerContext
-{
-}
-
-/// <summary>
 /// ViewModel for the 2048 game.
 /// </summary>
-public class GameViewModel : BaseViewModel
+public partial class GameViewModel : ObservableObject
 {
     private readonly GameConfig _config;
-    private readonly ILogger<GameViewModel>? _logger;
+    private readonly ILogger<GameViewModel> _logger;
     private Game2048Engine _engine;
-    private int _bestScore;
-    private string _statusText = "";
 
     public ObservableCollection<TileViewModel> Tiles { get; }
 
+    [ObservableProperty]
     private int _score;
-    public int Score
+
+    [ObservableProperty]
+    private int _bestScore;
+    
+    partial void OnBestScoreChanged(int value)
     {
-        get => _score;
-        private set => SetProperty(ref _score, value);
+        Preferences.Set("BestScore", value);
     }
 
-    public int BestScore
-    {
-        get => _bestScore;
-        private set
-        {
-            if (SetProperty(ref _bestScore, value))
-            {
-                Preferences.Set("BestScore", value);
-            }
-        }
-    }
-
+    [ObservableProperty]
     private int _moves;
-    public int Moves
-    {
-        get => _moves;
-        private set => SetProperty(ref _moves, value);
-    }
 
-    public string StatusText
-    {
-        get => _statusText;
-        private set => SetProperty(ref _statusText, value);
-    }
+    [ObservableProperty]
+    private string _statusText = "";
 
+    [ObservableProperty]
     private bool _canUndo;
-    public bool CanUndo
-    {
-        get => _canUndo;
-        private set => SetProperty(ref _canUndo, value);
-    }
 
+    [ObservableProperty]
     private bool _canRedo;
-    public bool CanRedo
-    {
-        get => _canRedo;
-        private set => SetProperty(ref _canRedo, value);
-    }
 
-    public ICommand NewGameCommand { get; }
-    public ICommand MoveCommand { get; }
-    public ICommand UndoCommand { get; }
-    public ICommand RedoCommand { get; }
-
-    public GameViewModel(ILogger<GameViewModel>? logger = null)
+    public GameViewModel(ILogger<GameViewModel> logger)
     {
         _logger = logger;
         _config = new GameConfig();
@@ -96,17 +59,12 @@ public class GameViewModel : BaseViewModel
             }
         }
 
-        // Commands
-        NewGameCommand = new Command(NewGame);
-        MoveCommand = new Command<Direction>(Move);
-        UndoCommand = new Command(Undo, () => CanUndo);
-        RedoCommand = new Command(Redo, () => CanRedo);
-
         // Load saved state or start new game
         LoadGame();
         UpdateUI();
     }
 
+    [RelayCommand]
     private void NewGame()
     {
         _engine.NewGame();
@@ -114,6 +72,7 @@ public class GameViewModel : BaseViewModel
         SaveGame();
     }
 
+    [RelayCommand]
     private void Move(Direction direction)
     {
         var moved = _engine.Move(direction);
@@ -130,6 +89,7 @@ public class GameViewModel : BaseViewModel
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
         if (_engine.Undo())
@@ -139,6 +99,7 @@ public class GameViewModel : BaseViewModel
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanRedo))]
     private void Redo()
     {
         if (_engine.Redo())
@@ -179,8 +140,8 @@ public class GameViewModel : BaseViewModel
         }
 
         // Refresh command can execute states
-        ((Command)UndoCommand).ChangeCanExecute();
-        ((Command)RedoCommand).ChangeCanExecute();
+        UndoCommand.NotifyCanExecuteChanged();
+        RedoCommand.NotifyCanExecuteChanged();
     }
 
     private void SaveGame()
@@ -193,7 +154,7 @@ public class GameViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to save game state");
+            LogSaveGameError(ex);
         }
     }
 
@@ -219,7 +180,7 @@ public class GameViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to load game state");
+            LogLoadGameError(ex);
         }
 
         // If loading failed or no saved game, start new game
