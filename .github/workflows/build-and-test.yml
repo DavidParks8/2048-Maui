@@ -10,6 +10,8 @@ on:
 jobs:
   build-and-test:
     runs-on: macos-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout code
