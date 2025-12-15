@@ -37,10 +37,8 @@
                     StrokeThickness="0"
                     Padding="20,10"
                     Margin="10,0"
-                    HeightRequest="60">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="5" />
-                </Border.StrokeShape>
+                    HeightRequest="60"
+                    StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
                     <Label Text="SCORE"
                            FontSize="12"
@@ -61,10 +59,8 @@
                     Stroke="Transparent"
                     StrokeThickness="0"
                     Padding="20,10"
-                    HeightRequest="60">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="5" />
-                </Border.StrokeShape>
+                    HeightRequest="60"
+                    StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
                     <Label Text="BEST"
                            FontSize="12"
@@ -99,10 +95,8 @@
                 VerticalOptions="Center"
                 HorizontalOptions="Center"
                 MaximumWidthRequest="500"
-                MaximumHeightRequest="500">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="10" />
-            </Border.StrokeShape>
+                MaximumHeightRequest="500"
+                StrokeShape="RoundRectangle 10">
 
             <!-- Grid for tiles -->
             <Grid x:Name="GameBoard"

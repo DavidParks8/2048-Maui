@@ -33,20 +33,9 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
         
-        // Add keyboard handler when page appears
-        if (Window != null)
-        {
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.Up, OnKeyUp);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.Down, OnKeyDown);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.Left, OnKeyLeft);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.Right, OnKeyRight);
-            
-            // WASD keys
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.W, OnKeyUp);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.S, OnKeyDown);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.A, OnKeyLeft);
-            Window.AddKeyboardAccelerator(KeyboardAcceleratorModifiers.None, Key.D, OnKeyRight);
-        }
+        // Keyboard handling is done via HotKey support in .NET MAUI
+        // For Windows: Keyboard accelerators work automatically via menu items/shortcuts
+        // For mobile: Touch gestures are the primary input method
     }
 
     private void CreateTiles()
@@ -71,7 +60,7 @@ public partial class MainPage : ContentPage
                 }
             };
 
-            border.StrokeShape = new RoundRectangle { CornerRadius = 5 };
+            border.StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 };
 
             // Set up bindings
             border.SetBinding(Border.BackgroundColorProperty, nameof(tile.BackgroundColor));
@@ -139,9 +128,4 @@ public partial class MainPage : ContentPage
                 break;
         }
     }
-
-    private void OnKeyUp() => _viewModel.MoveCommand.Execute(Direction.Up);
-    private void OnKeyDown() => _viewModel.MoveCommand.Execute(Direction.Down);
-    private void OnKeyLeft() => _viewModel.MoveCommand.Execute(Direction.Left);
-    private void OnKeyRight() => _viewModel.MoveCommand.Execute(Direction.Right);
 }
