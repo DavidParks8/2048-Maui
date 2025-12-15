@@ -10,10 +10,6 @@
     <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.0-rc.1.25064.9" />
     
     <!-- Testing Dependencies -->
-    <PackageVersion Include="MSTest" Version="3.7.0" />
-    <PackageVersion Include="MSTest.Analyzers" Version="3.7.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Moq" Version="4.18.4" />
   </ItemGroup>
 </Project>

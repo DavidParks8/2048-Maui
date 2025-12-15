@@ -1,14 +1,5 @@
-<Project Sdk="MSTest.Sdk/3.7.0">
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
-  </PropertyGroup>
-
+<Project Sdk="MSTest.Sdk">
   <ItemGroup>
-    <PackageReference Include="MSTest" />
-    <PackageReference Include="MSTest.Analyzers" />
-    <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Moq" />
   </ItemGroup>
 

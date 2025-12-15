@@ -2,9 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
-        dotnet-quality: 'preview'
         
     - name: Install .NET MAUI workload
       run: dotnet workload install maui
@@ -33,11 +32,11 @@ jobs:
       run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
       
     - name: Run tests
-      run: dotnet test 2048-Maui.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      run: dotnet exec test/TwentyFortyEight.Tests/bin/Release/net10.0/TwentyFortyEight.Tests.dll --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
       
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: '**/test-results.trx'
+        path: 'TestResults/*.trx'

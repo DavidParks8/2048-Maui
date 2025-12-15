@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
+[assembly: Parallelize(Scope = ExecutionScope.MethodLevel, Workers = 0)]
+
 namespace TwentyFortyEight.Tests;
 
 [TestClass]
