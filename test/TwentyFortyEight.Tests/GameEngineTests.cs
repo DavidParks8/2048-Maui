@@ -225,7 +225,7 @@ public class GameEngineTests
         
         // Most should be 2s (roughly 90%)
         var twoCount = spawnedValues.Count(v => v == 2);
-        Assert.IsGreaterThan(70, twoCount, $"Expected at least 70 2s, got {twoCount}");
+        Assert.IsGreaterThanOrEqualTo(70, twoCount, $"Expected at least 70 2s, got {twoCount}");
     }
 
     [TestMethod]
@@ -299,7 +299,7 @@ public class GameEngineTests
     }
 
     [TestMethod]
-    public void Redo_ReappliesUndonemove()
+    public void Redo_ReappliesUndoneMove()
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
