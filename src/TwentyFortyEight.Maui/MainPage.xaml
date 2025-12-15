@@ -1,28 +1,173 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="TwentyFortyEight.Maui.MainPage">
+             xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
+             xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
+             x:Class="TwentyFortyEight.Maui.MainPage"
+             BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center">
+    <ContentPage.BindingContext>
+        <local:GameViewModel />
+    </ContentPage.BindingContext>
 
-            <Label
-                Text="Welcome to 2048!"
-                SemanticProperties.HeadingLevel="Level1"
-                FontSize="32"
-                HorizontalOptions="Center" />
+    <Grid Padding="20" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-            <Label
-                Text="The classic 2048 game built with .NET MAUI"
-                SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to 2048"
-                FontSize="18"
-                HorizontalOptions="Center" />
+        <!-- Header with Title and Score -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        </VerticalStackLayout>
-    </ScrollView>
+            <Label Grid.Column="0"
+                   Text="2048"
+                   FontSize="48"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                   VerticalOptions="Center"
+                   SemanticProperties.HeadingLevel="Level1" />
 
+            <Border Grid.Column="1"
+                    BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                    Stroke="Transparent"
+                    StrokeThickness="0"
+                    Padding="20,10"
+                    Margin="10,0"
+                    HeightRequest="60">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="5" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+                    <Label Text="SCORE"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                           HorizontalOptions="Center" />
+                    <Label Text="{Binding Score}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           SemanticProperties.Description="Current score" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Column="2"
+                    BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                    Stroke="Transparent"
+                    StrokeThickness="0"
+                    Padding="20,10"
+                    HeightRequest="60">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="5" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="0">
+                    <Label Text="BEST"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                           HorizontalOptions="Center" />
+                    <Label Text="{Binding BestScore}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           SemanticProperties.Description="Best score" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Status Text -->
+        <Label Grid.Row="1"
+               Text="{Binding StatusText}"
+               FontSize="24"
+               FontAttributes="Bold"
+               TextColor="#f67c5f"
+               HorizontalOptions="Center"
+               IsVisible="{Binding StatusText, Converter={StaticResource StringNotEmptyConverter}}" />
+
+        <!-- Game Board -->
+        <Border Grid.Row="2"
+                BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                Stroke="Transparent"
+                StrokeThickness="0"
+                Padding="10"
+                VerticalOptions="Center"
+                HorizontalOptions="Center"
+                MaximumWidthRequest="500"
+                MaximumHeightRequest="500">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10" />
+            </Border.StrokeShape>
+
+            <!-- Grid for tiles -->
+            <Grid x:Name="GameBoard"
+                  ColumnSpacing="10"
+                  RowSpacing="10"
+                  WidthRequest="400"
+                  HeightRequest="400"
+                  SemanticProperties.Description="Game board with tiles">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Tiles will be added programmatically in code-behind -->
+            </Grid>
+        </Border>
+
+        <!-- Controls -->
+        <Grid Grid.Row="3" ColumnSpacing="10" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0"
+                    Text="New Game"
+                    Command="{Binding NewGameCommand}"
+                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="5"
+                    SemanticProperties.Description="Start a new game" />
+
+            <Button Grid.Column="1"
+                    Text="Undo"
+                    Command="{Binding UndoCommand}"
+                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="5"
+                    SemanticProperties.Description="Undo last move" />
+
+            <Button Grid.Column="2"
+                    Text="Redo"
+                    Command="{Binding RedoCommand}"
+                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="5"
+                    SemanticProperties.Description="Redo last undone move" />
+        </Grid>
+    </Grid>
 </ContentPage>
