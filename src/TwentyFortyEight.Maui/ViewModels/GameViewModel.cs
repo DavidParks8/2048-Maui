@@ -162,8 +162,8 @@ public partial class GameViewModel : ObservableObject
     {
         try
         {
-            // Load best score
-            _bestScore = Preferences.Get("BestScore", 0);
+            // Load best score - use property to trigger OnBestScoreChanged
+            BestScore = Preferences.Get("BestScore", 0);
 
             // Try to load saved game
             var savedJson = Preferences.Get("SavedGame", string.Empty);

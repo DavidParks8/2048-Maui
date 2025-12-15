@@ -18,7 +18,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class AppStrings {
+    public class AppStrings {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -32,7 +32,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TwentyFortyEight.Maui.Resources.Strings.AppStrings", typeof(AppStrings).Assembly);
@@ -47,7 +47,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -59,7 +59,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Game Over!.
         /// </summary>
-        internal static string GameOver {
+        public static string GameOver {
             get {
                 return ResourceManager.GetString("GameOver", resourceCulture);
             }
@@ -68,7 +68,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to You Win!.
         /// </summary>
-        internal static string YouWin {
+        public static string YouWin {
             get {
                 return ResourceManager.GetString("YouWin", resourceCulture);
             }
