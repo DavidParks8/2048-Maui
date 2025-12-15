@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\TwentyFortyEight.Maui\TwentyFortyEight.Maui.csproj" />
+  <Project Path="test\TwentyFortyEight.Tests\TwentyFortyEight.Tests.csproj" />
+</Solution>

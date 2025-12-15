@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common properties for all projects -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    
+    <!-- Build and output configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    
+    <!-- Repository metadata -->
+    <RepositoryUrl>https://github.com/DavidParks8/2048-Maui</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>DavidParks8</Authors>
+    <Copyright>Copyright © 2026</Copyright>
+  </PropertyGroup>
+</Project>
