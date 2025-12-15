@@ -33,22 +33,34 @@ public class TileViewModel : ViewModels.BaseViewModel
 
     public Color TextColor => Value > 4 ? Colors.White : Color.FromArgb("#776e65");
 
-    private Color GetBackgroundColor(int value) => value switch
+    private Color GetBackgroundColor(int value)
     {
-        0 => Color.FromArgb("#cdc1b4"),
-        2 => Color.FromArgb("#eee4da"),
-        4 => Color.FromArgb("#ede0c8"),
-        8 => Color.FromArgb("#f2b179"),
-        16 => Color.FromArgb("#f59563"),
-        32 => Color.FromArgb("#f67c5f"),
-        64 => Color.FromArgb("#f65e3b"),
-        128 => Color.FromArgb("#edcf72"),
-        256 => Color.FromArgb("#edcc61"),
-        512 => Color.FromArgb("#edc850"),
-        1024 => Color.FromArgb("#edc53f"),
-        2048 => Color.FromArgb("#edc22e"),
-        _ => Color.FromArgb("#3c3a32")
-    };
+        if (value == 0) return Color.FromArgb("#cdc1b4");
+        if (value == 2) return Color.FromArgb("#eee4da");
+        if (value == 4) return Color.FromArgb("#ede0c8");
+        if (value == 8) return Color.FromArgb("#f2b179");
+        if (value == 16) return Color.FromArgb("#f59563");
+        if (value == 32) return Color.FromArgb("#f67c5f");
+        if (value == 64) return Color.FromArgb("#f65e3b");
+        if (value == 128) return Color.FromArgb("#edcf72");
+        if (value == 256) return Color.FromArgb("#edcc61");
+        if (value == 512) return Color.FromArgb("#edc850");
+        if (value == 1024) return Color.FromArgb("#edc53f");
+        if (value == 2048) return Color.FromArgb("#edc22e");
+        
+        // For values > 2048, generate color based on the power of 2
+        // Use a color gradient from gold to dark red
+        var power = (int)Math.Log2(value);
+        var normalizedPower = (power - 11) / 10.0; // 11 is log2(2048)
+        normalizedPower = Math.Clamp(normalizedPower, 0, 1);
+        
+        // Interpolate between gold (#edc22e) and dark red (#8b0000)
+        var r = (byte)(0xed * (1 - normalizedPower) + 0x8b * normalizedPower);
+        var g = (byte)(0xc2 * (1 - normalizedPower));
+        var b = (byte)(0x2e * (1 - normalizedPower));
+        
+        return Color.FromRgb(r, g, b);
+    }
 
     public void UpdateValue(int newValue)
     {

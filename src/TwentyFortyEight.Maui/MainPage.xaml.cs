@@ -121,6 +121,7 @@ public partial class MainPage : ContentPage
                         var direction = deltaX > 0 ? Direction.Right : Direction.Left;
                         ViewModel.MoveCommand.Execute(direction);
                     }
+                    // Do nothing if swipe distance is too small
                 }
                 else
                 {
@@ -130,6 +131,7 @@ public partial class MainPage : ContentPage
                         var direction = deltaY > 0 ? Direction.Down : Direction.Up;
                         ViewModel.MoveCommand.Execute(direction);
                     }
+                    // Do nothing if swipe distance is too small
                 }
                 break;
         }

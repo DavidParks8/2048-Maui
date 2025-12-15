@@ -10,7 +10,7 @@ public class GameEngineTests
     public void NewGame_CreatesEmptyBoardWithTwoTiles()
     {
         // Arrange & Act
-        var engine = new Game2048Engine();
+        var engine = new Game2048Engine(new GameConfig(), new SystemRandomSource());
 
         // Assert
         var state = engine.CurrentState;

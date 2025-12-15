@@ -1,10 +1,20 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
+using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Models;
 
 namespace TwentyFortyEight.Maui.ViewModels;
+
+/// <summary>
+/// JSON serialization context for GameStateDto.
+/// </summary>
+[JsonSerializable(typeof(GameStateDto))]
+internal partial class GameSerializationContext : JsonSerializerContext
+{
+}
 
 /// <summary>
 /// ViewModel for the 2048 game.
@@ -12,6 +22,7 @@ namespace TwentyFortyEight.Maui.ViewModels;
 public class GameViewModel : BaseViewModel
 {
     private readonly GameConfig _config;
+    private readonly ILogger<GameViewModel>? _logger;
     private Game2048Engine _engine;
     private int _bestScore;
     private string _statusText = "";
@@ -69,10 +80,11 @@ public class GameViewModel : BaseViewModel
     public ICommand UndoCommand { get; }
     public ICommand RedoCommand { get; }
 
-    public GameViewModel()
+    public GameViewModel(ILogger<GameViewModel>? logger = null)
     {
+        _logger = logger;
         _config = new GameConfig();
-        _engine = new Game2048Engine(_config);
+        _engine = new Game2048Engine(_config, new SystemRandomSource());
         
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = new ObservableCollection<TileViewModel>();
@@ -155,11 +167,11 @@ public class GameViewModel : BaseViewModel
         // Update status text
         if (state.IsGameOver)
         {
-            StatusText = "Game Over!";
+            StatusText = Resources.Strings.AppStrings.GameOver;
         }
         else if (state.IsWon)
         {
-            StatusText = "You Win!";
+            StatusText = Resources.Strings.AppStrings.YouWin;
         }
         else
         {
@@ -176,12 +188,12 @@ public class GameViewModel : BaseViewModel
         try
         {
             var dto = GameStateDto.FromGameState(_engine.CurrentState);
-            var json = JsonSerializer.Serialize(dto);
+            var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
             Preferences.Set("SavedGame", json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore save errors
+            _logger?.LogError(ex, "Failed to save game state");
         }
     }
 
@@ -196,18 +208,18 @@ public class GameViewModel : BaseViewModel
             var savedJson = Preferences.Get("SavedGame", string.Empty);
             if (!string.IsNullOrEmpty(savedJson))
             {
-                var dto = JsonSerializer.Deserialize<GameStateDto>(savedJson);
+                var dto = JsonSerializer.Deserialize(savedJson, GameSerializationContext.Default.GameStateDto);
                 if (dto != null)
                 {
                     var state = dto.ToGameState();
-                    _engine = new Game2048Engine(state, _config);
+                    _engine = new Game2048Engine(state, _config, new SystemRandomSource());
                     return;
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore load errors and start new game
+            _logger?.LogError(ex, "Failed to load game state");
         }
 
         // If loading failed or no saved game, start new game

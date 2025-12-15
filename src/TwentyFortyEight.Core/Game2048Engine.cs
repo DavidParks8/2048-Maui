@@ -7,40 +7,43 @@ public class Game2048Engine
 {
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
-    private readonly Stack<GameState> _undoStack;
-    private readonly Stack<GameState> _redoStack;
-    private const int MaxHistorySize = 50;
+    private readonly List<MoveCommand> _moveHistory;
+    private int _currentMoveIndex;
+    private GameState _initialState;
 
     private GameState _currentState;
 
     public GameState CurrentState => _currentState;
 
-    public bool CanUndo => _undoStack.Count > 0;
-    public bool CanRedo => _redoStack.Count > 0;
+    public bool CanUndo => _currentMoveIndex > 0;
+    public bool CanRedo => _currentMoveIndex < _moveHistory.Count;
 
-    public Game2048Engine(GameConfig? config = null, IRandomSource? random = null)
+    public Game2048Engine(GameConfig config, IRandomSource random)
     {
-        _config = config ?? new GameConfig();
-        _random = random ?? new SystemRandomSource();
-        _undoStack = new Stack<GameState>();
-        _redoStack = new Stack<GameState>();
+        _config = config;
+        _random = random;
+        _moveHistory = new List<MoveCommand>();
+        _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
         
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
+        
+        _initialState = _currentState;
     }
 
     /// <summary>
     /// Creates a new game engine from a saved state.
     /// </summary>
-    public Game2048Engine(GameState state, GameConfig? config = null, IRandomSource? random = null)
+    public Game2048Engine(GameState state, GameConfig config, IRandomSource random)
     {
-        _config = config ?? new GameConfig();
-        _random = random ?? new SystemRandomSource();
-        _undoStack = new Stack<GameState>();
-        _redoStack = new Stack<GameState>();
+        _config = config;
+        _random = random;
+        _moveHistory = new List<MoveCommand>();
+        _currentMoveIndex = 0;
         _currentState = state;
+        _initialState = state;
     }
 
     /// <summary>
@@ -48,13 +51,15 @@ public class Game2048Engine
     /// </summary>
     public void NewGame()
     {
-        _undoStack.Clear();
-        _redoStack.Clear();
+        _moveHistory.Clear();
+        _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
         
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
+        
+        _initialState = _currentState;
     }
 
     /// <summary>
@@ -65,44 +70,18 @@ public class Game2048Engine
     {
         var newBoard = (int[])_currentState.Board.Clone();
         var scoreIncrease = 0;
-        var boardChanged = false;
-
-        switch (direction)
-        {
-            case Direction.Up:
-                boardChanged = MoveUp(newBoard, _currentState.Size, ref scoreIncrease);
-                break;
-            case Direction.Down:
-                boardChanged = MoveDown(newBoard, _currentState.Size, ref scoreIncrease);
-                break;
-            case Direction.Left:
-                boardChanged = MoveLeft(newBoard, _currentState.Size, ref scoreIncrease);
-                break;
-            case Direction.Right:
-                boardChanged = MoveRight(newBoard, _currentState.Size, ref scoreIncrease);
-                break;
-        }
+        var boardChanged = ProcessMove(newBoard, _currentState.Size, direction, ref scoreIncrease);
 
         if (!boardChanged)
         {
             return false;
         }
 
-        // Save current state to undo stack
-        _undoStack.Push(_currentState);
-        if (_undoStack.Count > MaxHistorySize)
+        // Clear any redo moves
+        if (_currentMoveIndex < _moveHistory.Count)
         {
-            // Remove oldest state
-            var temp = _undoStack.ToArray();
-            _undoStack.Clear();
-            for (int i = temp.Length - 1; i >= 0 && _undoStack.Count < MaxHistorySize; i--)
-            {
-                _undoStack.Push(temp[i]);
-            }
+            _moveHistory.RemoveRange(_currentMoveIndex, _moveHistory.Count - _currentMoveIndex);
         }
-
-        // Clear redo stack on new move
-        _redoStack.Clear();
 
         // Update state
         var newScore = _currentState.Score + scoreIncrease;
@@ -111,8 +90,16 @@ public class Game2048Engine
 
         _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
 
-        // Spawn a new tile
-        SpawnTile();
+        // Create and save move command
+        var moveCommand = new MoveCommand(direction);
+        
+        // Spawn a new tile and record it
+        var (spawnIndex, spawnValue) = SpawnTileWithInfo();
+        moveCommand.SpawnedTileIndex = spawnIndex;
+        moveCommand.SpawnedTileValue = spawnValue;
+        
+        _moveHistory.Add(moveCommand);
+        _currentMoveIndex++;
 
         // Check if game is over
         if (IsGameOver())
@@ -124,58 +111,83 @@ public class Game2048Engine
     }
 
     /// <summary>
-    /// Undoes the last move.
+    /// Undoes the last move by replaying from initial state.
     /// </summary>
     public bool Undo()
     {
-        if (_undoStack.Count == 0)
+        if (_currentMoveIndex == 0)
         {
             return false;
         }
 
-        _redoStack.Push(_currentState);
-        if (_redoStack.Count > MaxHistorySize)
-        {
-            // Remove oldest state
-            var temp = _redoStack.ToArray();
-            _redoStack.Clear();
-            for (int i = temp.Length - 1; i >= 0 && _redoStack.Count < MaxHistorySize; i--)
-            {
-                _redoStack.Push(temp[i]);
-            }
-        }
-
-        _currentState = _undoStack.Pop();
+        _currentMoveIndex--;
+        ReplayToCurrentIndex();
         return true;
     }
 
     /// <summary>
-    /// Redoes the last undone move.
+    /// Redoes the last undone move by replaying one more move.
     /// </summary>
     public bool Redo()
     {
-        if (_redoStack.Count == 0)
+        if (_currentMoveIndex >= _moveHistory.Count)
         {
             return false;
         }
 
-        _undoStack.Push(_currentState);
-        if (_undoStack.Count > MaxHistorySize)
-        {
-            // Remove oldest state
-            var temp = _undoStack.ToArray();
-            _undoStack.Clear();
-            for (int i = temp.Length - 1; i >= 0 && _undoStack.Count < MaxHistorySize; i--)
-            {
-                _undoStack.Push(temp[i]);
-            }
-        }
-
-        _currentState = _redoStack.Pop();
+        _currentMoveIndex++;
+        ReplayToCurrentIndex();
         return true;
     }
 
+    private void ReplayToCurrentIndex()
+    {
+        // Start from initial state
+        _currentState = new GameState(
+            (int[])_initialState.Board.Clone(),
+            _initialState.Size,
+            0,
+            0,
+            false,
+            false);
+
+        // Replay moves up to currentMoveIndex
+        for (int i = 0; i < _currentMoveIndex; i++)
+        {
+            var move = _moveHistory[i];
+            
+            var newBoard = (int[])_currentState.Board.Clone();
+            var scoreIncrease = 0;
+            ProcessMove(newBoard, _currentState.Size, move.Direction, ref scoreIncrease);
+
+            var newScore = _currentState.Score + scoreIncrease;
+            var newMoveCount = _currentState.MoveCount + 1;
+            var isWon = _currentState.IsWon || HasWinningTile(newBoard);
+
+            _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
+
+            // Restore the spawned tile
+            if (move.SpawnedTileIndex >= 0)
+            {
+                var row = move.SpawnedTileIndex / _currentState.Size;
+                var col = move.SpawnedTileIndex % _currentState.Size;
+                _currentState = _currentState.WithTile(row, col, move.SpawnedTileValue);
+            }
+        }
+
+        // Check if game is over
+        if (IsGameOver())
+        {
+            _currentState = _currentState.WithUpdate(isGameOver: true);
+        }
+    }
+
     private void SpawnTile()
+    {
+        SpawnTileWithInfo();
+    }
+
+    private (int index, int value) SpawnTileWithInfo()
     {
         var emptyCells = new List<int>();
         for (int i = 0; i < _currentState.Board.Length; i++)
@@ -188,7 +200,7 @@ public class Game2048Engine
 
         if (emptyCells.Count == 0)
         {
-            return;
+            return (-1, 0);
         }
 
         var index = emptyCells[_random.Next(emptyCells.Count)];
@@ -197,6 +209,8 @@ public class Game2048Engine
         var row = index / _currentState.Size;
         var col = index % _currentState.Size;
         _currentState = _currentState.WithTile(row, col, value);
+        
+        return (index, value);
     }
 
     private bool HasWinningTile(int[] board)
@@ -249,33 +263,50 @@ public class Game2048Engine
         return true;
     }
 
-    private bool MoveLeft(int[] board, int size, ref int scoreIncrease)
+    private bool ProcessMove(int[] board, int size, Direction direction, ref int scoreIncrease)
+    {
+        return direction switch
+        {
+            Direction.Up => ProcessMoveGeneric(board, size, true, false, ref scoreIncrease),
+            Direction.Down => ProcessMoveGeneric(board, size, true, true, ref scoreIncrease),
+            Direction.Left => ProcessMoveGeneric(board, size, false, false, ref scoreIncrease),
+            Direction.Right => ProcessMoveGeneric(board, size, false, true, ref scoreIncrease),
+            _ => false
+        };
+    }
+
+    private bool ProcessMoveGeneric(int[] board, int size, bool isVertical, bool isReverse, ref int scoreIncrease)
     {
         var moved = false;
-
-        for (int row = 0; row < size; row++)
+        var outerCount = size;
+        
+        for (int outer = 0; outer < outerCount; outer++)
         {
-            var rowValues = new List<int>();
+            var values = new List<int>();
             var merged = new HashSet<int>();
 
             // Collect non-zero values
-            for (int col = 0; col < size; col++)
+            for (int inner = 0; inner < size; inner++)
             {
-                var value = board[row * size + col];
+                var index = isVertical
+                    ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
+                    : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
+                
+                var value = board[index];
                 if (value != 0)
                 {
-                    rowValues.Add(value);
+                    values.Add(value);
                 }
             }
 
             // Merge tiles
-            var newRow = new List<int>();
-            for (int i = 0; i < rowValues.Count; i++)
+            var newValues = new List<int>();
+            for (int i = 0; i < values.Count; i++)
             {
-                if (i < rowValues.Count - 1 && rowValues[i] == rowValues[i + 1] && !merged.Contains(i))
+                if (i < values.Count - 1 && values[i] == values[i + 1] && !merged.Contains(i))
                 {
-                    var mergedValue = rowValues[i] * 2;
-                    newRow.Add(mergedValue);
+                    var mergedValue = values[i] * 2;
+                    newValues.Add(mergedValue);
                     scoreIncrease += mergedValue;
                     merged.Add(i);
                     merged.Add(i + 1);
@@ -283,202 +314,28 @@ public class Game2048Engine
                 }
                 else if (!merged.Contains(i))
                 {
-                    newRow.Add(rowValues[i]);
+                    newValues.Add(values[i]);
                 }
             }
 
             // Fill with zeros
-            while (newRow.Count < size)
+            while (newValues.Count < size)
             {
-                newRow.Add(0);
+                newValues.Add(0);
             }
 
             // Update board and check if changed
-            for (int col = 0; col < size; col++)
+            for (int inner = 0; inner < size; inner++)
             {
-                if (board[row * size + col] != newRow[col])
+                var index = isVertical
+                    ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
+                    : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
+                
+                if (board[index] != newValues[inner])
                 {
                     moved = true;
                 }
-                board[row * size + col] = newRow[col];
-            }
-        }
-
-        return moved;
-    }
-
-    private bool MoveRight(int[] board, int size, ref int scoreIncrease)
-    {
-        var moved = false;
-
-        for (int row = 0; row < size; row++)
-        {
-            var rowValues = new List<int>();
-            var merged = new HashSet<int>();
-
-            // Collect non-zero values (right to left)
-            for (int col = size - 1; col >= 0; col--)
-            {
-                var value = board[row * size + col];
-                if (value != 0)
-                {
-                    rowValues.Add(value);
-                }
-            }
-
-            // Merge tiles
-            var newRow = new List<int>();
-            for (int i = 0; i < rowValues.Count; i++)
-            {
-                if (i < rowValues.Count - 1 && rowValues[i] == rowValues[i + 1] && !merged.Contains(i))
-                {
-                    var mergedValue = rowValues[i] * 2;
-                    newRow.Add(mergedValue);
-                    scoreIncrease += mergedValue;
-                    merged.Add(i);
-                    merged.Add(i + 1);
-                    i++; // Skip next tile
-                }
-                else if (!merged.Contains(i))
-                {
-                    newRow.Add(rowValues[i]);
-                }
-            }
-
-            // Fill with zeros
-            while (newRow.Count < size)
-            {
-                newRow.Add(0);
-            }
-
-            // Update board (right to left) and check if changed
-            for (int col = 0; col < size; col++)
-            {
-                var newValue = newRow[col];
-                var boardCol = size - 1 - col;
-                if (board[row * size + boardCol] != newValue)
-                {
-                    moved = true;
-                }
-                board[row * size + boardCol] = newValue;
-            }
-        }
-
-        return moved;
-    }
-
-    private bool MoveUp(int[] board, int size, ref int scoreIncrease)
-    {
-        var moved = false;
-
-        for (int col = 0; col < size; col++)
-        {
-            var colValues = new List<int>();
-            var merged = new HashSet<int>();
-
-            // Collect non-zero values
-            for (int row = 0; row < size; row++)
-            {
-                var value = board[row * size + col];
-                if (value != 0)
-                {
-                    colValues.Add(value);
-                }
-            }
-
-            // Merge tiles
-            var newCol = new List<int>();
-            for (int i = 0; i < colValues.Count; i++)
-            {
-                if (i < colValues.Count - 1 && colValues[i] == colValues[i + 1] && !merged.Contains(i))
-                {
-                    var mergedValue = colValues[i] * 2;
-                    newCol.Add(mergedValue);
-                    scoreIncrease += mergedValue;
-                    merged.Add(i);
-                    merged.Add(i + 1);
-                    i++; // Skip next tile
-                }
-                else if (!merged.Contains(i))
-                {
-                    newCol.Add(colValues[i]);
-                }
-            }
-
-            // Fill with zeros
-            while (newCol.Count < size)
-            {
-                newCol.Add(0);
-            }
-
-            // Update board and check if changed
-            for (int row = 0; row < size; row++)
-            {
-                if (board[row * size + col] != newCol[row])
-                {
-                    moved = true;
-                }
-                board[row * size + col] = newCol[row];
-            }
-        }
-
-        return moved;
-    }
-
-    private bool MoveDown(int[] board, int size, ref int scoreIncrease)
-    {
-        var moved = false;
-
-        for (int col = 0; col < size; col++)
-        {
-            var colValues = new List<int>();
-            var merged = new HashSet<int>();
-
-            // Collect non-zero values (bottom to top)
-            for (int row = size - 1; row >= 0; row--)
-            {
-                var value = board[row * size + col];
-                if (value != 0)
-                {
-                    colValues.Add(value);
-                }
-            }
-
-            // Merge tiles
-            var newCol = new List<int>();
-            for (int i = 0; i < colValues.Count; i++)
-            {
-                if (i < colValues.Count - 1 && colValues[i] == colValues[i + 1] && !merged.Contains(i))
-                {
-                    var mergedValue = colValues[i] * 2;
-                    newCol.Add(mergedValue);
-                    scoreIncrease += mergedValue;
-                    merged.Add(i);
-                    merged.Add(i + 1);
-                    i++; // Skip next tile
-                }
-                else if (!merged.Contains(i))
-                {
-                    newCol.Add(colValues[i]);
-                }
-            }
-
-            // Fill with zeros
-            while (newCol.Count < size)
-            {
-                newCol.Add(0);
-            }
-
-            // Update board (bottom to top) and check if changed
-            for (int row = 0; row < size; row++)
-            {
-                var newValue = newCol[row];
-                var boardRow = size - 1 - row;
-                if (board[boardRow * size + col] != newValue)
-                {
-                    moved = true;
-                }
-                board[boardRow * size + col] = newValue;
+                board[index] = newValues[inner];
             }
         }
 
