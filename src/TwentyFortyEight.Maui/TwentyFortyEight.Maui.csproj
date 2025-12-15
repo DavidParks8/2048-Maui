@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!-- Default targets for local development -->
     <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+    
+    <!-- For CI builds without Xcode, only build Android -->
+    <TargetFrameworks Condition="'$(CI)' == 'true' OR '$(GITHUB_ACTIONS)' == 'true'">net10.0-android</TargetFrameworks>
     
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
