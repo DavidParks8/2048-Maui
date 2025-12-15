@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common properties for all projects -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    
+    <!-- Build and output configuration -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    
+    <!-- Repository metadata -->
+    <RepositoryUrl>https://github.com/DavidParks8/2048-Maui</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>DavidParks8</Authors>
+    <Copyright>Copyright © 2024</Copyright>
+  </PropertyGroup>
+</Project>
