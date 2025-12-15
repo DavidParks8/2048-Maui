@@ -142,14 +142,14 @@ public class Game2048Engine
 
     private void ReplayToCurrentIndex()
     {
-        // Start from initial state
+        // Start from initial state (always starts at score 0, move 0, not won, not over)
         _currentState = new GameState(
             (int[])_initialState.Board.Clone(),
             _initialState.Size,
-            0,
-            0,
-            false,
-            false);
+            _initialState.Score,
+            _initialState.MoveCount,
+            _initialState.IsWon,
+            _initialState.IsGameOver);
 
         // Replay moves up to currentMoveIndex
         for (int i = 0; i < _currentMoveIndex; i++)
@@ -288,9 +288,7 @@ public class Game2048Engine
             // Collect non-zero values
             for (int inner = 0; inner < size; inner++)
             {
-                var index = isVertical
-                    ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
-                    : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
+                var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
                 
                 var value = board[index];
                 if (value != 0)
@@ -327,9 +325,7 @@ public class Game2048Engine
             // Update board and check if changed
             for (int inner = 0; inner < size; inner++)
             {
-                var index = isVertical
-                    ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
-                    : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
+                var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
                 
                 if (board[index] != newValues[inner])
                 {
@@ -340,5 +336,12 @@ public class Game2048Engine
         }
 
         return moved;
+    }
+
+    private static int GetBoardIndex(int size, int outer, int inner, bool isVertical, bool isReverse)
+    {
+        return isVertical
+            ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
+            : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
     }
 }

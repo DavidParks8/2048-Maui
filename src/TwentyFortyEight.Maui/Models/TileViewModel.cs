@@ -33,6 +33,9 @@ public class TileViewModel : ViewModels.BaseViewModel
 
     public Color TextColor => Value > 4 ? Colors.White : Color.FromArgb("#776e65");
 
+    private const int Log2Of2048 = 11;
+    private const double GradientRange = 10.0;
+
     private Color GetBackgroundColor(int value)
     {
         if (value == 0) return Color.FromArgb("#cdc1b4");
@@ -51,7 +54,7 @@ public class TileViewModel : ViewModels.BaseViewModel
         // For values > 2048, generate color based on the power of 2
         // Use a color gradient from gold to dark red
         var power = (int)Math.Log2(value);
-        var normalizedPower = (power - 11) / 10.0; // 11 is log2(2048)
+        var normalizedPower = (power - Log2Of2048) / GradientRange;
         normalizedPower = Math.Clamp(normalizedPower, 0, 1);
         
         // Interpolate between gold (#edc22e) and dark red (#8b0000)
