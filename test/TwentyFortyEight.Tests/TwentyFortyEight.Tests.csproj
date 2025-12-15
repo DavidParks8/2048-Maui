@@ -7,8 +7,7 @@
     <PackageReference Include="Moq" />
   </ItemGroup>
 
-  <!-- Project reference will be added once we have shared logic to test -->
-  <!-- <ItemGroup>
-    <ProjectReference Include="..\..\src\TwentyFortyEight.Maui\TwentyFortyEight.Maui.csproj" />
-  </ItemGroup> -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
+  </ItemGroup>
 </Project>
