@@ -6,8 +6,8 @@
 
   <ItemGroup>
     <!-- MAUI Dependencies -->
-    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1.25064.9" />
-    <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.0-rc.1.25064.9" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.11" />
     
     <!-- Testing Dependencies -->
     <PackageVersion Include="Moq" Version="4.18.4" />
