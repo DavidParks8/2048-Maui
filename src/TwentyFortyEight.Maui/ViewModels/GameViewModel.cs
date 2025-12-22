@@ -141,6 +141,9 @@ public partial class GameViewModel : ObservableObject
                     eventArgs.NewTiles.Add(tile);
                 }
                 // Case 2: Tile merged (doubled in value)
+                // Note: In 2048, merges result in a doubled value at the destination.
+                // This detection works for both tiles that stay in place and receive
+                // merges, as well as tiles that move and merge with another tile.
                 else if (oldValue != 0 && newValue == oldValue * 2)
                 {
                     tile.IsMerged = true;

@@ -8,8 +8,6 @@ public class TileViewModel : ViewModels.BaseViewModel
     private int _value;
     private int _row;
     private int _column;
-    private int _previousRow;
-    private int _previousColumn;
     private bool _isNewTile;
     private bool _isMerged;
 
@@ -29,18 +27,6 @@ public class TileViewModel : ViewModels.BaseViewModel
     {
         get => _column;
         set => SetProperty(ref _column, value);
-    }
-
-    public int PreviousRow
-    {
-        get => _previousRow;
-        set => SetProperty(ref _previousRow, value);
-    }
-
-    public int PreviousColumn
-    {
-        get => _previousColumn;
-        set => SetProperty(ref _previousColumn, value);
     }
 
     public bool IsNewTile
