@@ -1,7 +1,7 @@
 namespace TwentyFortyEight.Core;
 
 /// <summary>
-/// Core engine for the 2048 game with undo/redo support.
+/// Core engine for the 2048 game with undo support.
 /// </summary>
 public class Game2048Engine
 {
@@ -16,7 +16,6 @@ public class Game2048Engine
     public GameState CurrentState => _currentState;
 
     public bool CanUndo => _currentMoveIndex > 0;
-    public bool CanRedo => _currentMoveIndex < _moveHistory.Count;
 
     public Game2048Engine(GameConfig config, IRandomSource random)
     {
@@ -121,21 +120,6 @@ public class Game2048Engine
         }
 
         _currentMoveIndex--;
-        ReplayToCurrentIndex();
-        return true;
-    }
-
-    /// <summary>
-    /// Redoes the last undone move by replaying one more move.
-    /// </summary>
-    public bool Redo()
-    {
-        if (_currentMoveIndex >= _moveHistory.Count)
-        {
-            return false;
-        }
-
-        _currentMoveIndex++;
         ReplayToCurrentIndex();
         return true;
     }

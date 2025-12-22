@@ -299,30 +299,7 @@ public class GameEngineTests
     }
 
     [TestMethod]
-    public void Redo_ReappliesUndoneMove()
-    {
-        // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
-        var engine = new Game2048Engine(config, random);
-
-        // Act
-        engine.Move(Direction.Left);
-        var boardAfterMove = (int[])engine.CurrentState.Board.Clone();
-        var scoreAfterMove = engine.CurrentState.Score;
-        
-        engine.Undo();
-        var redone = engine.Redo();
-
-        // Assert
-        Assert.IsTrue(redone, "Redo should succeed");
-        CollectionAssert.AreEqual(boardAfterMove, engine.CurrentState.Board, "Board should be restored to after-move state");
-        Assert.AreEqual(scoreAfterMove, engine.CurrentState.Score, "Score should be restored to after-move state");
-        Assert.IsFalse(engine.CanRedo, "Should not be able to redo again");
-    }
-
-    [TestMethod]
-    public void UndoRedo_BoundedCapacity()
+    public void Undo_BoundedCapacity()
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
@@ -352,24 +329,5 @@ public class GameEngineTests
 
         // Assert
         Assert.IsLessThanOrEqualTo(50, undoCount, $"Should be able to undo at most 50 moves, but got {undoCount}");
-    }
-
-    [TestMethod]
-    public void NewMove_ClearsRedoStack()
-    {
-        // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
-        var engine = new Game2048Engine(config, random);
-
-        // Act
-        engine.Move(Direction.Left);
-        engine.Undo();
-        Assert.IsTrue(engine.CanRedo, "Should be able to redo");
-        
-        engine.Move(Direction.Right);
-
-        // Assert
-        Assert.IsFalse(engine.CanRedo, "Redo stack should be cleared after new move");
     }
 }
