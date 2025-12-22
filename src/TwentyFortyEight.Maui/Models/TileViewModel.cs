@@ -1,45 +1,26 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace TwentyFortyEight.Maui.Models;
 
 /// <summary>
 /// Represents a tile in the 2048 game grid.
 /// </summary>
-public class TileViewModel : ViewModels.BaseViewModel
+public partial class TileViewModel : ObservableObject
 {
+    [ObservableProperty]
     private int _value;
+
+    [ObservableProperty]
     private int _row;
+
+    [ObservableProperty]
     private int _column;
+
+    [ObservableProperty]
     private bool _isNewTile;
+
+    [ObservableProperty]
     private bool _isMerged;
-
-    public int Value
-    {
-        get => _value;
-        set => SetProperty(ref _value, value);
-    }
-
-    public int Row
-    {
-        get => _row;
-        set => SetProperty(ref _row, value);
-    }
-
-    public int Column
-    {
-        get => _column;
-        set => SetProperty(ref _column, value);
-    }
-
-    public bool IsNewTile
-    {
-        get => _isNewTile;
-        set => SetProperty(ref _isNewTile, value);
-    }
-
-    public bool IsMerged
-    {
-        get => _isMerged;
-        set => SetProperty(ref _isMerged, value);
-    }
 
     public string DisplayValue => Value == 0 ? "" : Value.ToString();
 

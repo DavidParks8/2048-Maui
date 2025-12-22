@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -120,10 +121,13 @@ public partial class GameViewModel : ObservableObject
     private void UpdateUI(int[]? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;
-        var eventArgs = new TileUpdateEventArgs();
         
         if (previousBoard != null)
         {
+            var movedTiles = new HashSet<TileViewModel>();
+            var newTiles = new HashSet<TileViewModel>();
+            var mergedTiles = new HashSet<TileViewModel>();
+            
             for (int i = 0; i < state.Board.Length; i++)
             {
                 var tile = Tiles[i];
@@ -138,7 +142,7 @@ public partial class GameViewModel : ObservableObject
                 if (oldValue == 0 && (newValue == 2 || newValue == 4))
                 {
                     tile.IsNewTile = true;
-                    eventArgs.NewTiles.Add(tile);
+                    newTiles.Add(tile);
                 }
                 // Case 2: Tile merged (doubled in value)
                 // Note: In 2048, merges result in a doubled value at the destination.
@@ -147,21 +151,29 @@ public partial class GameViewModel : ObservableObject
                 else if (oldValue != 0 && newValue == oldValue * 2)
                 {
                     tile.IsMerged = true;
-                    eventArgs.MergedTiles.Add(tile);
+                    mergedTiles.Add(tile);
                 }
                 // Case 3: Tile changed (for sliding - any other value change)
                 else if (oldValue != newValue && newValue != 0)
                 {
-                    eventArgs.MovedTiles.Add(tile);
+                    movedTiles.Add(tile);
                 }
 
                 tile.UpdateValue(newValue);
             }
             
-            // Store the move direction for animation
-            if (moveDirection.HasValue)
+            // Create event args with frozen collections if there are changes
+            if (movedTiles.Count > 0 || newTiles.Count > 0 || mergedTiles.Count > 0)
             {
-                eventArgs.MoveDirection = moveDirection.Value;
+                var eventArgs = new TileUpdateEventArgs
+                {
+                    MovedTiles = movedTiles.ToFrozenSet(),
+                    NewTiles = newTiles.ToFrozenSet(),
+                    MergedTiles = mergedTiles.ToFrozenSet(),
+                    MoveDirection = moveDirection ?? Direction.Up
+                };
+                
+                TilesUpdated?.Invoke(this, eventArgs);
             }
         }
         else
@@ -196,12 +208,6 @@ public partial class GameViewModel : ObservableObject
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
-
-        // Raise event for animations if there are changes
-        if (previousBoard != null && (eventArgs.NewTiles.Count > 0 || eventArgs.MergedTiles.Count > 0 || eventArgs.MovedTiles.Count > 0))
-        {
-            TilesUpdated?.Invoke(this, eventArgs);
-        }
     }
 
     private void SaveGame()
