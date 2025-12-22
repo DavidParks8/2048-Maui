@@ -203,7 +203,7 @@ public partial class MainPage : ContentPage
 
                 // Animate back to original position
                 await Task.WhenAll(
-                    border.TranslateToAsync(0, 0, 100, Easing.CubicOut)
+                    border.TranslateToAsync(0, 0, 200, Easing.CubicOut)
                 );
             }
         });

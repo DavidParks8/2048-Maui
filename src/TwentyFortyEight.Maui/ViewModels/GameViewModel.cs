@@ -44,6 +44,9 @@ public partial class GameViewModel : ObservableObject
     private string _statusText = "";
 
     [ObservableProperty]
+    private bool _isGameOver;
+
+    [ObservableProperty]
     private bool _canUndo;
 
     public GameViewModel(ILogger<GameViewModel> logger)
@@ -177,12 +180,10 @@ public partial class GameViewModel : ObservableObject
         Moves = state.MoveCount;
         CanUndo = _engine.CanUndo;
 
-        // Update status text
-        if (state.IsGameOver)
-        {
-            StatusText = Resources.Strings.AppStrings.GameOver;
-        }
-        else if (state.IsWon)
+        // Update game over state and status text
+        IsGameOver = state.IsGameOver;
+        
+        if (state.IsWon)
         {
             StatusText = Resources.Strings.AppStrings.YouWin;
         }

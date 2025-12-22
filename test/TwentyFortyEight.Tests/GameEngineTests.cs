@@ -266,12 +266,12 @@ public class GameEngineTests
         // The current state should already be game over since the board is full
         // and no merges are possible
         
-        // Act - Try to make a move
+        // Act - Try to make a move (this triggers game over detection)
         var moved = engine.Move(Direction.Left);
 
         // Assert
         Assert.IsFalse(moved, "No move should be possible");
-        Assert.IsFalse(engine.CurrentState.IsGameOver, "Game is not over yet because move didn't happen");
+        Assert.IsTrue(engine.CurrentState.IsGameOver, "Game should be over when no moves are possible");
     }
 
     [TestMethod]

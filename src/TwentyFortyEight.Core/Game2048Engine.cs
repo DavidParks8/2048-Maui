@@ -73,6 +73,11 @@ public class Game2048Engine
 
         if (!boardChanged)
         {
+            // Check if game is over (no moves possible in any direction)
+            if (!_currentState.IsGameOver && IsGameOver())
+            {
+                _currentState = _currentState.WithUpdate(isGameOver: true);
+            }
             return false;
         }
 

@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
@@ -123,31 +124,59 @@
         </Border>
 
         <!-- Controls -->
-        <Grid Grid.Row="3" ColumnSpacing="10" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <HorizontalStackLayout Grid.Row="3" Spacing="15" HorizontalOptions="Center" Margin="0,10,0,0">
 
-            <Button Grid.Column="0"
-                    Text="New Game"
-                    Command="{Binding NewGameCommand}"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    TextColor="White"
-                    FontAttributes="Bold"
+            <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    StrokeThickness="0"
                     HeightRequest="50"
-                    CornerRadius="5"
-                    SemanticProperties.Description="Start a new game" />
+                    Padding="15,0"
+                    StrokeShape="RoundRectangle 5"
+                    SemanticProperties.Description="Start a new game">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NewGameCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="&#xE72C;"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="16"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                    <Label Text="New Game"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
 
-            <Button Grid.Column="1"
-                    Text="Undo"
-                    Command="{Binding UndoCommand}"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    TextColor="White"
-                    FontAttributes="Bold"
+            <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    StrokeThickness="0"
                     HeightRequest="50"
-                    CornerRadius="5"
-                    SemanticProperties.Description="Undo last move" />
-        </Grid>
+                    Padding="15,0"
+                    StrokeShape="RoundRectangle 5"
+                    SemanticProperties.Description="Undo last move">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding UndoCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="&#xE7A7;"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="16"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                    <Label Text="Undo"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+        </HorizontalStackLayout>
+
+        <!-- Game Over Modal -->
+        <components:GameOverModal Grid.RowSpan="4"
+                                  IsVisible="{Binding IsGameOver}"
+                                  Score="{Binding Score}"
+                                  BestScore="{Binding BestScore}"
+                                  NewGameCommand="{Binding NewGameCommand}"
+                                  ZIndex="100" />
     </Grid>
 </ContentPage>
