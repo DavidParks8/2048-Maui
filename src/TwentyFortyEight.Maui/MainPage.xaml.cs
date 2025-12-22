@@ -1,4 +1,5 @@
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
@@ -8,6 +9,7 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private Point _swipeStartPoint;
     private bool _isPanning;
+    private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
 
     public MainPage(GameViewModel viewModel)
     {
@@ -15,6 +17,9 @@ public partial class MainPage : ContentPage
         
         _viewModel = viewModel;
         BindingContext = _viewModel;
+        
+        // Subscribe to tiles updated event for animations
+        _viewModel.TilesUpdated += OnTilesUpdated;
         
         // Add tiles to the grid
         CreateTiles();
@@ -156,8 +161,85 @@ public partial class MainPage : ContentPage
             Grid.SetRow(border, tile.Row);
             Grid.SetColumn(border, tile.Column);
             
+            // Store the mapping
+            _tileBorders[tile] = border;
+            
             GameBoard.Children.Add(border);
         }
+    }
+
+    private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
+    {
+        // Animate sliding tiles first (moved tiles that received new values)
+        var slideTileTasks = e.MovedTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Calculate translation offset based on move direction
+                // Tiles appear to slide FROM the direction they came from
+                double translateX = 0;
+                double translateY = 0;
+                const double slideDistance = 20; // Subtle slide distance
+
+                switch (e.MoveDirection)
+                {
+                    case Direction.Up:
+                        translateY = slideDistance; // Came from below
+                        break;
+                    case Direction.Down:
+                        translateY = -slideDistance; // Came from above
+                        break;
+                    case Direction.Left:
+                        translateX = slideDistance; // Came from right
+                        break;
+                    case Direction.Right:
+                        translateX = -slideDistance; // Came from left
+                        break;
+                }
+
+                // Set initial translation
+                border.TranslationX = translateX;
+                border.TranslationY = translateY;
+
+                // Animate back to original position
+                await Task.WhenAll(
+                    border.TranslateToAsync(0, 0, 100, Easing.CubicOut)
+                );
+            }
+        });
+
+        // Animate new tiles (pop-in effect)
+        var newTileTasks = e.NewTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Start invisible and scaled down
+                border.Opacity = 0;
+                border.Scale = 0;
+                
+                // Animate pop-in: scale 0 -> 1.1 -> 1.0 with fade in
+                await Task.WhenAll(
+                    border.FadeToAsync(1, 75, Easing.CubicOut),
+                    border.ScaleToAsync(1.1, 75, Easing.CubicOut)
+                );
+                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+            }
+        });
+
+        // Animate merged tiles (pulse effect)
+        var mergedTileTasks = e.MergedTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Pulse: scale 1.0 -> 1.2 -> 1.0
+                await border.ScaleToAsync(1.2, 75, Easing.CubicOut);
+                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+            }
+        });
+
+        // Wait for slide animations to complete first, then do pop-in and merge
+        await Task.WhenAll(slideTileTasks);
+        await Task.WhenAll(newTileTasks.Concat(mergedTileTasks));
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)

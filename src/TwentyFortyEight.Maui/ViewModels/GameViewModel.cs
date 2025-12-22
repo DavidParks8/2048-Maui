@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,6 +20,11 @@ public partial class GameViewModel : ObservableObject
     private Game2048Engine _engine;
 
     public ObservableCollection<TileViewModel> Tiles { get; }
+
+    /// <summary>
+    /// Event raised when tiles are updated and need animations.
+    /// </summary>
+    public event EventHandler<TileUpdateEventArgs>? TilesUpdated;
 
     [ObservableProperty]
     private int _score;
@@ -75,10 +81,13 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private void Move(Direction direction)
     {
+        // Capture previous state before the move
+        var previousBoard = (int[])_engine.CurrentState.Board.Clone();
+        
         var moved = _engine.Move(direction);
         if (moved)
         {
-            UpdateUI();
+            UpdateUI(previousBoard, direction);
             SaveGame();
 
             // Update best score
@@ -109,14 +118,71 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    private void UpdateUI()
+    private void UpdateUI(int[]? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;
         
-        // Update tiles
-        for (int i = 0; i < state.Board.Length; i++)
+        if (previousBoard != null)
         {
-            Tiles[i].UpdateValue(state.Board[i]);
+            var movedTiles = new HashSet<TileViewModel>();
+            var newTiles = new HashSet<TileViewModel>();
+            var mergedTiles = new HashSet<TileViewModel>();
+            
+            for (int i = 0; i < state.Board.Length; i++)
+            {
+                var tile = Tiles[i];
+                var newValue = state.Board[i];
+                var oldValue = previousBoard[i];
+
+                // Reset animation flags
+                tile.IsNewTile = false;
+                tile.IsMerged = false;
+
+                // Case 1: New tile spawned (0 -> 2 or 0 -> 4)
+                if (oldValue == 0 && (newValue == 2 || newValue == 4))
+                {
+                    tile.IsNewTile = true;
+                    newTiles.Add(tile);
+                }
+                // Case 2: Tile merged (doubled in value)
+                // Note: In 2048, merges result in a doubled value at the destination.
+                // This detection works for both tiles that stay in place and receive
+                // merges, as well as tiles that move and merge with another tile.
+                else if (oldValue != 0 && newValue == oldValue * 2)
+                {
+                    tile.IsMerged = true;
+                    mergedTiles.Add(tile);
+                }
+                // Case 3: Tile changed (for sliding - any other value change)
+                else if (oldValue != newValue && newValue != 0)
+                {
+                    movedTiles.Add(tile);
+                }
+
+                tile.UpdateValue(newValue);
+            }
+            
+            // Create event args with frozen collections if there are changes
+            if (movedTiles.Count > 0 || newTiles.Count > 0 || mergedTiles.Count > 0)
+            {
+                var eventArgs = new TileUpdateEventArgs
+                {
+                    MovedTiles = movedTiles.ToFrozenSet(),
+                    NewTiles = newTiles.ToFrozenSet(),
+                    MergedTiles = mergedTiles.ToFrozenSet(),
+                    MoveDirection = moveDirection ?? Direction.Up
+                };
+                
+                TilesUpdated?.Invoke(this, eventArgs);
+            }
+        }
+        else
+        {
+            // No previous board - just update values
+            for (int i = 0; i < state.Board.Length; i++)
+            {
+                Tiles[i].UpdateValue(state.Board[i]);
+            }
         }
 
         // Update properties

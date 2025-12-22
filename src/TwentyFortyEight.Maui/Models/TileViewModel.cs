@@ -1,31 +1,26 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace TwentyFortyEight.Maui.Models;
 
 /// <summary>
 /// Represents a tile in the 2048 game grid.
 /// </summary>
-public class TileViewModel : ViewModels.BaseViewModel
+public partial class TileViewModel : ObservableObject
 {
+    [ObservableProperty]
     private int _value;
+
+    [ObservableProperty]
     private int _row;
+
+    [ObservableProperty]
     private int _column;
 
-    public int Value
-    {
-        get => _value;
-        set => SetProperty(ref _value, value);
-    }
+    [ObservableProperty]
+    private bool _isNewTile;
 
-    public int Row
-    {
-        get => _row;
-        set => SetProperty(ref _row, value);
-    }
-
-    public int Column
-    {
-        get => _column;
-        set => SetProperty(ref _column, value);
-    }
+    [ObservableProperty]
+    private bool _isMerged;
 
     public string DisplayValue => Value == 0 ? "" : Value.ToString();
 
@@ -65,11 +60,19 @@ public class TileViewModel : ViewModels.BaseViewModel
         return Color.FromRgb(r, g, b);
     }
 
-    public void UpdateValue(int newValue)
+    /// <summary>
+    /// Partial method hook called when Value property changes.
+    /// Notifies dependent properties to update.
+    /// </summary>
+    partial void OnValueChanged(int value)
     {
-        Value = newValue;
         OnPropertyChanged(nameof(DisplayValue));
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(TextColor));
+    }
+
+    public void UpdateValue(int newValue)
+    {
+        Value = newValue;
     }
 }
