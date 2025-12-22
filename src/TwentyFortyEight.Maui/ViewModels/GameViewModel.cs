@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.Serialization;
+using TwentyFortyEight.Maui.Services;
 
 namespace TwentyFortyEight.Maui.ViewModels;
 
@@ -16,7 +17,10 @@ public partial class GameViewModel : ObservableObject
 {
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
+    private readonly IGameCenterService _gameCenterService;
     private Game2048Engine _engine;
+    private readonly HashSet<int> _reportedTiles = new();
+    private readonly HashSet<int> _reportedScores = new();
 
     public ObservableCollection<TileViewModel> Tiles { get; }
 
@@ -43,9 +47,13 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _canRedo;
 
-    public GameViewModel(ILogger<GameViewModel> logger)
+    [ObservableProperty]
+    private bool _isGameCenterAvailable;
+
+    public GameViewModel(ILogger<GameViewModel> logger, IGameCenterService gameCenterService)
     {
         _logger = logger;
+        _gameCenterService = gameCenterService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, new SystemRandomSource());
         
@@ -62,6 +70,18 @@ public partial class GameViewModel : ObservableObject
         // Load saved state or start new game
         LoadGame();
         UpdateUI();
+        
+        // Check Game Center availability periodically
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await Task.Delay(1000);
+                IsGameCenterAvailable = _gameCenterService.IsAvailable;
+                if (IsGameCenterAvailable)
+                    break;
+            }
+        });
     }
 
     [RelayCommand]
@@ -81,11 +101,15 @@ public partial class GameViewModel : ObservableObject
             UpdateUI();
             SaveGame();
 
-            // Update best score
+            // Update best score and submit to Game Center if it's a new high score
             if (Score > BestScore)
             {
                 BestScore = Score;
+                _ = SubmitScoreToGameCenter(Score);
             }
+            
+            // Check and report achievements
+            _ = CheckAndReportAchievements();
         }
     }
 
@@ -129,6 +153,8 @@ public partial class GameViewModel : ObservableObject
         if (state.IsGameOver)
         {
             StatusText = Resources.Strings.AppStrings.GameOver;
+            // Submit score to Game Center on game over
+            _ = SubmitScoreToGameCenter(Score);
         }
         else if (state.IsWon)
         {
@@ -185,5 +211,128 @@ public partial class GameViewModel : ObservableObject
 
         // If loading failed or no saved game, start new game
         _engine.NewGame();
+    }
+
+    private async Task SubmitScoreToGameCenter(int score)
+    {
+        try
+        {
+            await _gameCenterService.SubmitScoreAsync(score);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to submit score to Game Center");
+        }
+    }
+
+    private async Task CheckAndReportAchievements()
+    {
+        try
+        {
+            var state = _engine.CurrentState;
+            
+            // Check for tile achievements
+            var maxTile = state.Board.Max();
+            await ReportTileAchievement(maxTile);
+            
+            // Check for first win achievement (reaching 2048)
+            if (state.IsWon && !_reportedTiles.Contains(2048))
+            {
+#if IOS
+                await _gameCenterService.ReportAchievementAsync(
+                    Services.GameCenterService.Achievement_FirstWin, 100.0);
+#endif
+            }
+            
+            // Check for score achievements
+            await ReportScoreAchievement(state.Score);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to report achievements to Game Center");
+        }
+    }
+
+    private async Task ReportTileAchievement(int maxTile)
+    {
+        // Only report each tile achievement once
+        if (maxTile < 128 || _reportedTiles.Contains(maxTile))
+            return;
+
+#if IOS
+        var achievementId = maxTile switch
+        {
+            >= 4096 => Services.GameCenterService.Achievement_Tile4096,
+            >= 2048 => Services.GameCenterService.Achievement_Tile2048,
+            >= 1024 => Services.GameCenterService.Achievement_Tile1024,
+            >= 512 => Services.GameCenterService.Achievement_Tile512,
+            >= 256 => Services.GameCenterService.Achievement_Tile256,
+            >= 128 => Services.GameCenterService.Achievement_Tile128,
+            _ => null
+        };
+
+        if (achievementId != null)
+        {
+            await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
+            _reportedTiles.Add(maxTile);
+        }
+#else
+        await Task.CompletedTask;
+#endif
+    }
+
+    private async Task ReportScoreAchievement(int score)
+    {
+#if IOS
+        var milestones = new[] { 10000, 25000, 50000, 100000 };
+        foreach (var milestone in milestones)
+        {
+            if (score >= milestone && !_reportedScores.Contains(milestone))
+            {
+                var achievementId = milestone switch
+                {
+                    10000 => Services.GameCenterService.Achievement_Score10000,
+                    25000 => Services.GameCenterService.Achievement_Score25000,
+                    50000 => Services.GameCenterService.Achievement_Score50000,
+                    100000 => Services.GameCenterService.Achievement_Score100000,
+                    _ => null
+                };
+
+                if (achievementId != null)
+                {
+                    await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
+                    _reportedScores.Add(milestone);
+                }
+            }
+        }
+#else
+        await Task.CompletedTask;
+#endif
+    }
+
+    [RelayCommand]
+    private async Task ShowLeaderboard()
+    {
+        try
+        {
+            await _gameCenterService.ShowLeaderboardAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to show Game Center leaderboard");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ShowAchievements()
+    {
+        try
+        {
+            await _gameCenterService.ShowAchievementsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to show Game Center achievements");
+        }
     }
 }

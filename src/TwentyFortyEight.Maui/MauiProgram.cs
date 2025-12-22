@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
@@ -21,6 +22,11 @@ public static class MauiProgram
 #endif
 
         // Register services for dependency injection
+#if IOS
+        builder.Services.AddSingleton<IGameCenterService, Services.GameCenterService>();
+#else
+        builder.Services.AddSingleton<IGameCenterService, GameCenterServiceStub>();
+#endif
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<MainPage>();
 

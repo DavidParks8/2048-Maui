@@ -123,42 +123,78 @@
         </Border>
 
         <!-- Controls -->
-        <Grid Grid.Row="3" ColumnSpacing="10" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <Grid Grid.Row="3" RowSpacing="10" Margin="0,10,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Button Grid.Column="0"
-                    Text="New Game"
-                    Command="{Binding NewGameCommand}"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    HeightRequest="50"
-                    CornerRadius="5"
-                    SemanticProperties.Description="Start a new game" />
+            <!-- Game Controls Row -->
+            <Grid Grid.Row="0" ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="1"
-                    Text="Undo"
-                    Command="{Binding UndoCommand}"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    HeightRequest="50"
-                    CornerRadius="5"
-                    SemanticProperties.Description="Undo last move" />
+                <Button Grid.Column="0"
+                        Text="New Game"
+                        Command="{Binding NewGameCommand}"
+                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="5"
+                        SemanticProperties.Description="Start a new game" />
 
-            <Button Grid.Column="2"
-                    Text="Redo"
-                    Command="{Binding RedoCommand}"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    HeightRequest="50"
-                    CornerRadius="5"
-                    SemanticProperties.Description="Redo last undone move" />
+                <Button Grid.Column="1"
+                        Text="Undo"
+                        Command="{Binding UndoCommand}"
+                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="5"
+                        SemanticProperties.Description="Undo last move" />
+
+                <Button Grid.Column="2"
+                        Text="Redo"
+                        Command="{Binding RedoCommand}"
+                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="5"
+                        SemanticProperties.Description="Redo last undone move" />
+            </Grid>
+
+            <!-- Game Center Controls Row (iOS only) -->
+            <Grid Grid.Row="1" ColumnSpacing="10" IsVisible="{Binding IsGameCenterAvailable}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Text="Leaderboard"
+                        Command="{Binding ShowLeaderboardCommand}"
+                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="5"
+                        SemanticProperties.Description="Show Game Center leaderboard" />
+
+                <Button Grid.Column="1"
+                        Text="Achievements"
+                        Command="{Binding ShowAchievementsCommand}"
+                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="5"
+                        SemanticProperties.Description="Show Game Center achievements" />
+            </Grid>
         </Grid>
     </Grid>
 </ContentPage>

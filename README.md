@@ -11,6 +11,7 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 - 🔄 Undo/Redo functionality (up to 50 moves)
 - 💾 Auto-save and resume game state
 - 🏆 Best score tracking
+- 🍎 **Game Center integration on iOS** (leaderboards and achievements)
 - 🎨 Light and dark theme support
 - ♿ Accessibility features with semantic descriptions
 - ⌨️ Keyboard support (arrow keys + WASD)
@@ -68,6 +69,49 @@ dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f n
 dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios
 dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios
 ```
+
+## Game Center Setup (iOS)
+
+The game includes Game Center integration on iOS with leaderboards and achievements. To enable Game Center features:
+
+### 1. Configure in App Store Connect
+
+1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/)
+2. Navigate to your app (Bundle ID: `com.davidparks.twentyfourtyeight`)
+3. Go to **Features** → **Game Center**
+
+### 2. Create Leaderboard
+
+Create a leaderboard with the following details:
+- **Leaderboard ID**: `com.davidparks.twentyfourtyeight.highscores`
+- **Leaderboard Name**: "High Scores"
+- **Score Format**: Integer
+- **Sort Order**: High to Low
+
+### 3. Create Achievements
+
+Create the following achievements (all should be 100% completion):
+
+| Achievement ID | Name | Description |
+|---------------|------|-------------|
+| `com.davidparks.twentyfourtyeight.tile128` | Tile 128 | Create a 128 tile |
+| `com.davidparks.twentyfourtyeight.tile256` | Tile 256 | Create a 256 tile |
+| `com.davidparks.twentyfourtyeight.tile512` | Tile 512 | Create a 512 tile |
+| `com.davidparks.twentyfourtyeight.tile1024` | Tile 1024 | Create a 1024 tile |
+| `com.davidparks.twentyfourtyeight.tile2048` | Tile 2048 | Create a 2048 tile |
+| `com.davidparks.twentyfourtyeight.tile4096` | Tile 4096 | Create a 4096 tile |
+| `com.davidparks.twentyfourtyeight.firstwin` | First Win | Reach 2048 for the first time |
+| `com.davidparks.twentyfourtyeight.score10000` | Score 10,000 | Reach a score of 10,000 |
+| `com.davidparks.twentyfourtyeight.score25000` | Score 25,000 | Reach a score of 25,000 |
+| `com.davidparks.twentyfourtyeight.score50000` | Score 50,000 | Reach a score of 50,000 |
+| `com.davidparks.twentyfourtyeight.score100000` | Score 100,000 | Reach a score of 100,000 |
+
+### 4. Testing Game Center
+
+- Game Center requires a real iOS device for testing (not the simulator)
+- Sign in to Game Center on your device
+- The app will automatically authenticate when launched
+- Leaderboard and Achievement buttons will appear when Game Center is available
 
 ## Architecture
 
