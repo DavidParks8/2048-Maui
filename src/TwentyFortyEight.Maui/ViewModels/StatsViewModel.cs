@@ -32,11 +32,15 @@ public partial class StatsViewModel : ObservableObject
     [RelayCommand]
     private async Task ResetStatistics()
     {
-        var result = await Application.Current?.MainPage?.DisplayAlert(
+        var mainPage = Shell.Current?.CurrentPage;
+        if (mainPage == null)
+            return;
+
+        var result = await mainPage.DisplayAlertAsync(
             "Reset Statistics",
             "Are you sure you want to reset all statistics? This action cannot be undone.",
             "Reset",
-            "Cancel") ?? Task.FromResult(false);
+            "Cancel");
 
         if (result)
         {
