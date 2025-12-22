@@ -60,11 +60,19 @@ public partial class TileViewModel : ObservableObject
         return Color.FromRgb(r, g, b);
     }
 
-    public void UpdateValue(int newValue)
+    /// <summary>
+    /// Partial method hook called when Value property changes.
+    /// Notifies dependent properties to update.
+    /// </summary>
+    partial void OnValueChanged(int value)
     {
-        Value = newValue;
         OnPropertyChanged(nameof(DisplayValue));
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(TextColor));
+    }
+
+    public void UpdateValue(int newValue)
+    {
+        Value = newValue;
     }
 }
