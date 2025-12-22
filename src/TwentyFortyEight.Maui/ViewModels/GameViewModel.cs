@@ -21,6 +21,7 @@ public partial class GameViewModel : ObservableObject
     private Game2048Engine _engine;
     private readonly HashSet<int> _reportedTiles = new();
     private readonly HashSet<int> _reportedScores = new();
+    private bool _firstWinReported = false;
 
     public ObservableCollection<TileViewModel> Tiles { get; }
 
@@ -71,16 +72,11 @@ public partial class GameViewModel : ObservableObject
         LoadGame();
         UpdateUI();
         
-        // Check Game Center availability periodically
+        // Check Game Center availability after a short delay
         _ = Task.Run(async () =>
         {
-            while (true)
-            {
-                await Task.Delay(1000);
-                IsGameCenterAvailable = _gameCenterService.IsAvailable;
-                if (IsGameCenterAvailable)
-                    break;
-            }
+            await Task.Delay(2000); // Give time for authentication
+            IsGameCenterAvailable = _gameCenterService.IsAvailable;
         });
     }
 
@@ -236,11 +232,12 @@ public partial class GameViewModel : ObservableObject
             await ReportTileAchievement(maxTile);
             
             // Check for first win achievement (reaching 2048)
-            if (state.IsWon && !_reportedTiles.Contains(2048))
+            if (state.IsWon && !_firstWinReported)
             {
 #if IOS
                 await _gameCenterService.ReportAchievementAsync(
                     Services.GameCenterService.Achievement_FirstWin, 100.0);
+                _firstWinReported = true;
 #endif
             }
             
@@ -273,8 +270,15 @@ public partial class GameViewModel : ObservableObject
 
         if (achievementId != null)
         {
-            await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
-            _reportedTiles.Add(maxTile);
+            try
+            {
+                await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
+                _reportedTiles.Add(maxTile);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to report tile achievement for {maxTile}");
+            }
         }
 #else
         await Task.CompletedTask;
@@ -300,8 +304,15 @@ public partial class GameViewModel : ObservableObject
 
                 if (achievementId != null)
                 {
-                    await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
-                    _reportedScores.Add(milestone);
+                    try
+                    {
+                        await _gameCenterService.ReportAchievementAsync(achievementId, 100.0);
+                        _reportedScores.Add(milestone);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Failed to report score achievement for {milestone}");
+                    }
                 }
             }
         }
