@@ -206,6 +206,14 @@ public partial class MainPage : ContentPage
         {
             newTileValues[tile] = tile.Value;
             tile.UpdateValue(0); // Show as empty cell during slide animation
+
+            // Also hide the border completely during slide animation
+            // This prevents visual glitches when spawning into a position a tile is leaving
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                border.Opacity = 0;
+                border.Scale = 0;
+            }
         }
 
         // Hide merged tiles initially (they will appear after slide animation)
@@ -256,40 +264,47 @@ public partial class MainPage : ContentPage
 
         // Now show the final tiles at their destinations
         // Animate merged tiles (pulse effect) - they appear now after sliding
-        var mergedTileTasks = e.MergedTiles.Select(async tile =>
-        {
-            if (_tileBorders.TryGetValue(tile, out var border))
+        var mergedTileTasks = e
+            .MergedTiles.Select(async tile =>
             {
-                // Show the merged tile and pulse
-                border.Opacity = 1;
-                border.Scale = 0.8;
-                await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
-                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
-            }
-        }).ToList(); // Materialize to start all tasks immediately
+                if (_tileBorders.TryGetValue(tile, out var border))
+                {
+                    // Show the merged tile and pulse
+                    border.Opacity = 1;
+                    border.Scale = 0.8;
+                    await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
+                    await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+                }
+            })
+            .ToList(); // Materialize to start all tasks immediately
 
         // Wait for merged tile animations to complete first
         await Task.WhenAll(mergedTileTasks);
 
         // Then animate new tiles - restore their value and scale up from small
-        var newTileTasks = e.NewTiles.Select(async tile =>
-        {
-            if (
-                _tileBorders.TryGetValue(tile, out var border)
-                && newTileValues.TryGetValue(tile, out var actualValue)
-            )
+        var newTileTasks = e
+            .NewTiles.Select(async tile =>
             {
-                // Set up for pop-in animation
-                border.Scale = 0;
-                border.Opacity = 1;
+                if (
+                    _tileBorders.TryGetValue(tile, out var border)
+                    && newTileValues.TryGetValue(tile, out var actualValue)
+                )
+                {
+                    // Restore the actual value first (this changes the background color)
+                    tile.UpdateValue(actualValue);
 
-                // Restore the actual value (this changes the background color)
-                tile.UpdateValue(actualValue);
+                    // Ensure scale is 0 and make visible
+                    border.Scale = 0;
+                    border.Opacity = 1;
 
-                // Animate scale from 0 to 1
-                await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
-            }
-        }).ToList(); // Materialize to start all tasks immediately
+                    // Small delay to ensure the UI has updated before animating
+                    await Task.Delay(10);
+
+                    // Animate scale from 0 to 1
+                    await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
+                }
+            })
+            .ToList(); // Materialize to start all tasks immediately
 
         await Task.WhenAll(newTileTasks);
     }

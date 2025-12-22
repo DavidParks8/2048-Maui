@@ -127,24 +127,29 @@ public partial class GameViewModel : ObservableObject
                 var tile = Tiles[i];
                 var newValue = state.Board[i];
                 var oldValue = previousBoard[i];
+                var row = i / _config.Size;
+                var col = i % _config.Size;
 
                 // Reset animation flags
                 tile.IsNewTile = false;
                 tile.IsMerged = false;
 
-                // Case 1: New tile spawned (0 -> 2 or 0 -> 4)
-                if (oldValue == 0 && (newValue == 2 || newValue == 4))
+                // Check if a tile moved away from this position
+                var movedAwayFrom = tileMovements.Any(m => m.FromRow == row && m.FromColumn == col);
+                // Check if a tile moved to this position
+                var isMovedHere = tileMovements.Any(m => m.ToRow == row && m.ToColumn == col);
+
+                // Case 1: New tile spawned
+                // Either: was empty and now has 2/4 (and nothing moved here)
+                // Or: a tile moved away and there's still a value here (new spawn in vacated spot)
+                if (newValue == 2 || newValue == 4)
                 {
-                    // Check if this is actually a new spawn (not a tile that moved here)
-                    var row = i / _config.Size;
-                    var col = i % _config.Size;
-                    var isMovedHere = tileMovements.Any(m => m.ToRow == row && m.ToColumn == col);
-                    if (!isMovedHere)
+                    if ((oldValue == 0 && !isMovedHere) || (movedAwayFrom && !isMovedHere))
                     {
                         tile.IsNewTile = true;
                         newTiles.Add(tile);
                     }
-                    else
+                    else if (isMovedHere)
                     {
                         movedTiles.Add(tile);
                     }
@@ -152,8 +157,6 @@ public partial class GameViewModel : ObservableObject
                 // Case 2: Tile merged (check if this position received a merge)
                 else if (newValue != 0)
                 {
-                    var row = i / _config.Size;
-                    var col = i % _config.Size;
                     var mergingMovements = tileMovements
                         .Where(m => m.ToRow == row && m.ToColumn == col && m.IsMerging)
                         .ToList();
