@@ -15,22 +15,6 @@ public class GameCenterService : IGameCenterService
     private bool _isAuthenticated;
     private readonly HashSet<string> _reportedAchievements = new();
 
-    // Leaderboard ID - must match the ID configured in App Store Connect
-    private const string LeaderboardId = "com.davidparks.twentyfourtyeight.highscores";
-
-    // Achievement IDs - must match the IDs configured in App Store Connect
-    public const string Achievement_Tile128 = "com.davidparks.twentyfourtyeight.tile128";
-    public const string Achievement_Tile256 = "com.davidparks.twentyfourtyeight.tile256";
-    public const string Achievement_Tile512 = "com.davidparks.twentyfourtyeight.tile512";
-    public const string Achievement_Tile1024 = "com.davidparks.twentyfourtyeight.tile1024";
-    public const string Achievement_Tile2048 = "com.davidparks.twentyfourtyeight.tile2048";
-    public const string Achievement_Tile4096 = "com.davidparks.twentyfourtyeight.tile4096";
-    public const string Achievement_FirstWin = "com.davidparks.twentyfourtyeight.firstwin";
-    public const string Achievement_Score10000 = "com.davidparks.twentyfourtyeight.score10000";
-    public const string Achievement_Score25000 = "com.davidparks.twentyfourtyeight.score25000";
-    public const string Achievement_Score50000 = "com.davidparks.twentyfourtyeight.score50000";
-    public const string Achievement_Score100000 = "com.davidparks.twentyfourtyeight.score100000";
-
     public GameCenterService(ILogger<GameCenterService>? logger = null)
     {
         _logger = logger;
@@ -105,7 +89,7 @@ public class GameCenterService : IGameCenterService
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                var scoreReporter = new GKScore(LeaderboardId)
+                var scoreReporter = new GKScore(GameCenterConstants.LeaderboardId)
                 {
                     Value = score
                 };
@@ -177,7 +161,7 @@ public class GameCenterService : IGameCenterService
             {
                 var viewController = new GKGameCenterViewController();
                 viewController.ViewState = GKGameCenterViewControllerState.Leaderboards;
-                viewController.LeaderboardIdentifier = LeaderboardId;
+                viewController.LeaderboardIdentifier = GameCenterConstants.LeaderboardId;
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);

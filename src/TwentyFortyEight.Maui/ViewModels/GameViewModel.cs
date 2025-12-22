@@ -72,12 +72,13 @@ public partial class GameViewModel : ObservableObject
         LoadGame();
         UpdateUI();
         
-        // Check Game Center availability after a short delay
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(2000); // Give time for authentication
-            IsGameCenterAvailable = _gameCenterService.IsAvailable;
-        });
+        // Update Game Center availability when service becomes available
+        UpdateGameCenterAvailability();
+    }
+
+    private void UpdateGameCenterAvailability()
+    {
+        IsGameCenterAvailable = _gameCenterService.IsAvailable;
     }
 
     [RelayCommand]
@@ -106,6 +107,9 @@ public partial class GameViewModel : ObservableObject
             
             // Check and report achievements
             _ = CheckAndReportAchievements();
+            
+            // Update Game Center availability
+            UpdateGameCenterAvailability();
         }
     }
 
@@ -234,11 +238,9 @@ public partial class GameViewModel : ObservableObject
             // Check for first win achievement (reaching 2048)
             if (state.IsWon && !_firstWinReported)
             {
-#if IOS
                 await _gameCenterService.ReportAchievementAsync(
-                    Services.GameCenterService.Achievement_FirstWin, 100.0);
+                    GameCenterConstants.Achievement_FirstWin, 100.0);
                 _firstWinReported = true;
-#endif
             }
             
             // Check for score achievements
@@ -256,15 +258,14 @@ public partial class GameViewModel : ObservableObject
         if (maxTile < 128 || _reportedTiles.Contains(maxTile))
             return;
 
-#if IOS
         var achievementId = maxTile switch
         {
-            >= 4096 => Services.GameCenterService.Achievement_Tile4096,
-            >= 2048 => Services.GameCenterService.Achievement_Tile2048,
-            >= 1024 => Services.GameCenterService.Achievement_Tile1024,
-            >= 512 => Services.GameCenterService.Achievement_Tile512,
-            >= 256 => Services.GameCenterService.Achievement_Tile256,
-            >= 128 => Services.GameCenterService.Achievement_Tile128,
+            >= 4096 => GameCenterConstants.Achievement_Tile4096,
+            >= 2048 => GameCenterConstants.Achievement_Tile2048,
+            >= 1024 => GameCenterConstants.Achievement_Tile1024,
+            >= 512 => GameCenterConstants.Achievement_Tile512,
+            >= 256 => GameCenterConstants.Achievement_Tile256,
+            >= 128 => GameCenterConstants.Achievement_Tile128,
             _ => null
         };
 
@@ -280,14 +281,10 @@ public partial class GameViewModel : ObservableObject
                 _logger.LogError(ex, $"Failed to report tile achievement for {maxTile}");
             }
         }
-#else
-        await Task.CompletedTask;
-#endif
     }
 
     private async Task ReportScoreAchievement(int score)
     {
-#if IOS
         var milestones = new[] { 10000, 25000, 50000, 100000 };
         foreach (var milestone in milestones)
         {
@@ -295,10 +292,10 @@ public partial class GameViewModel : ObservableObject
             {
                 var achievementId = milestone switch
                 {
-                    10000 => Services.GameCenterService.Achievement_Score10000,
-                    25000 => Services.GameCenterService.Achievement_Score25000,
-                    50000 => Services.GameCenterService.Achievement_Score50000,
-                    100000 => Services.GameCenterService.Achievement_Score100000,
+                    10000 => GameCenterConstants.Achievement_Score10000,
+                    25000 => GameCenterConstants.Achievement_Score25000,
+                    50000 => GameCenterConstants.Achievement_Score50000,
+                    100000 => GameCenterConstants.Achievement_Score100000,
                     _ => null
                 };
 
@@ -316,9 +313,6 @@ public partial class GameViewModel : ObservableObject
                 }
             }
         }
-#else
-        await Task.CompletedTask;
-#endif
     }
 
     [RelayCommand]
