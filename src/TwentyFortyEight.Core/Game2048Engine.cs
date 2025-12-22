@@ -24,11 +24,11 @@ public class Game2048Engine
         _moveHistory = new List<MoveCommand>();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
-        
+
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
-        
+
         _initialState = _currentState;
     }
 
@@ -53,11 +53,11 @@ public class Game2048Engine
         _moveHistory.Clear();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
-        
+
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
-        
+
         _initialState = _currentState;
     }
 
@@ -92,16 +92,23 @@ public class Game2048Engine
         var newMoveCount = _currentState.MoveCount + 1;
         var isWon = _currentState.IsWon || HasWinningTile(newBoard);
 
-        _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
+        _currentState = new GameState(
+            newBoard,
+            _currentState.Size,
+            newScore,
+            newMoveCount,
+            isWon,
+            false
+        );
 
         // Create and save move command
         var moveCommand = new MoveCommand(direction);
-        
+
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
         moveCommand.SpawnedTileIndex = spawnIndex;
         moveCommand.SpawnedTileValue = spawnValue;
-        
+
         _moveHistory.Add(moveCommand);
         _currentMoveIndex++;
 
@@ -138,13 +145,14 @@ public class Game2048Engine
             _initialState.Score,
             _initialState.MoveCount,
             _initialState.IsWon,
-            _initialState.IsGameOver);
+            _initialState.IsGameOver
+        );
 
         // Replay moves up to currentMoveIndex
         for (int i = 0; i < _currentMoveIndex; i++)
         {
             var move = _moveHistory[i];
-            
+
             var newBoard = (int[])_currentState.Board.Clone();
             var scoreIncrease = 0;
             ProcessMove(newBoard, _currentState.Size, move.Direction, ref scoreIncrease);
@@ -153,7 +161,14 @@ public class Game2048Engine
             var newMoveCount = _currentState.MoveCount + 1;
             var isWon = _currentState.IsWon || HasWinningTile(newBoard);
 
-            _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
+            _currentState = new GameState(
+                newBoard,
+                _currentState.Size,
+                newScore,
+                newMoveCount,
+                isWon,
+                false
+            );
 
             // Restore the spawned tile
             if (move.SpawnedTileIndex >= 0)
@@ -198,7 +213,7 @@ public class Game2048Engine
         var row = index / _currentState.Size;
         var col = index % _currentState.Size;
         _currentState = _currentState.WithTile(row, col, value);
-        
+
         return (index, value);
     }
 
@@ -260,15 +275,21 @@ public class Game2048Engine
             Direction.Down => ProcessMoveGeneric(board, size, true, true, ref scoreIncrease),
             Direction.Left => ProcessMoveGeneric(board, size, false, false, ref scoreIncrease),
             Direction.Right => ProcessMoveGeneric(board, size, false, true, ref scoreIncrease),
-            _ => false
+            _ => false,
         };
     }
 
-    private static bool ProcessMoveGeneric(int[] board, int size, bool isVertical, bool isReverse, ref int scoreIncrease)
+    private static bool ProcessMoveGeneric(
+        int[] board,
+        int size,
+        bool isVertical,
+        bool isReverse,
+        ref int scoreIncrease
+    )
     {
         var moved = false;
         var outerCount = size;
-        
+
         for (int outer = 0; outer < outerCount; outer++)
         {
             var values = new List<int>();
@@ -278,7 +299,7 @@ public class Game2048Engine
             for (int inner = 0; inner < size; inner++)
             {
                 var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
-                
+
                 var value = board[index];
                 if (value != 0)
                 {
@@ -315,7 +336,7 @@ public class Game2048Engine
             for (int inner = 0; inner < size; inner++)
             {
                 var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
-                
+
                 if (board[index] != newValues[inner])
                 {
                     moved = true;
@@ -327,7 +348,13 @@ public class Game2048Engine
         return moved;
     }
 
-    private static int GetBoardIndex(int size, int outer, int inner, bool isVertical, bool isReverse)
+    private static int GetBoardIndex(
+        int size,
+        int outer,
+        int inner,
+        bool isVertical,
+        bool isReverse
+    )
     {
         return isVertical
             ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)

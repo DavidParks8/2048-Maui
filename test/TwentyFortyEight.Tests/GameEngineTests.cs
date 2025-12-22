@@ -29,10 +29,13 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var engine = new Game2048Engine(config, random);
-        
+
         // Create a specific board state
         var board = new int[16];
-        board[0] = 2; board[1] = 0; board[2] = 2; board[3] = 0; // [2,0,2,0] -> [4,0,0,0]
+        board[0] = 2;
+        board[1] = 0;
+        board[2] = 2;
+        board[3] = 0; // [2,0,2,0] -> [4,0,0,0]
         var state = new GameState(board, 4, 0, 0, false, false);
         engine = new Game2048Engine(state, config, random);
 
@@ -52,7 +55,10 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2; board[1] = 2; board[2] = 2; board[3] = 2; // [2,2,2,2] -> [4,4,0,0]
+        board[0] = 2;
+        board[1] = 2;
+        board[2] = 2;
+        board[3] = 2; // [2,2,2,2] -> [4,4,0,0]
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
@@ -73,7 +79,10 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2; board[1] = 2; board[2] = 2; board[3] = 0; // [2,2,2,0] -> [4,2,0,0]
+        board[0] = 2;
+        board[1] = 2;
+        board[2] = 2;
+        board[3] = 0; // [2,2,2,0] -> [4,2,0,0]
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
@@ -95,7 +104,10 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 0; board[1] = 2; board[2] = 0; board[3] = 2; // [0,2,0,2] -> [0,0,0,4]
+        board[0] = 0;
+        board[1] = 2;
+        board[2] = 0;
+        board[3] = 2; // [0,2,0,2] -> [0,0,0,4]
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
@@ -117,9 +129,9 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2;  // Row 0
-        board[4] = 0;  // Row 1
-        board[8] = 2;  // Row 2
+        board[0] = 2; // Row 0
+        board[4] = 0; // Row 1
+        board[8] = 2; // Row 2
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [4,0,0,0]
         var state = new GameState(board, 4, 0, 0, false, false);
@@ -143,9 +155,9 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2;  // Row 0
-        board[4] = 0;  // Row 1
-        board[8] = 2;  // Row 2
+        board[0] = 2; // Row 0
+        board[4] = 0; // Row 1
+        board[8] = 2; // Row 2
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [0,0,0,4]
         var state = new GameState(board, 4, 0, 0, false, false);
@@ -169,7 +181,10 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2; board[1] = 4; board[2] = 8; board[3] = 16;
+        board[0] = 2;
+        board[1] = 4;
+        board[2] = 8;
+        board[3] = 16;
         // All tiles already at the left
         var state = new GameState(board, 4, 10, 5, false, false);
         var engine = new Game2048Engine(state, config, random);
@@ -181,7 +196,7 @@ public class GameEngineTests
         Assert.IsFalse(moved, "Move should be a no-op");
         Assert.AreEqual(10, engine.CurrentState.Score, "Score should not change");
         Assert.AreEqual(5, engine.CurrentState.MoveCount, "Move count should not change");
-        
+
         // Count non-zero tiles - should remain the same (no new tile spawned)
         var nonZeroCount = engine.CurrentState.Board.Count(x => x != 0);
         Assert.AreEqual(4, nonZeroCount, "No new tile should spawn on no-op move");
@@ -199,7 +214,10 @@ public class GameEngineTests
         {
             var random = new SeededRandomSource(i);
             var board = new int[16];
-            board[0] = 2; board[1] = 0; board[2] = 2; board[3] = 0;
+            board[0] = 2;
+            board[1] = 0;
+            board[2] = 2;
+            board[3] = 0;
             var state = new GameState(board, 4, 0, 0, false, false);
             var engine = new Game2048Engine(state, config, random);
 
@@ -221,8 +239,11 @@ public class GameEngineTests
         }
 
         // Verify all spawned values are either 2 or 4
-        Assert.IsTrue(spawnedValues.All(v => v == 2 || v == 4), "All spawned values should be 2 or 4");
-        
+        Assert.IsTrue(
+            spawnedValues.All(v => v == 2 || v == 4),
+            "All spawned values should be 2 or 4"
+        );
+
         // Most should be 2s (roughly 90%)
         var twoCount = spawnedValues.Count(v => v == 2);
         Assert.IsGreaterThanOrEqualTo(70, twoCount, $"Expected at least 70 2s, got {twoCount}");
@@ -253,25 +274,22 @@ public class GameEngineTests
         // Arrange - Create a full board with no possible merges
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
-        var board = new int[16]
-        {
-            2, 4, 8, 16,
-            16, 8, 4, 2,
-            2, 4, 8, 16,
-            16, 8, 4, 2
-        };
+        var board = new int[16] { 2, 4, 8, 16, 16, 8, 4, 2, 2, 4, 8, 16, 16, 8, 4, 2 };
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // The current state should already be game over since the board is full
         // and no merges are possible
-        
+
         // Act - Try to make a move (this triggers game over detection)
         var moved = engine.Move(Direction.Left);
 
         // Assert
         Assert.IsFalse(moved, "No move should be possible");
-        Assert.IsTrue(engine.CurrentState.IsGameOver, "Game should be over when no moves are possible");
+        Assert.IsTrue(
+            engine.CurrentState.IsGameOver,
+            "Game should be over when no moves are possible"
+        );
     }
 
     [TestMethod]
@@ -288,12 +306,16 @@ public class GameEngineTests
         engine.Move(Direction.Left);
         var boardAfterMove = (int[])engine.CurrentState.Board.Clone();
         var scoreAfterMove = engine.CurrentState.Score;
-        
+
         var undone = engine.Undo();
 
         // Assert
         Assert.IsTrue(undone, "Undo should succeed");
-        CollectionAssert.AreEqual(initialBoard, engine.CurrentState.Board, "Board should be restored");
+        CollectionAssert.AreEqual(
+            initialBoard,
+            engine.CurrentState.Board,
+            "Board should be restored"
+        );
         Assert.AreEqual(initialScore, engine.CurrentState.Score, "Score should be restored");
         Assert.IsFalse(engine.CanUndo, "Should not be able to undo again");
     }
@@ -305,8 +327,14 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var board = new int[16];
-        board[0] = 2; board[1] = 0; board[2] = 0; board[3] = 0;
-        board[4] = 0; board[5] = 2; board[6] = 0; board[7] = 0;
+        board[0] = 2;
+        board[1] = 0;
+        board[2] = 0;
+        board[3] = 0;
+        board[4] = 0;
+        board[5] = 2;
+        board[6] = 0;
+        board[7] = 0;
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
@@ -328,6 +356,10 @@ public class GameEngineTests
         }
 
         // Assert
-        Assert.IsLessThanOrEqualTo(50, undoCount, $"Should be able to undo at most 50 moves, but got {undoCount}");
+        Assert.IsLessThanOrEqualTo(
+            50,
+            undoCount,
+            $"Should be able to undo at most 50 moves, but got {undoCount}"
+        );
     }
 }

@@ -15,5 +15,7 @@
     <PackageVersion Include="CommunityToolkit.Maui" Version="13.0.0" />
     <!-- Testing Dependencies -->
     <PackageVersion Include="Moq" Version="4.18.4" />
+    <!-- Code Formatting -->
+    <PackageVersion Include="CSharpier.MsBuild" Version="0.30.6" />
   </ItemGroup>
 </Project>

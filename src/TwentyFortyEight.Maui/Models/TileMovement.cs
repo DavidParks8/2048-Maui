@@ -9,4 +9,5 @@ public readonly record struct TileMovement(
     int ToRow,
     int ToColumn,
     int Value,
-    bool IsMerging);
+    bool IsMerging
+);

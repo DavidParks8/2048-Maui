@@ -31,7 +31,7 @@ public class GameStateSerializationTests
     {
         // Arrange
         var state = new GameState(4);
-        
+
         // Act
         var dto = GameStateDto.FromGameState(state);
 

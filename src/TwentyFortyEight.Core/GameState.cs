@@ -77,8 +77,13 @@ public class GameState
     /// <summary>
     /// Creates a new GameState with updated properties.
     /// </summary>
-    public GameState WithUpdate(int[]? board = null, int? score = null, int? moveCount = null, 
-        bool? isWon = null, bool? isGameOver = null)
+    public GameState WithUpdate(
+        int[]? board = null,
+        int? score = null,
+        int? moveCount = null,
+        bool? isWon = null,
+        bool? isGameOver = null
+    )
     {
         return new GameState(
             board ?? (int[])Board.Clone(),

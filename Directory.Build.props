@@ -15,4 +15,9 @@
     <Authors>DavidParks8</Authors>
     <Copyright>Copyright © 2026</Copyright>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Code Formatting - runs on build -->
+    <PackageReference Include="CSharpier.MsBuild" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

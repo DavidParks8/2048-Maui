@@ -13,18 +13,20 @@ public class AnimationDetectionTests
         // Arrange
         var config = new GameConfig();
         var randomMock = new Mock<IRandomSource>();
-        
+
         // Setup random to return predictable values
-        randomMock.SetupSequence(r => r.Next(It.IsAny<int>()))
-            .Returns(0)  // First spawn position
-            .Returns(1)  // Second spawn position
+        randomMock
+            .SetupSequence(r => r.Next(It.IsAny<int>()))
+            .Returns(0) // First spawn position
+            .Returns(1) // Second spawn position
             .Returns(5); // Third spawn position after move (position that will be empty)
-        
-        randomMock.SetupSequence(r => r.NextDouble())
-            .Returns(0.5)  // First spawn value (2)
-            .Returns(0.5)  // Second spawn value (2)
+
+        randomMock
+            .SetupSequence(r => r.NextDouble())
+            .Returns(0.5) // First spawn value (2)
+            .Returns(0.5) // Second spawn value (2)
             .Returns(0.5); // Third spawn value (2) - new tile
-        
+
         var engine = new Game2048Engine(config, randomMock.Object);
         var initialBoardSnapshot = (int[])engine.CurrentState.Board.Clone();
 
@@ -33,11 +35,15 @@ public class AnimationDetectionTests
 
         // Assert
         Assert.IsTrue(moved, "Move should succeed");
-        
+
         // Verify a new tile was spawned (board has one more non-zero tile than initial)
         var initialNonZeroCount = initialBoardSnapshot.Count(v => v != 0);
         var finalNonZeroCount = engine.CurrentState.Board.Count(v => v != 0);
-        Assert.IsGreaterThanOrEqualTo(finalNonZeroCount, initialNonZeroCount, "Should have at least the same number of tiles after move");
+        Assert.IsGreaterThanOrEqualTo(
+            finalNonZeroCount,
+            initialNonZeroCount,
+            "Should have at least the same number of tiles after move"
+        );
     }
 
     [TestMethod]
@@ -46,15 +52,15 @@ public class AnimationDetectionTests
         // Arrange - Create a board with two 2's that can merge
         var config = new GameConfig();
         var randomMock = new Mock<IRandomSource>();
-        
+
         // Create initial state with two 2's in the same row
         var initialBoard = new int[16];
-        initialBoard[0] = 2;  // Top-left
-        initialBoard[1] = 2;  // Next to it
+        initialBoard[0] = 2; // Top-left
+        initialBoard[1] = 2; // Next to it
         var initialState = new GameState(initialBoard, 4, 0, 0, false, false);
-        
+
         var engine = new Game2048Engine(initialState, config, randomMock.Object);
-        
+
         // Setup random for the new tile spawn after merge
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
@@ -64,7 +70,11 @@ public class AnimationDetectionTests
 
         // Assert
         Assert.IsTrue(moved, "Move should succeed");
-        Assert.AreEqual(4, engine.CurrentState.Board[0], "First position should have merged value of 4");
+        Assert.AreEqual(
+            4,
+            engine.CurrentState.Board[0],
+            "First position should have merged value of 4"
+        );
         Assert.AreEqual(0, engine.CurrentState.Board[1], "Second position should be empty");
         Assert.AreEqual(4, engine.CurrentState.Score, "Score should increase by merged value");
     }
@@ -75,14 +85,14 @@ public class AnimationDetectionTests
         // Arrange - Create a board with a tile that needs to slide
         var config = new GameConfig();
         var randomMock = new Mock<IRandomSource>();
-        
+
         // Create initial state with a single tile not at the edge
         var initialBoard = new int[16];
-        initialBoard[1] = 2;  // Position 1 (will slide to position 0)
+        initialBoard[1] = 2; // Position 1 (will slide to position 0)
         var initialState = new GameState(initialBoard, 4, 0, 0, false, false);
-        
+
         var engine = new Game2048Engine(initialState, config, randomMock.Object);
-        
+
         // Setup random for the new tile spawn after slide
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
@@ -102,20 +112,20 @@ public class AnimationDetectionTests
         // Arrange
         var config = new GameConfig();
         var randomMock = new Mock<IRandomSource>();
-        
+
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
-        
+
         var engine = new Game2048Engine(config, randomMock.Object);
 
         // Act & Assert for each direction
         var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };
-        
+
         foreach (var direction in directions)
         {
             var previousBoard = (int[])engine.CurrentState.Board.Clone();
             var moved = engine.Move(direction);
-            
+
             if (moved)
             {
                 // Verify board changed
@@ -159,10 +169,10 @@ public class AnimationDetectionTests
         // This tests the animation detection logic pattern
         var oldValue = 0;
         var newValue = 2;
-        
+
         // Act - Simulate detection logic
         var isNewTile = oldValue == 0 && (newValue == 2 || newValue == 4);
-        
+
         // Assert
         Assert.IsTrue(isNewTile, "Should detect new tile when 0 becomes 2 or 4");
     }
@@ -173,10 +183,10 @@ public class AnimationDetectionTests
         // This tests the animation detection logic pattern
         var oldValue = 2;
         var newValue = 4;
-        
+
         // Act - Simulate detection logic
         var isMerged = oldValue != 0 && newValue == oldValue * 2;
-        
+
         // Assert
         Assert.IsTrue(isMerged, "Should detect merge when value doubles");
     }
@@ -187,10 +197,14 @@ public class AnimationDetectionTests
         // This tests the animation detection logic pattern
         var oldValue = 0;
         var newValue = 8;
-        
+
         // Act - Simulate detection logic (tile that slid into empty space)
-        var isSlide = oldValue != newValue && newValue != 0 && !(oldValue == 0 && (newValue == 2 || newValue == 4)) && !(oldValue != 0 && newValue == oldValue * 2);
-        
+        var isSlide =
+            oldValue != newValue
+            && newValue != 0
+            && !(oldValue == 0 && (newValue == 2 || newValue == 4))
+            && !(oldValue != 0 && newValue == oldValue * 2);
+
         // Assert
         Assert.IsTrue(isSlide, "Should detect slide when empty space gets a non-new tile");
     }

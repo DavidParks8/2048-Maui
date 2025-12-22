@@ -53,7 +53,7 @@ public class GameStateDto
             Score = state.Score,
             MoveCount = state.MoveCount,
             IsWon = state.IsWon,
-            IsGameOver = state.IsGameOver
+            IsGameOver = state.IsGameOver,
         };
     }
 
@@ -62,13 +62,6 @@ public class GameStateDto
     /// </summary>
     public GameState ToGameState()
     {
-        return new GameState(
-            (int[])Board.Clone(),
-            Size,
-            Score,
-            MoveCount,
-            IsWon,
-            IsGameOver
-        );
+        return new GameState((int[])Board.Clone(), Size, Score, MoveCount, IsWon, IsGameOver);
     }
 }
