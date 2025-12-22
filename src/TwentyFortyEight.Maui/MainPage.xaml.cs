@@ -144,10 +144,9 @@ public partial class MainPage : ContentPage
                     TextColor = tile.TextColor,
                     HorizontalOptions = LayoutOptions.Center,
                     VerticalOptions = LayoutOptions.Center
-                }
+                },
+                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 }
             };
-
-            border.StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 };
 
             // Set up bindings
             border.SetBinding(Border.BackgroundColorProperty, nameof(tile.BackgroundColor));
@@ -170,76 +169,163 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
-        // Animate sliding tiles first (moved tiles that received new values)
-        var slideTileTasks = e.MovedTiles.Select(async tile =>
+        // Calculate cell size for translation calculations
+        var cellWidth = GameBoard.Width / 4;
+        var cellHeight = GameBoard.Height / 4;
+        
+        // If we can't get valid dimensions, use defaults
+        if (cellWidth <= 0 || cellHeight <= 0)
+        {
+            cellWidth = 100;
+            cellHeight = 100;
+        }
+        
+        // Create overlay tiles for sliding animations
+        var overlayTiles = new List<Border>();
+        var slideAnimationTasks = new List<Task>();
+        
+        // Hide new tiles immediately (they will appear after all other animations)
+        // Store their actual values and temporarily set to 0 so they show as empty cells
+        var newTileValues = new Dictionary<TileViewModel, int>();
+        foreach (var tile in e.NewTiles)
+        {
+            newTileValues[tile] = tile.Value;
+            tile.UpdateValue(0); // Show as empty cell during slide animation
+        }
+        
+        // Hide merged tiles initially (they will appear after slide animation)
+        foreach (var tile in e.MergedTiles)
         {
             if (_tileBorders.TryGetValue(tile, out var border))
             {
-                // Calculate translation offset based on move direction
-                // Tiles appear to slide FROM the direction they came from
-                double translateX = 0;
-                double translateY = 0;
-                const double slideDistance = 20; // Subtle slide distance
-
-                switch (e.MoveDirection)
-                {
-                    case Direction.Up:
-                        translateY = slideDistance; // Came from below
-                        break;
-                    case Direction.Down:
-                        translateY = -slideDistance; // Came from above
-                        break;
-                    case Direction.Left:
-                        translateX = slideDistance; // Came from right
-                        break;
-                    case Direction.Right:
-                        translateX = -slideDistance; // Came from left
-                        break;
-                }
-
-                // Set initial translation
-                border.TranslationX = translateX;
-                border.TranslationY = translateY;
-
-                // Animate back to original position
-                await Task.WhenAll(
-                    border.TranslateToAsync(0, 0, 200, Easing.CubicOut)
-                );
-            }
-        });
-
-        // Animate new tiles (pop-in effect)
-        var newTileTasks = e.NewTiles.Select(async tile =>
-        {
-            if (_tileBorders.TryGetValue(tile, out var border))
-            {
-                // Start invisible and scaled down
                 border.Opacity = 0;
-                border.Scale = 0;
-                
-                // Animate pop-in: scale 0 -> 1.1 -> 1.0 with fade in
-                await Task.WhenAll(
-                    border.FadeToAsync(1, 75, Easing.CubicOut),
-                    border.ScaleToAsync(1.1, 75, Easing.CubicOut)
-                );
-                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+                border.Scale = 1;
             }
-        });
-
-        // Animate merged tiles (pulse effect)
+        }
+        
+        // Animate all tile movements using overlay tiles
+        foreach (var movement in e.TileMovements)
+        {
+            // Create an overlay tile at the source position
+            var overlayBorder = CreateOverlayTile(movement.Value);
+            overlayTiles.Add(overlayBorder);
+            
+            // Position the overlay at the source location
+            Grid.SetRow(overlayBorder, movement.FromRow);
+            Grid.SetColumn(overlayBorder, movement.FromColumn);
+            GameBoard.Children.Add(overlayBorder);
+            
+            // Calculate the translation needed to move from source to destination
+            var translateX = (movement.ToColumn - movement.FromColumn) * (cellWidth + 10); // 10 is ColumnSpacing
+            var translateY = (movement.ToRow - movement.FromRow) * (cellHeight + 10); // 10 is RowSpacing
+            
+            // Animate the overlay tile sliding to the destination
+            slideAnimationTasks.Add(Task.WhenAll(
+                overlayBorder.TranslateToAsync(translateX, translateY, 220, Easing.CubicOut)
+            ));
+        }
+        
+        // Wait for all slide animations to complete
+        if (slideAnimationTasks.Count > 0)
+        {
+            await Task.WhenAll(slideAnimationTasks);
+        }
+        
+        // Remove overlay tiles
+        foreach (var overlay in overlayTiles)
+        {
+            GameBoard.Children.Remove(overlay);
+        }
+        
+        // Now show the final tiles at their destinations
+        // Animate merged tiles (pulse effect) - they appear now after sliding
         var mergedTileTasks = e.MergedTiles.Select(async tile =>
         {
             if (_tileBorders.TryGetValue(tile, out var border))
             {
-                // Pulse: scale 1.0 -> 1.2 -> 1.0
-                await border.ScaleToAsync(1.2, 75, Easing.CubicOut);
+                // Show the merged tile and pulse
+                border.Opacity = 1;
+                border.Scale = 0.8;
+                await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
                 await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
             }
         });
+        
+        // Wait for merged tile animations to complete first
+        await Task.WhenAll(mergedTileTasks);
+        
+        // Then animate new tiles - restore their value and scale up from small
+        var newTileTasks = e.NewTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border) && newTileValues.TryGetValue(tile, out var actualValue))
+            {
+                // Set up for pop-in animation
+                border.Scale = 0;
+                border.Opacity = 1;
+                
+                // Restore the actual value (this changes the background color)
+                tile.UpdateValue(actualValue);
+                
+                // Animate scale from 0 to 1
+                await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
+            }
+        });
 
-        // Wait for slide animations to complete first, then do pop-in and merge
-        await Task.WhenAll(slideTileTasks);
-        await Task.WhenAll(newTileTasks.Concat(mergedTileTasks));
+        await Task.WhenAll(newTileTasks);
+    }
+    
+    private static Border CreateOverlayTile(int value)
+    {
+        var backgroundColor = GetBackgroundColor(value);
+        var textColor = value > 4 ? Colors.White : Color.FromArgb("#776e65");
+
+        var border = new Border
+        {
+            Stroke = Colors.Transparent,
+            StrokeThickness = 0,
+            Padding = 0,
+            BackgroundColor = backgroundColor,
+            ZIndex = 100, // Ensure overlay is on top
+            Content = new Label
+            {
+                Text = value.ToString(),
+                FontSize = 32,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = textColor,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center
+            },
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 }
+        };
+
+        return border;
+    }
+    
+    private static Color GetBackgroundColor(int value)
+    {
+        if (value == 0) return Color.FromArgb("#cdc1b4");
+        if (value == 2) return Color.FromArgb("#eee4da");
+        if (value == 4) return Color.FromArgb("#ede0c8");
+        if (value == 8) return Color.FromArgb("#f2b179");
+        if (value == 16) return Color.FromArgb("#f59563");
+        if (value == 32) return Color.FromArgb("#f67c5f");
+        if (value == 64) return Color.FromArgb("#f65e3b");
+        if (value == 128) return Color.FromArgb("#edcf72");
+        if (value == 256) return Color.FromArgb("#edcc61");
+        if (value == 512) return Color.FromArgb("#edc850");
+        if (value == 1024) return Color.FromArgb("#edc53f");
+        if (value == 2048) return Color.FromArgb("#edc22e");
+        
+        // For values > 2048, generate a gradient color
+        var power = (int)Math.Log2(value);
+        var normalizedPower = (power - 11) / 10.0;
+        normalizedPower = Math.Clamp(normalizedPower, 0, 1);
+        
+        var r = (byte)(0xed * (1 - normalizedPower) + 0x8b * normalizedPower);
+        var g = (byte)(0xc2 * (1 - normalizedPower));
+        var b = (byte)(0x2e * (1 - normalizedPower));
+        
+        return Color.FromRgb(r, g, b);
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)

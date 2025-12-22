@@ -264,7 +264,7 @@ public class Game2048Engine
         };
     }
 
-    private bool ProcessMoveGeneric(int[] board, int size, bool isVertical, bool isReverse, ref int scoreIncrease)
+    private static bool ProcessMoveGeneric(int[] board, int size, bool isVertical, bool isReverse, ref int scoreIncrease)
     {
         var moved = false;
         var outerCount = size;

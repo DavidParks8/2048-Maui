@@ -28,4 +28,10 @@ public class TileUpdateEventArgs : EventArgs
     /// Direction of the move that triggered these updates.
     /// </summary>
     public required Direction MoveDirection { get; init; }
+
+    /// <summary>
+    /// List of all tile movements with source and destination positions.
+    /// This enables proper slide animations from origin to destination.
+    /// </summary>
+    public required IReadOnlyList<TileMovement> TileMovements { get; init; }
 }

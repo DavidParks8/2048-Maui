@@ -31,7 +31,7 @@ public partial class TileViewModel : ObservableObject
     private const int Log2Of2048 = 11;
     private const double GradientRange = 10.0;
 
-    private Color GetBackgroundColor(int value)
+    private static Color GetBackgroundColor(int value)
     {
         if (value == 0) return Color.FromArgb("#cdc1b4");
         if (value == 2) return Color.FromArgb("#eee4da");
