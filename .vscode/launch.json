@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET MAUI Windows Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "--framework",
+        "net10.0-windows10.0.19041.0"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "preLaunchTask": "build: TwentyFortyEight.Maui (windows)"
+    }
+  ]
+}
