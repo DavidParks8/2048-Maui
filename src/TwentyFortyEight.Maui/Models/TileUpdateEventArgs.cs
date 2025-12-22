@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TwentyFortyEight.Core;
 
 namespace TwentyFortyEight.Maui.Models;
 
@@ -21,4 +22,9 @@ public class TileUpdateEventArgs : EventArgs
     /// Tiles that resulted from a merge.
     /// </summary>
     public List<TileViewModel> MergedTiles { get; set; } = new();
+
+    /// <summary>
+    /// Direction of the move that triggered these updates.
+    /// </summary>
+    public Direction MoveDirection { get; set; }
 }

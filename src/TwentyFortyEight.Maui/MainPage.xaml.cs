@@ -170,6 +170,44 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
+        // Animate sliding tiles first (moved tiles that received new values)
+        var slideTileTasks = e.MovedTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Calculate translation offset based on move direction
+                // Tiles appear to slide FROM the direction they came from
+                double translateX = 0;
+                double translateY = 0;
+                const double slideDistance = 20; // Subtle slide distance
+
+                switch (e.MoveDirection)
+                {
+                    case Direction.Up:
+                        translateY = slideDistance; // Came from below
+                        break;
+                    case Direction.Down:
+                        translateY = -slideDistance; // Came from above
+                        break;
+                    case Direction.Left:
+                        translateX = slideDistance; // Came from right
+                        break;
+                    case Direction.Right:
+                        translateX = -slideDistance; // Came from left
+                        break;
+                }
+
+                // Set initial translation
+                border.TranslationX = translateX;
+                border.TranslationY = translateY;
+
+                // Animate back to original position
+                await Task.WhenAll(
+                    border.TranslateToAsync(0, 0, 100, Easing.CubicOut)
+                );
+            }
+        });
+
         // Animate new tiles (pop-in effect)
         var newTileTasks = e.NewTiles.Select(async tile =>
         {
@@ -199,7 +237,8 @@ public partial class MainPage : ContentPage
             }
         });
 
-        // Wait for all animations to complete
+        // Wait for slide animations to complete first, then do pop-in and merge
+        await Task.WhenAll(slideTileTasks);
         await Task.WhenAll(newTileTasks.Concat(mergedTileTasks));
     }
 

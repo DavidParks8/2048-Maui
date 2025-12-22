@@ -86,7 +86,7 @@ public partial class GameViewModel : ObservableObject
         var moved = _engine.Move(direction);
         if (moved)
         {
-            UpdateUI(previousBoard);
+            UpdateUI(previousBoard, direction);
             SaveGame();
 
             // Update best score
@@ -117,7 +117,7 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    private void UpdateUI(int[]? previousBoard = null)
+    private void UpdateUI(int[]? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;
         var eventArgs = new TileUpdateEventArgs();
@@ -147,12 +147,18 @@ public partial class GameViewModel : ObservableObject
                     eventArgs.MergedTiles.Add(tile);
                 }
                 // Case 3: Tile changed (for sliding - any other value change)
-                else if (oldValue != newValue)
+                else if (oldValue != newValue && newValue != 0)
                 {
                     eventArgs.MovedTiles.Add(tile);
                 }
 
                 tile.UpdateValue(newValue);
+            }
+            
+            // Store the move direction for animation
+            if (moveDirection.HasValue)
+            {
+                eventArgs.MoveDirection = moveDirection.Value;
             }
         }
         else
