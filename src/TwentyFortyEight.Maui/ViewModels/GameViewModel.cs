@@ -160,16 +160,7 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task ShowStats()
     {
-        // Pause time tracking while viewing stats
-        _statisticsService.StopTimeTracking();
-        
         await Shell.Current.GoToAsync(nameof(StatsPage));
-        
-        // Resume time tracking when returning if game is not over
-        if (!_engine.CurrentState.IsGameOver)
-        {
-            _statisticsService.StartTimeTracking();
-        }
     }
 
     private void UpdateUI()

@@ -18,7 +18,7 @@ public class StatisticsService : IStatisticsService
     private const string KeyCurrentStreak = "Stats_CurrentStreak";
     private const string KeyBestStreak = "Stats_BestStreak";
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private Stopwatch? _gameTimer;
     private long _sessionStartSeconds;
 
