@@ -166,7 +166,7 @@ public partial class GameViewModel : ObservableObject
         await Shell.Current.GoToAsync(nameof(StatsPage));
         
         // Resume time tracking when returning if game is not over
-        if (!_engine.CurrentState.IsGameOver && !_engine.CurrentState.IsWon)
+        if (!_engine.CurrentState.IsGameOver)
         {
             _statisticsService.StartTimeTracking();
         }
@@ -242,7 +242,7 @@ public partial class GameViewModel : ObservableObject
                     _hasReached2048InCurrentGame = state.IsWon;
                     
                     // Resume time tracking if game is ongoing
-                    if (!state.IsGameOver && !state.IsWon)
+                    if (!state.IsGameOver)
                     {
                         _statisticsService.StartTimeTracking();
                     }
