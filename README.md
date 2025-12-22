@@ -11,6 +11,12 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 - 🔄 Undo/Redo functionality (up to 50 moves)
 - 💾 Auto-save and resume game state
 - 🏆 Best score tracking
+- 📊 Comprehensive statistics tracking
+  - Games played, won, and win rate
+  - Best score, average score, and highest tile
+  - Total time played with formatted display
+  - Total moves across all games
+  - Current and best win streaks
 - 🎨 Light and dark theme support
 - ♿ Accessibility features with semantic descriptions
 - ⌨️ Keyboard support (arrow keys + WASD)
@@ -94,8 +100,11 @@ A fully-testable, UI-independent game engine that implements the classic 2048 ru
 Cross-platform UI built with .NET MAUI using MVVM pattern:
 
 - **GameViewModel**: Observable game state, commands, and persistence
+- **StatsViewModel**: Statistics display and reset functionality
 - **TileViewModel**: Individual tile representation with colors and values
 - **MainPage**: Responsive game board with gesture and keyboard input
+- **StatsPage**: Comprehensive statistics display with organized sections
+- **StatisticsService**: Thread-safe statistics tracking with persistent storage
 
 **Input Methods:**
 - Touch: Swipe gestures (up/down/left/right)
@@ -105,7 +114,8 @@ Cross-platform UI built with .NET MAUI using MVVM pattern:
 - Score and best score display
 - Visual feedback for game state (won/game over)
 - Tile colors that match classic 2048 design
-- Undo/Redo/New Game buttons
+- Undo/Redo/New Game/Stats buttons
+- Statistics page with games, scores, time, and streaks sections
 
 ### 3. Tests (`TwentyFortyEight.Tests`)
 
@@ -117,6 +127,7 @@ Comprehensive test suite using MSTest:
 - Win and game-over detection
 - Undo/redo functionality
 - State serialization
+- Statistics service functionality (tracking, persistence, reset)
 
 ## Project Structure
 
