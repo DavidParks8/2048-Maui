@@ -7,9 +7,11 @@ public class Game2048Engine
 {
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
+    private readonly IGameStatisticsTracker? _statisticsTracker;
     private readonly List<MoveCommand> _moveHistory;
     private int _currentMoveIndex;
     private GameState _initialState;
+    private bool _hasReachedWinningTile;
 
     private GameState _currentState;
 
@@ -18,32 +20,39 @@ public class Game2048Engine
     public bool CanUndo => _currentMoveIndex > 0;
     public bool CanRedo => _currentMoveIndex < _moveHistory.Count;
 
-    public Game2048Engine(GameConfig config, IRandomSource random)
+    public Game2048Engine(GameConfig config, IRandomSource random, IGameStatisticsTracker? statisticsTracker = null)
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = new List<MoveCommand>();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
+        _hasReachedWinningTile = false;
         
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
         
         _initialState = _currentState;
+        
+        // Notify about game start
+        _statisticsTracker?.OnGameStarted();
     }
 
     /// <summary>
     /// Creates a new game engine from a saved state.
     /// </summary>
-    public Game2048Engine(GameState state, GameConfig config, IRandomSource random)
+    public Game2048Engine(GameState state, GameConfig config, IRandomSource random, IGameStatisticsTracker? statisticsTracker = null)
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = new List<MoveCommand>();
         _currentMoveIndex = 0;
         _currentState = state;
         _initialState = state;
+        _hasReachedWinningTile = state.IsWon;
     }
 
     /// <summary>
@@ -51,15 +60,25 @@ public class Game2048Engine
     /// </summary>
     public void NewGame()
     {
+        // Check if previous game ended without winning
+        if (!_hasReachedWinningTile && _currentState.MoveCount > 0)
+        {
+            _statisticsTracker?.OnGameOver(_currentState.Score, false);
+        }
+        
         _moveHistory.Clear();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
+        _hasReachedWinningTile = false;
         
         // Start with two random tiles
         SpawnTile();
         SpawnTile();
         
         _initialState = _currentState;
+        
+        // Notify about game start
+        _statisticsTracker?.OnGameStarted();
     }
 
     /// <summary>
@@ -101,10 +120,24 @@ public class Game2048Engine
         _moveHistory.Add(moveCommand);
         _currentMoveIndex++;
 
+        // Check if won for the first time
+        if (isWon && !_hasReachedWinningTile)
+        {
+            _hasReachedWinningTile = true;
+            _statisticsTracker?.OnGameWon();
+        }
+
+        // Get highest tile on board
+        var highestTile = newBoard.Max();
+        
+        // Notify about move
+        _statisticsTracker?.OnMoveMade(newScore, highestTile);
+
         // Check if game is over
         if (IsGameOver())
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
+            _statisticsTracker?.OnGameOver(newScore, _hasReachedWinningTile);
         }
 
         return true;

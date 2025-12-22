@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Adapters;
 using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.Serialization;
 using TwentyFortyEight.Maui.Services;
@@ -18,8 +19,8 @@ public partial class GameViewModel : ObservableObject
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IStatisticsService _statisticsService;
+    private readonly IGameStatisticsTracker _statisticsTracker;
     private Game2048Engine _engine;
-    private bool _hasReached2048InCurrentGame;
 
     public ObservableCollection<TileViewModel> Tiles { get; }
 
@@ -50,8 +51,9 @@ public partial class GameViewModel : ObservableObject
     {
         _logger = logger;
         _statisticsService = statisticsService;
+        _statisticsTracker = new GameStatisticsTrackerAdapter(statisticsService);
         _config = new GameConfig();
-        _engine = new Game2048Engine(_config, new SystemRandomSource());
+        _engine = new Game2048Engine(_config, new SystemRandomSource(), _statisticsTracker);
         
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = new ObservableCollection<TileViewModel>();
@@ -71,22 +73,7 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private void NewGame()
     {
-        // Stop time tracking for previous game
-        _statisticsService.StopTimeTracking();
-        
-        // Record game loss if previous game didn't win
-        if (!_hasReached2048InCurrentGame && Moves > 0)
-        {
-            _statisticsService.RecordGameLoss();
-        }
-        
         _engine.NewGame();
-        _hasReached2048InCurrentGame = false;
-        
-        // Increment games played and start time tracking
-        _statisticsService.IncrementGamesPlayed();
-        _statisticsService.StartTimeTracking();
-        
         UpdateUI();
         SaveGame();
     }
@@ -104,35 +91,6 @@ public partial class GameViewModel : ObservableObject
             if (Score > BestScore)
             {
                 BestScore = Score;
-            }
-            
-            // Update statistics
-            _statisticsService.UpdateBestScore(Score);
-            
-            // Check for highest tile
-            var highestTile = _engine.CurrentState.Board.Max();
-            _statisticsService.UpdateHighestTile(highestTile);
-            
-            // Track moves
-            _statisticsService.AddMoves(1);
-            
-            // Check if won (reached 2048 for the first time in this game)
-            if (!_hasReached2048InCurrentGame && _engine.CurrentState.IsWon)
-            {
-                _hasReached2048InCurrentGame = true;
-                _statisticsService.IncrementGamesWon();
-            }
-            
-            // If game over, finalize stats
-            if (_engine.CurrentState.IsGameOver)
-            {
-                _statisticsService.StopTimeTracking();
-                _statisticsService.AddScore(Score);
-                
-                if (!_hasReached2048InCurrentGame)
-                {
-                    _statisticsService.RecordGameLoss();
-                }
             }
         }
     }
@@ -227,10 +185,7 @@ public partial class GameViewModel : ObservableObject
                 if (dto != null)
                 {
                     var state = dto.ToGameState();
-                    _engine = new Game2048Engine(state, _config, new SystemRandomSource());
-                    
-                    // Check if this loaded game already has 2048
-                    _hasReached2048InCurrentGame = state.IsWon;
+                    _engine = new Game2048Engine(state, _config, new SystemRandomSource(), _statisticsTracker);
                     
                     // Resume time tracking if game is ongoing
                     if (!state.IsGameOver)
@@ -249,10 +204,5 @@ public partial class GameViewModel : ObservableObject
 
         // If loading failed or no saved game, start new game
         _engine.NewGame();
-        _hasReached2048InCurrentGame = false;
-        
-        // Increment games played and start time tracking
-        _statisticsService.IncrementGamesPlayed();
-        _statisticsService.StartTimeTracking();
     }
 }
