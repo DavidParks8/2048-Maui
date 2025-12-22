@@ -7,6 +7,7 @@ public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
     private Point _swipeStartPoint;
+    private bool _isPanning;
 
     public MainPage(GameViewModel viewModel)
     {
@@ -18,24 +19,105 @@ public partial class MainPage : ContentPage
         // Add tiles to the grid
         CreateTiles();
         
-        // Add swipe gesture
-        var swipeGesture = new SwipeGestureRecognizer();
-        swipeGesture.Swiped += OnSwiped;
-        GameBoard.GestureRecognizers.Add(swipeGesture);
-
-        // Add pan gesture for better swipe detection
+        // Add pan gesture for swipe detection (works better than SwipeGestureRecognizer)
         var panGesture = new PanGestureRecognizer();
         panGesture.PanUpdated += OnPanUpdated;
         GameBoard.GestureRecognizers.Add(panGesture);
+        
+        // Set up keyboard handling after page loads
+        this.Loaded += OnPageLoaded;
     }
+
+    private void OnPageLoaded(object? sender, EventArgs e)
+    {
+        // Focus the page to receive keyboard input
+        this.Focus();
+        
+#if WINDOWS
+        SetupWindowsInputHandling();
+#endif
+    }
+
+#if WINDOWS
+    private void SetupWindowsInputHandling()
+    {
+        var window = this.GetParentWindow();
+        if (window?.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+        {
+            nativeWindow.Content.KeyDown += OnWindowsKeyDown;
+            
+            // Set up manipulation events for better touch support
+            if (nativeWindow.Content is Microsoft.UI.Xaml.UIElement content)
+            {
+                content.ManipulationMode = Microsoft.UI.Xaml.Input.ManipulationModes.TranslateX | 
+                                           Microsoft.UI.Xaml.Input.ManipulationModes.TranslateY;
+                content.ManipulationStarted += OnManipulationStarted;
+                content.ManipulationCompleted += OnManipulationCompleted;
+            }
+        }
+    }
+
+    private Windows.Foundation.Point _manipulationStart;
+
+    private void OnManipulationStarted(object sender, Microsoft.UI.Xaml.Input.ManipulationStartedRoutedEventArgs e)
+    {
+        _manipulationStart = e.Position;
+    }
+
+    private void OnManipulationCompleted(object sender, Microsoft.UI.Xaml.Input.ManipulationCompletedRoutedEventArgs e)
+    {
+        var deltaX = e.Cumulative.Translation.X;
+        var deltaY = e.Cumulative.Translation.Y;
+        
+        const double minSwipeDistance = 30;
+        
+        if (Math.Abs(deltaX) > Math.Abs(deltaY))
+        {
+            if (Math.Abs(deltaX) > minSwipeDistance)
+            {
+                var direction = deltaX > 0 ? Direction.Right : Direction.Left;
+                _viewModel.MoveCommand.Execute(direction);
+            }
+        }
+        else
+        {
+            if (Math.Abs(deltaY) > minSwipeDistance)
+            {
+                var direction = deltaY > 0 ? Direction.Down : Direction.Up;
+                _viewModel.MoveCommand.Execute(direction);
+            }
+        }
+        
+        e.Handled = true;
+    }
+
+    private void OnWindowsKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        Direction? direction = e.Key switch
+        {
+            Windows.System.VirtualKey.Up => Direction.Up,
+            Windows.System.VirtualKey.Down => Direction.Down,
+            Windows.System.VirtualKey.Left => Direction.Left,
+            Windows.System.VirtualKey.Right => Direction.Right,
+            Windows.System.VirtualKey.W => Direction.Up,
+            Windows.System.VirtualKey.S => Direction.Down,
+            Windows.System.VirtualKey.A => Direction.Left,
+            Windows.System.VirtualKey.D => Direction.Right,
+            _ => null
+        };
+
+        if (direction.HasValue)
+        {
+            _viewModel.MoveCommand.Execute(direction.Value);
+            e.Handled = true;
+        }
+    }
+#endif
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        
-        // Keyboard handling is done via HotKey support in .NET MAUI
-        // For Windows: Keyboard accelerators work automatically via menu items/shortcuts
-        // For mobile: Touch gestures are the primary input method
+        this.Focus();
     }
 
     private void CreateTiles()
@@ -78,52 +160,52 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnSwiped(object? sender, SwipedEventArgs e)
-    {
-        var direction = e.Direction switch
-        {
-            SwipeDirection.Up => Direction.Up,
-            SwipeDirection.Down => Direction.Down,
-            SwipeDirection.Left => Direction.Left,
-            SwipeDirection.Right => Direction.Right,
-            _ => Direction.Up
-        };
-
-        _viewModel.MoveCommand.Execute(direction);
-    }
-
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
     {
+        const double minSwipeDistance = 30;
+        
         switch (e.StatusType)
         {
             case GestureStatus.Started:
-                _swipeStartPoint = new Point(e.TotalX, e.TotalY);
+                _isPanning = true;
+                _swipeStartPoint = new Point(0, 0);
+                break;
+
+            case GestureStatus.Running:
+                // Track the cumulative pan distance
+                if (_isPanning)
+                {
+                    _swipeStartPoint = new Point(e.TotalX, e.TotalY);
+                }
                 break;
 
             case GestureStatus.Completed:
-                var deltaX = e.TotalX - _swipeStartPoint.X;
-                var deltaY = e.TotalY - _swipeStartPoint.Y;
+            case GestureStatus.Canceled:
+                if (_isPanning)
+                {
+                    _isPanning = false;
+                    var deltaX = _swipeStartPoint.X;
+                    var deltaY = _swipeStartPoint.Y;
 
-                // Determine direction based on larger delta
-                if (Math.Abs(deltaX) > Math.Abs(deltaY))
-                {
-                    // Horizontal swipe
-                    if (Math.Abs(deltaX) > 50) // Minimum swipe distance
+                    // Determine direction based on larger delta
+                    if (Math.Abs(deltaX) > Math.Abs(deltaY))
                     {
-                        var direction = deltaX > 0 ? Direction.Right : Direction.Left;
-                        _viewModel.MoveCommand.Execute(direction);
+                        // Horizontal swipe
+                        if (Math.Abs(deltaX) > minSwipeDistance)
+                        {
+                            var direction = deltaX > 0 ? Direction.Right : Direction.Left;
+                            _viewModel.MoveCommand.Execute(direction);
+                        }
                     }
-                    // Do nothing if swipe distance is too small
-                }
-                else
-                {
-                    // Vertical swipe
-                    if (Math.Abs(deltaY) > 50) // Minimum swipe distance
+                    else
                     {
-                        var direction = deltaY > 0 ? Direction.Down : Direction.Up;
-                        _viewModel.MoveCommand.Execute(direction);
+                        // Vertical swipe
+                        if (Math.Abs(deltaY) > minSwipeDistance)
+                        {
+                            var direction = deltaY > 0 ? Direction.Down : Direction.Up;
+                            _viewModel.MoveCommand.Execute(direction);
+                        }
                     }
-                    // Do nothing if swipe distance is too small
                 }
                 break;
         }
