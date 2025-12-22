@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
+             x:Class="TwentyFortyEight.Maui.StatsPage"
+             x:DataType="local:StatsViewModel"
+             Title="Statistics"
+             BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+            
+            <!-- Header -->
+            <Label Text="📊 STATISTICS"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                   HorizontalOptions="Center"
+                   Margin="0,10,0,20"
+                   SemanticProperties.HeadingLevel="Level1" />
+
+            <!-- Games Section -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="GAMES"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#776e65, Dark=#cdc1b4}"
+                       Margin="0,0,0,5" />
+                
+                <Border BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 8">
+                    <Grid RowSpacing="12" ColumnSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Games Played"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Statistics.GamesPlayed}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Games Won"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Text="{Binding Statistics.GamesWon}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="2" Grid.Column="0"
+                               Text="Win Rate"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="2" Grid.Column="1"
+                               Text="{Binding Statistics.WinRate, StringFormat='{0:F1}%'}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Scores Section -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="SCORES"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#776e65, Dark=#cdc1b4}"
+                       Margin="0,0,0,5" />
+                
+                <Border BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 8">
+                    <Grid RowSpacing="12" ColumnSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Best Score"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Statistics.BestScore, StringFormat='{0:N0}'}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Average Score"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Text="{Binding Statistics.AverageScore, StringFormat='{0:N0}'}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="2" Grid.Column="0"
+                               Text="Highest Tile"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="2" Grid.Column="1"
+                               Text="{Binding Statistics.HighestTile}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Time & Moves Section -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="TIME &amp; MOVES"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#776e65, Dark=#cdc1b4}"
+                       Margin="0,0,0,5" />
+                
+                <Border BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 8">
+                    <Grid RowSpacing="12" ColumnSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Time Played"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Statistics.FormattedTimePlayed}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Total Moves"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Text="{Binding Statistics.TotalMoves, StringFormat='{0:N0}'}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Streaks Section -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="STREAKS"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#776e65, Dark=#cdc1b4}"
+                       Margin="0,0,0,5" />
+                
+                <Border BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 8">
+                    <Grid RowSpacing="12" ColumnSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Current Streak"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Statistics.CurrentStreak}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Best Streak"
+                               TextColor="{AppThemeBinding Light=#f9f6f2, Dark=#eee4da}"
+                               FontSize="16" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Text="{Binding Statistics.BestStreak}"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Buttons -->
+            <Button Text="Reset Statistics"
+                    Command="{Binding ResetStatisticsCommand}"
+                    BackgroundColor="#f67c5f"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="5"
+                    Margin="0,10,0,0"
+                    SemanticProperties.Description="Reset all statistics" />
+
+            <Button Text="Back to Game"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="5"
+                    SemanticProperties.Description="Return to game" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
