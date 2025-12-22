@@ -3,14 +3,9 @@ namespace TwentyFortyEight.Core;
 /// <summary>
 /// Deterministic implementation of IRandomSource for testing.
 /// </summary>
-public class SeededRandomSource : IRandomSource
+public class SeededRandomSource(int seed) : IRandomSource
 {
-    private readonly Random _random;
-
-    public SeededRandomSource(int seed)
-    {
-        _random = new Random(seed);
-    }
+    private readonly Random _random = new(seed);
 
     public int Next(int maxExclusive)
     {

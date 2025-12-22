@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
              xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
@@ -25,7 +26,7 @@
             </Grid.ColumnDefinitions>
 
             <Label Grid.Column="0"
-                   Text="2048"
+                   Text="{x:Static strings:AppStrings.GameTitle}"
                    FontSize="48"
                    FontAttributes="Bold"
                    TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
@@ -41,7 +42,7 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="SCORE"
+                    <Label Text="{x:Static strings:AppStrings.Score}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
@@ -51,7 +52,7 @@
                            FontAttributes="Bold"
                            TextColor="White"
                            HorizontalOptions="Center"
-                           SemanticProperties.Description="Current score" />
+                           SemanticProperties.Description="{x:Static strings:AppStrings.CurrentScoreDescription}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -63,7 +64,7 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="BEST"
+                    <Label Text="{x:Static strings:AppStrings.Best}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
@@ -73,7 +74,7 @@
                            FontAttributes="Bold"
                            TextColor="White"
                            HorizontalOptions="Center"
-                           SemanticProperties.Description="Best score" />
+                           SemanticProperties.Description="{x:Static strings:AppStrings.BestScoreDescription}" />
                 </VerticalStackLayout>
             </Border>
         </Grid>
@@ -105,7 +106,7 @@
                   RowSpacing="10"
                   WidthRequest="400"
                   HeightRequest="400"
-                  SemanticProperties.Description="Game board with tiles">
+                  SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
@@ -131,7 +132,7 @@
                     HeightRequest="50"
                     Padding="15,0"
                     StrokeShape="RoundRectangle 5"
-                    SemanticProperties.Description="Start a new game">
+                    SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NewGameCommand}" />
                 </Border.GestureRecognizers>
@@ -141,7 +142,7 @@
                            FontSize="16"
                            TextColor="White"
                            VerticalOptions="Center" />
-                    <Label Text="New Game"
+                    <Label Text="{x:Static strings:AppStrings.NewGame}"
                            FontAttributes="Bold"
                            TextColor="White"
                            VerticalOptions="Center" />
@@ -153,7 +154,7 @@
                     HeightRequest="50"
                     Padding="15,0"
                     StrokeShape="RoundRectangle 5"
-                    SemanticProperties.Description="Undo last move">
+                    SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding UndoCommand}" />
                 </Border.GestureRecognizers>
@@ -163,7 +164,7 @@
                            FontSize="16"
                            TextColor="White"
                            VerticalOptions="Center" />
-                    <Label Text="Undo"
+                    <Label Text="{x:Static strings:AppStrings.Undo}"
                            FontAttributes="Bold"
                            TextColor="White"
                            VerticalOptions="Center" />

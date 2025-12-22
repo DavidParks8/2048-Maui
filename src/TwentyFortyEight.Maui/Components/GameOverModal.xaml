@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              x:Class="TwentyFortyEight.Maui.Components.GameOverModal"
              x:Name="this">
 
@@ -22,7 +23,7 @@
             <VerticalStackLayout Spacing="20" HorizontalOptions="Center">
                 
                 <!-- Game Over Title -->
-                <Label Text="Game Over!"
+                <Label Text="{x:Static strings:AppStrings.GameOver}"
                        FontSize="36"
                        FontAttributes="Bold"
                        TextColor="#f67c5f"
@@ -30,7 +31,7 @@
                 
                 <!-- Score display -->
                 <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                    <Label Text="Your Score"
+                    <Label Text="{x:Static strings:AppStrings.YourScore}"
                            FontSize="16"
                            TextColor="{AppThemeBinding Light=#776e65, Dark=#a0968b}"
                            HorizontalOptions="Center" />
@@ -42,7 +43,7 @@
                 </VerticalStackLayout>
                 
                 <!-- Best score indicator -->
-                <Label Text="{Binding BestScore, Source={x:Reference this}, StringFormat='Best: {0}'}"
+                <Label Text="{Binding BestScoreText, Source={x:Reference this}}"
                        FontSize="14"
                        TextColor="{AppThemeBinding Light=#bbada0, Dark=#6a6458}"
                        HorizontalOptions="Center" />
@@ -63,7 +64,7 @@
                                FontSize="18"
                                TextColor="White"
                                VerticalOptions="Center" />
-                        <Label Text="Try Again"
+                        <Label Text="{x:Static strings:AppStrings.TryAgain}"
                                FontSize="18"
                                FontAttributes="Bold"
                                TextColor="White"

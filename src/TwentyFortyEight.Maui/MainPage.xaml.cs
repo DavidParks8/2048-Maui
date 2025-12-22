@@ -179,15 +179,20 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
-        // Calculate cell size for translation calculations
-        var cellWidth = GameBoard.Width / 4;
-        var cellHeight = GameBoard.Height / 4;
+        // Calculate cell step size (distance between adjacent cell centers)
+        // For a grid with N columns, spacing S, and total width W:
+        // Step = (W + S) / N (accounts for cell width plus one spacing gap)
+        const double spacing = 10;
+        const int gridSize = 4;
+        var cellStepX = (GameBoard.Width + spacing) / gridSize;
+        var cellStepY = (GameBoard.Height + spacing) / gridSize;
 
         // If we can't get valid dimensions, use defaults
-        if (cellWidth <= 0 || cellHeight <= 0)
+        if (cellStepX <= 0 || cellStepY <= 0)
         {
-            cellWidth = 100;
-            cellHeight = 100;
+            // Default: (400 + 10) / 4 = 102.5
+            cellStepX = 102.5;
+            cellStepY = 102.5;
         }
 
         // Create overlay tiles for sliding animations
@@ -226,8 +231,8 @@ public partial class MainPage : ContentPage
             GameBoard.Children.Add(overlayBorder);
 
             // Calculate the translation needed to move from source to destination
-            var translateX = (movement.ToColumn - movement.FromColumn) * (cellWidth + 10); // 10 is ColumnSpacing
-            var translateY = (movement.ToRow - movement.FromRow) * (cellHeight + 10); // 10 is RowSpacing
+            var translateX = (movement.ToColumn - movement.FromColumn) * cellStepX;
+            var translateY = (movement.ToRow - movement.FromRow) * cellStepY;
 
             // Animate the overlay tile sliding to the destination
             slideAnimationTasks.Add(
@@ -261,7 +266,7 @@ public partial class MainPage : ContentPage
                 await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
                 await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
             }
-        });
+        }).ToList(); // Materialize to start all tasks immediately
 
         // Wait for merged tile animations to complete first
         await Task.WhenAll(mergedTileTasks);
@@ -284,15 +289,15 @@ public partial class MainPage : ContentPage
                 // Animate scale from 0 to 1
                 await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
             }
-        });
+        }).ToList(); // Materialize to start all tasks immediately
 
         await Task.WhenAll(newTileTasks);
     }
 
     private static Border CreateOverlayTile(int value)
     {
-        var backgroundColor = GetBackgroundColor(value);
-        var textColor = value > 4 ? Colors.White : Color.FromArgb("#776e65");
+        var backgroundColor = TileViewModel.GetTileBackgroundColor(value);
+        var textColor = TileViewModel.GetTileTextColor(value);
 
         var border = new Border
         {
@@ -314,45 +319,6 @@ public partial class MainPage : ContentPage
         };
 
         return border;
-    }
-
-    private static Color GetBackgroundColor(int value)
-    {
-        if (value == 0)
-            return Color.FromArgb("#cdc1b4");
-        if (value == 2)
-            return Color.FromArgb("#eee4da");
-        if (value == 4)
-            return Color.FromArgb("#ede0c8");
-        if (value == 8)
-            return Color.FromArgb("#f2b179");
-        if (value == 16)
-            return Color.FromArgb("#f59563");
-        if (value == 32)
-            return Color.FromArgb("#f67c5f");
-        if (value == 64)
-            return Color.FromArgb("#f65e3b");
-        if (value == 128)
-            return Color.FromArgb("#edcf72");
-        if (value == 256)
-            return Color.FromArgb("#edcc61");
-        if (value == 512)
-            return Color.FromArgb("#edc850");
-        if (value == 1024)
-            return Color.FromArgb("#edc53f");
-        if (value == 2048)
-            return Color.FromArgb("#edc22e");
-
-        // For values > 2048, generate a gradient color
-        var power = (int)Math.Log2(value);
-        var normalizedPower = (power - 11) / 10.0;
-        normalizedPower = Math.Clamp(normalizedPower, 0, 1);
-
-        var r = (byte)(0xed * (1 - normalizedPower) + 0x8b * normalizedPower);
-        var g = (byte)(0xc2 * (1 - normalizedPower));
-        var b = (byte)(0x2e * (1 - normalizedPower));
-
-        return Color.FromRgb(r, g, b);
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)

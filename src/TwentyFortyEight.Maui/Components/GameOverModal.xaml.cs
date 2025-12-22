@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Maui.BindableProperty.Generator.Core;
+using TwentyFortyEight.Maui.Resources.Strings;
 
 namespace TwentyFortyEight.Maui.Components;
 
@@ -19,7 +20,7 @@ public partial class GameOverModal : ContentView
     /// <summary>
     /// Gets or sets the best score to display.
     /// </summary>
-    [AutoBindable]
+    [AutoBindable(OnChanged = nameof(OnBestScoreChanged))]
     private readonly int _bestScore;
 
     /// <summary>
@@ -30,8 +31,18 @@ public partial class GameOverModal : ContentView
 
 #pragma warning restore CS0169
 
+    /// <summary>
+    /// Gets the formatted best score text.
+    /// </summary>
+    public string BestScoreText => string.Format(AppStrings.BestFormat, BestScore);
+
     public GameOverModal()
     {
         InitializeComponent();
+    }
+
+    private void OnBestScoreChanged(int value)
+    {
+        OnPropertyChanged(nameof(BestScoreText));
     }
 }

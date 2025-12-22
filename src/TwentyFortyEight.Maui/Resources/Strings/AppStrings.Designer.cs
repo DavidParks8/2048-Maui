@@ -57,6 +57,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to BEST.
+        /// </summary>
+        public static string Best {
+            get {
+                return ResourceManager.GetString("Best", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best: {0}.
+        /// </summary>
+        public static string BestFormat {
+            get {
+                return ResourceManager.GetString("BestFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best score.
+        /// </summary>
+        public static string BestScoreDescription {
+            get {
+                return ResourceManager.GetString("BestScoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current score.
+        /// </summary>
+        public static string CurrentScoreDescription {
+            get {
+                return ResourceManager.GetString("CurrentScoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Game board with tiles.
+        /// </summary>
+        public static string GameBoardDescription {
+            get {
+                return ResourceManager.GetString("GameBoardDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Game Over!.
         /// </summary>
         public static string GameOver {
@@ -66,11 +111,83 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 2048.
+        /// </summary>
+        public static string GameTitle {
+            get {
+                return ResourceManager.GetString("GameTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New Game.
+        /// </summary>
+        public static string NewGame {
+            get {
+                return ResourceManager.GetString("NewGame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start a new game.
+        /// </summary>
+        public static string NewGameDescription {
+            get {
+                return ResourceManager.GetString("NewGameDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SCORE.
+        /// </summary>
+        public static string Score {
+            get {
+                return ResourceManager.GetString("Score", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Try Again.
+        /// </summary>
+        public static string TryAgain {
+            get {
+                return ResourceManager.GetString("TryAgain", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undo.
+        /// </summary>
+        public static string Undo {
+            get {
+                return ResourceManager.GetString("Undo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undo last move.
+        /// </summary>
+        public static string UndoDescription {
+            get {
+                return ResourceManager.GetString("UndoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You Win!.
         /// </summary>
         public static string YouWin {
             get {
                 return ResourceManager.GetString("YouWin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your Score.
+        /// </summary>
+        public static string YourScore {
+            get {
+                return ResourceManager.GetString("YourScore", resourceCulture);
             }
         }
     }
