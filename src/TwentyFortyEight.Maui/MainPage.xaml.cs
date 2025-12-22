@@ -1,4 +1,5 @@
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
@@ -8,6 +9,7 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private Point _swipeStartPoint;
     private bool _isPanning;
+    private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
 
     public MainPage(GameViewModel viewModel)
     {
@@ -15,6 +17,9 @@ public partial class MainPage : ContentPage
         
         _viewModel = viewModel;
         BindingContext = _viewModel;
+        
+        // Subscribe to tiles updated event for animations
+        _viewModel.TilesUpdated += OnTilesUpdated;
         
         // Add tiles to the grid
         CreateTiles();
@@ -156,8 +161,46 @@ public partial class MainPage : ContentPage
             Grid.SetRow(border, tile.Row);
             Grid.SetColumn(border, tile.Column);
             
+            // Store the mapping
+            _tileBorders[tile] = border;
+            
             GameBoard.Children.Add(border);
         }
+    }
+
+    private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
+    {
+        // Animate new tiles (pop-in effect)
+        var newTileTasks = e.NewTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Start invisible and scaled down
+                border.Opacity = 0;
+                border.Scale = 0;
+                
+                // Animate pop-in: scale 0 -> 1.1 -> 1.0 with fade in
+                await Task.WhenAll(
+                    border.FadeToAsync(1, 75, Easing.CubicOut),
+                    border.ScaleToAsync(1.1, 75, Easing.CubicOut)
+                );
+                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+            }
+        });
+
+        // Animate merged tiles (pulse effect)
+        var mergedTileTasks = e.MergedTiles.Select(async tile =>
+        {
+            if (_tileBorders.TryGetValue(tile, out var border))
+            {
+                // Pulse: scale 1.0 -> 1.2 -> 1.0
+                await border.ScaleToAsync(1.2, 75, Easing.CubicOut);
+                await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+            }
+        });
+
+        // Wait for all animations to complete
+        await Task.WhenAll(newTileTasks.Concat(mergedTileTasks));
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
