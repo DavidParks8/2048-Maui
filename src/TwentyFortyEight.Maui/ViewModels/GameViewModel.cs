@@ -46,9 +46,6 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _canUndo;
 
-    [ObservableProperty]
-    private bool _canRedo;
-
     public GameViewModel(ILogger<GameViewModel> logger)
     {
         _logger = logger;
@@ -102,16 +99,6 @@ public partial class GameViewModel : ObservableObject
     private void Undo()
     {
         if (_engine.Undo())
-        {
-            UpdateUI();
-            SaveGame();
-        }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRedo))]
-    private void Redo()
-    {
-        if (_engine.Redo())
         {
             UpdateUI();
             SaveGame();
@@ -189,7 +176,6 @@ public partial class GameViewModel : ObservableObject
         Score = state.Score;
         Moves = state.MoveCount;
         CanUndo = _engine.CanUndo;
-        CanRedo = _engine.CanRedo;
 
         // Update status text
         if (state.IsGameOver)
@@ -207,7 +193,6 @@ public partial class GameViewModel : ObservableObject
 
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
-        RedoCommand.NotifyCanExecuteChanged();
     }
 
     private void SaveGame()

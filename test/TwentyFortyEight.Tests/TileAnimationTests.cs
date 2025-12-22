@@ -154,34 +154,6 @@ public class AnimationDetectionTests
     }
 
     [TestMethod]
-    public void GameEngine_UndoRedo_MaintainsConsistentState()
-    {
-        // Arrange
-        var config = new GameConfig();
-        var randomMock = new Mock<IRandomSource>();
-        randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
-        randomMock.Setup(r => r.NextDouble()).Returns(0.5);
-        
-        var engine = new Game2048Engine(config, randomMock.Object);
-        var initialState = (int[])engine.CurrentState.Board.Clone();
-
-        // Act - Make moves, undo, and redo
-        engine.Move(Direction.Left);
-        var afterMove = (int[])engine.CurrentState.Board.Clone();
-        
-        engine.Undo();
-        var afterUndo = (int[])engine.CurrentState.Board.Clone();
-        
-        engine.Redo();
-        var afterRedo = (int[])engine.CurrentState.Board.Clone();
-
-        // Assert
-        Assert.IsFalse(initialState.SequenceEqual(afterMove), "Board should change after move");
-        Assert.IsTrue(initialState.SequenceEqual(afterUndo), "Undo should restore initial state");
-        Assert.IsTrue(afterMove.SequenceEqual(afterRedo), "Redo should match post-move state");
-    }
-
-    [TestMethod]
     public void AnimationLogic_IdentifiesNewTile()
     {
         // This tests the animation detection logic pattern
