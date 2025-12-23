@@ -9,6 +9,11 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     
+    <!-- AOT compilation and trimming -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsTrimmable>true</IsTrimmable>
+    
     <!-- Repository metadata -->
     <RepositoryUrl>https://github.com/DavidParks8/2048-Maui</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

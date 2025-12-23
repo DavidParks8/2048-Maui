@@ -262,3 +262,5 @@ string token = await SecureStorage.GetAsync("oauth_token");
 ## General Practices
 
 Avoid allocations at all costs! Code this like it is a fighter jet (no allocations, no exceptions) within reason. Allocations should happen at app start.
+
+Always use compiled bindings in xaml
