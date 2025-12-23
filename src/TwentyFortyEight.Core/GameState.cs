@@ -55,7 +55,7 @@ public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool 
     ) =>
         this with
         {
-            Board = board ?? Board.Clone(),
+            Board = board ?? Board,
             Score = score ?? Score,
             MoveCount = moveCount ?? MoveCount,
             IsWon = isWon ?? IsWon,

@@ -33,8 +33,8 @@ public class Game2048Engine
         _currentState = new GameState(_config.Size);
 
         // Start with two random tiles
-        SpawnTile();
-        SpawnTile();
+        SpawnTileWithInfo();
+        SpawnTileWithInfo();
 
         _initialState = _currentState;
     }
@@ -62,8 +62,8 @@ public class Game2048Engine
         _currentState = new GameState(_config.Size);
 
         // Start with two random tiles
-        SpawnTile();
-        SpawnTile();
+        SpawnTileWithInfo();
+        SpawnTileWithInfo();
 
         _initialState = _currentState;
     }
@@ -168,11 +168,6 @@ public class Game2048Engine
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
         }
-    }
-
-    private void SpawnTile()
-    {
-        SpawnTileWithInfo();
     }
 
     private (int index, int value) SpawnTileWithInfo()

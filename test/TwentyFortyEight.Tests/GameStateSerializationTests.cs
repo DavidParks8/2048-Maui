@@ -27,19 +27,6 @@ public class GameStateSerializationTests
     }
 
     [TestMethod]
-    public void GameStateDto_HasVersionField()
-    {
-        // Arrange
-        var state = new GameState(4);
-
-        // Act
-        var dto = GameStateDto.FromGameState(state);
-
-        // Assert
-        Assert.AreEqual(1, dto.Version, "Version should be 1 for future compatibility");
-    }
-
-    [TestMethod]
     public void GameStateDto_BoardIsCloned()
     {
         // Arrange

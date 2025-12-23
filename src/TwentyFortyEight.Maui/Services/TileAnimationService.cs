@@ -259,4 +259,35 @@ public class TileAnimationService
             StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 },
         };
     }
+
+    /// <summary>
+    /// Resets all tile borders to their normal visual state and removes overlay tiles.
+    /// Call this when animations are cancelled to ensure consistent UI state.
+    /// </summary>
+    /// <param name="gameBoard">The game board Grid element.</param>
+    /// <param name="tileBorders">Dictionary mapping TileViewModels to their Border elements.</param>
+    public static void ResetTileStates(
+        Grid gameBoard,
+        IReadOnlyDictionary<TileViewModel, Border> tileBorders
+    )
+    {
+        // Remove any overlay tiles (ZIndex = 100)
+        var overlaysToRemove = gameBoard
+            .Children.OfType<Border>()
+            .Where(b => b.ZIndex == 100);
+
+        foreach (var overlay in overlaysToRemove)
+        {
+            gameBoard.Children.Remove(overlay);
+        }
+
+        // Reset all tile borders to normal state
+        foreach (var (_, border) in tileBorders)
+        {
+            border.Opacity = 1;
+            border.Scale = 1;
+            border.TranslationX = 0;
+            border.TranslationY = 0;
+        }
+    }
 }

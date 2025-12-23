@@ -7,11 +7,6 @@ namespace TwentyFortyEight.Core;
 public class GameStateDto
 {
     /// <summary>
-    /// Version of the serialization format.
-    /// </summary>
-    public int Version { get; set; } = 1;
-
-    /// <summary>
     /// The game board as a flat array.
     /// </summary>
     public int[] Board { get; set; } = Array.Empty<int>();

@@ -10,7 +10,6 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
     private Point _swipeStartPoint;
-    private bool _isPanning;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
 
@@ -67,7 +66,6 @@ public partial class MainPage : ContentPage
             content.ManipulationMode =
                 Microsoft.UI.Xaml.Input.ManipulationModes.TranslateX
                 | Microsoft.UI.Xaml.Input.ManipulationModes.TranslateY;
-            content.ManipulationStarted += OnManipulationStarted;
             content.ManipulationCompleted += OnManipulationCompleted;
         }
     }
@@ -77,20 +75,9 @@ public partial class MainPage : ContentPage
         if (_windowsContent is not null)
         {
             _windowsContent.KeyDown -= OnWindowsKeyDown;
-            _windowsContent.ManipulationStarted -= OnManipulationStarted;
             _windowsContent.ManipulationCompleted -= OnManipulationCompleted;
             _windowsContent = null;
         }
-    }
-
-    private Windows.Foundation.Point _manipulationStart;
-
-    private void OnManipulationStarted(
-        object sender,
-        Microsoft.UI.Xaml.Input.ManipulationStartedRoutedEventArgs e
-    )
-    {
-        _manipulationStart = e.Position;
     }
 
     private void OnManipulationCompleted(
@@ -257,7 +244,8 @@ public partial class MainPage : ContentPage
         }
         catch (OperationCanceledException)
         {
-            // Animation was cancelled - this is expected when new moves come in quickly
+            // Animation was cancelled - reset tile states to ensure consistent UI
+            TileAnimationService.ResetTileStates(GameBoard, _tileBorders);
         }
         catch (Exception ex)
         {
@@ -276,25 +264,17 @@ public partial class MainPage : ContentPage
         switch (e.StatusType)
         {
             case GestureStatus.Started:
-                _isPanning = true;
                 _swipeStartPoint = new Point(0, 0);
                 break;
 
             case GestureStatus.Running:
                 // Track the cumulative pan distance
-                if (_isPanning)
-                {
-                    _swipeStartPoint = new Point(e.TotalX, e.TotalY);
-                }
+                _swipeStartPoint = new Point(e.TotalX, e.TotalY);
                 break;
 
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
-                if (_isPanning)
-                {
-                    _isPanning = false;
-                    ProcessSwipe(_swipeStartPoint.X, _swipeStartPoint.Y);
-                }
+                ProcessSwipe(_swipeStartPoint.X, _swipeStartPoint.Y);
                 break;
         }
     }
