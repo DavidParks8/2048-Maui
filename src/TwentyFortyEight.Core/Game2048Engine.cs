@@ -1,3 +1,5 @@
+using Microsoft.Extensions.ObjectPool;
+
 namespace TwentyFortyEight.Core;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class Game2048Engine
 {
+    // Object pools for ProcessMoveGeneric to avoid allocations per move
+    private static readonly ObjectPool<List<int>> s_intListPool = ObjectPool.Create(
+        new IntListPooledObjectPolicy()
+    );
+
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
     private readonly List<MoveRecord> _moveHistory;
@@ -21,7 +28,7 @@ public class Game2048Engine
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveRecord>();
+        _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
 
@@ -39,7 +46,7 @@ public class Game2048Engine
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveRecord>();
+        _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = state;
         _initialState = state;
@@ -94,11 +101,7 @@ public class Game2048Engine
 
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
-        MoveRecord moveRecord = new(direction)
-        {
-            SpawnedTileIndex = spawnIndex,
-            SpawnedTileValue = spawnValue,
-        };
+        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue);
 
         _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
@@ -174,19 +177,18 @@ public class Game2048Engine
 
     private (int index, int value) SpawnTileWithInfo()
     {
-        var emptyCells = _currentState.Board.FindEmptyCells();
+        var position = _currentState.Board.GetRandomEmptyCell(_random);
 
-        if (emptyCells.Count == 0)
+        if (!position.HasValue)
         {
             return (-1, 0);
         }
 
-        var position = emptyCells[_random.Next(emptyCells.Count)];
         var value = _random.NextDouble() < 0.9 ? 2 : 4;
 
-        _currentState = _currentState.WithTile(position.Row, position.Column, value);
+        _currentState = _currentState.WithTile(position.Value.Row, position.Value.Column, value);
 
-        var index = _currentState.Board.GetIndex(position.Row, position.Column);
+        var index = _currentState.Board.GetIndex(position.Value.Row, position.Value.Column);
         return (index, value);
     }
 
@@ -224,57 +226,68 @@ public class Game2048Engine
         var moved = false;
         var scoreIncrease = 0;
 
-        for (int outer = 0; outer < size; outer++)
+        // Rent pooled lists to avoid allocations
+        var values = s_intListPool.Get();
+        var newValues = s_intListPool.Get();
+
+        try
         {
-            var values = new List<int>();
-
-            // Collect non-zero values from board
-            for (int inner = 0; inner < size; inner++)
+            for (int outer = 0; outer < size; outer++)
             {
-                var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
-                var value = board[row, col];
-                if (value != 0)
+                values.Clear();
+
+                // Collect non-zero values from board
+                for (int inner = 0; inner < size; inner++)
                 {
-                    values.Add(value);
+                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
+                    var value = board[row, col];
+                    if (value != 0)
+                    {
+                        values.Add(value);
+                    }
+                }
+
+                // Merge tiles - using index tracking instead of HashSet
+                newValues.Clear();
+                int i = 0;
+                while (i < values.Count)
+                {
+                    if (i < values.Count - 1 && values[i] == values[i + 1])
+                    {
+                        var mergedValue = values[i] * 2;
+                        newValues.Add(mergedValue);
+                        scoreIncrease += mergedValue;
+                        i += 2; // Skip both merged tiles
+                    }
+                    else
+                    {
+                        newValues.Add(values[i]);
+                        i++;
+                    }
+                }
+
+                // Fill with zeros
+                while (newValues.Count < size)
+                {
+                    newValues.Add(0);
+                }
+
+                // Write to result and check if changed
+                for (int inner = 0; inner < size; inner++)
+                {
+                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
+                    result[row, col] = newValues[inner];
+                    if (board[row, col] != newValues[inner])
+                    {
+                        moved = true;
+                    }
                 }
             }
-
-            // Merge tiles
-            var newValues = new List<int>();
-            var merged = new HashSet<int>();
-            for (int i = 0; i < values.Count; i++)
-            {
-                if (i < values.Count - 1 && values[i] == values[i + 1] && !merged.Contains(i))
-                {
-                    var mergedValue = values[i] * 2;
-                    newValues.Add(mergedValue);
-                    scoreIncrease += mergedValue;
-                    merged.Add(i);
-                    merged.Add(i + 1);
-                    i++; // Skip next tile
-                }
-                else if (!merged.Contains(i))
-                {
-                    newValues.Add(values[i]);
-                }
-            }
-
-            // Fill with zeros
-            while (newValues.Count < size)
-            {
-                newValues.Add(0);
-            }
-
-            // Write to result and check if changed
-            for (int inner = 0; inner < size; inner++)
-            {
-                var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
-                result[row, col] = newValues[inner];
-                if (board[row, col] != newValues[inner])
-                {
-                    moved = true;
-                }
-            }
+        }
+        finally
+        {
+            s_intListPool.Return(values);
+            s_intListPool.Return(newValues);
         }
 
         return (Board.FromMutableArray(result, size), scoreIncrease, moved);
@@ -298,5 +311,19 @@ public class Game2048Engine
             var col = isReverse ? size - 1 - inner : inner;
             return (outer, col);
         }
+    }
+}
+
+/// <summary>
+/// Pooled object policy for List&lt;int&gt;.
+/// </summary>
+file sealed class IntListPooledObjectPolicy : PooledObjectPolicy<List<int>>
+{
+    public override List<int> Create() => new(8);
+
+    public override bool Return(List<int> obj)
+    {
+        obj.Clear();
+        return true;
     }
 }

@@ -1,5 +1,6 @@
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Models;
+using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
@@ -7,15 +8,22 @@ namespace TwentyFortyEight.Maui;
 public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
+    private readonly TileAnimationService _animationService;
     private Point _swipeStartPoint;
     private bool _isPanning;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
+    private CancellationTokenSource? _animationCts;
 
-    public MainPage(GameViewModel viewModel)
+#if WINDOWS
+    private Microsoft.UI.Xaml.UIElement? _windowsContent;
+#endif
+
+    public MainPage(GameViewModel viewModel, TileAnimationService animationService)
     {
         InitializeComponent();
 
         _viewModel = viewModel;
+        _animationService = animationService;
         BindingContext = _viewModel;
 
         // Subscribe to tiles updated event for animations
@@ -47,19 +55,31 @@ public partial class MainPage : ContentPage
     private void SetupWindowsInputHandling()
     {
         var window = this.GetParentWindow();
-        if (window?.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+        if (
+            window?.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow
+            && nativeWindow.Content is Microsoft.UI.Xaml.UIElement content
+        )
         {
-            nativeWindow.Content.KeyDown += OnWindowsKeyDown;
+            _windowsContent = content;
+            content.KeyDown += OnWindowsKeyDown;
 
             // Set up manipulation events for better touch support
-            if (nativeWindow.Content is Microsoft.UI.Xaml.UIElement content)
-            {
-                content.ManipulationMode =
-                    Microsoft.UI.Xaml.Input.ManipulationModes.TranslateX
-                    | Microsoft.UI.Xaml.Input.ManipulationModes.TranslateY;
-                content.ManipulationStarted += OnManipulationStarted;
-                content.ManipulationCompleted += OnManipulationCompleted;
-            }
+            content.ManipulationMode =
+                Microsoft.UI.Xaml.Input.ManipulationModes.TranslateX
+                | Microsoft.UI.Xaml.Input.ManipulationModes.TranslateY;
+            content.ManipulationStarted += OnManipulationStarted;
+            content.ManipulationCompleted += OnManipulationCompleted;
+        }
+    }
+
+    private void CleanupWindowsInputHandling()
+    {
+        if (_windowsContent is not null)
+        {
+            _windowsContent.KeyDown -= OnWindowsKeyDown;
+            _windowsContent.ManipulationStarted -= OnManipulationStarted;
+            _windowsContent.ManipulationCompleted -= OnManipulationCompleted;
+            _windowsContent = null;
         }
     }
 
@@ -111,8 +131,35 @@ public partial class MainPage : ContentPage
         this.Focus();
     }
 
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        // Cancel any pending animations
+        _animationCts?.Cancel();
+        _animationCts?.Dispose();
+        _animationCts = null;
+
+        // Unsubscribe from ViewModel events to prevent memory leaks
+        _viewModel.TilesUpdated -= OnTilesUpdated;
+
+#if WINDOWS
+        CleanupWindowsInputHandling();
+#endif
+    }
+
     private void CreateTiles()
     {
+        var boardSize = _viewModel.BoardSize;
+
+        // Create row and column definitions dynamically based on board size
+        for (int i = 0; i < boardSize; i++)
+        {
+            GameBoard.RowDefinitions.Add(new RowDefinition(GridLength.Star));
+            GameBoard.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        }
+
+        // Create tile views
         for (int i = 0; i < _viewModel.Tiles.Count; i++)
         {
             var tile = _viewModel.Tiles[i];
@@ -157,16 +204,6 @@ public partial class MainPage : ContentPage
     }
 
     /// <summary>
-    /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
-    /// </summary>
-    private const double TileSpacing = 10;
-
-    /// <summary>
-    /// Default board dimension when actual size cannot be determined.
-    /// </summary>
-    private const double DefaultBoardDimension = 400;
-
-    /// <summary>
     /// Minimum distance in pixels required to register a swipe gesture.
     /// </summary>
     private const double MinSwipeDistance = 30;
@@ -203,172 +240,35 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
+        // Cancel any pending animations before starting new ones
+        _animationCts?.Cancel();
+        _animationCts?.Dispose();
+        _animationCts = new CancellationTokenSource();
+
         try
         {
-            await AnimateTileUpdatesAsync(e);
+            await _animationService.AnimateAsync(
+                e,
+                GameBoard,
+                _viewModel.BoardSize,
+                _tileBorders,
+                _animationCts.Token
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            // Animation was cancelled - this is expected when new moves come in quickly
         }
         catch (Exception ex)
         {
             // Log but don't crash - animations are non-critical
             System.Diagnostics.Debug.WriteLine($"Animation error: {ex.Message}");
         }
-    }
-
-    private async Task AnimateTileUpdatesAsync(TileUpdateEventArgs e)
-    {
-        // Calculate cell step size (distance between adjacent cell centers)
-        // For a grid with N columns, spacing S, and total width W:
-        // Step = (W + S) / N (accounts for cell width plus one spacing gap)
-        var boardSize = _viewModel.BoardSize;
-        var cellStepX = (GameBoard.Width + TileSpacing) / boardSize;
-        var cellStepY = (GameBoard.Height + TileSpacing) / boardSize;
-
-        // If we can't get valid dimensions, use defaults
-        if (cellStepX <= 0 || cellStepY <= 0)
+        finally
         {
-            cellStepX = (DefaultBoardDimension + TileSpacing) / boardSize;
-            cellStepY = (DefaultBoardDimension + TileSpacing) / boardSize;
+            // Signal the ViewModel that animation is complete so next move can proceed
+            _viewModel.SignalAnimationComplete();
         }
-
-        // Create overlay tiles for sliding animations
-        var overlayTiles = new List<Border>();
-        var slideAnimationTasks = new List<Task>();
-
-        // Hide new tiles immediately (they will appear after all other animations)
-        // Store their actual values and temporarily set to 0 so they show as empty cells
-        var newTileValues = new Dictionary<TileViewModel, int>();
-        foreach (var tile in e.NewTiles)
-        {
-            newTileValues[tile] = tile.Value;
-            tile.UpdateValue(0); // Show as empty cell during slide animation
-
-            // Also hide the border completely during slide animation
-            // This prevents visual glitches when spawning into a position a tile is leaving
-            if (_tileBorders.TryGetValue(tile, out var border))
-            {
-                border.Opacity = 0;
-                border.Scale = 0;
-            }
-        }
-
-        // Hide merged tiles initially (they will appear after slide animation)
-        foreach (var tile in e.MergedTiles)
-        {
-            if (_tileBorders.TryGetValue(tile, out var border))
-            {
-                border.Opacity = 0;
-                border.Scale = 1;
-            }
-        }
-
-        // Animate all tile movements using overlay tiles
-        foreach (var movement in e.TileMovements)
-        {
-            // Create an overlay tile at the source position
-            var overlayBorder = CreateOverlayTile(movement.Value);
-            overlayTiles.Add(overlayBorder);
-
-            // Position the overlay at the source location
-            Grid.SetRow(overlayBorder, movement.From.Row);
-            Grid.SetColumn(overlayBorder, movement.From.Column);
-            GameBoard.Children.Add(overlayBorder);
-
-            // Calculate the translation needed to move from source to destination
-            var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
-            var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
-
-            // Animate the overlay tile sliding to the destination
-            slideAnimationTasks.Add(
-                Task.WhenAll(
-                    overlayBorder.TranslateToAsync(translateX, translateY, 220, Easing.CubicOut)
-                )
-            );
-        }
-
-        // Wait for all slide animations to complete
-        if (slideAnimationTasks.Count > 0)
-        {
-            await Task.WhenAll(slideAnimationTasks);
-        }
-
-        // Remove overlay tiles
-        foreach (var overlay in overlayTiles)
-        {
-            GameBoard.Children.Remove(overlay);
-        }
-
-        // Now show the final tiles at their destinations
-        // Animate merged tiles (pulse effect) - they appear now after sliding
-        var mergedTileTasks = e
-            .MergedTiles.Select(async tile =>
-            {
-                if (_tileBorders.TryGetValue(tile, out var border))
-                {
-                    // Show the merged tile and pulse
-                    border.Opacity = 1;
-                    border.Scale = 0.8;
-                    await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
-                    await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
-                }
-            })
-            .ToList(); // Materialize to start all tasks immediately
-
-        // Wait for merged tile animations to complete first
-        await Task.WhenAll(mergedTileTasks);
-
-        // Then animate new tiles - restore their value and scale up from small
-        var newTileTasks = e
-            .NewTiles.Select(async tile =>
-            {
-                if (
-                    _tileBorders.TryGetValue(tile, out var border)
-                    && newTileValues.TryGetValue(tile, out var actualValue)
-                )
-                {
-                    // Restore the actual value first (this changes the background color)
-                    tile.UpdateValue(actualValue);
-
-                    // Ensure scale is 0 and make visible
-                    border.Scale = 0;
-                    border.Opacity = 1;
-
-                    // Small delay to ensure the UI has updated before animating
-                    await Task.Delay(10);
-
-                    // Animate scale from 0 to 1
-                    await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
-                }
-            })
-            .ToList(); // Materialize to start all tasks immediately
-
-        await Task.WhenAll(newTileTasks);
-    }
-
-    private static Border CreateOverlayTile(int value)
-    {
-        var backgroundColor = TileViewModel.GetTileBackgroundColor(value);
-        var textColor = TileViewModel.GetTileTextColor(value);
-
-        var border = new Border
-        {
-            Stroke = Colors.Transparent,
-            StrokeThickness = 0,
-            Padding = 0,
-            BackgroundColor = backgroundColor,
-            ZIndex = 100, // Ensure overlay is on top
-            Content = new Label
-            {
-                Text = value.ToString(),
-                FontSize = 32,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = textColor,
-                HorizontalOptions = LayoutOptions.Center,
-                VerticalOptions = LayoutOptions.Center,
-            },
-            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 },
-        };
-
-        return border;
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)

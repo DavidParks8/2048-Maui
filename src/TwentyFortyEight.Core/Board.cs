@@ -53,10 +53,15 @@ public readonly struct Board : IEquatable<Board>
         Size = size;
         _data = new int[size, size];
 
-        // Copy from flat array to 2D in row-major order
-        for (int i = 0; i < data.Length; i++)
+        // Copy from flat array to 2D in row-major order using Span for efficiency
+        var sourceSpan = data.AsSpan();
+        for (int row = 0; row < size; row++)
         {
-            _data[i / size, i % size] = data[i];
+            var rowSlice = sourceSpan.Slice(row * size, size);
+            for (int col = 0; col < size; col++)
+            {
+                _data[row, col] = rowSlice[col];
+            }
         }
     }
 
@@ -220,7 +225,19 @@ public readonly struct Board : IEquatable<Board>
     /// </summary>
     public List<Position> FindEmptyCells()
     {
-        var emptyCells = new List<Position>();
+        var emptyCells = new List<Position>(Length);
+        FindEmptyCells(emptyCells);
+        return emptyCells;
+    }
+
+    /// <summary>
+    /// Populates the provided list with all empty cell positions.
+    /// The list is cleared before populating.
+    /// </summary>
+    /// <param name="emptyCells">The list to populate with empty cell positions.</param>
+    public void FindEmptyCells(List<Position> emptyCells)
+    {
+        emptyCells.Clear();
         for (int row = 0; row < Size; row++)
         {
             for (int col = 0; col < Size; col++)
@@ -231,7 +248,56 @@ public readonly struct Board : IEquatable<Board>
                 }
             }
         }
-        return emptyCells;
+    }
+
+    /// <summary>
+    /// Gets a random empty cell position without allocating a list.
+    /// Uses a two-pass approach: first counts empty cells, then selects a random index.
+    /// This maintains deterministic compatibility with seeded random sources.
+    /// </summary>
+    /// <param name="random">The random source to use for selection.</param>
+    /// <returns>The position of a random empty cell, or null if no empty cells exist.</returns>
+    public Position? GetRandomEmptyCell(IRandomSource random)
+    {
+        // First pass: count empty cells
+        int count = 0;
+        for (int row = 0; row < Size; row++)
+        {
+            for (int col = 0; col < Size; col++)
+            {
+                if (_data[row, col] == 0)
+                {
+                    count++;
+                }
+            }
+        }
+
+        if (count == 0)
+        {
+            return null;
+        }
+
+        // Pick a random index (single random call, matching original behavior)
+        int targetIndex = random.Next(count);
+
+        // Second pass: find the cell at that index
+        int currentIndex = 0;
+        for (int row = 0; row < Size; row++)
+        {
+            for (int col = 0; col < Size; col++)
+            {
+                if (_data[row, col] == 0)
+                {
+                    if (currentIndex == targetIndex)
+                    {
+                        return new Position(row, col);
+                    }
+                    currentIndex++;
+                }
+            }
+        }
+
+        return null; // Should never reach here
     }
 
     /// <summary>

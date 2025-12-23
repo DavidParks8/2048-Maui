@@ -20,12 +20,32 @@ public partial class GameViewModel : ObservableObject
     private readonly IMoveAnalyzer _moveAnalyzer;
     private Game2048Engine _engine;
 
+    /// <summary>
+    /// Lock to prevent concurrent move processing.
+    /// When true, a move is currently being processed and new moves should be queued or ignored.
+    /// </summary>
+    private volatile bool _isProcessingMove;
+
+    /// <summary>
+    /// Task completion source to signal when the current animation completes.
+    /// </summary>
+    private TaskCompletionSource? _animationCompletionSource;
+
     public ObservableCollection<TileViewModel> Tiles { get; }
 
     /// <summary>
     /// Event raised when tiles are updated and need animations.
     /// </summary>
     public event EventHandler<TileUpdateEventArgs>? TilesUpdated;
+
+    /// <summary>
+    /// Signals that the animation for the current move has completed.
+    /// Called by the view layer after animations finish.
+    /// </summary>
+    public void SignalAnimationComplete()
+    {
+        _animationCompletionSource?.TrySetResult();
+    }
 
     [ObservableProperty]
     private int _score;
@@ -86,22 +106,54 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Move(Direction direction)
+    private async Task MoveAsync(Direction direction)
     {
-        // Capture previous state before the move
-        var previousBoard = _engine.CurrentState.Board.Clone();
-
-        var moved = _engine.Move(direction);
-        if (moved)
+        // Prevent concurrent move processing to avoid broken board state from fast swiping
+        if (_isProcessingMove)
         {
-            UpdateUI(previousBoard, direction);
-            SaveGame();
+            return;
+        }
 
-            // Update best score
-            if (Score > BestScore)
+        _isProcessingMove = true;
+        try
+        {
+            // Capture previous state before the move
+            var previousBoard = _engine.CurrentState.Board.Clone();
+
+            var moved = _engine.Move(direction);
+            if (moved)
             {
-                BestScore = Score;
+                // Create a completion source to wait for animation
+                _animationCompletionSource = new TaskCompletionSource();
+
+                UpdateUI(previousBoard, direction);
+                SaveGame();
+
+                // Update best score
+                if (Score > BestScore)
+                {
+                    BestScore = Score;
+                }
+
+                // Wait for animation to complete (with timeout to prevent deadlock)
+                using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(500));
+                try
+                {
+                    await _animationCompletionSource.Task.WaitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Animation timed out or was cancelled - continue anyway
+                }
+                finally
+                {
+                    _animationCompletionSource = null;
+                }
             }
+        }
+        finally
+        {
+            _isProcessingMove = false;
         }
     }
 

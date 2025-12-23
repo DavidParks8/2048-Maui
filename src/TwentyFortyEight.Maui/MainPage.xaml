@@ -100,26 +100,13 @@
                 MaximumHeightRequest="500"
                 StrokeShape="RoundRectangle 10">
 
-            <!-- Grid for tiles -->
+            <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
             <Grid x:Name="GameBoard"
                   ColumnSpacing="10"
                   RowSpacing="10"
                   WidthRequest="400"
                   HeightRequest="400"
                   SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
                 <!-- Tiles will be added programmatically in code-behind -->
             </Grid>
         </Border>

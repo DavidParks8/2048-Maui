@@ -29,10 +29,86 @@ public partial class TileViewModel : ObservableObject
 
     public Color TextColor => GetTileTextColor(Value);
 
+    #region Constants
+
+    /// <summary>
+    /// The log base 2 of 2048 (used for high-value color gradient calculations).
+    /// </summary>
     private const int Log2Of2048 = 11;
+
+    /// <summary>
+    /// The range of power values over which the high-value gradient transitions.
+    /// </summary>
     private const double GradientRange = 10.0;
 
-    private static bool IsDarkMode => Application.Current?.RequestedTheme == AppTheme.Dark;
+    /// <summary>
+    /// Tile values at or below this threshold use the dark text color.
+    /// </summary>
+    private const int DarkTextThreshold = 4;
+
+    /// <summary>
+    /// Red component of the gold color used as gradient start (#edc22e).
+    /// </summary>
+    private const byte GoldRed = 0xed;
+
+    /// <summary>
+    /// Green component of the gold color used as gradient start (#edc22e).
+    /// </summary>
+    private const byte GoldGreen = 0xc2;
+
+    /// <summary>
+    /// Blue component of the gold color used as gradient start (#edc22e).
+    /// </summary>
+    private const byte GoldBlue = 0x2e;
+
+    /// <summary>
+    /// Red component of the dark red color used as gradient end (#8b0000).
+    /// </summary>
+    private const byte DarkRedRed = 0x8b;
+
+    #endregion
+
+    #region Theme Caching
+
+    private static bool s_isDarkModeCached;
+    private static bool s_themeCacheInitialized;
+
+    /// <summary>
+    /// Static constructor to set up theme change monitoring.
+    /// </summary>
+    static TileViewModel()
+    {
+        if (Application.Current is not null)
+        {
+            Application.Current.RequestedThemeChanged += OnAppThemeChanged;
+            UpdateThemeCache();
+        }
+    }
+
+    private static void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
+    {
+        UpdateThemeCache();
+    }
+
+    private static void UpdateThemeCache()
+    {
+        s_isDarkModeCached = Application.Current?.RequestedTheme == AppTheme.Dark;
+        s_themeCacheInitialized = true;
+    }
+
+    private static bool IsDarkMode
+    {
+        get
+        {
+            if (!s_themeCacheInitialized)
+            {
+                UpdateThemeCache();
+            }
+            return s_isDarkModeCached;
+        }
+    }
+
+    #endregion
 
     #region Cached Colors
 
@@ -82,7 +158,7 @@ public partial class TileViewModel : ObservableObject
     /// </summary>
     public static Color GetTileTextColor(int value)
     {
-        if (value > 4)
+        if (value > DarkTextThreshold)
             return Colors.White;
 
         return IsDarkMode ? TextColorLight : TextColorDark;
@@ -110,9 +186,9 @@ public partial class TileViewModel : ObservableObject
         normalizedPower = Math.Clamp(normalizedPower, 0, 1);
 
         // Interpolate between gold (#edc22e) and dark red (#8b0000)
-        var r = (byte)(0xed * (1 - normalizedPower) + 0x8b * normalizedPower);
-        var g = (byte)(0xc2 * (1 - normalizedPower));
-        var b = (byte)(0x2e * (1 - normalizedPower));
+        var r = (byte)(GoldRed * (1 - normalizedPower) + DarkRedRed * normalizedPower);
+        var g = (byte)(GoldGreen * (1 - normalizedPower));
+        var b = (byte)(GoldBlue * (1 - normalizedPower));
 
         return Color.FromRgb(r, g, b);
     }

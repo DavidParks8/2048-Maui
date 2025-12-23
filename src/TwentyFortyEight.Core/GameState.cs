@@ -4,84 +4,44 @@ namespace TwentyFortyEight.Core;
 /// Represents the current state of a 2048 game.
 /// This is designed to be immutable/snapshot-friendly for undo/redo functionality.
 /// </summary>
-public class GameState
+/// <param name="Board">The game board.</param>
+/// <param name="Score">The current score.</param>
+/// <param name="MoveCount">The number of moves made.</param>
+/// <param name="IsWon">Whether the game has been won (a tile reached WinTile).</param>
+/// <param name="IsGameOver">Whether the game is over (no valid moves remaining).</param>
+public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool IsGameOver)
 {
     /// <summary>
-    /// The game board.
-    /// </summary>
-    public Board Board { get; }
-
-    /// <summary>
-    /// The size of the board (e.g., 4 for a 4x4 board).
+    /// Gets the size of the board (e.g., 4 for a 4x4 board).
     /// </summary>
     public int Size => Board.Size;
 
     /// <summary>
-    /// The current score.
+    /// Creates a new empty game state with the specified board size.
     /// </summary>
-    public int Score { get; }
-
-    /// <summary>
-    /// The number of moves made.
-    /// </summary>
-    public int MoveCount { get; }
-
-    /// <summary>
-    /// Whether the game has been won (a tile reached WinTile).
-    /// </summary>
-    public bool IsWon { get; }
-
-    /// <summary>
-    /// Whether the game is over (no valid moves remaining).
-    /// </summary>
-    public bool IsGameOver { get; }
-
+    /// <param name="size">The size of the board (e.g., 4 for a 4x4 board).</param>
     public GameState(int size)
-    {
-        Board = new Board(size);
-        Score = 0;
-        MoveCount = 0;
-        IsWon = false;
-        IsGameOver = false;
-    }
-
-    public GameState(Board board, int score, int moveCount, bool isWon, bool isGameOver)
-    {
-        Board = board;
-        Score = score;
-        MoveCount = moveCount;
-        IsWon = isWon;
-        IsGameOver = isGameOver;
-    }
+        : this(new Board(size), Score: 0, MoveCount: 0, IsWon: false, IsGameOver: false) { }
 
     /// <summary>
     /// Legacy constructor for compatibility - creates a Board from int[].
     /// </summary>
     public GameState(int[] board, int size, int score, int moveCount, bool isWon, bool isGameOver)
-    {
-        Board = new Board(board, size);
-        Score = score;
-        MoveCount = moveCount;
-        IsWon = isWon;
-        IsGameOver = isGameOver;
-    }
+        : this(new Board(board, size), score, moveCount, isWon, isGameOver) { }
 
     /// <summary>
     /// Gets the tile value at the specified position.
     /// </summary>
-    public int GetTile(int row, int col)
-    {
-        return Board[row, col];
-    }
+    public int GetTile(int row, int col) => Board[row, col];
 
     /// <summary>
     /// Creates a new GameState with the tile at the specified position set to the given value.
     /// </summary>
-    public GameState WithTile(int row, int col, int value)
-    {
-        var newBoard = Board.WithTile(row, col, value);
-        return new GameState(newBoard, Score, MoveCount, IsWon, IsGameOver);
-    }
+    public GameState WithTile(int row, int col, int value) =>
+        this with
+        {
+            Board = Board.WithTile(row, col, value),
+        };
 
     /// <summary>
     /// Creates a new GameState with updated properties.
@@ -92,14 +52,13 @@ public class GameState
         int? moveCount = null,
         bool? isWon = null,
         bool? isGameOver = null
-    )
-    {
-        return new GameState(
-            board ?? Board.Clone(),
-            score ?? Score,
-            moveCount ?? MoveCount,
-            isWon ?? IsWon,
-            isGameOver ?? IsGameOver
-        );
-    }
+    ) =>
+        this with
+        {
+            Board = board ?? Board.Clone(),
+            Score = score ?? Score,
+            MoveCount = moveCount ?? MoveCount,
+            IsWon = isWon ?? IsWon,
+            IsGameOver = isGameOver ?? IsGameOver,
+        };
 }

@@ -6,9 +6,22 @@ namespace TwentyFortyEight.Core;
 /// <summary>
 /// Analyzes tile movements and categorizes tiles after a move.
 /// This logic is platform-agnostic and can be used by any UI implementation.
-/// This class is designed to be reused as a singleton - it owns a single <see cref="MoveAnalysisResult"/>
-/// that is cleared and repopulated on each call to <see cref="Analyze"/>.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Thread Safety:</b> This class uses thread-local storage for the result object.
+/// Each thread gets its own <see cref="MoveAnalysisResult"/> instance that is reused across calls.
+/// </para>
+/// <para>
+/// <b>IMPORTANT - Result Reuse:</b> The <see cref="MoveAnalysisResult"/> returned by <see cref="Analyze"/>
+/// is <b>cleared and repopulated on each call</b>. Do not hold references to the result across
+/// multiple calls to <see cref="Analyze"/>. If you need to preserve data, copy it immediately:
+/// <code>
+/// var result = analyzer.Analyze(prev, next, dir);
+/// var movementsCopy = result.Movements.ToList(); // Copy before next Analyze call
+/// </code>
+/// </para>
+/// </remarks>
 public class MoveAnalyzer : IMoveAnalyzer
 {
     // Pool for temporary lookup HashSets (not exposed to callers)
