@@ -32,6 +32,7 @@ public class TileUpdateEventArgs : EventArgs
     /// <summary>
     /// List of all tile movements with source and destination positions.
     /// This enables proper slide animations from origin to destination.
+    /// Uses the Core TileMovement type for platform-agnostic movement data.
     /// </summary>
-    public required IReadOnlyList<TileMovement> TileMovements { get; init; }
+    public required IReadOnlyList<Core.TileMovement> TileMovements { get; init; }
 }

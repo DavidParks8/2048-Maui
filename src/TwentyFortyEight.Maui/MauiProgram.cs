@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.ViewModels;
 
 namespace TwentyFortyEight.Maui;
@@ -23,6 +24,7 @@ public static class MauiProgram
 #endif
 
         // Register services for dependency injection
+        builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<MainPage>();
 

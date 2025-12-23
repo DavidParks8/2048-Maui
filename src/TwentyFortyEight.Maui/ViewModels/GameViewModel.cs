@@ -17,6 +17,7 @@ public partial class GameViewModel : ObservableObject
 {
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
+    private readonly IMoveAnalyzer _moveAnalyzer;
     private Game2048Engine _engine;
 
     public ObservableCollection<TileViewModel> Tiles { get; }
@@ -49,9 +50,10 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _canUndo;
 
-    public GameViewModel(ILogger<GameViewModel> logger)
+    public GameViewModel(ILogger<GameViewModel> logger, IMoveAnalyzer moveAnalyzer)
     {
         _logger = logger;
+        _moveAnalyzer = moveAnalyzer;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, new SystemRandomSource());
 
@@ -114,61 +116,41 @@ public partial class GameViewModel : ObservableObject
 
         if (previousBoard != null && moveDirection != null)
         {
+            // Use Core MoveAnalyzer for all movement and categorization logic
+            var analysis = _moveAnalyzer.Analyze(
+                previousBoard,
+                state.Board,
+                _config.Size,
+                moveDirection.Value
+            );
+
             var movedTiles = new HashSet<TileViewModel>();
             var newTiles = new HashSet<TileViewModel>();
             var mergedTiles = new HashSet<TileViewModel>();
-            var tileMovements = new List<TileMovement>();
-
-            // Calculate tile movements by simulating the move logic
-            CalculateTileMovements(previousBoard, state.Board, moveDirection.Value, tileMovements);
 
             for (int i = 0; i < state.Board.Length; i++)
             {
                 var tile = Tiles[i];
                 var newValue = state.Board[i];
-                var oldValue = previousBoard[i];
-                var row = i / _config.Size;
-                var col = i % _config.Size;
 
                 // Reset animation flags
                 tile.IsNewTile = false;
                 tile.IsMerged = false;
 
-                // Check if a tile moved away from this position
-                var movedAwayFrom = tileMovements.Any(m => m.FromRow == row && m.FromColumn == col);
-                // Check if a tile moved to this position
-                var isMovedHere = tileMovements.Any(m => m.ToRow == row && m.ToColumn == col);
-
-                // Case 1: New tile spawned
-                // Either: was empty and now has 2/4 (and nothing moved here)
-                // Or: a tile moved away and there's still a value here (new spawn in vacated spot)
-                if (newValue == 2 || newValue == 4)
+                // Categorize tile based on analysis results
+                if (analysis.SpawnedIndices.Contains(i))
                 {
-                    if ((oldValue == 0 && !isMovedHere) || (movedAwayFrom && !isMovedHere))
-                    {
-                        tile.IsNewTile = true;
-                        newTiles.Add(tile);
-                    }
-                    else if (isMovedHere)
-                    {
-                        movedTiles.Add(tile);
-                    }
+                    tile.IsNewTile = true;
+                    newTiles.Add(tile);
                 }
-                // Case 2: Tile merged (check if this position received a merge)
-                else if (newValue != 0)
+                else if (analysis.MergedIndices.Contains(i))
                 {
-                    var mergingMovements = tileMovements
-                        .Where(m => m.ToRow == row && m.ToColumn == col && m.IsMerging)
-                        .ToList();
-                    if (mergingMovements.Count > 0)
-                    {
-                        tile.IsMerged = true;
-                        mergedTiles.Add(tile);
-                    }
-                    else if (oldValue != newValue)
-                    {
-                        movedTiles.Add(tile);
-                    }
+                    tile.IsMerged = true;
+                    mergedTiles.Add(tile);
+                }
+                else if (analysis.MovedToIndices.Contains(i))
+                {
+                    movedTiles.Add(tile);
                 }
 
                 tile.UpdateValue(newValue);
@@ -179,7 +161,7 @@ public partial class GameViewModel : ObservableObject
                 movedTiles.Count > 0
                 || newTiles.Count > 0
                 || mergedTiles.Count > 0
-                || tileMovements.Count > 0
+                || analysis.Movements.Count > 0
             )
             {
                 var eventArgs = new TileUpdateEventArgs
@@ -188,7 +170,7 @@ public partial class GameViewModel : ObservableObject
                     NewTiles = newTiles.ToFrozenSet(),
                     MergedTiles = mergedTiles.ToFrozenSet(),
                     MoveDirection = moveDirection.Value,
-                    TileMovements = tileMovements,
+                    TileMovements = analysis.Movements,
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
@@ -222,112 +204,6 @@ public partial class GameViewModel : ObservableObject
 
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
-    }
-
-    /// <summary>
-    /// Calculates tile movements from the previous board to the new board.
-    /// This tracks where each tile came from, including merges.
-    /// </summary>
-    private void CalculateTileMovements(
-        int[] previousBoard,
-        int[] newBoard,
-        Direction direction,
-        List<TileMovement> movements
-    )
-    {
-        var size = _config.Size;
-
-        // Process each line (row or column) depending on direction
-        for (int line = 0; line < size; line++)
-        {
-            // Get indices for this line based on direction
-            var indices = GetLineIndices(line, size, direction);
-
-            // Collect non-zero tiles from previous board with their positions
-            var tiles = new List<(int index, int value)>();
-            foreach (var idx in indices)
-            {
-                if (previousBoard[idx] != 0)
-                {
-                    tiles.Add((idx, previousBoard[idx]));
-                }
-            }
-
-            if (tiles.Count == 0)
-                continue;
-
-            // Process tiles: merge and compact toward the direction
-            int destPosition = 0;
-            int i = 0;
-            while (i < tiles.Count)
-            {
-                var (sourceIdx, value) = tiles[i];
-                var sourceRow = sourceIdx / size;
-                var sourceCol = sourceIdx % size;
-
-                // Check if next tile can merge with this one
-                if (i + 1 < tiles.Count && tiles[i + 1].value == value)
-                {
-                    // Merge: both tiles move to the destination
-                    var destIdx = indices[destPosition];
-                    var destRow = destIdx / size;
-                    var destCol = destIdx % size;
-
-                    // First tile moves and merges
-                    movements.Add(
-                        new TileMovement(sourceRow, sourceCol, destRow, destCol, value, true)
-                    );
-
-                    // Second tile also moves and merges
-                    var (source2Idx, _) = tiles[i + 1];
-                    var source2Row = source2Idx / size;
-                    var source2Col = source2Idx % size;
-                    movements.Add(
-                        new TileMovement(source2Row, source2Col, destRow, destCol, value, true)
-                    );
-
-                    i += 2;
-                }
-                else
-                {
-                    // No merge: tile just moves (or stays)
-                    var destIdx = indices[destPosition];
-                    var destRow = destIdx / size;
-                    var destCol = destIdx % size;
-
-                    // Only record if actually moving
-                    if (sourceRow != destRow || sourceCol != destCol)
-                    {
-                        movements.Add(
-                            new TileMovement(sourceRow, sourceCol, destRow, destCol, value, false)
-                        );
-                    }
-
-                    i++;
-                }
-                destPosition++;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets the board indices for a line (row or column) in the order they should be processed.
-    /// </summary>
-    private static int[] GetLineIndices(int line, int size, Direction direction)
-    {
-        var indices = new int[size];
-        for (int i = 0; i < size; i++)
-        {
-            indices[i] = direction switch
-            {
-                Direction.Left => line * size + i,
-                Direction.Right => line * size + (size - 1 - i),
-                Direction.Up => i * size + line,
-                Direction.Down => (size - 1 - i) * size + line,
-                _ => 0,
-            };
-        }
-        return indices;
     }
 
     private void SaveGame()

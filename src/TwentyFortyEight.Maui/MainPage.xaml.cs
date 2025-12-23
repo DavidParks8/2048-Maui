@@ -234,13 +234,13 @@ public partial class MainPage : ContentPage
             overlayTiles.Add(overlayBorder);
 
             // Position the overlay at the source location
-            Grid.SetRow(overlayBorder, movement.FromRow);
-            Grid.SetColumn(overlayBorder, movement.FromColumn);
+            Grid.SetRow(overlayBorder, movement.From.Row);
+            Grid.SetColumn(overlayBorder, movement.From.Column);
             GameBoard.Children.Add(overlayBorder);
 
             // Calculate the translation needed to move from source to destination
-            var translateX = (movement.ToColumn - movement.FromColumn) * cellStepX;
-            var translateY = (movement.ToRow - movement.FromRow) * cellStepY;
+            var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
+            var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
 
             // Animate the overlay tile sliding to the destination
             slideAnimationTasks.Add(
