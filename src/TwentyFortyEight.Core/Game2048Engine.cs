@@ -14,6 +14,7 @@ public class Game2048Engine
 
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
+    private readonly IGameStatisticsTracker? _statisticsTracker;
     private readonly List<MoveRecord> _moveHistory;
     private int _currentMoveIndex;
     private GameState _initialState;
@@ -25,10 +26,15 @@ public class Game2048Engine
 
     public bool CanUndo => _currentMoveIndex > 0;
 
-    public Game2048Engine(GameConfig config, IRandomSource random, IGameStatisticsTracker? statisticsTracker = null)
+    public Game2048Engine(
+        GameConfig config,
+        IRandomSource random,
+        IGameStatisticsTracker? statisticsTracker = null
+    )
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
@@ -38,7 +44,7 @@ public class Game2048Engine
         SpawnTileWithInfo();
 
         _initialState = _currentState;
-        
+
         // Notify about game start
         _statisticsTracker?.OnGameStarted();
     }
@@ -46,10 +52,16 @@ public class Game2048Engine
     /// <summary>
     /// Creates a new game engine from a saved state.
     /// </summary>
-    public Game2048Engine(GameState state, GameConfig config, IRandomSource random, IGameStatisticsTracker? statisticsTracker = null)
+    public Game2048Engine(
+        GameState state,
+        GameConfig config,
+        IRandomSource random,
+        IGameStatisticsTracker? statisticsTracker = null
+    )
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = state;
@@ -67,7 +79,7 @@ public class Game2048Engine
         {
             _statisticsTracker?.OnGameOver(_currentState.Score, false);
         }
-        
+
         _moveHistory.Clear();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
@@ -77,7 +89,7 @@ public class Game2048Engine
         SpawnTileWithInfo();
 
         _initialState = _currentState;
-        
+
         // Notify about game start
         _statisticsTracker?.OnGameStarted();
     }
@@ -132,8 +144,15 @@ public class Game2048Engine
         }
 
         // Get highest tile on board
-        var highestTile = newBoard.Max();
-        
+        int highestTile = 0;
+        for (int i = 0; i < newBoard.Length; i++)
+        {
+            if (newBoard[i] > highestTile)
+            {
+                highestTile = newBoard[i];
+            }
+        }
+
         // Notify about move
         _statisticsTracker?.OnMoveMade(newScore, highestTile);
 

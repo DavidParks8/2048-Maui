@@ -19,6 +19,8 @@ public partial class GameViewModel : ObservableObject
 {
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
+    private readonly IStatisticsService _statisticsService;
+    private readonly IGameStatisticsTracker _statisticsTracker;
     private readonly IMoveAnalyzer _moveAnalyzer;
     private Game2048Engine _engine;
 
@@ -77,12 +79,18 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _canUndo;
 
-    public GameViewModel(ILogger<GameViewModel> logger, IMoveAnalyzer moveAnalyzer)
+    public GameViewModel(
+        ILogger<GameViewModel> logger,
+        IStatisticsService statisticsService,
+        IMoveAnalyzer moveAnalyzer
+    )
     {
         _logger = logger;
+        _statisticsService = statisticsService;
+        _statisticsTracker = new GameStatisticsTrackerAdapter(statisticsService);
         _moveAnalyzer = moveAnalyzer;
         _config = new GameConfig();
-        _engine = new Game2048Engine(_config, new SystemRandomSource());
+        _engine = new Game2048Engine(_config, new SystemRandomSource(), _statisticsTracker);
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = new ObservableCollection<TileViewModel>();
@@ -167,6 +175,12 @@ public partial class GameViewModel : ObservableObject
             UpdateUI();
             SaveGame();
         }
+    }
+
+    [RelayCommand]
+    private async Task ShowStats()
+    {
+        await Shell.Current.GoToAsync(nameof(StatsPage));
     }
 
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
@@ -296,14 +310,19 @@ public partial class GameViewModel : ObservableObject
                 if (dto != null)
                 {
                     var state = dto.ToGameState();
-                    _engine = new Game2048Engine(state, _config, new SystemRandomSource(), _statisticsTracker);
-                    
+                    _engine = new Game2048Engine(
+                        state,
+                        _config,
+                        new SystemRandomSource(),
+                        _statisticsTracker
+                    );
+
                     // Resume time tracking if game is ongoing
                     if (!state.IsGameOver)
                     {
                         _statisticsService.StartTimeTracking();
                     }
-                    
+
                     return;
                 }
             }

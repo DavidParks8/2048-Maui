@@ -13,7 +13,7 @@ public partial class StatsPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        
+
         // Refresh statistics when page appears
         if (BindingContext is StatsViewModel viewModel)
         {

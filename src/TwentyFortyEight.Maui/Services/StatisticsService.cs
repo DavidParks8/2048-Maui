@@ -43,7 +43,7 @@ public class StatisticsService : IStatisticsService
                 HighestTile = Preferences.Get(KeyHighestTile, 0),
                 TotalMoves = Preferences.Get(KeyTotalMoves, 0L),
                 CurrentStreak = Preferences.Get(KeyCurrentStreak, 0),
-                BestStreak = Preferences.Get(KeyBestStreak, 0)
+                BestStreak = Preferences.Get(KeyBestStreak, 0),
             };
         }
     }
@@ -163,11 +163,11 @@ public class StatisticsService : IStatisticsService
             if (_gameTimer?.IsRunning == true)
             {
                 _gameTimer.Stop();
-                
+
                 // Persist accumulated time
                 var elapsedSeconds = (long)_gameTimer.Elapsed.TotalSeconds;
                 AddTimePlayed(elapsedSeconds);
-                
+
                 _gameTimer.Reset();
             }
         }

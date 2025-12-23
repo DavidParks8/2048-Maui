@@ -38,7 +38,7 @@ public class GameStatisticsTrackerAdapter : IGameStatisticsTracker
     {
         _statisticsService.StopTimeTracking();
         _statisticsService.AddScore(finalScore);
-        
+
         if (!wasWon)
         {
             _statisticsService.RecordGameLoss();

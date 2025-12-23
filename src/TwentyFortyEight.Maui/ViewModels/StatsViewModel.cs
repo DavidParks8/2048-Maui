@@ -40,7 +40,8 @@ public partial class StatsViewModel : ObservableObject
             "Reset Statistics",
             "Are you sure you want to reset all statistics? This action cannot be undone.",
             "Reset",
-            "Cancel");
+            "Cancel"
+        );
 
         if (result)
         {

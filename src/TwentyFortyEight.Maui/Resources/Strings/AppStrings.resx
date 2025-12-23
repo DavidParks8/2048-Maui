@@ -103,4 +103,10 @@
   <data name="TryAgain" xml:space="preserve">
     <value>Try Again</value>
   </data>
+  <data name="Stats" xml:space="preserve">
+    <value>Stats</value>
+  </data>
+  <data name="StatsDescription" xml:space="preserve">
+    <value>View statistics</value>
+  </data>
 </root>
