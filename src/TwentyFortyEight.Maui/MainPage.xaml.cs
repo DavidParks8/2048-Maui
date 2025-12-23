@@ -1,4 +1,5 @@
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Behaviors;
 using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.ViewModels;
@@ -9,13 +10,13 @@ public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
-    private Point _swipeStartPoint;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
+    private readonly KeyboardInputBehavior _keyboardBehavior;
 
-#if WINDOWS
-    private Microsoft.UI.Xaml.UIElement? _windowsContent;
-#endif
+    // Touch/pointer tracking for swipe detection
+    private Point? _pointerStartPoint;
+    private Point _panAccumulator;
 
     public MainPage(GameViewModel viewModel, TileAnimationService animationService)
     {
@@ -31,91 +32,63 @@ public partial class MainPage : ContentPage
         // Add tiles to the grid
         CreateTiles();
 
-        // Add pan gesture for swipe detection (works better than SwipeGestureRecognizer)
+        // Set up gesture recognizers for swipe detection
+        SetupGestureRecognizers();
+
+        // Set up keyboard handling via platform behavior
+        _keyboardBehavior = new KeyboardInputBehavior();
+        _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
+        this.Behaviors.Add(_keyboardBehavior);
+    }
+
+    /// <summary>
+    /// Sets up gesture recognizers for cross-platform swipe detection.
+    /// Uses both Pan and Pointer gestures for maximum compatibility.
+    /// </summary>
+    private void SetupGestureRecognizers()
+    {
+        // Pan gesture for touch swipes (works on mobile)
         var panGesture = new PanGestureRecognizer();
         panGesture.PanUpdated += OnPanUpdated;
-        GameBoard.GestureRecognizers.Add(panGesture);
+        RootLayout.GestureRecognizers.Add(panGesture);
 
-        // Set up keyboard handling after page loads
-        this.Loaded += OnPageLoaded;
+        // Pointer gesture for better mouse/touch support (especially on Windows)
+        var pointerGesture = new PointerGestureRecognizer();
+        pointerGesture.PointerPressed += OnPointerPressed;
+        pointerGesture.PointerReleased += OnPointerReleased;
+        RootLayout.GestureRecognizers.Add(pointerGesture);
     }
 
-    private void OnPageLoaded(object? sender, EventArgs e)
+    private void OnKeyboardDirectionPressed(object? sender, Direction direction)
     {
-        // Focus the page to receive keyboard input
-        this.Focus();
-
-#if WINDOWS
-        SetupWindowsInputHandling();
-#endif
+        _viewModel.MoveCommand.Execute(direction);
     }
 
-#if WINDOWS
-    private void SetupWindowsInputHandling()
+    private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
-        var window = this.GetParentWindow();
-        if (
-            window?.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow
-            && nativeWindow.Content is Microsoft.UI.Xaml.UIElement content
-        )
-        {
-            _windowsContent = content;
-            content.KeyDown += OnWindowsKeyDown;
-
-            // Set up manipulation events for better touch support
-            content.ManipulationMode =
-                Microsoft.UI.Xaml.Input.ManipulationModes.TranslateX
-                | Microsoft.UI.Xaml.Input.ManipulationModes.TranslateY;
-            content.ManipulationCompleted += OnManipulationCompleted;
-        }
+        _pointerStartPoint = e.GetPosition(RootLayout);
     }
 
-    private void CleanupWindowsInputHandling()
+    private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (_windowsContent is not null)
-        {
-            _windowsContent.KeyDown -= OnWindowsKeyDown;
-            _windowsContent.ManipulationCompleted -= OnManipulationCompleted;
-            _windowsContent = null;
-        }
-    }
+        if (_pointerStartPoint is null)
+            return;
 
-    private void OnManipulationCompleted(
-        object sender,
-        Microsoft.UI.Xaml.Input.ManipulationCompletedRoutedEventArgs e
-    )
-    {
-        ProcessSwipe(e.Cumulative.Translation.X, e.Cumulative.Translation.Y);
-        e.Handled = true;
-    }
+        var endPoint = e.GetPosition(RootLayout);
+        if (endPoint is null)
+            return;
 
-    private void OnWindowsKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-    {
-        Direction? direction = e.Key switch
-        {
-            Windows.System.VirtualKey.Up => Direction.Up,
-            Windows.System.VirtualKey.Down => Direction.Down,
-            Windows.System.VirtualKey.Left => Direction.Left,
-            Windows.System.VirtualKey.Right => Direction.Right,
-            Windows.System.VirtualKey.W => Direction.Up,
-            Windows.System.VirtualKey.S => Direction.Down,
-            Windows.System.VirtualKey.A => Direction.Left,
-            Windows.System.VirtualKey.D => Direction.Right,
-            _ => null,
-        };
+        var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
+        var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
 
-        if (direction.HasValue)
-        {
-            _viewModel.MoveCommand.Execute(direction.Value);
-            e.Handled = true;
-        }
+        ProcessSwipe(deltaX, deltaY);
+
+        _pointerStartPoint = null;
     }
-#endif
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        this.Focus();
     }
 
     protected override void OnDisappearing()
@@ -129,10 +102,7 @@ public partial class MainPage : ContentPage
 
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
-
-#if WINDOWS
-        CleanupWindowsInputHandling();
-#endif
+        _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
     }
 
     private void CreateTiles()
@@ -264,17 +234,17 @@ public partial class MainPage : ContentPage
         switch (e.StatusType)
         {
             case GestureStatus.Started:
-                _swipeStartPoint = new Point(0, 0);
+                _panAccumulator = new Point(0, 0);
                 break;
 
             case GestureStatus.Running:
                 // Track the cumulative pan distance
-                _swipeStartPoint = new Point(e.TotalX, e.TotalY);
+                _panAccumulator = new Point(e.TotalX, e.TotalY);
                 break;
 
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
-                ProcessSwipe(_swipeStartPoint.X, _swipeStartPoint.Y);
+                ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
                 break;
         }
     }

@@ -272,9 +272,7 @@ public class TileAnimationService
     )
     {
         // Remove any overlay tiles (ZIndex = 100)
-        var overlaysToRemove = gameBoard
-            .Children.OfType<Border>()
-            .Where(b => b.ZIndex == 100);
+        var overlaysToRemove = gameBoard.Children.OfType<Border>().Where(b => b.ZIndex == 100);
 
         foreach (var overlay in overlaysToRemove)
         {

@@ -9,7 +9,7 @@
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
-    <Grid Padding="20" RowSpacing="20">
+    <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
