@@ -8,7 +8,7 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 ## Features
 
 - 🎮 Classic 2048 gameplay with smooth animations
-- 🔄 Undo/Redo functionality (up to 50 moves)
+- 🔄 Undo functionality (up to 50 moves)
 - 💾 Auto-save and resume game state
 - 🏆 Best score tracking
 - 📊 Comprehensive statistics tracking
@@ -114,8 +114,8 @@ Cross-platform UI built with .NET MAUI using MVVM pattern:
 - Score and best score display
 - Visual feedback for game state (won/game over)
 - Tile colors that match classic 2048 design
-- Undo/Redo/New Game/Stats buttons
 - Statistics page with games, scores, time, and streaks sections
+- Undo/New Game buttons
 
 ### 3. Tests (`TwentyFortyEight.Tests`)
 

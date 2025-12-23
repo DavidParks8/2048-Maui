@@ -1,4 +1,6 @@
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.ViewModels;
 
@@ -11,6 +13,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -22,7 +25,8 @@ public static class MauiProgram
 #endif
 
         // Register services for dependency injection
-        builder.Services.AddSingleton<IStatisticsService, StatisticsService>();
+        builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
+        builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
         builder.Services.AddTransient<MainPage>();

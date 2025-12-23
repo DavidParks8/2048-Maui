@@ -64,4 +64,43 @@
   <data name="YouWin" xml:space="preserve">
     <value>You Win!</value>
   </data>
+  <data name="GameTitle" xml:space="preserve">
+    <value>2048</value>
+  </data>
+  <data name="Score" xml:space="preserve">
+    <value>SCORE</value>
+  </data>
+  <data name="Best" xml:space="preserve">
+    <value>BEST</value>
+  </data>
+  <data name="NewGame" xml:space="preserve">
+    <value>New Game</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="CurrentScoreDescription" xml:space="preserve">
+    <value>Current score</value>
+  </data>
+  <data name="BestScoreDescription" xml:space="preserve">
+    <value>Best score</value>
+  </data>
+  <data name="GameBoardDescription" xml:space="preserve">
+    <value>Game board with tiles</value>
+  </data>
+  <data name="NewGameDescription" xml:space="preserve">
+    <value>Start a new game</value>
+  </data>
+  <data name="UndoDescription" xml:space="preserve">
+    <value>Undo last move</value>
+  </data>
+  <data name="YourScore" xml:space="preserve">
+    <value>Your Score</value>
+  </data>
+  <data name="BestFormat" xml:space="preserve">
+    <value>Best: {0}</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Try Again</value>
+  </data>
 </root>

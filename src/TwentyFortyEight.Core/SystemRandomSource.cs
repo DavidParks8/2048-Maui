@@ -14,7 +14,7 @@ public class SystemRandomSource : IRandomSource
 
     public SystemRandomSource(int seed)
     {
-        _random = new Random(seed);
+        _random = new Random(seed); // DevSkim: ignore DS148264
     }
 
     public int Next(int maxExclusive)

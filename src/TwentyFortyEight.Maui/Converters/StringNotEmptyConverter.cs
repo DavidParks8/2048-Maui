@@ -9,7 +9,12 @@ public class StringNotEmptyConverter : IValueConverter
         return !string.IsNullOrEmpty(value?.ToString());
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object ConvertBack(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    )
     {
         throw new NotImplementedException();
     }

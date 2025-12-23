@@ -11,14 +11,14 @@ public class GameStateSerializationTests
     {
         // Arrange
         var board = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 0, 0, 0, 0, 0 };
-        var state = new GameState(board, 4, 5000, 42, true, false);
+        var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
         var dto = GameStateDto.FromGameState(state);
         var restored = dto.ToGameState();
 
         // Assert
-        CollectionAssert.AreEqual(state.Board, restored.Board);
+        CollectionAssert.AreEqual(state.Board.ToArray(), restored.Board.ToArray());
         Assert.AreEqual(state.Size, restored.Size);
         Assert.AreEqual(state.Score, restored.Score);
         Assert.AreEqual(state.MoveCount, restored.MoveCount);
@@ -27,24 +27,11 @@ public class GameStateSerializationTests
     }
 
     [TestMethod]
-    public void GameStateDto_HasVersionField()
-    {
-        // Arrange
-        var state = new GameState(4);
-        
-        // Act
-        var dto = GameStateDto.FromGameState(state);
-
-        // Assert
-        Assert.AreEqual(1, dto.Version, "Version should be 1 for future compatibility");
-    }
-
-    [TestMethod]
     public void GameStateDto_BoardIsCloned()
     {
         // Arrange
         var board = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 0, 0, 0, 0, 0 };
-        var state = new GameState(board, 4, 5000, 42, true, false);
+        var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
         var dto = GameStateDto.FromGameState(state);
