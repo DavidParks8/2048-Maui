@@ -1,0 +1,27 @@
+{
+  "name": "2048 MAUI - Android Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerEnv": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "ANDROID_SDK_ROOT": "/opt/android-sdk"
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "GitHub.copilot"
+      ],
+      "settings": {
+        "dotnet.defaultSolution": "2048-Maui.slnx"
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=2048-maui-nuget-cache,target=/home/vscode/.nuget,type=volume"
+  ]
+}
