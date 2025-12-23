@@ -59,9 +59,8 @@
                         <TapGestureRecognizer Command="{Binding NewGameCommand, Source={x:Reference this}}" />
                     </Border.GestureRecognizers>
                     <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
-                        <Label Text="&#xE72C;"
-                               FontFamily="Segoe MDL2 Assets"
-                               FontSize="18"
+                        <Label Text="↻"
+                               FontSize="20"
                                TextColor="White"
                                VerticalOptions="Center" />
                         <Label Text="{x:Static strings:AppStrings.TryAgain}"

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace TwentyFortyEight.Maui.Models;
@@ -33,6 +34,49 @@ public partial class TileViewModel : ObservableObject
 
     private static bool IsDarkMode => Application.Current?.RequestedTheme == AppTheme.Dark;
 
+    #region Cached Colors
+
+    // Pre-computed colors to avoid parsing hex strings on every access
+    private static readonly Color TextColorDark = Color.FromArgb("#776e65");
+    private static readonly Color TextColorLight = Color.FromArgb("#f9f6f2");
+
+    private static readonly FrozenDictionary<int, Color> LightModeColors = new Dictionary<
+        int,
+        Color
+    >
+    {
+        [0] = Color.FromArgb("#cdc1b4"),
+        [2] = Color.FromArgb("#eee4da"),
+        [4] = Color.FromArgb("#ede0c8"),
+        [8] = Color.FromArgb("#f2b179"),
+        [16] = Color.FromArgb("#f59563"),
+        [32] = Color.FromArgb("#f67c5f"),
+        [64] = Color.FromArgb("#f65e3b"),
+        [128] = Color.FromArgb("#edcf72"),
+        [256] = Color.FromArgb("#edcc61"),
+        [512] = Color.FromArgb("#edc850"),
+        [1024] = Color.FromArgb("#edc53f"),
+        [2048] = Color.FromArgb("#edc22e"),
+    }.ToFrozenDictionary();
+
+    private static readonly FrozenDictionary<int, Color> DarkModeColors = new Dictionary<int, Color>
+    {
+        [0] = Color.FromArgb("#524b44"),
+        [2] = Color.FromArgb("#5c6b7a"), // Blue-gray tint
+        [4] = Color.FromArgb("#7a6b5c"), // Warm tan/brown tint
+        [8] = Color.FromArgb("#f2b179"),
+        [16] = Color.FromArgb("#f59563"),
+        [32] = Color.FromArgb("#f67c5f"),
+        [64] = Color.FromArgb("#f65e3b"),
+        [128] = Color.FromArgb("#edcf72"),
+        [256] = Color.FromArgb("#edcc61"),
+        [512] = Color.FromArgb("#edc850"),
+        [1024] = Color.FromArgb("#edc53f"),
+        [2048] = Color.FromArgb("#edc22e"),
+    }.ToFrozenDictionary();
+
+    #endregion
+
     /// <summary>
     /// Gets the text color for a tile with the specified value.
     /// </summary>
@@ -41,7 +85,7 @@ public partial class TileViewModel : ObservableObject
         if (value > 4)
             return Colors.White;
 
-        return IsDarkMode ? Color.FromArgb("#f9f6f2") : Color.FromArgb("#776e65");
+        return IsDarkMode ? TextColorLight : TextColorDark;
     }
 
     /// <summary>
@@ -49,71 +93,10 @@ public partial class TileViewModel : ObservableObject
     /// </summary>
     public static Color GetTileBackgroundColor(int value)
     {
-        if (IsDarkMode)
-            return GetDarkModeBackgroundColor(value);
+        var colorMap = IsDarkMode ? DarkModeColors : LightModeColors;
 
-        return GetLightModeBackgroundColor(value);
-    }
-
-    private static Color GetLightModeBackgroundColor(int value)
-    {
-        if (value == 0)
-            return Color.FromArgb("#cdc1b4");
-        if (value == 2)
-            return Color.FromArgb("#eee4da");
-        if (value == 4)
-            return Color.FromArgb("#ede0c8");
-        if (value == 8)
-            return Color.FromArgb("#f2b179");
-        if (value == 16)
-            return Color.FromArgb("#f59563");
-        if (value == 32)
-            return Color.FromArgb("#f67c5f");
-        if (value == 64)
-            return Color.FromArgb("#f65e3b");
-        if (value == 128)
-            return Color.FromArgb("#edcf72");
-        if (value == 256)
-            return Color.FromArgb("#edcc61");
-        if (value == 512)
-            return Color.FromArgb("#edc850");
-        if (value == 1024)
-            return Color.FromArgb("#edc53f");
-        if (value == 2048)
-            return Color.FromArgb("#edc22e");
-
-        return GetHighValueColor(value);
-    }
-
-    private static Color GetDarkModeBackgroundColor(int value)
-    {
-        // Dark mode: empty tiles should be darker to contrast with the board
-        if (value == 0)
-            return Color.FromArgb("#524b44");
-        // Use distinct hues for better colorblind accessibility
-        if (value == 2)
-            return Color.FromArgb("#5c6b7a"); // Blue-gray tint
-        if (value == 4)
-            return Color.FromArgb("#7a6b5c"); // Warm tan/brown tint
-        // Higher value tiles keep their vibrant colors for visibility
-        if (value == 8)
-            return Color.FromArgb("#f2b179");
-        if (value == 16)
-            return Color.FromArgb("#f59563");
-        if (value == 32)
-            return Color.FromArgb("#f67c5f");
-        if (value == 64)
-            return Color.FromArgb("#f65e3b");
-        if (value == 128)
-            return Color.FromArgb("#edcf72");
-        if (value == 256)
-            return Color.FromArgb("#edcc61");
-        if (value == 512)
-            return Color.FromArgb("#edc850");
-        if (value == 1024)
-            return Color.FromArgb("#edc53f");
-        if (value == 2048)
-            return Color.FromArgb("#edc22e");
+        if (colorMap.TryGetValue(value, out var color))
+            return color;
 
         return GetHighValueColor(value);
     }

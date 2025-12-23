@@ -78,28 +78,7 @@ public partial class MainPage : ContentPage
         Microsoft.UI.Xaml.Input.ManipulationCompletedRoutedEventArgs e
     )
     {
-        var deltaX = e.Cumulative.Translation.X;
-        var deltaY = e.Cumulative.Translation.Y;
-
-        const double minSwipeDistance = 30;
-
-        if (Math.Abs(deltaX) > Math.Abs(deltaY))
-        {
-            if (Math.Abs(deltaX) > minSwipeDistance)
-            {
-                var direction = deltaX > 0 ? Direction.Right : Direction.Left;
-                _viewModel.MoveCommand.Execute(direction);
-            }
-        }
-        else
-        {
-            if (Math.Abs(deltaY) > minSwipeDistance)
-            {
-                var direction = deltaY > 0 ? Direction.Down : Direction.Up;
-                _viewModel.MoveCommand.Execute(direction);
-            }
-        }
-
+        ProcessSwipe(e.Cumulative.Translation.X, e.Cumulative.Translation.Y);
         e.Handled = true;
     }
 
@@ -177,22 +156,78 @@ public partial class MainPage : ContentPage
         }
     }
 
+    /// <summary>
+    /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
+    /// </summary>
+    private const double TileSpacing = 10;
+
+    /// <summary>
+    /// Default board dimension when actual size cannot be determined.
+    /// </summary>
+    private const double DefaultBoardDimension = 400;
+
+    /// <summary>
+    /// Minimum distance in pixels required to register a swipe gesture.
+    /// </summary>
+    private const double MinSwipeDistance = 30;
+
+    /// <summary>
+    /// Processes a swipe gesture and executes the corresponding move command.
+    /// </summary>
+    /// <param name="deltaX">Horizontal displacement.</param>
+    /// <param name="deltaY">Vertical displacement.</param>
+    private void ProcessSwipe(double deltaX, double deltaY)
+    {
+        Direction? direction = null;
+
+        if (Math.Abs(deltaX) > Math.Abs(deltaY))
+        {
+            if (Math.Abs(deltaX) > MinSwipeDistance)
+            {
+                direction = deltaX > 0 ? Direction.Right : Direction.Left;
+            }
+        }
+        else
+        {
+            if (Math.Abs(deltaY) > MinSwipeDistance)
+            {
+                direction = deltaY > 0 ? Direction.Down : Direction.Up;
+            }
+        }
+
+        if (direction.HasValue)
+        {
+            _viewModel.MoveCommand.Execute(direction.Value);
+        }
+    }
+
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
+    {
+        try
+        {
+            await AnimateTileUpdatesAsync(e);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't crash - animations are non-critical
+            System.Diagnostics.Debug.WriteLine($"Animation error: {ex.Message}");
+        }
+    }
+
+    private async Task AnimateTileUpdatesAsync(TileUpdateEventArgs e)
     {
         // Calculate cell step size (distance between adjacent cell centers)
         // For a grid with N columns, spacing S, and total width W:
         // Step = (W + S) / N (accounts for cell width plus one spacing gap)
-        const double spacing = 10;
-        const int gridSize = 4;
-        var cellStepX = (GameBoard.Width + spacing) / gridSize;
-        var cellStepY = (GameBoard.Height + spacing) / gridSize;
+        var boardSize = _viewModel.BoardSize;
+        var cellStepX = (GameBoard.Width + TileSpacing) / boardSize;
+        var cellStepY = (GameBoard.Height + TileSpacing) / boardSize;
 
         // If we can't get valid dimensions, use defaults
         if (cellStepX <= 0 || cellStepY <= 0)
         {
-            // Default: (400 + 10) / 4 = 102.5
-            cellStepX = 102.5;
-            cellStepY = 102.5;
+            cellStepX = (DefaultBoardDimension + TileSpacing) / boardSize;
+            cellStepY = (DefaultBoardDimension + TileSpacing) / boardSize;
         }
 
         // Create overlay tiles for sliding animations
@@ -338,8 +373,6 @@ public partial class MainPage : ContentPage
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
     {
-        const double minSwipeDistance = 30;
-
         switch (e.StatusType)
         {
             case GestureStatus.Started:
@@ -360,28 +393,7 @@ public partial class MainPage : ContentPage
                 if (_isPanning)
                 {
                     _isPanning = false;
-                    var deltaX = _swipeStartPoint.X;
-                    var deltaY = _swipeStartPoint.Y;
-
-                    // Determine direction based on larger delta
-                    if (Math.Abs(deltaX) > Math.Abs(deltaY))
-                    {
-                        // Horizontal swipe
-                        if (Math.Abs(deltaX) > minSwipeDistance)
-                        {
-                            var direction = deltaX > 0 ? Direction.Right : Direction.Left;
-                            _viewModel.MoveCommand.Execute(direction);
-                        }
-                    }
-                    else
-                    {
-                        // Vertical swipe
-                        if (Math.Abs(deltaY) > minSwipeDistance)
-                        {
-                            var direction = deltaY > 0 ? Direction.Down : Direction.Up;
-                            _viewModel.MoveCommand.Execute(direction);
-                        }
-                    }
+                    ProcessSwipe(_swipeStartPoint.X, _swipeStartPoint.Y);
                 }
                 break;
         }

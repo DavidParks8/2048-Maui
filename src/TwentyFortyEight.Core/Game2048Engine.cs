@@ -7,7 +7,7 @@ public class Game2048Engine
 {
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
-    private readonly List<MoveCommand> _moveHistory;
+    private readonly List<MoveRecord> _moveHistory;
     private int _currentMoveIndex;
     private GameState _initialState;
 
@@ -21,7 +21,7 @@ public class Game2048Engine
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveCommand>();
+        _moveHistory = new List<MoveRecord>();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
 
@@ -39,7 +39,7 @@ public class Game2048Engine
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveCommand>();
+        _moveHistory = new List<MoveRecord>();
         _currentMoveIndex = 0;
         _currentState = state;
         _initialState = state;
@@ -92,15 +92,15 @@ public class Game2048Engine
 
         _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false);
 
-        // Create and save move command
-        var moveCommand = new MoveCommand(direction);
-
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
-        moveCommand.SpawnedTileIndex = spawnIndex;
-        moveCommand.SpawnedTileValue = spawnValue;
+        MoveRecord moveRecord = new(direction)
+        {
+            SpawnedTileIndex = spawnIndex,
+            SpawnedTileValue = spawnValue,
+        };
 
-        _moveHistory.Add(moveCommand);
+        _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
 
         // Check if game is over
@@ -192,37 +192,10 @@ public class Game2048Engine
 
     private bool IsGameOver()
     {
-        var size = _currentState.Size;
         var board = _currentState.Board;
 
-        // Check for empty cells
-        if (board.CountEmptyCells() > 0)
-        {
-            return false;
-        }
-
-        // Check for possible merges using 2D access
-        for (int row = 0; row < size; row++)
-        {
-            for (int col = 0; col < size; col++)
-            {
-                var current = board[row, col];
-
-                // Check right
-                if (col < size - 1 && current == board[row, col + 1])
-                {
-                    return false;
-                }
-
-                // Check down
-                if (row < size - 1 && current == board[row + 1, col])
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        // Game is not over if there are empty cells or possible merges
+        return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
     }
 
     private static (Board newBoard, int scoreIncrease, bool moved) ProcessMove(

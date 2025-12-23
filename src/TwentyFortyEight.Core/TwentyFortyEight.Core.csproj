@@ -4,5 +4,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.HighPerformance" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
   </ItemGroup>
 </Project>

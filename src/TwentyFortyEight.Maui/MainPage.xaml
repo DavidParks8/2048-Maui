@@ -137,9 +137,8 @@
                     <TapGestureRecognizer Command="{Binding NewGameCommand}" />
                 </Border.GestureRecognizers>
                 <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                    <Label Text="&#xE72C;"
-                           FontFamily="Segoe MDL2 Assets"
-                           FontSize="16"
+                    <Label Text="↻"
+                           FontSize="18"
                            TextColor="White"
                            VerticalOptions="Center" />
                     <Label Text="{x:Static strings:AppStrings.NewGame}"
@@ -159,9 +158,8 @@
                     <TapGestureRecognizer Command="{Binding UndoCommand}" />
                 </Border.GestureRecognizers>
                 <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                    <Label Text="&#xE7A7;"
-                           FontFamily="Segoe MDL2 Assets"
-                           FontSize="16"
+                    <Label Text="↩"
+                           FontSize="18"
                            TextColor="White"
                            VerticalOptions="Center" />
                     <Label Text="{x:Static strings:AppStrings.Undo}"

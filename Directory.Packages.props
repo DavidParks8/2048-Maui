@@ -13,6 +13,7 @@
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <!-- High Performance -->
     <PackageVersion Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" />
     <!-- Animation Dependencies -->
     <PackageVersion Include="CommunityToolkit.Maui" Version="13.0.0" />
     <!-- Testing Dependencies -->

@@ -33,6 +33,11 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _bestScore;
 
+    /// <summary>
+    /// Gets the board size for UI layout calculations.
+    /// </summary>
+    public int BoardSize => _config.Size;
+
     partial void OnBestScoreChanged(int value)
     {
         Preferences.Set("BestScore", value);

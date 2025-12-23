@@ -27,7 +27,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var engine = new Game2048Engine(config, random);
 
         // Create a specific board state
@@ -53,7 +53,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 2;
@@ -77,7 +77,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 2;
@@ -102,7 +102,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 0;
         board[1] = 2;
@@ -127,7 +127,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2; // Row 0
         board[4] = 0; // Row 1
@@ -153,7 +153,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2; // Row 0
         board[4] = 0; // Row 1
@@ -179,7 +179,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 4;
@@ -213,7 +213,7 @@ public class GameEngineTests
         // Run multiple games to check spawn distribution
         for (int i = 0; i < 100; i++)
         {
-            var random = new SeededRandomSource(i);
+            var random = new SystemRandomSource(i);
             var board = new int[16];
             board[0] = 2;
             board[1] = 0;
@@ -255,7 +255,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4, WinTile = 2048 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 1024;
         board[1] = 1024;
@@ -274,7 +274,7 @@ public class GameEngineTests
     {
         // Arrange - Create a full board with no possible merges
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16] { 2, 4, 8, 16, 16, 8, 4, 2, 2, 4, 8, 16, 16, 8, 4, 2 };
         var state = new GameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
@@ -298,7 +298,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var engine = new Game2048Engine(config, random);
         var initialBoard = engine.CurrentState.Board.ToArray();
         var initialScore = engine.CurrentState.Score;
@@ -326,7 +326,7 @@ public class GameEngineTests
     {
         // Arrange
         var config = new GameConfig { Size = 4 };
-        var random = new SeededRandomSource(42);
+        var random = new SystemRandomSource(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 0;

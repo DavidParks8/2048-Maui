@@ -258,3 +258,7 @@ string token = await SecureStorage.GetAsync("oauth_token");
 4. **Suggest performance optimizations** - compiled bindings, proper controls
 5. **Provide working XAML examples** with modern patterns
 6. **Consider cross-platform implications**
+
+## General Practices
+
+Avoid allocations at all costs! Code this like it is a fighter jet (no allocations, no exceptions) within reason. Allocations should happen at app start.

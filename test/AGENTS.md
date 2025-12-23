@@ -69,9 +69,14 @@ public void ExampleTest()
 
 ### Using Mocks
 
-Use `SeededRandomSource` for deterministic tests or `Mock<IRandomSource>` for precise control:
+Use `SystemRandomSource(seed)` for deterministic tests or `Mock<IRandomSource>` for precise control:
 
 ```csharp
+// Seeded random for deterministic tests
+var random = new SystemRandomSource(42);
+Game2048Engine engine = new(config, random);
+
+// Or use Moq for precise control
 Mock<IRandomSource> randomMock = new();
 randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
 randomMock.Setup(r => r.NextDouble()).Returns(0.5);
