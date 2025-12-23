@@ -3,8 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
              xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+             xmlns:behaviors="clr-namespace:TwentyFortyEight.Maui.Behaviors"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
@@ -89,7 +91,8 @@
                IsVisible="{Binding StatusText, Converter={StaticResource StringNotEmptyConverter}}" />
 
         <!-- Game Board -->
-        <Border Grid.Row="2"
+        <Border x:Name="BoardContainer"
+                Grid.Row="2"
                 BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
                 Stroke="Transparent"
                 StrokeThickness="0"
@@ -100,14 +103,20 @@
                 MaximumHeightRequest="500"
                 StrokeShape="RoundRectangle 10">
 
-            <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
-            <Grid x:Name="GameBoard"
-                  ColumnSpacing="10"
-                  RowSpacing="10"
-                  WidthRequest="400"
-                  HeightRequest="400"
-                  SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
-                <!-- Tiles will be added programmatically in code-behind -->
+            <Border.Behaviors>
+                <behaviors:RippleBehavior />
+            </Border.Behaviors>
+
+            <Grid>
+                <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
+                <Grid x:Name="GameBoard"
+                      ColumnSpacing="10"
+                      RowSpacing="10"
+                      WidthRequest="400"
+                      HeightRequest="400"
+                      SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
+                    <!-- Tiles will be added programmatically in code-behind -->
+                </Grid>
             </Grid>
         </Border>
 
