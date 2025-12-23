@@ -27,7 +27,7 @@ public class AnimationDetectionTests
             .Returns(0.5) // Second spawn value (2)
             .Returns(0.5); // Third spawn value (2) - new tile
 
-        var engine = new Game2048Engine(config, randomMock.Object);
+        var engine = new Game2048Engine(config, randomMock.Object, NullStatisticsTracker.Instance);
         var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
         // Act
@@ -59,7 +59,12 @@ public class AnimationDetectionTests
         initialBoard[1] = 2; // Next to it
         var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
-        var engine = new Game2048Engine(initialState, config, randomMock.Object);
+        var engine = new Game2048Engine(
+            initialState,
+            config,
+            randomMock.Object,
+            NullStatisticsTracker.Instance
+        );
 
         // Setup random for the new tile spawn after merge
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
@@ -91,7 +96,12 @@ public class AnimationDetectionTests
         initialBoard[1] = 2; // Position 1 (will slide to position 0)
         var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
-        var engine = new Game2048Engine(initialState, config, randomMock.Object);
+        var engine = new Game2048Engine(
+            initialState,
+            config,
+            randomMock.Object,
+            NullStatisticsTracker.Instance
+        );
 
         // Setup random for the new tile spawn after slide
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
@@ -116,7 +126,7 @@ public class AnimationDetectionTests
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
 
-        var engine = new Game2048Engine(config, randomMock.Object);
+        var engine = new Game2048Engine(config, randomMock.Object, NullStatisticsTracker.Instance);
 
         // Act & Assert for each direction
         var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };

@@ -104,7 +104,12 @@ public class AdaptiveSpawnTests
         data[4] = 4;
         // Leave rest empty for spawning
         var state = TestHelpers.CreateGameState(data, 4, 1000, 10, false, false);
-        var engine = new Game2048Engine(state, config, mockRandom.Object);
+        var engine = new Game2048Engine(
+            state,
+            config,
+            mockRandom.Object,
+            NullStatisticsTracker.Instance
+        );
 
         // Act
         engine.Move(Direction.Right); // This should spawn a new tile
@@ -143,7 +148,12 @@ public class AdaptiveSpawnTests
         data[4] = 32;
         // Leave rest empty for spawning
         var state = TestHelpers.CreateGameState(data, 4, 100, 5, false, false);
-        var engine = new Game2048Engine(state, config, mockRandom.Object);
+        var engine = new Game2048Engine(
+            state,
+            config,
+            mockRandom.Object,
+            NullStatisticsTracker.Instance
+        );
 
         // Act
         engine.Move(Direction.Right);

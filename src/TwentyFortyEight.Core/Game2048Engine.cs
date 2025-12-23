@@ -14,6 +14,7 @@ public class Game2048Engine
 
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
+    private readonly IStatisticsTracker _statisticsTracker;
     private readonly List<MoveRecord> _moveHistory;
     private int _currentMoveIndex;
     private GameState _initialState;
@@ -24,10 +25,15 @@ public class Game2048Engine
 
     public bool CanUndo => _currentMoveIndex > 0;
 
-    public Game2048Engine(GameConfig config, IRandomSource random)
+    public Game2048Engine(
+        GameConfig config,
+        IRandomSource random,
+        IStatisticsTracker statisticsTracker
+    )
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
@@ -37,15 +43,24 @@ public class Game2048Engine
         SpawnTileWithInfo();
 
         _initialState = _currentState;
+
+        // Track initial game start
+        _statisticsTracker.OnGameStarted();
     }
 
     /// <summary>
     /// Creates a new game engine from a saved state.
     /// </summary>
-    public Game2048Engine(GameState state, GameConfig config, IRandomSource random)
+    public Game2048Engine(
+        GameState state,
+        GameConfig config,
+        IRandomSource random,
+        IStatisticsTracker statisticsTracker
+    )
     {
         _config = config;
         _random = random;
+        _statisticsTracker = statisticsTracker;
         _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = state;
@@ -57,6 +72,12 @@ public class Game2048Engine
     /// </summary>
     public void NewGame()
     {
+        // End previous game if it wasn't finished
+        if (!_currentState.IsGameOver)
+        {
+            _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+        }
+
         _moveHistory.Clear();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
@@ -66,6 +87,9 @@ public class Game2048Engine
         SpawnTileWithInfo();
 
         _initialState = _currentState;
+
+        // Track new game start
+        _statisticsTracker.OnGameStarted();
     }
 
     /// <summary>
@@ -85,6 +109,7 @@ public class Game2048Engine
             if (!_currentState.IsGameOver && IsGameOver())
             {
                 _currentState = _currentState.WithUpdate(isGameOver: true);
+                _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
             }
             return false;
         }
@@ -99,9 +124,21 @@ public class Game2048Engine
         var newScore = _currentState.Score + scoreIncrease;
         var newMoveCount = _currentState.MoveCount + 1;
         var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
-        var isWon = _currentState.IsWon || newMaxTile >= _config.WinTile;
+        var wasWonBefore = _currentState.IsWon;
+        var isWon = wasWonBefore || newMaxTile >= _config.WinTile;
 
         _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
+
+        // Track statistics
+        _statisticsTracker.OnMoveMade();
+        _statisticsTracker.UpdateHighestTile(newMaxTile);
+        _statisticsTracker.UpdateBestScore(newScore);
+
+        // Check if game was just won
+        if (isWon && !wasWonBefore)
+        {
+            _statisticsTracker.OnGameWon();
+        }
 
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
@@ -114,6 +151,7 @@ public class Game2048Engine
         if (IsGameOver())
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
+            _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
         }
 
         return true;

@@ -103,4 +103,79 @@
   <data name="TryAgain" xml:space="preserve">
     <value>Try Again</value>
   </data>
+  <data name="Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="StatisticsPageTitle" xml:space="preserve">
+    <value>📊 Statistics</value>
+  </data>
+  <data name="StatisticsDescription" xml:space="preserve">
+    <value>View gameplay statistics</value>
+  </data>
+  <data name="GamesSection" xml:space="preserve">
+    <value>GAMES</value>
+  </data>
+  <data name="GamesPlayed" xml:space="preserve">
+    <value>Games Played</value>
+  </data>
+  <data name="GamesWon" xml:space="preserve">
+    <value>Games Won</value>
+  </data>
+  <data name="WinRate" xml:space="preserve">
+    <value>Win Rate</value>
+  </data>
+  <data name="ScoresSection" xml:space="preserve">
+    <value>SCORES</value>
+  </data>
+  <data name="BestScoreLabel" xml:space="preserve">
+    <value>Best Score</value>
+  </data>
+  <data name="AverageScore" xml:space="preserve">
+    <value>Average Score</value>
+  </data>
+  <data name="HighestTile" xml:space="preserve">
+    <value>Highest Tile</value>
+  </data>
+  <data name="MovesSection" xml:space="preserve">
+    <value>MOVES</value>
+  </data>
+  <data name="TotalMoves" xml:space="preserve">
+    <value>Total Moves</value>
+  </data>
+  <data name="StreaksSection" xml:space="preserve">
+    <value>STREAKS</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Current</value>
+  </data>
+  <data name="CurrentStreak" xml:space="preserve">
+    <value>Current Streak</value>
+  </data>
+  <data name="BestLabel" xml:space="preserve">
+    <value>Best</value>
+  </data>
+  <data name="BestStreakLabel" xml:space="preserve">
+    <value>Best Streak</value>
+  </data>
+  <data name="ResetStatistics" xml:space="preserve">
+    <value>Reset Statistics</value>
+  </data>
+  <data name="ResetStatisticsTitle" xml:space="preserve">
+    <value>Reset Statistics</value>
+  </data>
+  <data name="ResetStatisticsMessage" xml:space="preserve">
+    <value>Are you sure you want to reset all statistics? This action cannot be undone.</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="BackDescription" xml:space="preserve">
+    <value>Go back to the game</value>
+  </data>
 </root>
