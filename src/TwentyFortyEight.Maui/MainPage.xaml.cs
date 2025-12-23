@@ -220,7 +220,7 @@ public partial class MainPage : ContentPage
             var slideAnimationTasks = new List<Task>();
 
             // Hide new tiles immediately (they will appear after all other animations)
-            // Only hide visually - DO NOT change the tile value to avoid race conditions
+            // Only hide visually - do not change the tile value to avoid race conditions
             foreach (var tile in e.NewTiles)
             {
                 // Only hide the border completely during slide animation
