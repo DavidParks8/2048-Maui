@@ -36,7 +36,7 @@ public class GameEngineTests
         board[1] = 0;
         board[2] = 2;
         board[3] = 0; // [2,0,2,0] -> [4,0,0,0]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -59,7 +59,7 @@ public class GameEngineTests
         board[1] = 2;
         board[2] = 2;
         board[3] = 2; // [2,2,2,2] -> [4,4,0,0]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -83,7 +83,7 @@ public class GameEngineTests
         board[1] = 2;
         board[2] = 2;
         board[3] = 0; // [2,2,2,0] -> [4,2,0,0]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -108,7 +108,7 @@ public class GameEngineTests
         board[1] = 2;
         board[2] = 0;
         board[3] = 2; // [0,2,0,2] -> [0,0,0,4]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -134,7 +134,7 @@ public class GameEngineTests
         board[8] = 2; // Row 2
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [4,0,0,0]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -160,7 +160,7 @@ public class GameEngineTests
         board[8] = 2; // Row 2
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [0,0,0,4]
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -186,7 +186,7 @@ public class GameEngineTests
         board[2] = 8;
         board[3] = 16;
         // All tiles already at the left
-        var state = new GameState(board, 4, 10, 5, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 10, 5, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -219,7 +219,7 @@ public class GameEngineTests
             board[1] = 0;
             board[2] = 2;
             board[3] = 0;
-            var state = new GameState(board, 4, 0, 0, false, false);
+            var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
             var engine = new Game2048Engine(state, config, random);
 
             // Get initial tiles count
@@ -259,7 +259,7 @@ public class GameEngineTests
         var board = new int[16];
         board[0] = 1024;
         board[1] = 1024;
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act
@@ -276,7 +276,7 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SystemRandomSource(42);
         var board = new int[16] { 2, 4, 8, 16, 16, 8, 4, 2, 2, 4, 8, 16, 16, 8, 4, 2 };
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // The current state should already be game over since the board is full
@@ -336,7 +336,7 @@ public class GameEngineTests
         board[5] = 2;
         board[6] = 0;
         board[7] = 0;
-        var state = new GameState(board, 4, 0, 0, false, false);
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
         var engine = new Game2048Engine(state, config, random);
 
         // Act - Make more than 50 moves

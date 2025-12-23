@@ -11,7 +11,7 @@ public class GameStateSerializationTests
     {
         // Arrange
         var board = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 0, 0, 0, 0, 0 };
-        var state = new GameState(board, 4, 5000, 42, true, false);
+        var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
         var dto = GameStateDto.FromGameState(state);
@@ -31,7 +31,7 @@ public class GameStateSerializationTests
     {
         // Arrange
         var board = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 0, 0, 0, 0, 0 };
-        var state = new GameState(board, 4, 5000, 42, true, false);
+        var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
         var dto = GameStateDto.FromGameState(state);

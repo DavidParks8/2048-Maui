@@ -74,7 +74,10 @@ public class Game2048Engine
     /// </summary>
     public bool Move(Direction direction)
     {
-        var (newBoard, scoreIncrease, boardChanged) = ProcessMove(_currentState.Board, direction);
+        var (newBoard, scoreIncrease, boardChanged, maxMergedValue) = ProcessMove(
+            _currentState.Board,
+            direction
+        );
 
         if (!boardChanged)
         {
@@ -92,12 +95,13 @@ public class Game2048Engine
             _moveHistory.RemoveRange(_currentMoveIndex, _moveHistory.Count - _currentMoveIndex);
         }
 
-        // Update state
+        // Update state - track the new max tile value
         var newScore = _currentState.Score + scoreIncrease;
         var newMoveCount = _currentState.MoveCount + 1;
-        var isWon = _currentState.IsWon || newBoard.ContainsAtLeast(_config.WinTile);
+        var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
+        var isWon = _currentState.IsWon || newMaxTile >= _config.WinTile;
 
-        _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false);
+        _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
 
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
@@ -146,13 +150,24 @@ public class Game2048Engine
         {
             var move = _moveHistory[i];
 
-            var (newBoard, scoreIncrease, _) = ProcessMove(_currentState.Board, move.Direction);
+            var (newBoard, scoreIncrease, _, maxMergedValue) = ProcessMove(
+                _currentState.Board,
+                move.Direction
+            );
 
             var newScore = _currentState.Score + scoreIncrease;
             var newMoveCount = _currentState.MoveCount + 1;
-            var isWon = _currentState.IsWon || newBoard.ContainsAtLeast(_config.WinTile);
+            var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
+            var isWon = _currentState.IsWon || newMaxTile >= _config.WinTile;
 
-            _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false);
+            _currentState = new GameState(
+                newBoard,
+                newScore,
+                newMoveCount,
+                isWon,
+                false,
+                newMaxTile
+            );
 
             // Restore the spawned tile
             if (move.SpawnedTileIndex >= 0)
@@ -179,13 +194,29 @@ public class Game2048Engine
             return (-1, 0);
         }
 
-        var value = _random.NextDouble() < 0.9 ? 2 : 4;
+        // Get adaptive spawn values based on tracked max tile
+        var (commonValue, rareValue) = GetSpawnValues(_currentState.MaxTileValue);
+        var value = _random.NextDouble() < 0.9 ? commonValue : rareValue;
 
         _currentState = _currentState.WithTile(position.Value.Row, position.Value.Column, value);
 
         var index = _currentState.Board.GetIndex(position.Value.Row, position.Value.Column);
         return (index, value);
     }
+
+    /// <summary>
+    /// Gets the spawn values based on the current maximum tile on the board.
+    /// Spawn values scale up as the game progresses to keep the game playable at high scores.
+    /// </summary>
+    private static (int commonValue, int rareValue) GetSpawnValues(int maxTileOnBoard) =>
+        maxTileOnBoard switch
+        {
+            >= 131072 => (32, 64), // 2^17: spawn 32 (90%) or 64 (10%)
+            >= 32768 => (16, 32), // 2^15: spawn 16 (90%) or 32 (10%)
+            >= 8192 => (8, 16), // 2^13: spawn 8 (90%) or 16 (10%)
+            >= 2048 => (4, 8), // 2^11: spawn 4 (90%) or 8 (10%)
+            _ => (2, 4), // Default: spawn 2 (90%) or 4 (10%)
+        };
 
     private bool IsGameOver()
     {
@@ -195,7 +226,7 @@ public class Game2048Engine
         return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
     }
 
-    private static (Board newBoard, int scoreIncrease, bool moved) ProcessMove(
+    private static (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) ProcessMove(
         Board board,
         Direction direction
     )
@@ -206,20 +237,22 @@ public class Game2048Engine
             Direction.Down => ProcessMoveGeneric(board, isVertical: true, isReverse: true),
             Direction.Left => ProcessMoveGeneric(board, isVertical: false, isReverse: false),
             Direction.Right => ProcessMoveGeneric(board, isVertical: false, isReverse: true),
-            _ => (board, 0, false),
+            _ => (board, 0, false, 0),
         };
     }
 
-    private static (Board newBoard, int scoreIncrease, bool moved) ProcessMoveGeneric(
-        Board board,
-        bool isVertical,
-        bool isReverse
-    )
+    private static (
+        Board newBoard,
+        int scoreIncrease,
+        bool moved,
+        int maxMergedValue
+    ) ProcessMoveGeneric(Board board, bool isVertical, bool isReverse)
     {
         var size = board.Size;
         var result = new int[size, size];
         var moved = false;
         var scoreIncrease = 0;
+        var maxMergedValue = 0;
 
         // Rent pooled lists to avoid allocations
         var values = s_intListPool.Get();
@@ -252,6 +285,8 @@ public class Game2048Engine
                         var mergedValue = values[i] * 2;
                         newValues.Add(mergedValue);
                         scoreIncrease += mergedValue;
+                        if (mergedValue > maxMergedValue)
+                            maxMergedValue = mergedValue;
                         i += 2; // Skip both merged tiles
                     }
                     else
@@ -285,7 +320,7 @@ public class Game2048Engine
             s_intListPool.Return(newValues);
         }
 
-        return (Board.FromMutableArray(result, size), scoreIncrease, moved);
+        return (Board.FromMutableArray(result, size), scoreIncrease, moved, maxMergedValue);
     }
 
     private static (int row, int col) GetBoardPosition(

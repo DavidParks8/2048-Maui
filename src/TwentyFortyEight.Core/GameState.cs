@@ -9,7 +9,15 @@ namespace TwentyFortyEight.Core;
 /// <param name="MoveCount">The number of moves made.</param>
 /// <param name="IsWon">Whether the game has been won (a tile reached WinTile).</param>
 /// <param name="IsGameOver">Whether the game is over (no valid moves remaining).</param>
-public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool IsGameOver)
+/// <param name="MaxTileValue">The highest tile value currently on the board (tracked for performance).</param>
+public record GameState(
+    Board Board,
+    int Score,
+    int MoveCount,
+    bool IsWon,
+    bool IsGameOver,
+    int MaxTileValue = 0
+)
 {
     /// <summary>
     /// Gets the size of the board (e.g., 4 for a 4x4 board).
@@ -21,13 +29,14 @@ public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool 
     /// </summary>
     /// <param name="size">The size of the board (e.g., 4 for a 4x4 board).</param>
     public GameState(int size)
-        : this(new Board(size), Score: 0, MoveCount: 0, IsWon: false, IsGameOver: false) { }
-
-    /// <summary>
-    /// Legacy constructor for compatibility - creates a Board from int[].
-    /// </summary>
-    public GameState(int[] board, int size, int score, int moveCount, bool isWon, bool isGameOver)
-        : this(new Board(board, size), score, moveCount, isWon, isGameOver) { }
+        : this(
+            new Board(size),
+            Score: 0,
+            MoveCount: 0,
+            IsWon: false,
+            IsGameOver: false,
+            MaxTileValue: 0
+        ) { }
 
     /// <summary>
     /// Gets the tile value at the specified position.
@@ -41,6 +50,7 @@ public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool 
         this with
         {
             Board = Board.WithTile(row, col, value),
+            MaxTileValue = Math.Max(MaxTileValue, value),
         };
 
     /// <summary>
@@ -51,7 +61,8 @@ public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool 
         int? score = null,
         int? moveCount = null,
         bool? isWon = null,
-        bool? isGameOver = null
+        bool? isGameOver = null,
+        int? maxTileValue = null
     ) =>
         this with
         {
@@ -60,5 +71,6 @@ public record GameState(Board Board, int Score, int MoveCount, bool IsWon, bool 
             MoveCount = moveCount ?? MoveCount,
             IsWon = isWon ?? IsWon,
             IsGameOver = isGameOver ?? IsGameOver,
+            MaxTileValue = maxTileValue ?? MaxTileValue,
         };
 }

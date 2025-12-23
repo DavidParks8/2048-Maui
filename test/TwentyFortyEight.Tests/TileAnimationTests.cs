@@ -57,7 +57,7 @@ public class AnimationDetectionTests
         var initialBoard = new int[16];
         initialBoard[0] = 2; // Top-left
         initialBoard[1] = 2; // Next to it
-        var initialState = new GameState(initialBoard, 4, 0, 0, false, false);
+        var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
         var engine = new Game2048Engine(initialState, config, randomMock.Object);
 
@@ -89,7 +89,7 @@ public class AnimationDetectionTests
         // Create initial state with a single tile not at the edge
         var initialBoard = new int[16];
         initialBoard[1] = 2; // Position 1 (will slide to position 0)
-        var initialState = new GameState(initialBoard, 4, 0, 0, false, false);
+        var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
         var engine = new Game2048Engine(initialState, config, randomMock.Object);
 

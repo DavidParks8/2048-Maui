@@ -129,7 +129,7 @@ public partial class MainPage : ContentPage
                 Content = new Label
                 {
                     Text = tile.DisplayValue,
-                    FontSize = 32,
+                    FontSize = tile.FontSize,
                     FontAttributes = FontAttributes.Bold,
                     TextColor = tile.TextColor,
                     HorizontalOptions = LayoutOptions.Center,
@@ -147,6 +147,7 @@ public partial class MainPage : ContentPage
             var label = (Label)border.Content;
             label.SetBinding(Label.TextProperty, nameof(tile.DisplayValue));
             label.SetBinding(Label.TextColorProperty, nameof(tile.TextColor));
+            label.SetBinding(Label.FontSizeProperty, nameof(tile.FontSize));
 
             border.BindingContext = tile;
 

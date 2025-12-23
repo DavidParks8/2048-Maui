@@ -29,6 +29,8 @@ public partial class TileViewModel : ObservableObject
 
     public Color TextColor => GetTileTextColor(Value);
 
+    public double FontSize => GetTileFontSize(Value);
+
     #region Constants
 
     /// <summary>
@@ -179,18 +181,50 @@ public partial class TileViewModel : ObservableObject
 
     private static Color GetHighValueColor(int value)
     {
-        // For values > 2048, generate color based on the power of 2
-        // Use a color gradient from gold to dark red
+        // For values > 2048, generate distinct colors based on the power of 2
+        // Use a rainbow-like progression to make very high tiles easily distinguishable
         var power = (int)Math.Log2(value);
-        var normalizedPower = (power - Log2Of2048) / GradientRange;
-        normalizedPower = Math.Clamp(normalizedPower, 0, 1);
 
-        // Interpolate between gold (#edc22e) and dark red (#8b0000)
-        var r = (byte)(GoldRed * (1 - normalizedPower) + DarkRedRed * normalizedPower);
-        var g = (byte)(GoldGreen * (1 - normalizedPower));
-        var b = (byte)(GoldBlue * (1 - normalizedPower));
+        // Power 12 = 4096, 13 = 8192, 14 = 16384, etc.
+        // Cycle through distinct colors for each power level
+        return power switch
+        {
+            12 => Color.FromRgb(0xed, 0xb4, 0x22), // Gold-orange (4096)
+            13 => Color.FromRgb(0xe8, 0x7e, 0x2c), // Deep orange (8192)
+            14 => Color.FromRgb(0xe0, 0x4a, 0x38), // Red-orange (16384)
+            15 => Color.FromRgb(0xd4, 0x2e, 0x55), // Crimson (32768)
+            16 => Color.FromRgb(0xb8, 0x2e, 0x8c), // Magenta (65536)
+            17 => Color.FromRgb(0x8e, 0x2e, 0xb8), // Purple (131072)
+            18 => Color.FromRgb(0x5a, 0x2e, 0xd4), // Violet (262144)
+            19 => Color.FromRgb(0x2e, 0x4a, 0xe8), // Blue (524288)
+            20 => Color.FromRgb(0x2e, 0x8e, 0xe8), // Sky blue (1048576)
+            21 => Color.FromRgb(0x2e, 0xc4, 0xd4), // Cyan (2097152)
+            _ => Color.FromRgb(0x2e, 0xd4, 0x8e), // Teal (higher)
+        };
+    }
 
-        return Color.FromRgb(r, g, b);
+    /// <summary>
+    /// Gets the appropriate font size for a tile based on the number of digits.
+    /// Scales down for larger numbers to ensure they fit within the tile.
+    /// </summary>
+    public static double GetTileFontSize(int value)
+    {
+        if (value == 0)
+            return 32;
+
+        var digitCount = (int)Math.Floor(Math.Log10(value)) + 1;
+
+        return digitCount switch
+        {
+            1 => 32, // 2-8
+            2 => 32, // 16-64
+            3 => 28, // 128-512
+            4 => 24, // 1024-8192
+            5 => 20, // 16384-65536
+            6 => 16, // 131072-524288
+            7 => 14, // 1048576+
+            _ => 12, // Very large numbers
+        };
     }
 
     /// <summary>
@@ -202,6 +236,7 @@ public partial class TileViewModel : ObservableObject
         OnPropertyChanged(nameof(DisplayValue));
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(TextColor));
+        OnPropertyChanged(nameof(FontSize));
     }
 
     public void UpdateValue(int newValue)
