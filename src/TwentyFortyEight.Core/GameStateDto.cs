@@ -48,7 +48,7 @@ public class GameStateDto
     {
         return new GameStateDto
         {
-            Board = (int[])state.Board.Clone(),
+            Board = state.Board.ToArray(),
             Size = state.Size,
             Score = state.Score,
             MoveCount = state.MoveCount,
@@ -62,6 +62,7 @@ public class GameStateDto
     /// </summary>
     public GameState ToGameState()
     {
-        return new GameState((int[])Board.Clone(), Size, Score, MoveCount, IsWon, IsGameOver);
+        var board = new Board(Board, Size);
+        return new GameState(board, Score, MoveCount, IsWon, IsGameOver);
     }
 }

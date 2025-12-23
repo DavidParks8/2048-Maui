@@ -84,7 +84,7 @@ public partial class GameViewModel : ObservableObject
     private void Move(Direction direction)
     {
         // Capture previous state before the move
-        var previousBoard = (int[])_engine.CurrentState.Board.Clone();
+        var previousBoard = _engine.CurrentState.Board.Clone();
 
         var moved = _engine.Move(direction);
         if (moved)
@@ -110,7 +110,7 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    private void UpdateUI(int[]? previousBoard = null, Direction? moveDirection = null)
+    private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;
 
@@ -118,9 +118,8 @@ public partial class GameViewModel : ObservableObject
         {
             // Use Core MoveAnalyzer for all movement and categorization logic
             var analysis = _moveAnalyzer.Analyze(
-                previousBoard,
+                previousBoard.Value,
                 state.Board,
-                _config.Size,
                 moveDirection.Value
             );
 

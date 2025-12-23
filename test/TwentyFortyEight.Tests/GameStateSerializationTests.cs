@@ -18,7 +18,7 @@ public class GameStateSerializationTests
         var restored = dto.ToGameState();
 
         // Assert
-        CollectionAssert.AreEqual(state.Board, restored.Board);
+        CollectionAssert.AreEqual(state.Board.ToArray(), restored.Board.ToArray());
         Assert.AreEqual(state.Size, restored.Size);
         Assert.AreEqual(state.Score, restored.Score);
         Assert.AreEqual(state.MoveCount, restored.MoveCount);

@@ -7,14 +7,10 @@ namespace TwentyFortyEight.Core;
 public class MoveAnalyzer : IMoveAnalyzer
 {
     /// <inheritdoc />
-    public MoveAnalysisResult Analyze(
-        int[] previousBoard,
-        int[] newBoard,
-        int size,
-        Direction direction
-    )
+    public MoveAnalysisResult Analyze(Board previousBoard, Board newBoard, Direction direction)
     {
-        var movements = CalculateTileMovements(previousBoard, size, direction);
+        var size = previousBoard.Size;
+        var movements = CalculateTileMovements(previousBoard, direction);
 
         var spawnedIndices = new HashSet<int>();
         var mergedIndices = new HashSet<int>();
@@ -24,7 +20,8 @@ public class MoveAnalyzer : IMoveAnalyzer
         {
             var newValue = newBoard[i];
             var oldValue = previousBoard[i];
-            Position position = new(i / size, i % size);
+            var (row, col) = newBoard.GetPosition(i);
+            Position position = new(row, col);
 
             if (newValue == 0)
                 continue;
@@ -65,13 +62,10 @@ public class MoveAnalyzer : IMoveAnalyzer
     /// Calculates tile movements from the previous board state.
     /// This tracks where each tile moves to, including merges.
     /// </summary>
-    private List<TileMovement> CalculateTileMovements(
-        int[] previousBoard,
-        int size,
-        Direction direction
-    )
+    private List<TileMovement> CalculateTileMovements(Board previousBoard, Direction direction)
     {
         var movements = new List<TileMovement>();
+        var size = previousBoard.Size;
 
         // Process each line (row or column) depending on direction
         for (int line = 0; line < size; line++)
@@ -98,21 +92,24 @@ public class MoveAnalyzer : IMoveAnalyzer
             while (i < tiles.Count)
             {
                 var (sourceIdx, value) = tiles[i];
-                var source = new Position(sourceIdx / size, sourceIdx % size);
+                var (sourceRow, sourceCol) = previousBoard.GetPosition(sourceIdx);
+                var source = new Position(sourceRow, sourceCol);
 
                 // Check if next tile can merge with this one
                 if (i + 1 < tiles.Count && tiles[i + 1].value == value)
                 {
                     // Merge: both tiles move to the destination
                     var destIdx = indices[destPosition];
-                    var dest = new Position(destIdx / size, destIdx % size);
+                    var (destRow, destCol) = previousBoard.GetPosition(destIdx);
+                    var dest = new Position(destRow, destCol);
 
                     // First tile moves and merges
                     movements.Add(new TileMovement(source, dest, value, true));
 
                     // Second tile also moves and merges
                     var (source2Idx, _) = tiles[i + 1];
-                    var source2 = new Position(source2Idx / size, source2Idx % size);
+                    var (source2Row, source2Col) = previousBoard.GetPosition(source2Idx);
+                    var source2 = new Position(source2Row, source2Col);
                     movements.Add(new TileMovement(source2, dest, value, true));
 
                     i += 2;
@@ -121,7 +118,8 @@ public class MoveAnalyzer : IMoveAnalyzer
                 {
                     // No merge: tile just moves (or stays)
                     var destIdx = indices[destPosition];
-                    var dest = new Position(destIdx / size, destIdx % size);
+                    var (destRow, destCol) = previousBoard.GetPosition(destIdx);
+                    var dest = new Position(destRow, destCol);
 
                     // Only record if actually moving
                     if (source != dest)

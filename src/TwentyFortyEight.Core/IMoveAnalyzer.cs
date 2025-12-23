@@ -12,8 +12,7 @@ public interface IMoveAnalyzer
     /// </summary>
     /// <param name="previousBoard">The board state before the move.</param>
     /// <param name="newBoard">The board state after the move (including spawned tile).</param>
-    /// <param name="size">The size of the board (e.g., 4 for a 4x4 board).</param>
     /// <param name="direction">The direction of the move.</param>
     /// <returns>Analysis result with movements and tile categorizations.</returns>
-    MoveAnalysisResult Analyze(int[] previousBoard, int[] newBoard, int size, Direction direction);
+    MoveAnalysisResult Analyze(Board previousBoard, Board newBoard, Direction direction);
 }

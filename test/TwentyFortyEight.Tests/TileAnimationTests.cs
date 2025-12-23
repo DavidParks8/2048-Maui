@@ -28,7 +28,7 @@ public class AnimationDetectionTests
             .Returns(0.5); // Third spawn value (2) - new tile
 
         var engine = new Game2048Engine(config, randomMock.Object);
-        var initialBoardSnapshot = (int[])engine.CurrentState.Board.Clone();
+        var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
         // Act
         var moved = engine.Move(Direction.Right);
@@ -38,7 +38,7 @@ public class AnimationDetectionTests
 
         // Verify a new tile was spawned (board has one more non-zero tile than initial)
         var initialNonZeroCount = initialBoardSnapshot.Count(v => v != 0);
-        var finalNonZeroCount = engine.CurrentState.Board.Count(v => v != 0);
+        var finalNonZeroCount = engine.CurrentState.Board.ToArray().Count(v => v != 0);
         Assert.IsGreaterThanOrEqualTo(
             finalNonZeroCount,
             initialNonZeroCount,
@@ -123,13 +123,14 @@ public class AnimationDetectionTests
 
         foreach (var direction in directions)
         {
-            var previousBoard = (int[])engine.CurrentState.Board.Clone();
+            var previousBoard = engine.CurrentState.Board.ToArray();
             var moved = engine.Move(direction);
 
             if (moved)
             {
                 // Verify board changed
-                var boardChanged = !previousBoard.SequenceEqual(engine.CurrentState.Board);
+                var currentBoard = engine.CurrentState.Board.ToArray();
+                var boardChanged = !previousBoard.SequenceEqual(currentBoard);
                 Assert.IsTrue(boardChanged, $"Board should change after moving {direction}");
             }
         }

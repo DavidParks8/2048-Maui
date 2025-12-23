@@ -14,7 +14,7 @@ public class GameEngineTests
 
         // Assert
         var state = engine.CurrentState;
-        var nonZeroCount = state.Board.Count(x => x != 0);
+        var nonZeroCount = state.Board.Length - state.Board.CountEmptyCells();
         Assert.AreEqual(2, nonZeroCount, "New game should start with exactly 2 tiles");
         Assert.AreEqual(0, state.Score, "Score should start at 0");
         Assert.AreEqual(0, state.MoveCount, "Move count should start at 0");
@@ -198,7 +198,8 @@ public class GameEngineTests
         Assert.AreEqual(5, engine.CurrentState.MoveCount, "Move count should not change");
 
         // Count non-zero tiles - should remain the same (no new tile spawned)
-        var nonZeroCount = engine.CurrentState.Board.Count(x => x != 0);
+        var nonZeroCount =
+            engine.CurrentState.Board.Length - engine.CurrentState.Board.CountEmptyCells();
         Assert.AreEqual(4, nonZeroCount, "No new tile should spawn on no-op move");
     }
 
@@ -222,7 +223,7 @@ public class GameEngineTests
             var engine = new Game2048Engine(state, config, random);
 
             // Get initial tiles count
-            var initialCount = state.Board.Count(x => x != 0);
+            var initialCount = state.Board.Length - state.Board.CountEmptyCells();
 
             // Make a move to trigger spawn
             engine.Move(Direction.Left);
@@ -299,12 +300,12 @@ public class GameEngineTests
         var config = new GameConfig { Size = 4 };
         var random = new SeededRandomSource(42);
         var engine = new Game2048Engine(config, random);
-        var initialBoard = (int[])engine.CurrentState.Board.Clone();
+        var initialBoard = engine.CurrentState.Board.ToArray();
         var initialScore = engine.CurrentState.Score;
 
         // Act
         engine.Move(Direction.Left);
-        var boardAfterMove = (int[])engine.CurrentState.Board.Clone();
+        var boardAfterMove = engine.CurrentState.Board.ToArray();
         var scoreAfterMove = engine.CurrentState.Score;
 
         var undone = engine.Undo();
@@ -313,7 +314,7 @@ public class GameEngineTests
         Assert.IsTrue(undone, "Undo should succeed");
         CollectionAssert.AreEqual(
             initialBoard,
-            engine.CurrentState.Board,
+            engine.CurrentState.Board.ToArray(),
             "Board should be restored"
         );
         Assert.AreEqual(initialScore, engine.CurrentState.Score, "Score should be restored");

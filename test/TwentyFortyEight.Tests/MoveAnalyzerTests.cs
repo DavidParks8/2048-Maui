@@ -9,6 +9,11 @@ public class MoveAnalyzerTests
     private const int Size = 4;
     private readonly IMoveAnalyzer _analyzer = new MoveAnalyzer();
 
+    /// <summary>
+    /// Helper to create a Board from a flat int array for testing.
+    /// </summary>
+    private static Board CreateBoard(int[] data) => new(data, Size);
+
     #region Analyze - Spawn Detection Tests
 
     [TestMethod]
@@ -20,7 +25,11 @@ public class MoveAnalyzerTests
         newBoard[5] = 2; // New tile spawned at index 5
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.HasCount(1, result.SpawnedIndices, "Should have one spawned tile");
@@ -39,7 +48,11 @@ public class MoveAnalyzerTests
         newBoard[1] = 2; // NEW tile spawned in vacated spot
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.HasCount(1, result.SpawnedIndices, "Should have one spawned tile");
@@ -59,7 +72,11 @@ public class MoveAnalyzerTests
         newBoard[7] = 2; // Actual spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.DoesNotContain(0, result.SpawnedIndices, "Moved tile should not be spawned");
@@ -83,7 +100,11 @@ public class MoveAnalyzerTests
         newBoard[5] = 2; // Spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.HasCount(1, result.MergedIndices, "Should have one merged tile");
@@ -106,7 +127,11 @@ public class MoveAnalyzerTests
         newBoard[10] = 2; // Spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.HasCount(2, result.MergedIndices, "Should have two merged tiles");
@@ -130,7 +155,11 @@ public class MoveAnalyzerTests
         newBoard[7] = 2; // Spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.HasCount(1, result.MovedToIndices, "Should have one moved tile");
@@ -149,7 +178,11 @@ public class MoveAnalyzerTests
         newBoard[7] = 2; // Spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.IsEmpty(result.MovedToIndices, "Should have no moved tiles");
@@ -175,7 +208,11 @@ public class MoveAnalyzerTests
         newBoard[5] = 2; // Spawned
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Left);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Left
+        );
 
         // Assert
         Assert.Contains(0, result.MergedIndices, "Index 0 should be merged");
@@ -204,7 +241,11 @@ public class MoveAnalyzerTests
         newBoard[7] = 2; // Spawn
 
         // Act
-        var result = _analyzer.Analyze(previousBoard, newBoard, Size, Direction.Up);
+        var result = _analyzer.Analyze(
+            CreateBoard(previousBoard),
+            CreateBoard(newBoard),
+            Direction.Up
+        );
 
         // Assert
         Assert.HasCount(2, result.MovedToIndices, "Two moved tiles");
