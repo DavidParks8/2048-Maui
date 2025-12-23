@@ -9,6 +9,7 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private Point _swipeStartPoint;
     private bool _isPanning;
+    private bool _isAnimating;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
 
     public MainPage(GameViewModel viewModel)
@@ -78,6 +79,13 @@ public partial class MainPage : ContentPage
         Microsoft.UI.Xaml.Input.ManipulationCompletedRoutedEventArgs e
     )
     {
+        // Ignore input while animations are running
+        if (_isAnimating)
+        {
+            e.Handled = true;
+            return;
+        }
+
         var deltaX = e.Cumulative.Translation.X;
         var deltaY = e.Cumulative.Translation.Y;
 
@@ -105,6 +113,13 @@ public partial class MainPage : ContentPage
 
     private void OnWindowsKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        // Ignore input while animations are running
+        if (_isAnimating)
+        {
+            e.Handled = true;
+            return;
+        }
+
         Direction? direction = e.Key switch
         {
             Windows.System.VirtualKey.Up => Direction.Up,
@@ -179,134 +194,135 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
-        // Calculate cell step size (distance between adjacent cell centers)
-        // For a grid with N columns, spacing S, and total width W:
-        // Step = (W + S) / N (accounts for cell width plus one spacing gap)
-        const double spacing = 10;
-        const int gridSize = 4;
-        var cellStepX = (GameBoard.Width + spacing) / gridSize;
-        var cellStepY = (GameBoard.Height + spacing) / gridSize;
+        // Set animation flag to block input during animations
+        _isAnimating = true;
 
-        // If we can't get valid dimensions, use defaults
-        if (cellStepX <= 0 || cellStepY <= 0)
+        try
         {
-            // Default: (400 + 10) / 4 = 102.5
-            cellStepX = 102.5;
-            cellStepY = 102.5;
-        }
+            // Calculate cell step size (distance between adjacent cell centers)
+            // For a grid with N columns, spacing S, and total width W:
+            // Step = (W + S) / N (accounts for cell width plus one spacing gap)
+            const double spacing = 10;
+            const int gridSize = 4;
+            var cellStepX = (GameBoard.Width + spacing) / gridSize;
+            var cellStepY = (GameBoard.Height + spacing) / gridSize;
 
-        // Create overlay tiles for sliding animations
-        var overlayTiles = new List<Border>();
-        var slideAnimationTasks = new List<Task>();
-
-        // Hide new tiles immediately (they will appear after all other animations)
-        // Store their actual values and temporarily set to 0 so they show as empty cells
-        var newTileValues = new Dictionary<TileViewModel, int>();
-        foreach (var tile in e.NewTiles)
-        {
-            newTileValues[tile] = tile.Value;
-            tile.UpdateValue(0); // Show as empty cell during slide animation
-
-            // Also hide the border completely during slide animation
-            // This prevents visual glitches when spawning into a position a tile is leaving
-            if (_tileBorders.TryGetValue(tile, out var border))
+            // If we can't get valid dimensions, use defaults
+            if (cellStepX <= 0 || cellStepY <= 0)
             {
-                border.Opacity = 0;
-                border.Scale = 0;
+                // Default: (400 + 10) / 4 = 102.5
+                cellStepX = 102.5;
+                cellStepY = 102.5;
             }
-        }
 
-        // Hide merged tiles initially (they will appear after slide animation)
-        foreach (var tile in e.MergedTiles)
-        {
-            if (_tileBorders.TryGetValue(tile, out var border))
+            // Create overlay tiles for sliding animations
+            var overlayTiles = new List<Border>();
+            var slideAnimationTasks = new List<Task>();
+
+            // Hide new tiles immediately (they will appear after all other animations)
+            // Only hide visually - DO NOT change the tile value to avoid race conditions
+            foreach (var tile in e.NewTiles)
             {
-                border.Opacity = 0;
-                border.Scale = 1;
+                // Only hide the border completely during slide animation
+                // This prevents visual glitches when spawning into a position a tile is leaving
+                if (_tileBorders.TryGetValue(tile, out var border))
+                {
+                    border.Opacity = 0;
+                    border.Scale = 0;
+                }
             }
-        }
 
-        // Animate all tile movements using overlay tiles
-        foreach (var movement in e.TileMovements)
-        {
-            // Create an overlay tile at the source position
-            var overlayBorder = CreateOverlayTile(movement.Value);
-            overlayTiles.Add(overlayBorder);
-
-            // Position the overlay at the source location
-            Grid.SetRow(overlayBorder, movement.From.Row);
-            Grid.SetColumn(overlayBorder, movement.From.Column);
-            GameBoard.Children.Add(overlayBorder);
-
-            // Calculate the translation needed to move from source to destination
-            var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
-            var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
-
-            // Animate the overlay tile sliding to the destination
-            slideAnimationTasks.Add(
-                Task.WhenAll(
-                    overlayBorder.TranslateToAsync(translateX, translateY, 220, Easing.CubicOut)
-                )
-            );
-        }
-
-        // Wait for all slide animations to complete
-        if (slideAnimationTasks.Count > 0)
-        {
-            await Task.WhenAll(slideAnimationTasks);
-        }
-
-        // Remove overlay tiles
-        foreach (var overlay in overlayTiles)
-        {
-            GameBoard.Children.Remove(overlay);
-        }
-
-        // Now show the final tiles at their destinations
-        // Animate merged tiles (pulse effect) - they appear now after sliding
-        var mergedTileTasks = e
-            .MergedTiles.Select(async tile =>
+            // Hide merged tiles initially (they will appear after slide animation)
+            foreach (var tile in e.MergedTiles)
             {
                 if (_tileBorders.TryGetValue(tile, out var border))
                 {
-                    // Show the merged tile and pulse
-                    border.Opacity = 1;
-                    border.Scale = 0.8;
-                    await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
-                    await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+                    border.Opacity = 0;
+                    border.Scale = 1;
                 }
-            })
-            .ToList(); // Materialize to start all tasks immediately
+            }
 
-        // Wait for merged tile animations to complete first
-        await Task.WhenAll(mergedTileTasks);
-
-        // Then animate new tiles - restore their value and scale up from small
-        var newTileTasks = e
-            .NewTiles.Select(async tile =>
+            // Animate all tile movements using overlay tiles
+            foreach (var movement in e.TileMovements)
             {
-                if (
-                    _tileBorders.TryGetValue(tile, out var border)
-                    && newTileValues.TryGetValue(tile, out var actualValue)
-                )
+                // Create an overlay tile at the source position
+                var overlayBorder = CreateOverlayTile(movement.Value);
+                overlayTiles.Add(overlayBorder);
+
+                // Position the overlay at the source location
+                Grid.SetRow(overlayBorder, movement.From.Row);
+                Grid.SetColumn(overlayBorder, movement.From.Column);
+                GameBoard.Children.Add(overlayBorder);
+
+                // Calculate the translation needed to move from source to destination
+                var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
+                var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
+
+                // Animate the overlay tile sliding to the destination
+                slideAnimationTasks.Add(
+                    Task.WhenAll(
+                        overlayBorder.TranslateToAsync(translateX, translateY, 220, Easing.CubicOut)
+                    )
+                );
+            }
+
+            // Wait for all slide animations to complete
+            if (slideAnimationTasks.Count > 0)
+            {
+                await Task.WhenAll(slideAnimationTasks);
+            }
+
+            // Remove overlay tiles
+            foreach (var overlay in overlayTiles)
+            {
+                GameBoard.Children.Remove(overlay);
+            }
+
+            // Now show the final tiles at their destinations
+            // Animate merged tiles (pulse effect) - they appear now after sliding
+            var mergedTileTasks = e
+                .MergedTiles.Select(async tile =>
                 {
-                    // Restore the actual value first (this changes the background color)
-                    tile.UpdateValue(actualValue);
+                    if (_tileBorders.TryGetValue(tile, out var border))
+                    {
+                        // Show the merged tile and pulse
+                        border.Opacity = 1;
+                        border.Scale = 0.8;
+                        await border.ScaleToAsync(1.2, 100, Easing.CubicOut);
+                        await border.ScaleToAsync(1.0, 75, Easing.CubicIn);
+                    }
+                })
+                .ToList(); // Materialize to start all tasks immediately
 
-                    // Ensure scale is 0 and make visible
-                    border.Scale = 0;
-                    border.Opacity = 1;
+            // Wait for merged tile animations to complete first
+            await Task.WhenAll(mergedTileTasks);
 
-                    // Small delay to ensure the UI has updated before animating
-                    await Task.Delay(10);
+            // Then animate new tiles - scale up from small
+            var newTileTasks = e
+                .NewTiles.Select(async tile =>
+                {
+                    if (_tileBorders.TryGetValue(tile, out var border))
+                    {
+                        // Ensure scale is 0 and make visible
+                        border.Scale = 0;
+                        border.Opacity = 1;
 
-                    // Animate scale from 0 to 1
-                    await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
-                }
-            })
-            .ToList(); // Materialize to start all tasks immediately
+                        // Small delay to ensure the UI has updated before animating
+                        await Task.Delay(10);
 
-        await Task.WhenAll(newTileTasks);
+                        // Animate scale from 0 to 1
+                        await border.ScaleToAsync(1.0, 100, Easing.CubicOut);
+                    }
+                })
+                .ToList(); // Materialize to start all tasks immediately
+
+            await Task.WhenAll(newTileTasks);
+        }
+        finally
+        {
+            // Always clear the animation flag when done
+            _isAnimating = false;
+        }
     }
 
     private static Border CreateOverlayTile(int value)
@@ -360,6 +376,13 @@ public partial class MainPage : ContentPage
                 if (_isPanning)
                 {
                     _isPanning = false;
+
+                    // Ignore input while animations are running
+                    if (_isAnimating)
+                    {
+                        break;
+                    }
+
                     var deltaX = _swipeStartPoint.X;
                     var deltaY = _swipeStartPoint.Y;
 
