@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
@@ -6,6 +8,11 @@ namespace TwentyFortyEight.Maui.Services;
 /// </summary>
 public partial class AccelerometerService : IAccelerometerService
 {
+    public AccelerometerService(ILogger<AccelerometerService> logger)
+    {
+        // Logger not used on Windows, but required for DI consistency
+    }
+
     /// <inheritdoc/>
     public event EventHandler<OrientationChangedEventArgs>? OrientationChanged;
 
