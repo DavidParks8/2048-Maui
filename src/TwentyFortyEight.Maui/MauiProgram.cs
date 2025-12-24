@@ -31,6 +31,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
         builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
         builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
+        builder.Services.AddSingleton<IHapticService, MauiHapticService>();
         builder.Services.AddSingleton<IPreferencesService, MauiPreferencesService>();
         builder.Services.AddSingleton<IAlertService, MauiAlertService>();
         builder.Services.AddSingleton<INavigationService, MauiNavigationService>();

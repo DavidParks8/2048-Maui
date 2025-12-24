@@ -24,6 +24,7 @@ public class GameViewModelTests
     private Mock<IAlertService> _alertServiceMock = null!;
     private Mock<INavigationService> _navigationServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
+    private Mock<IHapticService> _hapticServiceMock = null!;
 
     [TestInitialize]
     public void Setup()
@@ -37,9 +38,12 @@ public class GameViewModelTests
         _alertServiceMock = new Mock<IAlertService>();
         _navigationServiceMock = new Mock<INavigationService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
+        _hapticServiceMock = new Mock<IHapticService>();
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.AnimationSpeed).Returns(1.0);
+        _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
+        _hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
         _preferencesServiceMock
             .Setup(p => p.GetInt(It.IsAny<string>(), It.IsAny<int>()))
             .Returns(0);
@@ -63,7 +67,8 @@ public class GameViewModelTests
             _preferencesServiceMock.Object,
             _alertServiceMock.Object,
             _navigationServiceMock.Object,
-            _localizationServiceMock.Object
+            _localizationServiceMock.Object,
+            _hapticServiceMock.Object
         );
     }
 

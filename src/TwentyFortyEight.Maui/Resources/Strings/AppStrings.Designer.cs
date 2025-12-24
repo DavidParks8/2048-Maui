@@ -619,5 +619,23 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("AnimationSpeedFast", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to HAPTICS.
+        /// </summary>
+        public static string HapticsSection {
+            get {
+                return ResourceManager.GetString("HapticsSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Haptic Feedback.
+        /// </summary>
+        public static string EnableHaptics {
+            get {
+                return ResourceManager.GetString("EnableHaptics", resourceCulture);
+            }
+        }
     }
 }

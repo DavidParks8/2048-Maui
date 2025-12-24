@@ -3,7 +3,7 @@
    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
    xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
-   xmlns:vm="clr-namespace:TwentyFortyEight.Maui.ViewModels"
+   xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
    x:Class="TwentyFortyEight.Maui.SettingsPage"
    x:DataType="vm:SettingsViewModel"
    Title="{x:Static strings:AppStrings.SettingsPageTitle}"
@@ -84,6 +84,39 @@
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
                      HorizontalOptions="Center" />
                </VerticalStackLayout>
+            </VerticalStackLayout>
+         </Border>
+
+         <!-- Haptics Section (conditionally visible) -->
+         <Border
+            BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 10"
+            Padding="16"
+            IsVisible="{Binding IsHapticsSupported}">
+            <VerticalStackLayout Spacing="12">
+               <Label
+                  Text="{x:Static strings:AppStrings.HapticsSection}"
+                  FontSize="12"
+                  FontAttributes="Bold"
+                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                  Margin="0,0,0,4" />
+
+               <!-- Enable Haptics Toggle -->
+               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <Label
+                     Grid.Column="0"
+                     Text="{x:Static strings:AppStrings.EnableHaptics}"
+                     FontSize="15"
+                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                     VerticalOptions="Center" />
+                  <Switch
+                     Grid.Column="1"
+                     IsToggled="{Binding HapticsEnabled}"
+                     OnColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                     ThumbColor="White"
+                     VerticalOptions="Center" />
+               </Grid>
             </VerticalStackLayout>
          </Border>
 
