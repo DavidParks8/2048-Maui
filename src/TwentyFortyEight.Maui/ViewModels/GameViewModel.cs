@@ -407,42 +407,49 @@ public partial class GameViewModel : ObservableObject
 
     private async Task CheckAndReportAchievements()
     {
-        var state = _engine.CurrentState;
-
-        // Check for tile achievements using the core tracker
-        if (_achievementTracker.CheckTileAchievement(state.MaxTileValue))
+        try
         {
-            var tileValue = _achievementTracker.LastUnlockedTileValue!.Value;
-            var achievementId = GetTileAchievementId(tileValue);
-            if (achievementId != null)
-            {
-                await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-            }
-        }
+            var state = _engine.CurrentState;
 
-        // Check for first win achievement
-        if (_achievementTracker.CheckFirstWinAchievement(state.IsWon))
+            // Check for tile achievements using the core tracker
+            if (_achievementTracker.CheckTileAchievement(state.MaxTileValue))
+            {
+                var tileValue = _achievementTracker.LastUnlockedTileValue!.Value;
+                var achievementId = GetTileAchievementId(tileValue);
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Check for first win achievement
+            if (_achievementTracker.CheckFirstWinAchievement(state.IsWon))
+            {
+                var achievementId = GetFirstWinAchievementId();
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Check for score achievements
+            if (_achievementTracker.CheckScoreAchievement(state.Score))
+            {
+                var scoreMilestone = _achievementTracker.LastUnlockedScoreMilestone!.Value;
+                var achievementId = GetScoreAchievementId(scoreMilestone);
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Reset the "just unlocked" flags after reporting
+            _achievementTracker.ResetJustUnlocked();
+        }
+        catch (Exception ex)
         {
-            var achievementId = GetFirstWinAchievementId();
-            if (achievementId != null)
-            {
-                await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-            }
+            _logger.LogError(ex, "Failed to check and report achievements");
         }
-
-        // Check for score achievements
-        if (_achievementTracker.CheckScoreAchievement(state.Score))
-        {
-            var scoreMilestone = _achievementTracker.LastUnlockedScoreMilestone!.Value;
-            var achievementId = GetScoreAchievementId(scoreMilestone);
-            if (achievementId != null)
-            {
-                await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-            }
-        }
-
-        // Reset the "just unlocked" flags after reporting
-        _achievementTracker.ResetJustUnlocked();
     }
 
     private static string? GetTileAchievementId(int tileValue)
@@ -491,12 +498,26 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task ShowLeaderboard()
     {
-        await _socialGamingService.ShowLeaderboardAsync();
+        try
+        {
+            await _socialGamingService.ShowLeaderboardAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to show leaderboard");
+        }
     }
 
     [RelayCommand]
     private async Task ShowAchievements()
     {
-        await _socialGamingService.ShowAchievementsAsync();
+        try
+        {
+            await _socialGamingService.ShowAchievementsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to show achievements");
+        }
     }
 }
