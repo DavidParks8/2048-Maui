@@ -42,10 +42,7 @@ public partial class GamepadInputBehavior
 
     private void AttachToActivity()
     {
-        if (
-            AttachedPage?.GetParentWindow()?.Handler?.PlatformView
-            is Android.App.Activity activity
-        )
+        if (AttachedPage?.GetParentWindow()?.Handler?.PlatformView is Android.App.Activity activity)
         {
             _activity = activity;
 
