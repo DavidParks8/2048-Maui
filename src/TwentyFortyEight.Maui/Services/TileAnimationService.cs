@@ -7,6 +7,8 @@ namespace TwentyFortyEight.Maui.Services;
 /// </summary>
 public class TileAnimationService
 {
+    private readonly SettingsService _settingsService;
+
     /// <summary>
     /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
     /// </summary>
@@ -18,29 +20,42 @@ public class TileAnimationService
     private const double DefaultBoardDimension = 400;
 
     /// <summary>
-    /// Duration of the slide animation in milliseconds.
+    /// Base duration of the slide animation in milliseconds.
     /// </summary>
-    private const uint SlideAnimationDuration = 220;
+    private const uint BaseSlideAnimationDuration = 220;
 
     /// <summary>
-    /// Duration of the scale-up animation for merged tiles in milliseconds.
+    /// Base duration of the scale-up animation for merged tiles in milliseconds.
     /// </summary>
-    private const uint MergePulseUpDuration = 100;
+    private const uint BaseMergePulseUpDuration = 100;
 
     /// <summary>
-    /// Duration of the scale-down animation for merged tiles in milliseconds.
+    /// Base duration of the scale-down animation for merged tiles in milliseconds.
     /// </summary>
-    private const uint MergePulseDownDuration = 75;
+    private const uint BaseMergePulseDownDuration = 75;
 
     /// <summary>
-    /// Duration of the scale animation for new tiles in milliseconds.
+    /// Base duration of the scale animation for new tiles in milliseconds.
     /// </summary>
-    private const uint NewTileScaleDuration = 100;
+    private const uint BaseNewTileScaleDuration = 100;
 
     /// <summary>
     /// Small delay to ensure UI updates before animating in milliseconds.
     /// </summary>
     private const int UiUpdateDelay = 10;
+
+    public TileAnimationService(SettingsService settingsService)
+    {
+        _settingsService = settingsService;
+    }
+
+    /// <summary>
+    /// Gets the adjusted animation duration based on the animation speed setting.
+    /// </summary>
+    private uint GetAdjustedDuration(uint baseDuration)
+    {
+        return (uint)(baseDuration / _settingsService.AnimationSpeed);
+    }
 
     /// <summary>
     /// Animates tile updates with cancellation support.
@@ -59,6 +74,31 @@ public class TileAnimationService
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Skip animations if disabled
+        if (!_settingsService.AnimationsEnabled)
+        {
+            // Just update the tiles without animation
+            foreach (var tile in args.MergedTiles)
+            {
+                if (tileBorders.TryGetValue(tile, out var border))
+                {
+                    border.Opacity = 1;
+                    border.Scale = 1;
+                }
+            }
+
+            foreach (var tile in args.NewTiles)
+            {
+                if (tileBorders.TryGetValue(tile, out var border))
+                {
+                    border.Opacity = 1;
+                    border.Scale = 1;
+                }
+            }
+
+            return;
+        }
 
         var cellStepX = CalculateCellStep(gameBoard.Width, boardSize);
         var cellStepY = CalculateCellStep(gameBoard.Height, boardSize);
@@ -138,7 +178,7 @@ public class TileAnimationService
         }
     }
 
-    private static async Task<List<Border>> AnimateSlideMovementsAsync(
+    private async Task<List<Border>> AnimateSlideMovementsAsync(
         IReadOnlyList<Core.TileMovement> tileMovements,
         Grid gameBoard,
         double cellStepX,
@@ -167,7 +207,7 @@ public class TileAnimationService
                 overlayBorder.TranslateToAsync(
                     translateX,
                     translateY,
-                    SlideAnimationDuration,
+                    GetAdjustedDuration(BaseSlideAnimationDuration),
                     Easing.CubicOut
                 )
             );
@@ -181,7 +221,7 @@ public class TileAnimationService
         return overlayTiles;
     }
 
-    private static async Task AnimateMergedTilesAsync(
+    private async Task AnimateMergedTilesAsync(
         IReadOnlySet<TileViewModel> mergedTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
         CancellationToken cancellationToken
@@ -196,8 +236,16 @@ public class TileAnimationService
 
                     border.Opacity = 1;
                     border.Scale = 0.8;
-                    await border.ScaleToAsync(1.2, MergePulseUpDuration, Easing.CubicOut);
-                    await border.ScaleToAsync(1.0, MergePulseDownDuration, Easing.CubicIn);
+                    await border.ScaleToAsync(
+                        1.2,
+                        GetAdjustedDuration(BaseMergePulseUpDuration),
+                        Easing.CubicOut
+                    );
+                    await border.ScaleToAsync(
+                        1.0,
+                        GetAdjustedDuration(BaseMergePulseDownDuration),
+                        Easing.CubicIn
+                    );
                 }
             })
             .ToList();
@@ -205,7 +253,7 @@ public class TileAnimationService
         await Task.WhenAll(mergedTileTasks);
     }
 
-    private static async Task AnimateNewTilesAsync(
+    private async Task AnimateNewTilesAsync(
         IReadOnlySet<TileViewModel> newTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
         Dictionary<TileViewModel, int> newTileValues,
@@ -227,7 +275,11 @@ public class TileAnimationService
                     border.Opacity = 1;
 
                     await Task.Delay(UiUpdateDelay, cancellationToken);
-                    await border.ScaleToAsync(1.0, NewTileScaleDuration, Easing.CubicOut);
+                    await border.ScaleToAsync(
+                        1.0,
+                        GetAdjustedDuration(BaseNewTileScaleDuration),
+                        Easing.CubicOut
+                    );
                 }
             })
             .ToList();

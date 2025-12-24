@@ -31,10 +31,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
+        builder.Services.AddSingleton<SettingsService>();
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<StatsPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
         return builder.Build();
     }
