@@ -26,6 +26,7 @@ public partial class GameViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
+    private readonly IHapticService _hapticService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -121,7 +122,8 @@ public partial class GameViewModel : ObservableObject
         IPreferencesService preferencesService,
         IAlertService alertService,
         INavigationService navigationService,
-        ILocalizationService localizationService
+        ILocalizationService localizationService,
+        IHapticService hapticService
     )
     {
         _logger = logger;
@@ -133,6 +135,7 @@ public partial class GameViewModel : ObservableObject
         _alertService = alertService;
         _navigationService = navigationService;
         _localizationService = localizationService;
+        _hapticService = hapticService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -206,6 +209,12 @@ public partial class GameViewModel : ObservableObject
             var moved = _engine.Move(direction);
             if (moved)
             {
+                // Trigger haptic feedback if enabled and supported
+                if (_settingsService.HapticsEnabled && _hapticService.IsSupported)
+                {
+                    _hapticService.PerformHaptic();
+                }
+
                 // Create a completion source to wait for animation
                 _animationCompletionSource = new TaskCompletionSource<bool>();
 
