@@ -255,7 +255,7 @@ public sealed class BoardRippleService
         using var bitmap = Android.Graphics.Bitmap.CreateBitmap(
             width,
             height,
-            Android.Graphics.Bitmap.Config.Argb8888
+            Android.Graphics.Bitmap.Config.Argb8888!
         );
         using (var canvas = new Android.Graphics.Canvas(bitmap))
         {

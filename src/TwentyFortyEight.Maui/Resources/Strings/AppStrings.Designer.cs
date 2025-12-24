@@ -460,5 +460,83 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("BackDescription", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How to Play.
+        /// </summary>
+        public static string HowToPlay {
+            get {
+                return ResourceManager.GetString("HowToPlay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Learn how to play the game.
+        /// </summary>
+        public static string HowToPlayDescription {
+            get {
+                return ResourceManager.GetString("HowToPlayDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How to Play.
+        /// </summary>
+        public static string HowToPlayTitle {
+            get {
+                return ResourceManager.GetString("HowToPlayTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Swipe or use arrow keys to move tiles. When two tiles with the same number touch, they merge into one!
+        ///
+        ///Keep combining tiles to reach the 2048 tile and win the game!
+        ///
+        ///🎯 Goal: Reach 2048
+        ///⌨️ Controls: Arrow keys, WASD, or swipe
+        ///✨ Strategy: Keep your highest tile in a corner.
+        /// </summary>
+        public static string HowToPlayContent {
+            get {
+                return ResourceManager.GetString("HowToPlayContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Got It!.
+        /// </summary>
+        public static string GotIt {
+            get {
+                return ResourceManager.GetString("GotIt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start New Game?.
+        /// </summary>
+        public static string RestartConfirmTitle {
+            get {
+                return ResourceManager.GetString("RestartConfirmTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to start a new game? Your current progress will be lost..
+        /// </summary>
+        public static string RestartConfirmMessage {
+            get {
+                return ResourceManager.GetString("RestartConfirmMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start New.
+        /// </summary>
+        public static string StartNew {
+            get {
+                return ResourceManager.GetString("StartNew", resourceCulture);
+            }
+        }
     }
 }

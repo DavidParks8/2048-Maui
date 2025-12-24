@@ -178,4 +178,34 @@
   <data name="BackDescription" xml:space="preserve">
     <value>Go back to the game</value>
   </data>
+  <data name="HowToPlay" xml:space="preserve">
+    <value>How to Play</value>
+  </data>
+  <data name="HowToPlayDescription" xml:space="preserve">
+    <value>Learn how to play the game</value>
+  </data>
+  <data name="HowToPlayTitle" xml:space="preserve">
+    <value>How to Play</value>
+  </data>
+  <data name="HowToPlayContent" xml:space="preserve">
+    <value>Swipe or use arrow keys to move tiles. When two tiles with the same number touch, they merge into one!
+
+Keep combining tiles to reach the 2048 tile and win the game!
+
+🎯 Goal: Reach 2048
+⌨️ Controls: Arrow keys, WASD, or swipe
+✨ Strategy: Keep your highest tile in a corner</value>
+  </data>
+  <data name="GotIt" xml:space="preserve">
+    <value>Got It!</value>
+  </data>
+  <data name="RestartConfirmTitle" xml:space="preserve">
+    <value>Start New Game?</value>
+  </data>
+  <data name="RestartConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to start a new game? Your current progress will be lost.</value>
+  </data>
+  <data name="StartNew" xml:space="preserve">
+    <value>Start New</value>
+  </data>
 </root>
