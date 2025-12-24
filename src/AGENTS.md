@@ -109,6 +109,24 @@ BoxView, Ellipse, Line, Path, Polygon, Polyline, Rectangle, RoundRectangle - all
 | Slider/Stepper | Numeric value selection |
 | SearchBar | Search input with icon |
 
+### FontImageSource
+
+**CRITICAL**: When using `FontImageSource` for icons, use `Size` property, NOT `FontSize`:
+
+```xml
+<!-- CORRECT -->
+<Button.ImageSource>
+    <FontImageSource Glyph="↻" Size="20" Color="White" />
+</Button.ImageSource>
+
+<!-- WRONG - Will cause XamlParseException -->
+<Button.ImageSource>
+    <FontImageSource Glyph="↻" FontSize="20" Color="White" />
+</Button.ImageSource>
+```
+
+**Why**: `FontImageSource` uses `Size` property while text controls like `Label` and `Button` use `FontSize`. This is a common naming inconsistency in .NET MAUI.
+
 ### List & Data Display
 
 | Control | When to Use |
