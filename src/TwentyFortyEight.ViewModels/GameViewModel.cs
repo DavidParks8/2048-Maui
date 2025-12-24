@@ -217,11 +217,10 @@ public partial class GameViewModel : ObservableObject
 
         _engine.NewGame();
 
-        UpdateUI();
-        
-        // Reset score announcement tracking after UI update to align with game state
+        // Reset score announcement tracking before UI update to ensure consistency
         _lastAnnouncedScore = 0;
-        
+
+        UpdateUI();
         SaveGame();
     }
 
