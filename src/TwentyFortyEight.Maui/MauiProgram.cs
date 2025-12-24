@@ -32,6 +32,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
+
+        // Register Game Center service - platform-specific implementation
+#if IOS || MACCATALYST
+        builder.Services.AddSingleton<IGameCenterService, GameCenterService>();
+#else
+        builder.Services.AddSingleton<IGameCenterService, GameCenterServiceStub>();
+#endif
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();

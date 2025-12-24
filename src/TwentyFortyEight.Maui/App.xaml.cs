@@ -18,7 +18,7 @@ public partial class App : Application
     protected override Window CreateWindow(IActivationState? activationState)
     {
         var window = new Window(new AppShell());
-        
+
         // Authenticate with Game Center on app startup (fire and forget)
         MainThread.BeginInvokeOnMainThread(async () =>
         {
@@ -31,7 +31,7 @@ public partial class App : Application
                 _logger.LogError(ex, "Game Center authentication failed");
             }
         });
-        
+
         return window;
     }
 }

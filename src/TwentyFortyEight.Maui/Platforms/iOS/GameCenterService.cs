@@ -1,4 +1,3 @@
-#if IOS
 using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
@@ -27,7 +26,7 @@ public class GameCenterService : IGameCenterService
         try
         {
             var tcs = new TaskCompletionSource<bool>();
-            
+
             GKLocalPlayer.Local.AuthenticateHandler = (viewController, error) =>
             {
                 if (viewController != null)
@@ -35,27 +34,38 @@ public class GameCenterService : IGameCenterService
                     // Present the Game Center login view controller
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        var window = UIApplication.SharedApplication?.KeyWindow 
-                                  ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                        var window =
+                            UIApplication.SharedApplication?.KeyWindow
+                            ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
                         var rootViewController = window?.RootViewController;
-                        
+
                         if (rootViewController != null)
                         {
-                            rootViewController.PresentViewController(viewController, true, () =>
-                            {
-                                _logger?.LogInformation("Game Center authentication view presented");
-                            });
+                            rootViewController.PresentViewController(
+                                viewController,
+                                true,
+                                () =>
+                                {
+                                    _logger?.LogInformation(
+                                        "Game Center authentication view presented"
+                                    );
+                                }
+                            );
                         }
                         else
                         {
-                            _logger?.LogWarning("No root view controller available for Game Center authentication");
+                            _logger?.LogWarning(
+                                "No root view controller available for Game Center authentication"
+                            );
                             tcs.TrySetResult(false);
                         }
                     });
                 }
                 else if (error != null)
                 {
-                    _logger?.LogError($"Game Center authentication error: {error.LocalizedDescription}");
+                    _logger?.LogError(
+                        $"Game Center authentication error: {error.LocalizedDescription}"
+                    );
                     _isAuthenticated = false;
                     tcs.TrySetResult(false);
                 }
@@ -63,7 +73,9 @@ public class GameCenterService : IGameCenterService
                 {
                     // Successfully authenticated
                     _isAuthenticated = GKLocalPlayer.Local.IsAuthenticated;
-                    _logger?.LogInformation($"Game Center authentication: {(_isAuthenticated ? "success" : "not authenticated")}");
+                    _logger?.LogInformation(
+                        $"Game Center authentication: {(_isAuthenticated ? "success" : "not authenticated")}"
+                    );
                     tcs.TrySetResult(_isAuthenticated);
                 }
             };
@@ -91,7 +103,7 @@ public class GameCenterService : IGameCenterService
             {
                 var scoreReporter = new GKScore(GameCenterConstants.LeaderboardId)
                 {
-                    Value = score
+                    Value = score,
                 };
 
                 var scores = new[] { scoreReporter };
@@ -127,18 +139,20 @@ public class GameCenterService : IGameCenterService
                 var achievement = new GKAchievement(achievementId)
                 {
                     PercentComplete = percentComplete,
-                    ShowsCompletionBanner = percentComplete >= 100.0
+                    ShowsCompletionBanner = percentComplete >= 100.0,
                 };
 
                 var achievements = new[] { achievement };
                 await GKAchievement.ReportAchievementsAsync(achievements);
-                
+
                 if (percentComplete >= 100.0)
                 {
                     _reportedAchievements.Add(achievementId);
                 }
-                
-                _logger?.LogInformation($"Achievement reported to Game Center: {achievementId} ({percentComplete}%)");
+
+                _logger?.LogInformation(
+                    $"Achievement reported to Game Center: {achievementId} ({percentComplete}%)"
+                );
             });
         }
         catch (Exception ex)
@@ -167,10 +181,11 @@ public class GameCenterService : IGameCenterService
                     viewController.DismissViewController(true, null);
                 };
 
-                var window = UIApplication.SharedApplication?.KeyWindow 
-                          ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window =
+                    UIApplication.SharedApplication?.KeyWindow
+                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
                 var rootViewController = window?.RootViewController;
-                
+
                 if (rootViewController != null)
                 {
                     rootViewController.PresentViewController(viewController, true, null);
@@ -207,10 +222,11 @@ public class GameCenterService : IGameCenterService
                     viewController.DismissViewController(true, null);
                 };
 
-                var window = UIApplication.SharedApplication?.KeyWindow 
-                          ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window =
+                    UIApplication.SharedApplication?.KeyWindow
+                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
                 var rootViewController = window?.RootViewController;
-                
+
                 if (rootViewController != null)
                 {
                     rootViewController.PresentViewController(viewController, true, null);
@@ -228,4 +244,3 @@ public class GameCenterService : IGameCenterService
         }
     }
 }
-#endif

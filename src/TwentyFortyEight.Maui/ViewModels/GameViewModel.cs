@@ -20,6 +20,7 @@ public partial class GameViewModel : ObservableObject
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
     private readonly IStatisticsTracker _statisticsTracker;
+    private readonly IGameCenterService _gameCenterService;
     private Game2048Engine _engine;
     private readonly HashSet<int> _reportedTiles = new();
     private readonly HashSet<int> _reportedScores = new();
@@ -83,15 +84,20 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isHowToPlayVisible;
 
+    [ObservableProperty]
+    private bool _isGameCenterAvailable;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
-        IStatisticsTracker statisticsTracker
+        IStatisticsTracker statisticsTracker,
+        IGameCenterService gameCenterService
     )
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
         _statisticsTracker = statisticsTracker;
+        _gameCenterService = gameCenterService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, new SystemRandomSource(), _statisticsTracker);
 
@@ -108,7 +114,7 @@ public partial class GameViewModel : ObservableObject
         // Load saved state or start new game
         LoadGame();
         UpdateUI();
-        
+
         // Update Game Center availability when service becomes available
         UpdateGameCenterAvailability();
     }
@@ -205,10 +211,10 @@ public partial class GameViewModel : ObservableObject
                     _animationCompletionSource = null;
                 }
             }
-            
+
             // Check and report achievements
             _ = CheckAndReportAchievements();
-            
+
             // Update Game Center availability
             UpdateGameCenterAvailability();
         }
@@ -403,19 +409,21 @@ public partial class GameViewModel : ObservableObject
         try
         {
             var state = _engine.CurrentState;
-            
+
             // Check for tile achievements
-            var maxTile = state.Board.Max();
+            var maxTile = state.MaxTileValue;
             await ReportTileAchievement(maxTile);
-            
+
             // Check for first win achievement (reaching 2048)
             if (state.IsWon && !_firstWinReported)
             {
                 await _gameCenterService.ReportAchievementAsync(
-                    GameCenterConstants.Achievement_FirstWin, 100.0);
+                    GameCenterConstants.Achievement_FirstWin,
+                    100.0
+                );
                 _firstWinReported = true;
             }
-            
+
             // Check for score achievements
             await ReportScoreAchievement(state.Score);
         }
@@ -439,7 +447,7 @@ public partial class GameViewModel : ObservableObject
             >= 512 => GameCenterConstants.Achievement_Tile512,
             >= 256 => GameCenterConstants.Achievement_Tile256,
             >= 128 => GameCenterConstants.Achievement_Tile128,
-            _ => null
+            _ => null,
         };
 
         if (achievementId != null)
@@ -469,7 +477,7 @@ public partial class GameViewModel : ObservableObject
                     25000 => GameCenterConstants.Achievement_Score25000,
                     50000 => GameCenterConstants.Achievement_Score50000,
                     100000 => GameCenterConstants.Achievement_Score100000,
-                    _ => null
+                    _ => null,
                 };
 
                 if (achievementId != null)
