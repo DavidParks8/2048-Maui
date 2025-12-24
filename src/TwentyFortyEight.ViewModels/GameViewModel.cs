@@ -81,6 +81,12 @@ public partial class GameViewModel : ObservableObject
         if (value > 0 && value > _lastAnnouncedScore && value - _lastAnnouncedScore >= 10)
         {
             _screenReaderService.Announce($"Score: {value}");
+        }
+        
+        // Always track the current score for accurate announcement logic
+        // This ensures proper behavior with undo operations
+        if (value >= 0)
+        {
             _lastAnnouncedScore = value;
         }
     }
@@ -211,10 +217,11 @@ public partial class GameViewModel : ObservableObject
 
         _engine.NewGame();
 
-        // Reset score announcement tracking for new game
-        _lastAnnouncedScore = 0;
-
         UpdateUI();
+        
+        // Reset score announcement tracking after UI update to align with game state
+        _lastAnnouncedScore = 0;
+        
         SaveGame();
     }
 
