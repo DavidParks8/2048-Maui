@@ -14,6 +14,7 @@ public partial class MainPage : ContentPage
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
+    private readonly GamepadInputBehavior _gamepadBehavior;
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
@@ -40,6 +41,11 @@ public partial class MainPage : ContentPage
         _keyboardBehavior = new KeyboardInputBehavior();
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
         this.Behaviors.Add(_keyboardBehavior);
+
+        // Set up gamepad/controller handling via platform behavior
+        _gamepadBehavior = new GamepadInputBehavior();
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        this.Behaviors.Add(_gamepadBehavior);
     }
 
     /// <summary>
@@ -61,6 +67,11 @@ public partial class MainPage : ContentPage
     }
 
     private void OnKeyboardDirectionPressed(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
+
+    private void OnGamepadDirectionPressed(object? sender, Direction direction)
     {
         _viewModel.MoveCommand.Execute(direction);
     }
@@ -95,9 +106,11 @@ public partial class MainPage : ContentPage
         // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
     }
 
     protected override void OnDisappearing()
@@ -112,6 +125,7 @@ public partial class MainPage : ContentPage
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
     }
 
     [UnconditionalSuppressMessage(
