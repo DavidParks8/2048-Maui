@@ -247,6 +247,7 @@
 
          <!-- Reset Statistics Button -->
          <Button x:Name="ResetStatisticsButton"
+            AutomationId="ResetStatisticsButton"
             Text="{x:Static strings:AppStrings.ResetStatistics}"
             Command="{Binding ResetStatisticsCommand}"
             BackgroundColor="#f67c5f"

@@ -58,6 +58,7 @@
                 
                 <!-- New Game Button -->
                 <Button x:Name="TryAgainButton"
+                    AutomationId="TryAgainButton"
                     Command="{Binding NewGameCommand, Source={x:Reference this}}"
                     Text="{x:Static strings:AppStrings.TryAgain}"
                     BackgroundColor="#f67c5f"

@@ -43,6 +43,7 @@
                 
                 <!-- Got It Button -->
                 <Button x:Name="GotItButton"
+                    AutomationId="GotItButton"
                     Command="{Binding CloseCommand, Source={x:Reference this}}"
                     Text="{x:Static strings:AppStrings.GotIt}"
                     BackgroundColor="#8f7a66"

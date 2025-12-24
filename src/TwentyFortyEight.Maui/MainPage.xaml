@@ -14,12 +14,14 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem
             x:Name="ToolbarSettingsButton"
+            AutomationId="ToolbarSettingsButton"
             Text="{x:Static strings:AppStrings.Settings}"
             Command="{Binding OpenSettingsCommand}"
             Order="Secondary"
             Priority="0" />
         <ToolbarItem
             x:Name="ToolbarHowToPlayButton"
+            AutomationId="ToolbarHowToPlayButton"
             Text="{x:Static strings:AppStrings.HowToPlay}"
             Command="{Binding ShowHowToPlayCommand}"
             Order="Secondary"
@@ -151,6 +153,7 @@
                                Margin="0,10,0,0">
 
             <Button x:Name="NewGameButton"
+                AutomationId="NewGameButton"
                 Command="{Binding NewGameCommand}"
                 Text="{x:Static strings:AppStrings.NewGame}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
@@ -161,6 +164,7 @@
                 SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}" />
 
             <Button x:Name="UndoButton"
+                AutomationId="UndoButton"
                 Command="{Binding UndoCommand}"
                 Text="{x:Static strings:AppStrings.Undo}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
@@ -171,6 +175,7 @@
                 SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
 
             <Button x:Name="StatisticsButton"
+                AutomationId="StatisticsButton"
                 Command="{Binding OpenStatsCommand}"
                 Text="{x:Static strings:AppStrings.Statistics}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
