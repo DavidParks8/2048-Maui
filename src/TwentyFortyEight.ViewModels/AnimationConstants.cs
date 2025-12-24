@@ -35,4 +35,3 @@ public static class AnimationConstants
         + BaseMergePulseDownDuration
         + BaseNewTileScaleDuration;
 }
-
