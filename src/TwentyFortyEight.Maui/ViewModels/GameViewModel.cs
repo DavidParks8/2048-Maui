@@ -377,12 +377,7 @@ public partial class GameViewModel : ObservableObject
                 if (dto != null)
                 {
                     var state = dto.ToGameState();
-                    _engine = new Game2048Engine(
-                        state,
-                        _config,
-                        _randomSource,
-                        _statisticsTracker
-                    );
+                    _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
                     return;
                 }
             }

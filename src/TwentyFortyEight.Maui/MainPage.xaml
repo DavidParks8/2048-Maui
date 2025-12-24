@@ -15,13 +15,13 @@
         <ToolbarItem
             Text="{x:Static strings:AppStrings.Settings}"
             Command="{Binding OpenSettingsCommand}"
-            Order="Primary"
-            Priority="1" />
+            Order="Secondary"
+            Priority="0" />
         <ToolbarItem
             Text="{x:Static strings:AppStrings.HowToPlay}"
             Command="{Binding ShowHowToPlayCommand}"
-            Order="Primary"
-            Priority="0" />
+            Order="Secondary"
+            Priority="1" />
     </ContentPage.ToolbarItems>
 
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
