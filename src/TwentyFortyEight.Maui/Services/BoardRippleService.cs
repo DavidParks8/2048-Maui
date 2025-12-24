@@ -3,9 +3,6 @@ using System.Runtime.InteropServices;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
-#if WINDOWS
-using System.Runtime.InteropServices.WindowsRuntime;
-#endif
 
 // NOTE: We intentionally avoid SKRuntimeEffect here to keep this working across
 // SkiaSharp versions and platforms. The effect is implemented via Skia's
@@ -18,7 +15,7 @@ namespace TwentyFortyEight.Maui.Services;
 /// The effect captures a snapshot, then distorts it with concentric traveling waves that
 /// reflect off the edges twice before dissipating — like dropping a stone in a still pool.
 /// </summary>
-public sealed class BoardRippleService
+public sealed partial class BoardRippleService
 {
     /// <summary>
     /// Total duration of the ripple animation in seconds.
@@ -267,153 +264,13 @@ public sealed class BoardRippleService
         }
     }
 
-    private static async Task<SKBitmap?> TryCaptureBitmapAsync(
+    /// <summary>
+    /// Platform-specific implementation to capture the board container as a bitmap.
+    /// </summary>
+    private static partial Task<SKBitmap?> TryCaptureBitmapAsync(
         VisualElement boardContainer,
         CancellationToken cancellationToken
-    )
-    {
-#if WINDOWS
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement fe)
-            return null;
-
-        // RenderTargetBitmap must be created and used on the UI thread (STA).
-        // Marshal the entire capture operation to the dispatcher to avoid COMException.
-        var tcs = new TaskCompletionSource<(int Width, int Height, byte[] Bytes)?>();
-
-        await boardContainer.Dispatcher.DispatchAsync(async () =>
-        {
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
-                await rtb.RenderAsync(fe);
-
-                var width = rtb.PixelWidth;
-                var height = rtb.PixelHeight;
-                if (width <= 0 || height <= 0)
-                {
-                    tcs.TrySetResult(null);
-                    return;
-                }
-
-                var pixelBuffer = await rtb.GetPixelsAsync();
-                var bytes = pixelBuffer.ToArray();
-
-                tcs.TrySetResult((width, height, bytes));
-            }
-            catch (OperationCanceledException)
-            {
-                tcs.TrySetCanceled(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetException(ex);
-            }
-        });
-
-        var result = await tcs.Task.ConfigureAwait(true);
-        if (result is null)
-            return null;
-
-        var (capturedWidth, capturedHeight, capturedBytes) = result.Value;
-        var info = new SKImageInfo(
-            capturedWidth,
-            capturedHeight,
-            SKColorType.Bgra8888,
-            SKAlphaType.Premul
-        );
-        var bitmap = new SKBitmap(info);
-        Marshal.Copy(capturedBytes, 0, bitmap.GetPixels(), capturedBytes.Length);
-        return bitmap;
-#elif ANDROID
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not Android.Views.View view)
-            return null;
-
-        var width = view.Width;
-        var height = view.Height;
-        if (width <= 0 || height <= 0)
-            return null;
-
-        using var bitmap = Android.Graphics.Bitmap.CreateBitmap(
-            width,
-            height,
-            Android.Graphics.Bitmap.Config.Argb8888!
-        );
-        using (var canvas = new Android.Graphics.Canvas(bitmap))
-        {
-            view.Draw(canvas);
-        }
-
-        var byteCount = bitmap.ByteCount;
-        var buffer = Java.Nio.ByteBuffer.AllocateDirect(byteCount);
-        bitmap.CopyPixelsToBuffer(buffer);
-        buffer.Rewind();
-
-        var bytes = new byte[byteCount];
-        buffer.Get(bytes);
-
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var skBitmap = new SKBitmap(info);
-        Marshal.Copy(bytes, 0, skBitmap.GetPixels(), bytes.Length);
-        return skBitmap;
-#elif IOS || MACCATALYST
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not UIKit.UIView view)
-            return null;
-
-        var bounds = view.Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-            return null;
-
-        var renderer = new UIKit.UIGraphicsImageRenderer(bounds.Size);
-        using var image = renderer.CreateImage(_ =>
-        {
-            // drawViewHierarchy gives best fidelity for composed UI
-            view.DrawViewHierarchy(bounds, true);
-        });
-
-        using var cgImage = image.CGImage;
-        if (cgImage is null)
-            return null;
-
-        var width = (int)cgImage.Width;
-        var height = (int)cgImage.Height;
-        if (width <= 0 || height <= 0)
-            return null;
-
-        var bytesPerRow = width * 4;
-        var bytes = new byte[bytesPerRow * height];
-
-        using var colorSpace = CoreGraphics.CGColorSpace.CreateDeviceRGB();
-        using var ctx = new CoreGraphics.CGBitmapContext(
-            bytes,
-            width,
-            height,
-            8,
-            bytesPerRow,
-            colorSpace,
-            CoreGraphics.CGBitmapFlags.ByteOrder32Little
-                | CoreGraphics.CGBitmapFlags.PremultipliedFirst
-        );
-
-        ctx.DrawImage(new CoreGraphics.CGRect(0, 0, width, height), cgImage);
-
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var skBitmap = new SKBitmap(info);
-        Marshal.Copy(bytes, 0, skBitmap.GetPixels(), bytes.Length);
-        return skBitmap;
-#else
-        _ = boardContainer;
-        _ = cancellationToken;
-        return null;
-#endif
-    }
+    );
 
     private static float Envelope(float t, float duration)
     {
