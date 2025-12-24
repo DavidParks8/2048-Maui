@@ -29,6 +29,10 @@ public static class AnimationConstants
     /// <summary>
     /// Total base sequence duration for a complete move animation (slide + merge + spawn).
     /// </summary>
-    public const uint BaseTotalSequenceDuration = BaseSlideAnimationDuration + BaseMergePulseUpDuration + BaseMergePulseDownDuration + BaseNewTileScaleDuration;
+    public const uint BaseTotalSequenceDuration =
+        BaseSlideAnimationDuration
+        + BaseMergePulseUpDuration
+        + BaseMergePulseDownDuration
+        + BaseNewTileScaleDuration;
 }
 
