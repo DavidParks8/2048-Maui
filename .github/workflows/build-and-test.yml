@@ -53,6 +53,7 @@ jobs:
         path: 'TestResults/*.cobertura.xml'
 
   build-ios:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-26
     permissions:
       contents: read
@@ -85,6 +86,7 @@ jobs:
         MAUI_TARGET_PLATFORM: ios
 
   build-windows:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     permissions:
       contents: read
