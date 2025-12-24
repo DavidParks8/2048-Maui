@@ -32,7 +32,7 @@ jobs:
       run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
       
     - name: Run tests
-      run: dotnet run --project test/TwentyFortyEight.Tests/TwentyFortyEight.Tests.csproj --configuration Release --no-build -- --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
+      run: dotnet test --configuration Release --no-build -- --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
       
     - name: Upload test results
       uses: actions/upload-artifact@v4
