@@ -235,4 +235,10 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="AnimationSpeedFast" xml:space="preserve">
     <value>Fast</value>
   </data>
+  <data name="HapticsSection" xml:space="preserve">
+    <value>HAPTICS</value>
+  </data>
+  <data name="EnableHaptics" xml:space="preserve">
+    <value>Enable Haptic Feedback</value>
+  </data>
 </root>
