@@ -48,7 +48,7 @@
                    VerticalOptions="Center"
                    SemanticProperties.HeadingLevel="Level1" />
 
-            <VerticalStackLayout x:Name="ScoreContainer" Grid.Column="1" Grid.ColumnSpan="2" Spacing="10" Orientation="Horizontal">
+            <HorizontalStackLayout x:Name="ScoreContainer" Grid.Column="1" Grid.ColumnSpan="2" Spacing="10">
                 <Border x:Name="ScoreBorder"
                         BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
                         Stroke="Transparent"
@@ -93,7 +93,7 @@
                                SemanticProperties.Description="{x:Static strings:AppStrings.BestScoreDescription}" />
                     </VerticalStackLayout>
                 </Border>
-            </VerticalStackLayout>
+            </HorizontalStackLayout>
         </Grid>
 
         <!-- Status Text -->
