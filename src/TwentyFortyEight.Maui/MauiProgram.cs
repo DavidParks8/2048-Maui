@@ -48,15 +48,9 @@ public static class MauiProgram
             AchievementIdMapper
         >();
 
-        // Register MAUI social gaming service - uses partial class pattern
+        // Register social gaming service - uses partial class pattern
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
-        builder.Services.AddSingleton<
-            TwentyFortyEight.Maui.Services.ISocialGamingService,
-            SocialGamingService
-        >();
-
-        // Register adapter for ViewModels
-        builder.Services.AddSingleton<ISocialGamingService, SocialGamingServiceAdapter>();
+        builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
 
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();

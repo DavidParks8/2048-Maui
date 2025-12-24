@@ -2,6 +2,7 @@ using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
 using UIKit;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
