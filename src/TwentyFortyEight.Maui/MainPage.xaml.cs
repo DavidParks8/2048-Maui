@@ -15,10 +15,14 @@ public partial class MainPage : ContentPage
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
     private readonly GamepadInputBehavior _gamepadBehavior;
+    private readonly ScrollInputBehavior _scrollBehavior;
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
     private Point _panAccumulator;
+    private DateTime _lastInputTime = DateTime.MinValue;
+    private const int InputCooldownMs = 400; // Prevent any gesture double-trigger
+    private bool _isProcessingInput = false;
 
     // Responsive sizing
     private const double DefaultBoardSize = 400;
@@ -51,6 +55,11 @@ public partial class MainPage : ContentPage
         _gamepadBehavior = new GamepadInputBehavior();
         _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
         this.Behaviors.Add(_gamepadBehavior);
+
+        // Set up scroll/trackpad handling via platform behavior (desktop only)
+        _scrollBehavior = new ScrollInputBehavior();
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
+        this.Behaviors.Add(_scrollBehavior);
     }
 
     /// <summary>
@@ -81,6 +90,23 @@ public partial class MainPage : ContentPage
         _viewModel.MoveCommand.Execute(direction);
     }
 
+    private void OnScrollDirectionPressed(object? sender, Direction direction)
+    {
+        if (_isProcessingInput)
+            return;
+
+        _isProcessingInput = true;
+        try
+        {
+            _lastInputTime = DateTime.UtcNow;
+            _viewModel.MoveCommand.Execute(direction);
+        }
+        finally
+        {
+            _isProcessingInput = false;
+        }
+    }
+
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
         _pointerStartPoint = e.GetPosition(RootLayout);
@@ -91,16 +117,37 @@ public partial class MainPage : ContentPage
         if (_pointerStartPoint is null)
             return;
 
+        // Prevent double-counting if any input just fired
+        if (
+            _isProcessingInput
+            || (DateTime.UtcNow - _lastInputTime).TotalMilliseconds < InputCooldownMs
+        )
+        {
+            _pointerStartPoint = null;
+            return;
+        }
+
         var endPoint = e.GetPosition(RootLayout);
         if (endPoint is null)
+        {
+            _pointerStartPoint = null;
             return;
+        }
 
-        var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
-        var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
+        _isProcessingInput = true;
+        try
+        {
+            var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
+            var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
 
-        ProcessSwipe(deltaX, deltaY);
-
-        _pointerStartPoint = null;
+            ProcessSwipe(deltaX, deltaY);
+            _lastInputTime = DateTime.UtcNow;
+        }
+        finally
+        {
+            _pointerStartPoint = null;
+            _isProcessingInput = false;
+        }
     }
 
     protected override void OnAppearing()
@@ -113,11 +160,13 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
         _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
         _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
     }
 
     protected override void OnDisappearing()
@@ -134,6 +183,7 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
         _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
     }
 
     protected override void OnSizeAllocated(double width, double height)
@@ -361,7 +411,24 @@ public partial class MainPage : ContentPage
 
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
-                ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
+                // Prevent double-counting if any input just fired
+                if (
+                    _isProcessingInput
+                    || (DateTime.UtcNow - _lastInputTime).TotalMilliseconds < InputCooldownMs
+                )
+                {
+                    break;
+                }
+                _isProcessingInput = true;
+                try
+                {
+                    ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
+                    _lastInputTime = DateTime.UtcNow;
+                }
+                finally
+                {
+                    _isProcessingInput = false;
+                }
                 break;
         }
     }
