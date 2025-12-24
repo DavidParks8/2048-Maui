@@ -94,7 +94,7 @@ public partial class GamepadInputBehavior
         _pollingTimer = AttachedPage?.Dispatcher.CreateTimer();
         if (_pollingTimer != null)
         {
-            _pollingTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS polling
+            _pollingTimer.Interval = TimeSpan.FromMilliseconds(33); // ~30 FPS polling
             _pollingTimer.Tick += OnPollingTick;
             _pollingTimer.Start();
         }
