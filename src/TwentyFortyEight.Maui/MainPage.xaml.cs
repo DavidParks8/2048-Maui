@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Behaviors;
 using TwentyFortyEight.Maui.Models;
@@ -105,6 +106,11 @@ public partial class MainPage : ContentPage
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
     }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
+        Justification = "String-based bindings are safe here as the types are preserved by MAUI and the binding context is set explicitly."
+    )]
     private void CreateTiles()
     {
         var boardSize = _viewModel.BoardSize;
