@@ -9,6 +9,7 @@ public partial class AccelerometerService : IAccelerometerService
 {
     private DeviceOrientation _currentOrientation = DeviceOrientation.Portrait;
     private bool _isMonitoring;
+    private const double OrientationThreshold = 1.15; // 15% threshold to prevent jittery changes
 
     /// <inheritdoc/>
     public event EventHandler<OrientationChangedEventArgs>? OrientationChanged;
@@ -59,13 +60,17 @@ public partial class AccelerometerService : IAccelerometerService
     {
         var data = e.Reading;
 
-        // Determine orientation based on accelerometer data
+        // Determine orientation based on accelerometer data with threshold to prevent jitter
         // When device is in portrait, Y acceleration is dominant (gravity pulls down)
         // When device is in landscape, X acceleration is dominant
         var absX = Math.Abs(data.Acceleration.X);
         var absY = Math.Abs(data.Acceleration.Y);
 
-        var newOrientation = absX > absY ? DeviceOrientation.Landscape : DeviceOrientation.Portrait;
+        // Use threshold to prevent rapid switching at boundary angles
+        var newOrientation =
+            absX > absY * OrientationThreshold
+                ? DeviceOrientation.Landscape
+                : DeviceOrientation.Portrait;
 
         if (newOrientation != _currentOrientation)
         {

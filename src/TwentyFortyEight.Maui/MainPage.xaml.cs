@@ -288,13 +288,22 @@ public partial class MainPage : ContentPage
 
     private async void OnOrientationChanged(object? sender, OrientationChangedEventArgs e)
     {
-        if (_currentOrientation == e.Orientation)
-            return;
+        try
+        {
+            if (_currentOrientation == e.Orientation)
+                return;
 
-        _currentOrientation = e.Orientation;
+            _currentOrientation = e.Orientation;
 
-        // Animate layout changes based on orientation
-        await AnimateLayoutForOrientation(e.Orientation);
+            // Animate layout changes based on orientation
+            await AnimateLayoutForOrientation(e.Orientation);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"Error during orientation change animation: {ex.Message}"
+            );
+        }
     }
 
     private async Task AnimateLayoutForOrientation(DeviceOrientation orientation)
@@ -304,29 +313,31 @@ public partial class MainPage : ContentPage
         if (orientation == DeviceOrientation.Landscape)
         {
             // In landscape mode, move scores and buttons to the right side of the board
-            // Update grid structure
+            // Fade out first
             await Task.WhenAll(
                 ScoreContainer.FadeToAsync(0, animationDuration / 2),
                 ControlsContainer.FadeToAsync(0, animationDuration / 2)
             );
 
-            // Remove from current positions
+            // Position both containers in row 2, but at different vertical positions
             Grid.SetRow(ScoreContainer, 2);
             Grid.SetColumn(ScoreContainer, 0);
+            Grid.SetColumnSpan(ScoreContainer, 1);
             Grid.SetRowSpan(ScoreContainer, 1);
 
-            Grid.SetRow(ControlsContainer, 2);
+            Grid.SetRow(ControlsContainer, 3);
             Grid.SetColumn(ControlsContainer, 0);
 
-            // Change positioning for landscape
+            // Change positioning for landscape - float to the right side
             ScoreContainer.HorizontalOptions = LayoutOptions.End;
             ScoreContainer.VerticalOptions = LayoutOptions.Start;
             ScoreContainer.Margin = new Thickness(20, 0, 0, 0);
 
             ControlsContainer.HorizontalOptions = LayoutOptions.End;
-            ControlsContainer.VerticalOptions = LayoutOptions.End;
+            ControlsContainer.VerticalOptions = LayoutOptions.Start;
             ControlsContainer.Margin = new Thickness(20, 0, 0, 0);
 
+            // Fade back in
             await Task.WhenAll(
                 ScoreContainer.FadeToAsync(1, animationDuration / 2),
                 ControlsContainer.FadeToAsync(1, animationDuration / 2)
@@ -335,6 +346,7 @@ public partial class MainPage : ContentPage
         else
         {
             // In portrait mode, restore original layout
+            // Fade out first
             await Task.WhenAll(
                 ScoreContainer.FadeToAsync(0, animationDuration / 2),
                 ControlsContainer.FadeToAsync(0, animationDuration / 2)
@@ -343,6 +355,7 @@ public partial class MainPage : ContentPage
             // Restore original positions
             Grid.SetRow(ScoreContainer, 0);
             Grid.SetColumn(ScoreContainer, 1);
+            Grid.SetColumnSpan(ScoreContainer, 2);
             Grid.SetRowSpan(ScoreContainer, 1);
 
             Grid.SetRow(ControlsContainer, 3);
@@ -357,6 +370,7 @@ public partial class MainPage : ContentPage
             ControlsContainer.VerticalOptions = LayoutOptions.Fill;
             ControlsContainer.Margin = new Thickness(0, 10, 0, 0);
 
+            // Fade back in
             await Task.WhenAll(
                 ScoreContainer.FadeToAsync(1, animationDuration / 2),
                 ControlsContainer.FadeToAsync(1, animationDuration / 2)
