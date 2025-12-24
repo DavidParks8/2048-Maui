@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.Serialization;
+using TwentyFortyEight.Maui.Services;
 
 namespace TwentyFortyEight.Maui.ViewModels;
 
@@ -18,7 +19,9 @@ public partial class GameViewModel : ObservableObject
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
+    private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
+    private readonly IRandomSource _randomSource;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -82,14 +85,18 @@ public partial class GameViewModel : ObservableObject
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
-        IStatisticsTracker statisticsTracker
+        ISettingsService settingsService,
+        IStatisticsTracker statisticsTracker,
+        IRandomSource randomSource
     )
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
+        _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
+        _randomSource = randomSource;
         _config = new GameConfig();
-        _engine = new Game2048Engine(_config, new SystemRandomSource(), _statisticsTracker);
+        _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = new ObservableCollection<TileViewModel>();
@@ -179,7 +186,7 @@ public partial class GameViewModel : ObservableObject
                 }
 
                 // Wait for animation to complete (with timeout to prevent deadlock)
-                using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(500));
+                using CancellationTokenSource cts = new(GetAnimationWaitTimeout());
                 try
                 {
                     await _animationCompletionSource.Task.WaitAsync(cts.Token);
@@ -198,6 +205,23 @@ public partial class GameViewModel : ObservableObject
         {
             _isProcessingMove = false;
         }
+    }
+
+    private TimeSpan GetAnimationWaitTimeout()
+    {
+        // Base animation durations (ms) from TileAnimationService, before speed scaling.
+        const double baseSequenceMs = 220 + 100 + 75 + 100;
+        const double bufferMs = 300;
+
+        var speed = _settingsService.AnimationSpeed;
+        if (!double.IsFinite(speed) || speed <= 0)
+        {
+            speed = 1.0;
+        }
+
+        var timeoutMs = (baseSequenceMs / speed) + bufferMs;
+        timeoutMs = Math.Clamp(timeoutMs, 250, 5000);
+        return TimeSpan.FromMilliseconds(timeoutMs);
     }
 
     [RelayCommand(CanExecute = nameof(CanUndo))]
@@ -275,13 +299,17 @@ public partial class GameViewModel : ObservableObject
                 || analysis.Movements.Count > 0
             )
             {
+                // IMPORTANT: Copy the movements list because analysis.Movements is a pooled
+                // reference that gets cleared on the next Analyze() call.
+                var movementsCopy = analysis.Movements.ToList();
+
                 var eventArgs = new TileUpdateEventArgs
                 {
                     MovedTiles = movedTiles.ToFrozenSet(),
                     NewTiles = newTiles.ToFrozenSet(),
                     MergedTiles = mergedTiles.ToFrozenSet(),
                     MoveDirection = moveDirection.Value,
-                    TileMovements = analysis.Movements,
+                    TileMovements = movementsCopy,
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
@@ -352,7 +380,7 @@ public partial class GameViewModel : ObservableObject
                     _engine = new Game2048Engine(
                         state,
                         _config,
-                        new SystemRandomSource(),
+                        _randomSource,
                         _statisticsTracker
                     );
                     return;

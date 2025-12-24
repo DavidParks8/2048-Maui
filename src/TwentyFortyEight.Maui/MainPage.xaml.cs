@@ -90,6 +90,14 @@ public partial class MainPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+
+        // Re-subscribe to events (they are unsubscribed in OnDisappearing)
+        // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
+        _viewModel.TilesUpdated -= OnTilesUpdated;
+        _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+
+        _viewModel.TilesUpdated += OnTilesUpdated;
+        _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
     }
 
     protected override void OnDisappearing()

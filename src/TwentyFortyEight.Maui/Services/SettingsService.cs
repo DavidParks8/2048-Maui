@@ -7,6 +7,9 @@ public class SettingsService : ISettingsService
 {
     private const string AnimationsEnabledKey = "AnimationsEnabled";
     private const string AnimationSpeedKey = "AnimationSpeed";
+    private const double DefaultAnimationSpeed = 1.0;
+    private const double MinAnimationSpeed = 0.5;
+    private const double MaxAnimationSpeed = 1.5;
 
     /// <summary>
     /// Gets or sets whether animations are enabled.
@@ -22,7 +25,30 @@ public class SettingsService : ISettingsService
     /// </summary>
     public double AnimationSpeed
     {
-        get => Preferences.Get(AnimationSpeedKey, 1.0);
-        set => Preferences.Set(AnimationSpeedKey, Math.Clamp(value, 0.5, 1.5));
+        get
+        {
+            var speed = Preferences.Get(AnimationSpeedKey, DefaultAnimationSpeed);
+
+            if (!double.IsFinite(speed))
+            {
+                speed = DefaultAnimationSpeed;
+                Preferences.Set(AnimationSpeedKey, speed);
+                return speed;
+            }
+
+            var clamped = Math.Clamp(speed, MinAnimationSpeed, MaxAnimationSpeed);
+            if (clamped != speed)
+            {
+                speed = clamped;
+                Preferences.Set(AnimationSpeedKey, speed);
+            }
+
+            return speed;
+        }
+        set =>
+            Preferences.Set(
+                AnimationSpeedKey,
+                Math.Clamp(value, MinAnimationSpeed, MaxAnimationSpeed)
+            );
     }
 }

@@ -27,6 +27,7 @@ public static class MauiProgram
 #endif
 
         // Register services for dependency injection
+        builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
         builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<TileAnimationService>();
