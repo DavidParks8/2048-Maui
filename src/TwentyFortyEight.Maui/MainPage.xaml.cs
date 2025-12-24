@@ -14,6 +14,7 @@ public partial class MainPage : ContentPage
     private readonly IAccelerometerService _accelerometerService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
+    private CancellationTokenSource? _orientationAnimationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
     private DeviceOrientation _currentOrientation = DeviceOrientation.Portrait;
 
@@ -126,6 +127,10 @@ public partial class MainPage : ContentPage
         _animationCts?.Cancel();
         _animationCts?.Dispose();
         _animationCts = null;
+
+        _orientationAnimationCts?.Cancel();
+        _orientationAnimationCts?.Dispose();
+        _orientationAnimationCts = null;
 
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
@@ -295,8 +300,17 @@ public partial class MainPage : ContentPage
 
             _currentOrientation = e.Orientation;
 
+            // Cancel any pending orientation animations
+            _orientationAnimationCts?.Cancel();
+            _orientationAnimationCts?.Dispose();
+            _orientationAnimationCts = new CancellationTokenSource();
+
             // Animate layout changes based on orientation
-            await AnimateLayoutForOrientation(e.Orientation);
+            await AnimateLayoutForOrientation(e.Orientation, _orientationAnimationCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Animation was cancelled - this is expected behavior
         }
         catch (Exception ex)
         {
@@ -306,7 +320,10 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async Task AnimateLayoutForOrientation(DeviceOrientation orientation)
+    private async Task AnimateLayoutForOrientation(
+        DeviceOrientation orientation,
+        CancellationToken cancellationToken
+    )
     {
         const uint animationDuration = 300;
 
@@ -318,6 +335,8 @@ public partial class MainPage : ContentPage
                 ScoreContainer.FadeToAsync(0, animationDuration / 2),
                 ControlsContainer.FadeToAsync(0, animationDuration / 2)
             );
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Position both containers in row 2, but at different vertical positions
             Grid.SetRow(ScoreContainer, 2);
@@ -337,6 +356,8 @@ public partial class MainPage : ContentPage
             ControlsContainer.VerticalOptions = LayoutOptions.Start;
             ControlsContainer.Margin = new Thickness(20, 0, 0, 0);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Fade back in
             await Task.WhenAll(
                 ScoreContainer.FadeToAsync(1, animationDuration / 2),
@@ -351,6 +372,8 @@ public partial class MainPage : ContentPage
                 ScoreContainer.FadeToAsync(0, animationDuration / 2),
                 ControlsContainer.FadeToAsync(0, animationDuration / 2)
             );
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Restore original positions
             Grid.SetRow(ScoreContainer, 0);
@@ -369,6 +392,8 @@ public partial class MainPage : ContentPage
             ControlsContainer.HorizontalOptions = LayoutOptions.Center;
             ControlsContainer.VerticalOptions = LayoutOptions.Fill;
             ControlsContainer.Margin = new Thickness(0, 10, 0, 0);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Fade back in
             await Task.WhenAll(
