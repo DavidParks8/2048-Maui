@@ -1,4 +1,4 @@
-namespace TwentyFortyEight.Maui.Services;
+namespace TwentyFortyEight.ViewModels.Services;
 
 /// <summary>
 /// Interface for managing application settings.

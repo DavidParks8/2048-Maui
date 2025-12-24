@@ -1,5 +1,11 @@
 <Solution>
-  <Project Path="src\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
-  <Project Path="src\TwentyFortyEight.Maui\TwentyFortyEight.Maui.csproj" />
-  <Project Path="test\TwentyFortyEight.Tests\TwentyFortyEight.Tests.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
+    <Project Path="src\TwentyFortyEight.Maui\TwentyFortyEight.Maui.csproj" />
+    <Project Path="src\TwentyFortyEight.ViewModels\TwentyFortyEight.ViewModels.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test\TwentyFortyEight.Core.Tests\TwentyFortyEight.Core.Tests.csproj" />
+    <Project Path="test\TwentyFortyEight.ViewModels.Tests\TwentyFortyEight.ViewModels.Tests.csproj" />
+  </Folder>
 </Solution>

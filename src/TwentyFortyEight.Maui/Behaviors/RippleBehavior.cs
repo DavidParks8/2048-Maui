@@ -163,7 +163,10 @@ public sealed class RippleBehavior : Behavior<View>
         if (_rippleService is null || _rippleOverlay is null || _attachedElement is null)
             return;
 
-        await _rippleGate.WaitAsync().ConfigureAwait(false);
+        // Non-blocking check: if a ripple is already playing, ignore this request entirely
+        if (!_rippleGate.Wait(0))
+            return;
+
         CancellationTokenSource? oldCts = null;
         Task? oldTask = null;
         try

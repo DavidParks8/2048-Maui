@@ -131,12 +131,6 @@ public readonly struct Board : IEquatable<Board>
     public ReadOnlySpan2D<int> AsReadOnlySpan2D() => _data;
 
     /// <summary>
-    /// Creates a mutable copy of this board as a 2D array.
-    /// Use this when you need to modify the board for game logic.
-    /// </summary>
-    public int[,] ToMutableArray() => (int[,])_data.Clone();
-
-    /// <summary>
     /// Creates a Board from a modified 2D array.
     /// Takes ownership of the array (no cloning) for efficiency.
     /// </summary>
@@ -221,36 +215,6 @@ public readonly struct Board : IEquatable<Board>
     }
 
     /// <summary>
-    /// Finds all empty cell positions.
-    /// </summary>
-    public List<Position> FindEmptyCells()
-    {
-        var emptyCells = new List<Position>(Length);
-        FindEmptyCells(emptyCells);
-        return emptyCells;
-    }
-
-    /// <summary>
-    /// Populates the provided list with all empty cell positions.
-    /// The list is cleared before populating.
-    /// </summary>
-    /// <param name="emptyCells">The list to populate with empty cell positions.</param>
-    public void FindEmptyCells(List<Position> emptyCells)
-    {
-        emptyCells.Clear();
-        for (int row = 0; row < Size; row++)
-        {
-            for (int col = 0; col < Size; col++)
-            {
-                if (_data[row, col] == 0)
-                {
-                    emptyCells.Add(new Position(row, col));
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// Gets a random empty cell position without allocating a list.
     /// Uses a two-pass approach: first counts empty cells, then selects a random index.
     /// This maintains deterministic compatibility with seeded random sources.
@@ -298,34 +262,6 @@ public readonly struct Board : IEquatable<Board>
         }
 
         return null; // Should never reach here
-    }
-
-    /// <summary>
-    /// Checks if the board contains the specified value.
-    /// </summary>
-    public bool Contains(int value)
-    {
-        var span = AsReadOnlySpan2D();
-        foreach (var tile in span)
-        {
-            if (tile == value)
-                return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Checks if the board contains any tile with a value greater than or equal to the specified threshold.
-    /// </summary>
-    public bool ContainsAtLeast(int threshold)
-    {
-        var span = AsReadOnlySpan2D();
-        foreach (var tile in span)
-        {
-            if (tile >= threshold)
-                return true;
-        }
-        return false;
     }
 
     /// <summary>

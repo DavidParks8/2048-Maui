@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.ViewModels.Services;
 
-namespace TwentyFortyEight.Maui.ViewModels;
+namespace TwentyFortyEight.ViewModels;
 
 /// <summary>
 /// ViewModel for the settings page.

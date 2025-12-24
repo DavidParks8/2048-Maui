@@ -3,9 +3,6 @@ using System.Runtime.InteropServices;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
-#if WINDOWS
-using System.Runtime.InteropServices.WindowsRuntime;
-#endif
 
 // NOTE: We intentionally avoid SKRuntimeEffect here to keep this working across
 // SkiaSharp versions and platforms. The effect is implemented via Skia's
@@ -18,7 +15,7 @@ namespace TwentyFortyEight.Maui.Services;
 /// The effect captures a snapshot, then distorts it with concentric traveling waves that
 /// reflect off the edges twice before dissipating — like dropping a stone in a still pool.
 /// </summary>
-public sealed class BoardRippleService
+public sealed partial class BoardRippleService
 {
     /// <summary>
     /// Total duration of the ripple animation in seconds.
@@ -33,6 +30,9 @@ public sealed class BoardRippleService
     [ThreadStatic]
     private static int s_pixelBufferSize;
 
+    // Debounce: track if a ripple is currently playing to prevent concurrent effects
+    private int _isPlaying;
+
     public async Task<bool> TryPlayAsync(
         SKCanvasView rippleOverlay,
         VisualElement boardContainer,
@@ -40,12 +40,22 @@ public sealed class BoardRippleService
         CancellationToken cancellationToken
     )
     {
+        // Debounce: if already playing, skip this request
+        if (Interlocked.CompareExchange(ref _isPlaying, 1, 0) != 0)
+            return false;
+
         IDispatcherTimer? timer = null;
         SKBitmap? capturedBitmap = null;
         SKImage? capturedImage = null;
         EventHandler<SKPaintSurfaceEventArgs>? paintHandler = null;
         var handlerAttached = false;
         SKBitmap? displacementMap = null;
+
+        // Flag to signal paint handler that resources are being disposed.
+        // Using a class wrapper so the closure captures the reference, not the value.
+        var disposedFlag = new DisposedFlag();
+        // Counter to track in-flight paint operations
+        var paintInFlight = new PaintInFlightCounter();
 
         try
         {
@@ -69,7 +79,7 @@ public sealed class BoardRippleService
             var capturedWidth = capturedBitmap.Width;
             var capturedHeight = capturedBitmap.Height;
 
-            rippleOverlay.IsVisible = true;
+            await rippleOverlay.Dispatcher.DispatchAsync(() => rippleOverlay.IsVisible = true);
 
             var startUtc = DateTimeOffset.UtcNow;
             var tcs = new TaskCompletionSource();
@@ -82,91 +92,118 @@ public sealed class BoardRippleService
 
             paintHandler = (_, e) =>
             {
-                var info = e.Info;
-                var canvas = e.Surface.Canvas;
-                canvas.Clear(SKColors.Transparent);
-
-                if (capturedImage is null)
+                // Check disposed flag FIRST before any resource access.
+                // This prevents using disposed native handles.
+                if (disposedFlag.IsDisposed)
                     return;
 
-                // Source rect is the captured image size; dest rect is the canvas size
-                // Apply a manual scale factor to compensate for sizing mismatch
-                const float scaleFactor = 1.05f;
-                var srcRect = SKRect.Create(capturedWidth, capturedHeight);
-                var scaledW = info.Width * scaleFactor;
-                var scaledH = info.Height * scaleFactor;
-                var offsetX = (info.Width - scaledW) / 2f;
-                var offsetY = (info.Height - scaledH) / 2f;
-                var dstRect = SKRect.Create(offsetX, offsetY, scaledW, scaledH);
-
-                var elapsed = (float)(DateTimeOffset.UtcNow - startUtc).TotalSeconds;
-                var env = Envelope(elapsed, durationSeconds);
-                if (env <= 0.001f)
+                // Increment in-flight counter to signal we're actively painting.
+                // The finally block will wait for this to reach zero before disposing.
+                paintInFlight.Enter();
+                try
                 {
-                    // Ensure we don't block board visibility if we're still painting.
-                    canvas.DrawImage(capturedImage, srcRect, dstRect);
-                    return;
-                }
+                    // Double-check after entering - disposal may have started
+                    if (disposedFlag.IsDisposed)
+                        return;
 
-                // Displacement map resolution - balance between quality and performance.
-                // Lower resolution = faster but more aliasing. GPU upscales it smoothly.
-                var mapW = Math.Clamp(info.Width / 2, 240, 480);
-                var mapH = Math.Clamp(info.Height / 2, 240, 480);
-                if (
-                    displacementMap is null
-                    || displacementMap.Width != mapW
-                    || displacementMap.Height != mapH
-                )
-                {
-                    displacementMap?.Dispose();
-                    displacementMap = new SKBitmap(
-                        new SKImageInfo(mapW, mapH, SKColorType.Bgra8888, SKAlphaType.Premul)
+                    var info = e.Info;
+                    var canvas = e.Surface.Canvas;
+                    canvas.Clear(SKColors.Transparent);
+
+                    // Check again before using capturedImage
+                    if (capturedImage is null || disposedFlag.IsDisposed)
+                        return;
+
+                    // Source rect is the captured image size; dest rect is the canvas size
+                    // Apply a manual scale factor to compensate for sizing mismatch
+                    const float scaleFactor = 1.05f;
+                    var srcRect = SKRect.Create(capturedWidth, capturedHeight);
+                    var scaledW = info.Width * scaleFactor;
+                    var scaledH = info.Height * scaleFactor;
+                    var offsetX = (info.Width - scaledW) / 2f;
+                    var offsetY = (info.Height - scaledH) / 2f;
+                    var dstRect = SKRect.Create(offsetX, offsetY, scaledW, scaledH);
+
+                    var elapsed = (float)(DateTimeOffset.UtcNow - startUtc).TotalSeconds;
+                    var env = Envelope(elapsed, durationSeconds);
+                    if (env <= 0.001f)
+                    {
+                        // Ensure we don't block board visibility if we're still painting.
+                        if (!disposedFlag.IsDisposed)
+                            canvas.DrawImage(capturedImage, srcRect, dstRect);
+                        return;
+                    }
+
+                    // Displacement map resolution - balance between quality and performance.
+                    // Lower resolution = faster but more aliasing. GPU upscales it smoothly.
+                    var mapW = Math.Clamp(info.Width / 2, 240, 480);
+                    var mapH = Math.Clamp(info.Height / 2, 240, 480);
+                    if (
+                        displacementMap is null
+                        || displacementMap.Width != mapW
+                        || displacementMap.Height != mapH
+                    )
+                    {
+                        displacementMap?.Dispose();
+                        displacementMap = new SKBitmap(
+                            new SKImageInfo(mapW, mapH, SKColorType.Bgra8888, SKAlphaType.Premul)
+                        );
+                    }
+
+                    // Convert origin in DIPs to pixels in the current canvas.
+                    var dipToPxX = boardDipWidth > 0 ? (info.Width / boardDipWidth) : 1f;
+                    var dipToPxY = boardDipHeight > 0 ? (info.Height / boardDipHeight) : 1f;
+                    var originPx = new Vector2(originDip.X * dipToPxX, originDip.Y * dipToPxY);
+
+                    // Update displacement map pixels.
+                    UpdateDisplacementMap(
+                        displacementMap,
+                        originPx,
+                        new Vector2(info.Width, info.Height),
+                        elapsed,
+                        durationSeconds
                     );
+
+                    // SkiaSharp 2.88 docs: CreateDisplacementMapEffect expects SKImageFilter displacement,
+                    // not a shader. We generate an image filter from the displacement bitmap.
+                    using var displacementImage = SKImage.FromBitmap(displacementMap);
+                    if (displacementImage is null || disposedFlag.IsDisposed)
+                    {
+                        if (!disposedFlag.IsDisposed)
+                            canvas.DrawImage(capturedImage, srcRect, dstRect);
+                        return;
+                    }
+
+                    using var displacementFilter = SKImageFilter.CreateImage(
+                        displacementImage,
+                        SKRect.Create(mapW, mapH),
+                        dstRect,
+                        SKFilterQuality.High
+                    );
+
+                    // AAA-level displacement amplitude (pixels) - scales with envelope
+                    var scalePx = 28f * env;
+
+                    using var rippleFilter = SKImageFilter.CreateDisplacementMapEffect(
+                        SKColorChannel.R,
+                        SKColorChannel.G,
+                        scalePx,
+                        displacementFilter,
+                        null
+                    );
+
+                    using var paint = new SKPaint
+                    {
+                        IsAntialias = true,
+                        ImageFilter = rippleFilter,
+                    };
+                    if (!disposedFlag.IsDisposed)
+                        canvas.DrawImage(capturedImage, srcRect, dstRect, paint);
                 }
-
-                // Convert origin in DIPs to pixels in the current canvas.
-                var dipToPxX = boardDipWidth > 0 ? (info.Width / boardDipWidth) : 1f;
-                var dipToPxY = boardDipHeight > 0 ? (info.Height / boardDipHeight) : 1f;
-                var originPx = new Vector2(originDip.X * dipToPxX, originDip.Y * dipToPxY);
-
-                // Update displacement map pixels.
-                UpdateDisplacementMap(
-                    displacementMap,
-                    originPx,
-                    new Vector2(info.Width, info.Height),
-                    elapsed,
-                    durationSeconds
-                );
-
-                // SkiaSharp 2.88 docs: CreateDisplacementMapEffect expects SKImageFilter displacement,
-                // not a shader. We generate an image filter from the displacement bitmap.
-                using var displacementImage = SKImage.FromBitmap(displacementMap);
-                if (displacementImage is null)
+                finally
                 {
-                    canvas.DrawImage(capturedImage, srcRect, dstRect);
-                    return;
+                    paintInFlight.Exit();
                 }
-
-                using var displacementFilter = SKImageFilter.CreateImage(
-                    displacementImage,
-                    SKRect.Create(mapW, mapH),
-                    dstRect,
-                    SKFilterQuality.High
-                );
-
-                // AAA-level displacement amplitude (pixels) - scales with envelope
-                var scalePx = 28f * env;
-
-                using var rippleFilter = SKImageFilter.CreateDisplacementMapEffect(
-                    SKColorChannel.R,
-                    SKColorChannel.G,
-                    scalePx,
-                    displacementFilter,
-                    null
-                );
-
-                using var paint = new SKPaint { IsAntialias = true, ImageFilter = rippleFilter };
-                canvas.DrawImage(capturedImage, srcRect, dstRect, paint);
             };
 
             rippleOverlay.PaintSurface += paintHandler;
@@ -204,129 +241,36 @@ public sealed class BoardRippleService
             // ALWAYS hide overlay and clean up, even on cancellation or exception.
             timer?.Stop();
 
+            // Signal that we're disposing - paint handlers will check this flag
+            // and exit early before accessing any resources.
+            disposedFlag.MarkDisposed();
+
             if (handlerAttached && paintHandler is not null)
                 rippleOverlay.PaintSurface -= paintHandler;
+
+            // Wait for any in-flight paint operations to complete.
+            // This ensures no paint handler is actively using the resources we're about to dispose.
+            // Use a timeout to prevent deadlocks in edge cases.
+            paintInFlight.WaitForZero(TimeSpan.FromMilliseconds(100));
 
             rippleOverlay.Dispatcher.Dispatch(() => rippleOverlay.IsVisible = false);
 
             capturedImage?.Dispose();
             capturedBitmap?.Dispose();
             displacementMap?.Dispose();
+
+            // Reset debounce flag to allow future ripple effects
+            Interlocked.Exchange(ref _isPlaying, 0);
         }
     }
 
-    private static async Task<SKBitmap?> TryCaptureBitmapAsync(
+    /// <summary>
+    /// Platform-specific implementation to capture the board container as a bitmap.
+    /// </summary>
+    private static partial Task<SKBitmap?> TryCaptureBitmapAsync(
         VisualElement boardContainer,
         CancellationToken cancellationToken
-    )
-    {
-#if WINDOWS
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement fe)
-            return null;
-
-        var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
-        await rtb.RenderAsync(fe);
-
-        var width = rtb.PixelWidth;
-        var height = rtb.PixelHeight;
-        if (width <= 0 || height <= 0)
-            return null;
-
-        var pixelBuffer = await rtb.GetPixelsAsync();
-        var bytes = pixelBuffer.ToArray();
-
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var bitmap = new SKBitmap(info);
-        Marshal.Copy(bytes, 0, bitmap.GetPixels(), bytes.Length);
-        return bitmap;
-#elif ANDROID
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not Android.Views.View view)
-            return null;
-
-        var width = view.Width;
-        var height = view.Height;
-        if (width <= 0 || height <= 0)
-            return null;
-
-        using var bitmap = Android.Graphics.Bitmap.CreateBitmap(
-            width,
-            height,
-            Android.Graphics.Bitmap.Config.Argb8888!
-        );
-        using (var canvas = new Android.Graphics.Canvas(bitmap))
-        {
-            view.Draw(canvas);
-        }
-
-        var byteCount = bitmap.ByteCount;
-        var buffer = Java.Nio.ByteBuffer.AllocateDirect(byteCount);
-        bitmap.CopyPixelsToBuffer(buffer);
-        buffer.Rewind();
-
-        var bytes = new byte[byteCount];
-        buffer.Get(bytes);
-
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var skBitmap = new SKBitmap(info);
-        Marshal.Copy(bytes, 0, skBitmap.GetPixels(), bytes.Length);
-        return skBitmap;
-#elif IOS || MACCATALYST
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (boardContainer.Handler?.PlatformView is not UIKit.UIView view)
-            return null;
-
-        var bounds = view.Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-            return null;
-
-        var renderer = new UIKit.UIGraphicsImageRenderer(bounds.Size);
-        using var image = renderer.CreateImage(_ =>
-        {
-            // drawViewHierarchy gives best fidelity for composed UI
-            view.DrawViewHierarchy(bounds, true);
-        });
-
-        using var cgImage = image.CGImage;
-        if (cgImage is null)
-            return null;
-
-        var width = (int)cgImage.Width;
-        var height = (int)cgImage.Height;
-        if (width <= 0 || height <= 0)
-            return null;
-
-        var bytesPerRow = width * 4;
-        var bytes = new byte[bytesPerRow * height];
-
-        using var colorSpace = CoreGraphics.CGColorSpace.CreateDeviceRGB();
-        using var ctx = new CoreGraphics.CGBitmapContext(
-            bytes,
-            width,
-            height,
-            8,
-            bytesPerRow,
-            colorSpace,
-            CoreGraphics.CGBitmapFlags.ByteOrder32Little
-                | CoreGraphics.CGBitmapFlags.PremultipliedFirst
-        );
-
-        ctx.DrawImage(new CoreGraphics.CGRect(0, 0, width, height), cgImage);
-
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var skBitmap = new SKBitmap(info);
-        Marshal.Copy(bytes, 0, skBitmap.GetPixels(), bytes.Length);
-        return skBitmap;
-#else
-        _ = boardContainer;
-        _ = cancellationToken;
-        return null;
-#endif
-    }
+    );
 
     private static float Envelope(float t, float duration)
     {
@@ -566,5 +510,58 @@ public sealed class BoardRippleService
         var modulation = 1f + 0.15f * MathF.Sin(phase * 0.3f);
 
         return MathF.Sin(phase) * lead * modulation;
+    }
+
+    /// <summary>
+    /// Thread-safe flag to signal that resources are being disposed.
+    /// Paint handlers check this before accessing any native resources.
+    /// </summary>
+    private sealed class DisposedFlag
+    {
+        private int _disposed;
+
+        public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+
+        public void MarkDisposed() => Interlocked.Exchange(ref _disposed, 1);
+    }
+
+    /// <summary>
+    /// Thread-safe counter to track in-flight paint operations.
+    /// The cleanup code waits for this to reach zero before disposing resources.
+    /// </summary>
+    private sealed class PaintInFlightCounter
+    {
+        private int _count;
+        private readonly object _lock = new();
+
+        public void Enter() => Interlocked.Increment(ref _count);
+
+        public void Exit()
+        {
+            var newCount = Interlocked.Decrement(ref _count);
+            if (newCount == 0)
+            {
+                lock (_lock)
+                {
+                    Monitor.PulseAll(_lock);
+                }
+            }
+        }
+
+        public void WaitForZero(TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            lock (_lock)
+            {
+                while (Volatile.Read(ref _count) > 0)
+                {
+                    var remaining = deadline - DateTime.UtcNow;
+                    if (remaining <= TimeSpan.Zero)
+                        break;
+
+                    Monitor.Wait(_lock, remaining);
+                }
+            }
+        }
     }
 }

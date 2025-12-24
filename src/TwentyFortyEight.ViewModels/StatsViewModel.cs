@@ -1,9 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Resources.Strings;
+using TwentyFortyEight.ViewModels.Services;
 
-namespace TwentyFortyEight.Maui.ViewModels;
+namespace TwentyFortyEight.ViewModels;
 
 /// <summary>
 /// ViewModel for the Statistics page.
@@ -11,6 +11,9 @@ namespace TwentyFortyEight.Maui.ViewModels;
 public partial class StatsViewModel : ObservableObject
 {
     private readonly IStatisticsTracker _statisticsTracker;
+    private readonly IAlertService _alertService;
+    private readonly INavigationService _navigationService;
+    private readonly ILocalizationService _localizationService;
 
     [ObservableProperty]
     private int _gamesPlayed;
@@ -39,9 +42,17 @@ public partial class StatsViewModel : ObservableObject
     [ObservableProperty]
     private int _bestStreak;
 
-    public StatsViewModel(IStatisticsTracker statisticsTracker)
+    public StatsViewModel(
+        IStatisticsTracker statisticsTracker,
+        IAlertService alertService,
+        INavigationService navigationService,
+        ILocalizationService localizationService
+    )
     {
         _statisticsTracker = statisticsTracker;
+        _alertService = alertService;
+        _navigationService = navigationService;
+        _localizationService = localizationService;
         RefreshStatistics();
     }
 
@@ -66,18 +77,11 @@ public partial class StatsViewModel : ObservableObject
     [RelayCommand]
     private async Task ResetStatisticsAsync()
     {
-        var window = Application.Current?.Windows.FirstOrDefault();
-        var page = window?.Page;
-        if (page is null)
-        {
-            return;
-        }
-
-        bool confirmed = await page.DisplayAlertAsync(
-            AppStrings.ResetStatisticsTitle,
-            AppStrings.ResetStatisticsMessage,
-            AppStrings.Reset,
-            AppStrings.Cancel
+        bool confirmed = await _alertService.ShowConfirmationAsync(
+            _localizationService.ResetStatisticsTitle,
+            _localizationService.ResetStatisticsMessage,
+            _localizationService.Reset,
+            _localizationService.Cancel
         );
 
         if (confirmed)
@@ -90,7 +94,7 @@ public partial class StatsViewModel : ObservableObject
     [RelayCommand]
     private async Task GoBackAsync()
     {
-        await Shell.Current.GoToAsync("..");
+        await _navigationService.GoBackAsync();
     }
 
     private static string FormatWinRate(double winRate)

@@ -1,8 +1,7 @@
 using System.Collections.Frozen;
-using System.Collections.Generic;
 using TwentyFortyEight.Core;
 
-namespace TwentyFortyEight.Maui.Models;
+namespace TwentyFortyEight.ViewModels.Models;
 
 /// <summary>
 /// Event args for tile update events that require animations.
@@ -34,5 +33,5 @@ public class TileUpdateEventArgs : EventArgs
     /// This enables proper slide animations from origin to destination.
     /// Uses the Core TileMovement type for platform-agnostic movement data.
     /// </summary>
-    public required IReadOnlyList<Core.TileMovement> TileMovements { get; init; }
+    public required IReadOnlyList<TileMovement> TileMovements { get; init; }
 }

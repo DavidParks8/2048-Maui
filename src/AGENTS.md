@@ -195,6 +195,46 @@ await Shell.Current.GoToAsync("details?id=123");
 
 ### Platform Code
 
+**Prefer partial classes and methods** over `#if` preprocessor directives for platform-specific implementations. This keeps platform code isolated and improves readability.
+
+#### Partial Classes Pattern (Preferred)
+
+Define a `partial class` with a `partial method` declaration in the shared code (e.g., `Services/`):
+
+```csharp
+namespace MyApp.Services;
+
+public partial class MyService
+{
+    // Shared code here...
+
+    // Platform-specific method declaration (no body)
+    private static partial Task<string?> GetPlatformValueAsync();
+}
+```
+
+Implement the partial method in each platform folder (`Platforms/Windows/`, `Platforms/Android/`, etc.):
+
+```csharp
+// Platforms/Windows/MyService.cs
+namespace MyApp.Services;
+
+public partial class MyService
+{
+    private static partial Task<string?> GetPlatformValueAsync()
+    {
+        // Windows-specific implementation
+        return Task.FromResult<string?>("Windows");
+    }
+}
+```
+
+The build system automatically includes only the correct platform implementation based on the target framework.
+
+#### Conditional Compilation (Use Sparingly)
+
+Only use `#if` directives for small, inline platform differences (e.g., in handler customization):
+
 ```csharp
 #if ANDROID
 #elif IOS

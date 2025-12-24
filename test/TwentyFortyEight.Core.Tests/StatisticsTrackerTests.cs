@@ -1,6 +1,6 @@
 using TwentyFortyEight.Core;
 
-namespace TwentyFortyEight.Tests;
+namespace TwentyFortyEight.Core.Tests;
 
 /// <summary>
 /// Null implementation of IStatisticsTracker for tests that don't need statistics.

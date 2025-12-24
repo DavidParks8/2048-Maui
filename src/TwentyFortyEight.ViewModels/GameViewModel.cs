@@ -5,11 +5,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Models;
-using TwentyFortyEight.Maui.Serialization;
-using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Serialization;
+using TwentyFortyEight.ViewModels.Services;
 
-namespace TwentyFortyEight.Maui.ViewModels;
+namespace TwentyFortyEight.ViewModels;
 
 /// <summary>
 /// ViewModel for the 2048 game.
@@ -19,22 +19,34 @@ public partial class GameViewModel : ObservableObject
     private readonly GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
+    private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
-    private readonly IAchievementTracker _achievementTracker;
-    private readonly ISocialGamingService _socialGamingService;
+    private readonly IRandomSource _randomSource;
+    private readonly IPreferencesService _preferencesService;
+    private readonly IAlertService _alertService;
+    private readonly INavigationService _navigationService;
+    private readonly ILocalizationService _localizationService;
     private Game2048Engine _engine;
 
     /// <summary>
-    /// Lock to prevent concurrent move processing.
-    /// When true, a move is currently being processed and new moves should be queued or ignored.
+    /// Semaphore to prevent concurrent move processing.
+    /// Ensures only one move is processed at a time to avoid broken board state from fast swiping.
     /// </summary>
-    private volatile bool _isProcessingMove;
+    private readonly SemaphoreSlim _moveLock = new(1, 1);
 
     /// <summary>
     /// Task completion source to signal when the current animation completes.
     /// </summary>
-    private TaskCompletionSource? _animationCompletionSource;
+    private TaskCompletionSource<bool>? _animationCompletionSource;
 
+    /// <summary>
+    /// Debounce timer for saving best score to preferences.
+    /// </summary>
+    private CancellationTokenSource? _bestScoreSaveDebounce;
+
+    /// <summary>
+    /// The collection of tiles for the game board.
+    /// </summary>
     public ObservableCollection<TileViewModel> Tiles { get; }
 
     /// <summary>
@@ -48,7 +60,7 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public void SignalAnimationComplete()
     {
-        _animationCompletionSource?.TrySetResult();
+        _animationCompletionSource?.TrySetResult(true);
     }
 
     [ObservableProperty]
@@ -64,7 +76,25 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnBestScoreChanged(int value)
     {
-        Preferences.Set("BestScore", value);
+        // Debounce preference saving to avoid hammering storage during rapid undos
+        _bestScoreSaveDebounce?.Cancel();
+        _bestScoreSaveDebounce?.Dispose();
+        _bestScoreSaveDebounce = new CancellationTokenSource();
+
+        _ = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
+    }
+
+    private async Task DebouncedSaveBestScoreAsync(int value, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(500, cancellationToken);
+            _preferencesService.SetInt("BestScore", value);
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled by newer value - expected behavior
+        }
     }
 
     [ObservableProperty]
@@ -88,18 +118,26 @@ public partial class GameViewModel : ObservableObject
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
+        ISettingsService settingsService,
         IStatisticsTracker statisticsTracker,
-        IAchievementTracker achievementTracker,
-        ISocialGamingService socialGamingService
+        IRandomSource randomSource,
+        IPreferencesService preferencesService,
+        IAlertService alertService,
+        INavigationService navigationService,
+        ILocalizationService localizationService
     )
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
+        _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
-        _achievementTracker = achievementTracker;
-        _socialGamingService = socialGamingService;
+        _randomSource = randomSource;
+        _preferencesService = preferencesService;
+        _alertService = alertService;
+        _navigationService = navigationService;
+        _localizationService = localizationService;
         _config = new GameConfig();
-        _engine = new Game2048Engine(_config, new SystemRandomSource(), _statisticsTracker);
+        _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = new ObservableCollection<TileViewModel>();
@@ -130,21 +168,16 @@ public partial class GameViewModel : ObservableObject
         // Show confirmation if game is in progress (has moves and not game over)
         if (Moves > 0 && !IsGameOver)
         {
-            // Use Shell.Current.CurrentPage for displaying alerts
-            var page = Shell.Current?.CurrentPage;
-            if (page != null)
-            {
-                bool confirm = await page.DisplayAlertAsync(
-                    Resources.Strings.AppStrings.RestartConfirmTitle,
-                    Resources.Strings.AppStrings.RestartConfirmMessage,
-                    Resources.Strings.AppStrings.StartNew,
-                    Resources.Strings.AppStrings.Cancel
-                );
+            bool confirm = await _alertService.ShowConfirmationAsync(
+                _localizationService.RestartConfirmTitle,
+                _localizationService.RestartConfirmMessage,
+                _localizationService.StartNew,
+                _localizationService.Cancel
+            );
 
-                if (!confirm)
-                {
-                    return;
-                }
+            if (!confirm)
+            {
+                return;
             }
         }
 
@@ -169,13 +202,13 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task MoveAsync(Direction direction)
     {
-        // Prevent concurrent move processing to avoid broken board state from fast swiping
-        if (_isProcessingMove)
+        // Use non-blocking Wait(0) to check if we can acquire the lock immediately
+        // If not, another move is in progress - skip this one
+        if (!_moveLock.Wait(0))
         {
             return;
         }
 
-        _isProcessingMove = true;
         try
         {
             // Capture previous state before the move
@@ -185,7 +218,7 @@ public partial class GameViewModel : ObservableObject
             if (moved)
             {
                 // Create a completion source to wait for animation
-                _animationCompletionSource = new TaskCompletionSource();
+                _animationCompletionSource = new TaskCompletionSource<bool>();
 
                 UpdateUI(previousBoard, direction);
                 SaveGame();
@@ -198,7 +231,7 @@ public partial class GameViewModel : ObservableObject
                 }
 
                 // Wait for animation to complete (with timeout to prevent deadlock)
-                using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(500));
+                using CancellationTokenSource cts = new(GetAnimationWaitTimeout());
                 try
                 {
                     await _animationCompletionSource.Task.WaitAsync(cts.Token);
@@ -221,8 +254,25 @@ public partial class GameViewModel : ObservableObject
         }
         finally
         {
-            _isProcessingMove = false;
+            _moveLock.Release();
         }
+    }
+
+    private TimeSpan GetAnimationWaitTimeout()
+    {
+        // Base animation durations (ms) from TileAnimationService, before speed scaling.
+        const double baseSequenceMs = 220 + 100 + 75 + 100;
+        const double bufferMs = 300;
+
+        var speed = _settingsService.AnimationSpeed;
+        if (!double.IsFinite(speed) || speed <= 0)
+        {
+            speed = 1.0;
+        }
+
+        var timeoutMs = (baseSequenceMs / speed) + bufferMs;
+        timeoutMs = Math.Clamp(timeoutMs, 250, 5000);
+        return TimeSpan.FromMilliseconds(timeoutMs);
     }
 
     [RelayCommand(CanExecute = nameof(CanUndo))]
@@ -238,13 +288,13 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task OpenStatsAsync()
     {
-        await Shell.Current.GoToAsync("stats");
+        await _navigationService.NavigateToAsync("stats");
     }
 
     [RelayCommand]
     private async Task OpenSettingsAsync()
     {
-        await Shell.Current.GoToAsync("settings");
+        await _navigationService.NavigateToAsync("settings");
     }
 
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
@@ -300,13 +350,17 @@ public partial class GameViewModel : ObservableObject
                 || analysis.Movements.Count > 0
             )
             {
+                // IMPORTANT: Copy the movements list because analysis.Movements is a pooled
+                // reference that gets cleared on the next Analyze() call.
+                var movementsCopy = analysis.Movements.ToList();
+
                 var eventArgs = new TileUpdateEventArgs
                 {
                     MovedTiles = movedTiles.ToFrozenSet(),
                     NewTiles = newTiles.ToFrozenSet(),
                     MergedTiles = mergedTiles.ToFrozenSet(),
                     MoveDirection = moveDirection.Value,
-                    TileMovements = analysis.Movements,
+                    TileMovements = movementsCopy,
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
@@ -331,7 +385,7 @@ public partial class GameViewModel : ObservableObject
 
         if (state.IsWon)
         {
-            StatusText = Resources.Strings.AppStrings.YouWin;
+            StatusText = _localizationService.YouWin;
         }
         else
         {
@@ -348,7 +402,7 @@ public partial class GameViewModel : ObservableObject
         {
             var dto = GameStateDto.FromGameState(_engine.CurrentState);
             var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
-            Preferences.Set("SavedGame", json);
+            _preferencesService.SetString("SavedGame", json);
         }
         catch (Exception ex)
         {
@@ -361,10 +415,10 @@ public partial class GameViewModel : ObservableObject
         try
         {
             // Load best score - use property to trigger OnBestScoreChanged
-            BestScore = Preferences.Get("BestScore", 0);
+            BestScore = _preferencesService.GetInt("BestScore", 0);
 
             // Try to load saved game
-            var savedJson = Preferences.Get("SavedGame", string.Empty);
+            var savedJson = _preferencesService.GetString("SavedGame", string.Empty);
             if (!string.IsNullOrEmpty(savedJson))
             {
                 var dto = JsonSerializer.Deserialize(
@@ -374,12 +428,7 @@ public partial class GameViewModel : ObservableObject
                 if (dto != null)
                 {
                     var state = dto.ToGameState();
-                    _engine = new Game2048Engine(
-                        state,
-                        _config,
-                        new SystemRandomSource(),
-                        _statisticsTracker
-                    );
+                    _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
                     return;
                 }
             }
@@ -393,131 +442,9 @@ public partial class GameViewModel : ObservableObject
         _engine.NewGame();
     }
 
-    private async Task SubmitScoreToSocialGaming(int score)
-    {
-        try
-        {
-            await _socialGamingService.SubmitScoreAsync(score);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to submit score to social gaming service");
-        }
-    }
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to save game state")]
+    partial void LogSaveGameError(Exception ex);
 
-    private async Task CheckAndReportAchievements()
-    {
-        try
-        {
-            var state = _engine.CurrentState;
-
-            // Check for tile achievements using the core tracker
-            if (_achievementTracker.CheckTileAchievement(state.MaxTileValue))
-            {
-                var tileValue = _achievementTracker.LastUnlockedTileValue!.Value;
-                var achievementId = GetTileAchievementId(tileValue);
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Check for first win achievement
-            if (_achievementTracker.CheckFirstWinAchievement(state.IsWon))
-            {
-                var achievementId = GetFirstWinAchievementId();
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Check for score achievements
-            if (_achievementTracker.CheckScoreAchievement(state.Score))
-            {
-                var scoreMilestone = _achievementTracker.LastUnlockedScoreMilestone!.Value;
-                var achievementId = GetScoreAchievementId(scoreMilestone);
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Reset the "just unlocked" flags after reporting
-            _achievementTracker.ResetJustUnlocked();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to check and report achievements");
-        }
-    }
-
-    private static string? GetTileAchievementId(int tileValue)
-    {
-#if IOS || MACCATALYST
-        return tileValue switch
-        {
-            4096 => PlatformAchievementIds.iOS.Achievement_Tile4096,
-            2048 => PlatformAchievementIds.iOS.Achievement_Tile2048,
-            1024 => PlatformAchievementIds.iOS.Achievement_Tile1024,
-            512 => PlatformAchievementIds.iOS.Achievement_Tile512,
-            256 => PlatformAchievementIds.iOS.Achievement_Tile256,
-            128 => PlatformAchievementIds.iOS.Achievement_Tile128,
-            _ => null,
-        };
-#else
-        return null;
-#endif
-    }
-
-    private static string? GetFirstWinAchievementId()
-    {
-#if IOS || MACCATALYST
-        return PlatformAchievementIds.iOS.Achievement_FirstWin;
-#else
-        return null;
-#endif
-    }
-
-    private static string? GetScoreAchievementId(int score)
-    {
-#if IOS || MACCATALYST
-        return score switch
-        {
-            10000 => PlatformAchievementIds.iOS.Achievement_Score10000,
-            25000 => PlatformAchievementIds.iOS.Achievement_Score25000,
-            50000 => PlatformAchievementIds.iOS.Achievement_Score50000,
-            100000 => PlatformAchievementIds.iOS.Achievement_Score100000,
-            _ => null,
-        };
-#else
-        return null;
-#endif
-    }
-
-    [RelayCommand]
-    private async Task ShowLeaderboard()
-    {
-        try
-        {
-            await _socialGamingService.ShowLeaderboardAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to show leaderboard");
-        }
-    }
-
-    [RelayCommand]
-    private async Task ShowAchievements()
-    {
-        try
-        {
-            await _socialGamingService.ShowAchievementsAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to show achievements");
-        }
-    }
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
+    partial void LogLoadGameError(Exception ex);
 }

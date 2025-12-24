@@ -1,4 +1,6 @@
-using TwentyFortyEight.Maui.Models;
+using TwentyFortyEight.Maui.Helpers;
+using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -43,6 +45,11 @@ public class TileAnimationService(ISettingsService settingsService)
     private const double DefaultAnimationSpeed = 1.0;
 
     /// <summary>
+    /// Minimum duration for an animation to be perceptible (in milliseconds).
+    /// </summary>
+    private const uint MinimumAnimationDuration = 16;
+
+    /// <summary>
     /// Small delay to ensure UI updates before animating in milliseconds.
     /// </summary>
     private const int UiUpdateDelay = 10;
@@ -53,12 +60,20 @@ public class TileAnimationService(ISettingsService settingsService)
     private uint GetAdjustedDuration(uint baseDuration)
     {
         var speed = settingsService.AnimationSpeed;
-        // Ensure speed is never zero or negative to prevent division by zero
-        if (speed <= 0)
+        if (!double.IsFinite(speed) || speed <= 0)
         {
             speed = DefaultAnimationSpeed;
         }
-        return (uint)(baseDuration / speed);
+
+        var adjusted = baseDuration / speed;
+        if (!double.IsFinite(adjusted) || adjusted <= 0)
+        {
+            return MinimumAnimationDuration;
+        }
+
+        // Round rather than truncate to avoid 0ms due to casting.
+        var adjustedMs = (uint)Math.Round(adjusted, MidpointRounding.AwayFromZero);
+        return adjustedMs < MinimumAnimationDuration ? MinimumAnimationDuration : adjustedMs;
     }
 
     /// <summary>
@@ -293,8 +308,8 @@ public class TileAnimationService(ISettingsService settingsService)
 
     private static Border CreateOverlayTile(int value)
     {
-        var backgroundColor = TileViewModel.GetTileBackgroundColor(value);
-        var textColor = TileViewModel.GetTileTextColor(value);
+        var backgroundColor = TileColorHelper.GetTileBackgroundColor(value);
+        var textColor = TileColorHelper.GetTileTextColor(value);
 
         return new Border
         {
