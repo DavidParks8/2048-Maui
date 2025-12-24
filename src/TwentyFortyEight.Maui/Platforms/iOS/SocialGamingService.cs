@@ -6,15 +6,15 @@ using UIKit;
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// iOS implementation of Game Center service using GameKit framework.
+/// iOS/macOS implementation of social gaming service using Game Center.
 /// </summary>
-public class GameCenterService : IGameCenterService
+public partial class SocialGamingService : ISocialGamingService
 {
-    private readonly ILogger<GameCenterService>? _logger;
+    private readonly ILogger<SocialGamingService> _logger;
     private bool _isAuthenticated;
     private readonly HashSet<string> _reportedAchievements = new();
 
-    public GameCenterService(ILogger<GameCenterService>? logger = null)
+    public SocialGamingService(ILogger<SocialGamingService> logger)
     {
         _logger = logger;
     }
@@ -46,26 +46,20 @@ public class GameCenterService : IGameCenterService
                                 true,
                                 () =>
                                 {
-                                    _logger?.LogInformation(
-                                        "Game Center authentication view presented"
-                                    );
+                                    LogAuthenticationViewPresented();
                                 }
                             );
                         }
                         else
                         {
-                            _logger?.LogWarning(
-                                "No root view controller available for Game Center authentication"
-                            );
+                            LogNoRootViewController();
                             tcs.TrySetResult(false);
                         }
                     });
                 }
                 else if (error != null)
                 {
-                    _logger?.LogError(
-                        $"Game Center authentication error: {error.LocalizedDescription}"
-                    );
+                    LogAuthenticationError(error.LocalizedDescription);
                     _isAuthenticated = false;
                     tcs.TrySetResult(false);
                 }
@@ -73,9 +67,7 @@ public class GameCenterService : IGameCenterService
                 {
                     // Successfully authenticated
                     _isAuthenticated = GKLocalPlayer.Local.IsAuthenticated;
-                    _logger?.LogInformation(
-                        $"Game Center authentication: {(_isAuthenticated ? "success" : "not authenticated")}"
-                    );
+                    LogAuthenticationResult(_isAuthenticated);
                     tcs.TrySetResult(_isAuthenticated);
                 }
             };
@@ -84,7 +76,7 @@ public class GameCenterService : IGameCenterService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to authenticate with Game Center");
+            LogAuthenticationFailed(ex);
             _isAuthenticated = false;
         }
     }
@@ -93,7 +85,7 @@ public class GameCenterService : IGameCenterService
     {
         if (!IsAvailable)
         {
-            _logger?.LogDebug("Game Center not available, skipping score submission");
+            LogServiceNotAvailable("score submission");
             return;
         }
 
@@ -101,19 +93,19 @@ public class GameCenterService : IGameCenterService
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                var scoreReporter = new GKScore(GameCenterConstants.LeaderboardId)
+                var scoreReporter = new GKScore(PlatformAchievementIds.iOS.LeaderboardId)
                 {
                     Value = score,
                 };
 
                 var scores = new[] { scoreReporter };
                 await GKScore.ReportScoresAsync(scores);
-                _logger?.LogInformation($"Score submitted to Game Center: {score}");
+                LogScoreSubmitted(score);
             });
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, $"Failed to submit score to Game Center: {score}");
+            LogScoreSubmissionFailed(score, ex);
         }
     }
 
@@ -121,14 +113,14 @@ public class GameCenterService : IGameCenterService
     {
         if (!IsAvailable)
         {
-            _logger?.LogDebug("Game Center not available, skipping achievement report");
+            LogServiceNotAvailable("achievement report");
             return;
         }
 
         // Only report 100% achievements once
         if (percentComplete >= 100.0 && _reportedAchievements.Contains(achievementId))
         {
-            _logger?.LogDebug($"Achievement {achievementId} already reported");
+            LogAchievementAlreadyReported(achievementId);
             return;
         }
 
@@ -150,14 +142,12 @@ public class GameCenterService : IGameCenterService
                     _reportedAchievements.Add(achievementId);
                 }
 
-                _logger?.LogInformation(
-                    $"Achievement reported to Game Center: {achievementId} ({percentComplete}%)"
-                );
+                LogAchievementReported(achievementId, percentComplete);
             });
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, $"Failed to report achievement to Game Center: {achievementId}");
+            LogAchievementReportFailed(achievementId, ex);
         }
     }
 
@@ -165,7 +155,7 @@ public class GameCenterService : IGameCenterService
     {
         if (!IsAvailable)
         {
-            _logger?.LogDebug("Game Center not available, cannot show leaderboard");
+            LogServiceNotAvailable("show leaderboard");
             return;
         }
 
@@ -175,7 +165,7 @@ public class GameCenterService : IGameCenterService
             {
                 var viewController = new GKGameCenterViewController();
                 viewController.ViewState = GKGameCenterViewControllerState.Leaderboards;
-                viewController.LeaderboardIdentifier = GameCenterConstants.LeaderboardId;
+                viewController.LeaderboardIdentifier = PlatformAchievementIds.iOS.LeaderboardId;
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
@@ -189,17 +179,17 @@ public class GameCenterService : IGameCenterService
                 if (rootViewController != null)
                 {
                     rootViewController.PresentViewController(viewController, true, null);
-                    _logger?.LogInformation("Game Center leaderboard presented");
+                    LogLeaderboardPresented();
                 }
                 else
                 {
-                    _logger?.LogWarning("No root view controller available to show leaderboard");
+                    LogNoRootViewControllerForLeaderboard();
                 }
             });
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to show Game Center leaderboard");
+            LogShowLeaderboardFailed(ex);
         }
     }
 
@@ -207,7 +197,7 @@ public class GameCenterService : IGameCenterService
     {
         if (!IsAvailable)
         {
-            _logger?.LogDebug("Game Center not available, cannot show achievements");
+            LogServiceNotAvailable("show achievements");
             return;
         }
 
@@ -230,17 +220,133 @@ public class GameCenterService : IGameCenterService
                 if (rootViewController != null)
                 {
                     rootViewController.PresentViewController(viewController, true, null);
-                    _logger?.LogInformation("Game Center achievements presented");
+                    LogAchievementsPresented();
                 }
                 else
                 {
-                    _logger?.LogWarning("No root view controller available to show achievements");
+                    LogNoRootViewControllerForAchievements();
                 }
             });
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to show Game Center achievements");
+            LogShowAchievementsFailed(ex);
         }
     }
+
+    // LoggerMessage source-generated logging methods
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Information,
+        Message = "Game Center authentication view presented"
+    )]
+    partial void LogAuthenticationViewPresented();
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Warning,
+        Message = "No root view controller available for Game Center authentication"
+    )]
+    partial void LogNoRootViewController();
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Error,
+        Message = "Game Center authentication error: {ErrorMessage}"
+    )]
+    partial void LogAuthenticationError(string errorMessage);
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Information,
+        Message = "Game Center authentication: {IsAuthenticated}"
+    )]
+    partial void LogAuthenticationResult(bool isAuthenticated);
+
+    [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Error,
+        Message = "Failed to authenticate with Game Center"
+    )]
+    partial void LogAuthenticationFailed(Exception ex);
+
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Debug,
+        Message = "Game Center not available, skipping {Operation}"
+    )]
+    partial void LogServiceNotAvailable(string operation);
+
+    [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "Score submitted: {Score}")]
+    partial void LogScoreSubmitted(long score);
+
+    [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Error,
+        Message = "Failed to submit score: {Score}"
+    )]
+    partial void LogScoreSubmissionFailed(long score, Exception ex);
+
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Debug,
+        Message = "Achievement {AchievementId} already reported"
+    )]
+    partial void LogAchievementAlreadyReported(string achievementId);
+
+    [LoggerMessage(
+        EventId = 10,
+        Level = LogLevel.Information,
+        Message = "Achievement reported: {AchievementId} ({PercentComplete}%)"
+    )]
+    partial void LogAchievementReported(string achievementId, double percentComplete);
+
+    [LoggerMessage(
+        EventId = 11,
+        Level = LogLevel.Error,
+        Message = "Failed to report achievement: {AchievementId}"
+    )]
+    partial void LogAchievementReportFailed(string achievementId, Exception ex);
+
+    [LoggerMessage(
+        EventId = 12,
+        Level = LogLevel.Information,
+        Message = "Game Center leaderboard presented"
+    )]
+    partial void LogLeaderboardPresented();
+
+    [LoggerMessage(
+        EventId = 13,
+        Level = LogLevel.Warning,
+        Message = "No root view controller available to show leaderboard"
+    )]
+    partial void LogNoRootViewControllerForLeaderboard();
+
+    [LoggerMessage(
+        EventId = 14,
+        Level = LogLevel.Error,
+        Message = "Failed to show Game Center leaderboard"
+    )]
+    partial void LogShowLeaderboardFailed(Exception ex);
+
+    [LoggerMessage(
+        EventId = 15,
+        Level = LogLevel.Information,
+        Message = "Game Center achievements presented"
+    )]
+    partial void LogAchievementsPresented();
+
+    [LoggerMessage(
+        EventId = 16,
+        Level = LogLevel.Warning,
+        Message = "No root view controller available to show achievements"
+    )]
+    partial void LogNoRootViewControllerForAchievements();
+
+    [LoggerMessage(
+        EventId = 17,
+        Level = LogLevel.Error,
+        Message = "Failed to show Game Center achievements"
+    )]
+    partial void LogShowAchievementsFailed(Exception ex);
 }

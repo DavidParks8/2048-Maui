@@ -1,10 +1,10 @@
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// Stub implementation of IGameCenterService for non-iOS platforms.
-/// All operations are no-ops.
+/// Default implementation of ISocialGamingService for platforms without social gaming support.
+/// Platform-specific implementations should be placed in their respective platform folders.
 /// </summary>
-public class GameCenterServiceStub : IGameCenterService
+public partial class SocialGamingService : ISocialGamingService
 {
     public bool IsAvailable => false;
 

@@ -33,12 +33,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
 
-        // Register Game Center service - platform-specific implementation
-#if IOS || MACCATALYST
-        builder.Services.AddSingleton<IGameCenterService, GameCenterService>();
-#else
-        builder.Services.AddSingleton<IGameCenterService, GameCenterServiceStub>();
-#endif
+        // Register achievement tracker
+        builder.Services.AddSingleton<IAchievementTracker, AchievementTracker>();
+
+        // Register social gaming service - uses partial class pattern
+        // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
+        builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
+
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();

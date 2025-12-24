@@ -199,14 +199,14 @@
                 </HorizontalStackLayout>
             </Border>
 
-            <!-- Game Center Leaderboard button (iOS only, visible when available) -->
+            <!-- Social Gaming Leaderboard button (visible when available) -->
             <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                     StrokeThickness="0"
                     HeightRequest="50"
                     Padding="15,0"
                     StrokeShape="RoundRectangle 5"
-                    IsVisible="{Binding IsGameCenterAvailable}"
-                    SemanticProperties.Description="View Game Center Leaderboard">
+                    IsVisible="{Binding IsSocialGamingAvailable}"
+                    SemanticProperties.Description="View Leaderboard">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding ShowLeaderboardCommand}" />
                 </Border.GestureRecognizers>
@@ -222,14 +222,14 @@
                 </HorizontalStackLayout>
             </Border>
 
-            <!-- Game Center Achievements button (iOS only, visible when available) -->
+            <!-- Social Gaming Achievements button (visible when available) -->
             <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                     StrokeThickness="0"
                     HeightRequest="50"
                     Padding="15,0"
                     StrokeShape="RoundRectangle 5"
-                    IsVisible="{Binding IsGameCenterAvailable}"
-                    SemanticProperties.Description="View Game Center Achievements">
+                    IsVisible="{Binding IsSocialGamingAvailable}"
+                    SemanticProperties.Description="View Achievements">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding ShowAchievementsCommand}" />
                 </Border.GestureRecognizers>

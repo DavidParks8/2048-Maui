@@ -5,13 +5,13 @@ namespace TwentyFortyEight.Maui;
 
 public partial class App : Application
 {
-    private readonly IGameCenterService _gameCenterService;
+    private readonly ISocialGamingService _socialGamingService;
     private readonly ILogger<App> _logger;
 
-    public App(IGameCenterService gameCenterService, ILogger<App> logger)
+    public App(ISocialGamingService socialGamingService, ILogger<App> logger)
     {
         InitializeComponent();
-        _gameCenterService = gameCenterService;
+        _socialGamingService = socialGamingService;
         _logger = logger;
     }
 
@@ -19,16 +19,16 @@ public partial class App : Application
     {
         var window = new Window(new AppShell());
 
-        // Authenticate with Game Center on app startup (fire and forget)
+        // Authenticate with social gaming service on app startup (fire and forget)
         MainThread.BeginInvokeOnMainThread(async () =>
         {
             try
             {
-                await _gameCenterService.AuthenticateAsync();
+                await _socialGamingService.AuthenticateAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Game Center authentication failed");
+                _logger.LogError(ex, "Social gaming authentication failed");
             }
         });
 

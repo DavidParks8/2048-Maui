@@ -1,19 +1,23 @@
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// Service for Game Center integration on iOS.
-/// Provides leaderboard and achievement functionality.
+/// Platform-agnostic service for social gaming features.
+/// Supports leaderboards and achievements across different platforms:
+/// - iOS/macOS: Game Center
+/// - Windows: Xbox Live
+/// - Android: Google Play Games
+/// - Other: Steam, etc.
 /// </summary>
-public interface IGameCenterService
+public interface ISocialGamingService
 {
     /// <summary>
-    /// Authenticates the player with Game Center.
+    /// Authenticates the player with the platform's social gaming service.
     /// Should be called once at app startup.
     /// </summary>
     Task AuthenticateAsync();
 
     /// <summary>
-    /// Gets whether Game Center is available and the player is authenticated.
+    /// Gets whether the social gaming service is available and the player is authenticated.
     /// </summary>
     bool IsAvailable { get; }
 
@@ -26,17 +30,17 @@ public interface IGameCenterService
     /// <summary>
     /// Reports progress for an achievement.
     /// </summary>
-    /// <param name="achievementId">The achievement identifier.</param>
+    /// <param name="achievementId">The platform-specific achievement identifier.</param>
     /// <param name="percentComplete">Progress percentage (0-100).</param>
     Task ReportAchievementAsync(string achievementId, double percentComplete);
 
     /// <summary>
-    /// Shows the Game Center leaderboard UI.
+    /// Shows the platform's leaderboard UI.
     /// </summary>
     Task ShowLeaderboardAsync();
 
     /// <summary>
-    /// Shows the Game Center achievements UI.
+    /// Shows the platform's achievements UI.
     /// </summary>
     Task ShowAchievementsAsync();
 }
