@@ -4,6 +4,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+
+    <!-- Xamarin/Android toolchain warnings (only for Android TFMs) -->
+    <NoWarn Condition="'$(TargetFramework)' != '' and $([System.String]::Copy('$(TargetFramework)').Contains('-android'))">$(NoWarn);XA0141</NoWarn>
     
     <!-- Build and output configuration -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
