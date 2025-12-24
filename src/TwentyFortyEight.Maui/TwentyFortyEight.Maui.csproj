@@ -5,8 +5,10 @@
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">net10.0-android</TargetFrameworks>
     
-    <!-- For CI builds without Xcode, only build Android -->
-    <TargetFrameworks Condition="'$(CI)' == 'true' OR '$(GITHUB_ACTIONS)' == 'true'">net10.0-android</TargetFrameworks>
+    <!-- CI builds: use MAUI_TARGET_PLATFORM environment variable to select target -->
+    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'android'">net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'ios'">net10.0-ios</TargetFrameworks>
+    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'windows'">net10.0-windows10.0.19041.0</TargetFrameworks>
     
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
