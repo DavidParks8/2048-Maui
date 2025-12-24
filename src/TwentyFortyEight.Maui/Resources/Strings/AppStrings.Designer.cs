@@ -57,6 +57,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to BEST.
+        /// </summary>
+        public static string Best {
+            get {
+                return ResourceManager.GetString("Best", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best: {0}.
+        /// </summary>
+        public static string BestFormat {
+            get {
+                return ResourceManager.GetString("BestFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best score.
+        /// </summary>
+        public static string BestScoreDescription {
+            get {
+                return ResourceManager.GetString("BestScoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current score.
+        /// </summary>
+        public static string CurrentScoreDescription {
+            get {
+                return ResourceManager.GetString("CurrentScoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Game board with tiles.
+        /// </summary>
+        public static string GameBoardDescription {
+            get {
+                return ResourceManager.GetString("GameBoardDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Game Over!.
         /// </summary>
         public static string GameOver {
@@ -66,11 +111,512 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 2048.
+        /// </summary>
+        public static string GameTitle {
+            get {
+                return ResourceManager.GetString("GameTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New Game.
+        /// </summary>
+        public static string NewGame {
+            get {
+                return ResourceManager.GetString("NewGame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start a new game.
+        /// </summary>
+        public static string NewGameDescription {
+            get {
+                return ResourceManager.GetString("NewGameDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SCORE.
+        /// </summary>
+        public static string Score {
+            get {
+                return ResourceManager.GetString("Score", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Try Again.
+        /// </summary>
+        public static string TryAgain {
+            get {
+                return ResourceManager.GetString("TryAgain", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undo.
+        /// </summary>
+        public static string Undo {
+            get {
+                return ResourceManager.GetString("Undo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undo last move.
+        /// </summary>
+        public static string UndoDescription {
+            get {
+                return ResourceManager.GetString("UndoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You Win!.
         /// </summary>
         public static string YouWin {
             get {
                 return ResourceManager.GetString("YouWin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your Score.
+        /// </summary>
+        public static string YourScore {
+            get {
+                return ResourceManager.GetString("YourScore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Statistics.
+        /// </summary>
+        public static string Statistics {
+            get {
+                return ResourceManager.GetString("Statistics", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to View gameplay statistics.
+        /// </summary>
+        public static string StatisticsDescription {
+            get {
+                return ResourceManager.GetString("StatisticsDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 📊 Statistics.
+        /// </summary>
+        public static string StatisticsPageTitle {
+            get {
+                return ResourceManager.GetString("StatisticsPageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GAMES.
+        /// </summary>
+        public static string GamesSection {
+            get {
+                return ResourceManager.GetString("GamesSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Games Played.
+        /// </summary>
+        public static string GamesPlayed {
+            get {
+                return ResourceManager.GetString("GamesPlayed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Games Won.
+        /// </summary>
+        public static string GamesWon {
+            get {
+                return ResourceManager.GetString("GamesWon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Win Rate.
+        /// </summary>
+        public static string WinRate {
+            get {
+                return ResourceManager.GetString("WinRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SCORES.
+        /// </summary>
+        public static string ScoresSection {
+            get {
+                return ResourceManager.GetString("ScoresSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best Score.
+        /// </summary>
+        public static string BestScoreLabel {
+            get {
+                return ResourceManager.GetString("BestScoreLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Average Score.
+        /// </summary>
+        public static string AverageScore {
+            get {
+                return ResourceManager.GetString("AverageScore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Highest Tile.
+        /// </summary>
+        public static string HighestTile {
+            get {
+                return ResourceManager.GetString("HighestTile", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to MOVES.
+        /// </summary>
+        public static string MovesSection {
+            get {
+                return ResourceManager.GetString("MovesSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to TIME &amp; MOVES.
+        /// </summary>
+        public static string TimeMovesSection {
+            get {
+                return ResourceManager.GetString("TimeMovesSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Time Played.
+        /// </summary>
+        public static string TimePlayed {
+            get {
+                return ResourceManager.GetString("TimePlayed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Total Moves.
+        /// </summary>
+        public static string TotalMoves {
+            get {
+                return ResourceManager.GetString("TotalMoves", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to STREAKS.
+        /// </summary>
+        public static string StreaksSection {
+            get {
+                return ResourceManager.GetString("StreaksSection", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Current.
+        /// </summary>
+        public static string Current {
+            get {
+                return ResourceManager.GetString("Current", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current Streak.
+        /// </summary>
+        public static string CurrentStreak {
+            get {
+                return ResourceManager.GetString("CurrentStreak", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Best.
+        /// </summary>
+        public static string BestLabel {
+            get {
+                return ResourceManager.GetString("BestLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Best Streak.
+        /// </summary>
+        public static string BestStreakLabel {
+            get {
+                return ResourceManager.GetString("BestStreakLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset Statistics.
+        /// </summary>
+        public static string ResetStatistics {
+            get {
+                return ResourceManager.GetString("ResetStatistics", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset Statistics.
+        /// </summary>
+        public static string ResetStatisticsTitle {
+            get {
+                return ResourceManager.GetString("ResetStatisticsTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to reset all statistics? This action cannot be undone.
+        /// </summary>
+        public static string ResetStatisticsMessage {
+            get {
+                return ResourceManager.GetString("ResetStatisticsMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string Reset {
+            get {
+                return ResourceManager.GetString("Reset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}d {1}h {2}m.
+        /// </summary>
+        public static string TimeFormatDays {
+            get {
+                return ResourceManager.GetString("TimeFormatDays", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}h {1}m.
+        /// </summary>
+        public static string TimeFormatHours {
+            get {
+                return ResourceManager.GetString("TimeFormatHours", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}m {1}s.
+        /// </summary>
+        public static string TimeFormatMinutes {
+            get {
+                return ResourceManager.GetString("TimeFormatMinutes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Back.
+        /// </summary>
+        public static string Back {
+            get {
+                return ResourceManager.GetString("Back", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Go back to the game.
+        /// </summary>
+        public static string BackDescription {
+            get {
+                return ResourceManager.GetString("BackDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How to Play.
+        /// </summary>
+        public static string HowToPlay {
+            get {
+                return ResourceManager.GetString("HowToPlay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Learn how to play the game.
+        /// </summary>
+        public static string HowToPlayDescription {
+            get {
+                return ResourceManager.GetString("HowToPlayDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How to Play.
+        /// </summary>
+        public static string HowToPlayTitle {
+            get {
+                return ResourceManager.GetString("HowToPlayTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Swipe or use arrow keys to move tiles. When two tiles with the same number touch, they merge into one!
+        ///
+        ///Keep combining tiles to reach the 2048 tile and win the game!
+        ///
+        ///🎯 Goal: Reach 2048
+        ///⌨️ Controls: Arrow keys, WASD, or swipe
+        ///✨ Strategy: Keep your highest tile in a corner.
+        /// </summary>
+        public static string HowToPlayContent {
+            get {
+                return ResourceManager.GetString("HowToPlayContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Got It!.
+        /// </summary>
+        public static string GotIt {
+            get {
+                return ResourceManager.GetString("GotIt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start New Game?.
+        /// </summary>
+        public static string RestartConfirmTitle {
+            get {
+                return ResourceManager.GetString("RestartConfirmTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to start a new game? Your current progress will be lost..
+        /// </summary>
+        public static string RestartConfirmMessage {
+            get {
+                return ResourceManager.GetString("RestartConfirmMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start New.
+        /// </summary>
+        public static string StartNew {
+            get {
+                return ResourceManager.GetString("StartNew", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings.
+        /// </summary>
+        public static string Settings {
+            get {
+                return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ⚙️ Settings.
+        /// </summary>
+        public static string SettingsPageTitle {
+            get {
+                return ResourceManager.GetString("SettingsPageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open settings.
+        /// </summary>
+        public static string SettingsDescription {
+            get {
+                return ResourceManager.GetString("SettingsDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ANIMATIONS.
+        /// </summary>
+        public static string AnimationsSection {
+            get {
+                return ResourceManager.GetString("AnimationsSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Animations.
+        /// </summary>
+        public static string EnableAnimations {
+            get {
+                return ResourceManager.GetString("EnableAnimations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Animation Speed.
+        /// </summary>
+        public static string AnimationSpeed {
+            get {
+                return ResourceManager.GetString("AnimationSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Slow.
+        /// </summary>
+        public static string AnimationSpeedSlow {
+            get {
+                return ResourceManager.GetString("AnimationSpeedSlow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Normal.
+        /// </summary>
+        public static string AnimationSpeedNormal {
+            get {
+                return ResourceManager.GetString("AnimationSpeedNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fast.
+        /// </summary>
+        public static string AnimationSpeedFast {
+            get {
+                return ResourceManager.GetString("AnimationSpeedFast", resourceCulture);
             }
         }
     }

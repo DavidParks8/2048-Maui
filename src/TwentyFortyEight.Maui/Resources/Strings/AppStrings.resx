@@ -64,4 +64,175 @@
   <data name="YouWin" xml:space="preserve">
     <value>You Win!</value>
   </data>
+  <data name="GameTitle" xml:space="preserve">
+    <value>2048</value>
+  </data>
+  <data name="Score" xml:space="preserve">
+    <value>SCORE</value>
+  </data>
+  <data name="Best" xml:space="preserve">
+    <value>BEST</value>
+  </data>
+  <data name="NewGame" xml:space="preserve">
+    <value>New Game</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="CurrentScoreDescription" xml:space="preserve">
+    <value>Current score</value>
+  </data>
+  <data name="BestScoreDescription" xml:space="preserve">
+    <value>Best score</value>
+  </data>
+  <data name="GameBoardDescription" xml:space="preserve">
+    <value>Game board with tiles</value>
+  </data>
+  <data name="NewGameDescription" xml:space="preserve">
+    <value>Start a new game</value>
+  </data>
+  <data name="UndoDescription" xml:space="preserve">
+    <value>Undo last move</value>
+  </data>
+  <data name="YourScore" xml:space="preserve">
+    <value>Your Score</value>
+  </data>
+  <data name="BestFormat" xml:space="preserve">
+    <value>Best: {0}</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Try Again</value>
+  </data>
+  <data name="Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="StatisticsPageTitle" xml:space="preserve">
+    <value>📊 Statistics</value>
+  </data>
+  <data name="StatisticsDescription" xml:space="preserve">
+    <value>View gameplay statistics</value>
+  </data>
+  <data name="GamesSection" xml:space="preserve">
+    <value>GAMES</value>
+  </data>
+  <data name="GamesPlayed" xml:space="preserve">
+    <value>Games Played</value>
+  </data>
+  <data name="GamesWon" xml:space="preserve">
+    <value>Games Won</value>
+  </data>
+  <data name="WinRate" xml:space="preserve">
+    <value>Win Rate</value>
+  </data>
+  <data name="ScoresSection" xml:space="preserve">
+    <value>SCORES</value>
+  </data>
+  <data name="BestScoreLabel" xml:space="preserve">
+    <value>Best Score</value>
+  </data>
+  <data name="AverageScore" xml:space="preserve">
+    <value>Average Score</value>
+  </data>
+  <data name="HighestTile" xml:space="preserve">
+    <value>Highest Tile</value>
+  </data>
+  <data name="MovesSection" xml:space="preserve">
+    <value>MOVES</value>
+  </data>
+  <data name="TotalMoves" xml:space="preserve">
+    <value>Total Moves</value>
+  </data>
+  <data name="StreaksSection" xml:space="preserve">
+    <value>STREAKS</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Current</value>
+  </data>
+  <data name="CurrentStreak" xml:space="preserve">
+    <value>Current Streak</value>
+  </data>
+  <data name="BestLabel" xml:space="preserve">
+    <value>Best</value>
+  </data>
+  <data name="BestStreakLabel" xml:space="preserve">
+    <value>Best Streak</value>
+  </data>
+  <data name="ResetStatistics" xml:space="preserve">
+    <value>Reset Statistics</value>
+  </data>
+  <data name="ResetStatisticsTitle" xml:space="preserve">
+    <value>Reset Statistics</value>
+  </data>
+  <data name="ResetStatisticsMessage" xml:space="preserve">
+    <value>Are you sure you want to reset all statistics? This action cannot be undone.</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="BackDescription" xml:space="preserve">
+    <value>Go back to the game</value>
+  </data>
+  <data name="HowToPlay" xml:space="preserve">
+    <value>How to Play</value>
+  </data>
+  <data name="HowToPlayDescription" xml:space="preserve">
+    <value>Learn how to play the game</value>
+  </data>
+  <data name="HowToPlayTitle" xml:space="preserve">
+    <value>How to Play</value>
+  </data>
+  <data name="HowToPlayContent" xml:space="preserve">
+    <value>Swipe or use arrow keys to move tiles. When two tiles with the same number touch, they merge into one!
+
+Keep combining tiles to reach the 2048 tile and win the game!
+
+🎯 Goal: Reach 2048
+⌨️ Controls: Arrow keys, WASD, or swipe
+✨ Strategy: Keep your highest tile in a corner</value>
+  </data>
+  <data name="GotIt" xml:space="preserve">
+    <value>Got It!</value>
+  </data>
+  <data name="RestartConfirmTitle" xml:space="preserve">
+    <value>Start New Game?</value>
+  </data>
+  <data name="RestartConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to start a new game? Your current progress will be lost.</value>
+  </data>
+  <data name="StartNew" xml:space="preserve">
+    <value>Start New</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsPageTitle" xml:space="preserve">
+    <value>⚙️ Settings</value>
+  </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="AnimationsSection" xml:space="preserve">
+    <value>ANIMATIONS</value>
+  </data>
+  <data name="EnableAnimations" xml:space="preserve">
+    <value>Enable Animations</value>
+  </data>
+  <data name="AnimationSpeed" xml:space="preserve">
+    <value>Animation Speed</value>
+  </data>
+  <data name="AnimationSpeedSlow" xml:space="preserve">
+    <value>Slow</value>
+  </data>
+  <data name="AnimationSpeedNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="AnimationSpeedFast" xml:space="preserve">
+    <value>Fast</value>
+  </data>
 </root>

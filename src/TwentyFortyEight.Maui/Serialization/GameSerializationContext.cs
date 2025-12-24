@@ -7,6 +7,4 @@ namespace TwentyFortyEight.Maui.Serialization;
 /// JSON serialization context for GameStateDto.
 /// </summary>
 [JsonSerializable(typeof(GameStateDto))]
-internal partial class GameSerializationContext : JsonSerializerContext
-{
-}
+internal partial class GameSerializationContext : JsonSerializerContext { }

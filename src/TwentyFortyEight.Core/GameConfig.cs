@@ -14,9 +14,4 @@ public class GameConfig
     /// Tile value required to win (default 2048).
     /// </summary>
     public int WinTile { get; init; } = 2048;
-
-    /// <summary>
-    /// Whether the player can continue playing after winning (default true).
-    /// </summary>
-    public bool AllowContinueAfterWin { get; init; } = true;
 }

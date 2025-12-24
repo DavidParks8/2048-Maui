@@ -1,13 +1,21 @@
+using Microsoft.Extensions.ObjectPool;
+
 namespace TwentyFortyEight.Core;
 
 /// <summary>
-/// Core engine for the 2048 game with undo/redo support.
+/// Core engine for the 2048 game with undo support.
 /// </summary>
 public class Game2048Engine
 {
+    // Object pools for ProcessMoveGeneric to avoid allocations per move
+    private static readonly ObjectPool<List<int>> s_intListPool = ObjectPool.Create(
+        new IntListPooledObjectPolicy()
+    );
+
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
-    private readonly List<MoveCommand> _moveHistory;
+    private readonly IStatisticsTracker _statisticsTracker;
+    private readonly List<MoveRecord> _moveHistory;
     private int _currentMoveIndex;
     private GameState _initialState;
 
@@ -16,31 +24,44 @@ public class Game2048Engine
     public GameState CurrentState => _currentState;
 
     public bool CanUndo => _currentMoveIndex > 0;
-    public bool CanRedo => _currentMoveIndex < _moveHistory.Count;
 
-    public Game2048Engine(GameConfig config, IRandomSource random)
+    public Game2048Engine(
+        GameConfig config,
+        IRandomSource random,
+        IStatisticsTracker statisticsTracker
+    )
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveCommand>();
+        _statisticsTracker = statisticsTracker;
+        _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
-        
+
         // Start with two random tiles
-        SpawnTile();
-        SpawnTile();
-        
+        SpawnTileWithInfo();
+        SpawnTileWithInfo();
+
         _initialState = _currentState;
+
+        // Track initial game start
+        _statisticsTracker.OnGameStarted();
     }
 
     /// <summary>
     /// Creates a new game engine from a saved state.
     /// </summary>
-    public Game2048Engine(GameState state, GameConfig config, IRandomSource random)
+    public Game2048Engine(
+        GameState state,
+        GameConfig config,
+        IRandomSource random,
+        IStatisticsTracker statisticsTracker
+    )
     {
         _config = config;
         _random = random;
-        _moveHistory = new List<MoveCommand>();
+        _statisticsTracker = statisticsTracker;
+        _moveHistory = [];
         _currentMoveIndex = 0;
         _currentState = state;
         _initialState = state;
@@ -51,15 +72,24 @@ public class Game2048Engine
     /// </summary>
     public void NewGame()
     {
+        // End previous game if it wasn't finished
+        if (!_currentState.IsGameOver)
+        {
+            _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+        }
+
         _moveHistory.Clear();
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
-        
+
         // Start with two random tiles
-        SpawnTile();
-        SpawnTile();
-        
+        SpawnTileWithInfo();
+        SpawnTileWithInfo();
+
         _initialState = _currentState;
+
+        // Track new game start
+        _statisticsTracker.OnGameStarted();
     }
 
     /// <summary>
@@ -68,12 +98,19 @@ public class Game2048Engine
     /// </summary>
     public bool Move(Direction direction)
     {
-        var newBoard = (int[])_currentState.Board.Clone();
-        var scoreIncrease = 0;
-        var boardChanged = ProcessMove(newBoard, _currentState.Size, direction, ref scoreIncrease);
+        var (newBoard, scoreIncrease, boardChanged, maxMergedValue) = ProcessMove(
+            _currentState.Board,
+            direction
+        );
 
         if (!boardChanged)
         {
+            // Check if game is over (no moves possible in any direction)
+            if (!_currentState.IsGameOver && IsGameOver())
+            {
+                _currentState = _currentState.WithUpdate(isGameOver: true);
+                _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+            }
             return false;
         }
 
@@ -83,28 +120,38 @@ public class Game2048Engine
             _moveHistory.RemoveRange(_currentMoveIndex, _moveHistory.Count - _currentMoveIndex);
         }
 
-        // Update state
+        // Update state - track the new max tile value
         var newScore = _currentState.Score + scoreIncrease;
         var newMoveCount = _currentState.MoveCount + 1;
-        var isWon = _currentState.IsWon || HasWinningTile(newBoard);
+        var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
+        var wasWonBefore = _currentState.IsWon;
+        var isWon = wasWonBefore || newMaxTile >= _config.WinTile;
 
-        _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
+        _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
 
-        // Create and save move command
-        var moveCommand = new MoveCommand(direction);
-        
+        // Track statistics
+        _statisticsTracker.OnMoveMade();
+        _statisticsTracker.UpdateHighestTile(newMaxTile);
+        _statisticsTracker.UpdateBestScore(newScore);
+
+        // Check if game was just won
+        if (isWon && !wasWonBefore)
+        {
+            _statisticsTracker.OnGameWon();
+        }
+
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
-        moveCommand.SpawnedTileIndex = spawnIndex;
-        moveCommand.SpawnedTileValue = spawnValue;
-        
-        _moveHistory.Add(moveCommand);
+        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue);
+
+        _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
 
         // Check if game is over
         if (IsGameOver())
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
+            _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
         }
 
         return true;
@@ -125,46 +172,40 @@ public class Game2048Engine
         return true;
     }
 
-    /// <summary>
-    /// Redoes the last undone move by replaying one more move.
-    /// </summary>
-    public bool Redo()
-    {
-        if (_currentMoveIndex >= _moveHistory.Count)
-        {
-            return false;
-        }
-
-        _currentMoveIndex++;
-        ReplayToCurrentIndex();
-        return true;
-    }
-
     private void ReplayToCurrentIndex()
     {
         // Start from initial state (always starts at score 0, move 0, not won, not over)
         _currentState = new GameState(
-            (int[])_initialState.Board.Clone(),
-            _initialState.Size,
+            _initialState.Board.Clone(),
             _initialState.Score,
             _initialState.MoveCount,
             _initialState.IsWon,
-            _initialState.IsGameOver);
+            _initialState.IsGameOver
+        );
 
         // Replay moves up to currentMoveIndex
         for (int i = 0; i < _currentMoveIndex; i++)
         {
             var move = _moveHistory[i];
-            
-            var newBoard = (int[])_currentState.Board.Clone();
-            var scoreIncrease = 0;
-            ProcessMove(newBoard, _currentState.Size, move.Direction, ref scoreIncrease);
+
+            var (newBoard, scoreIncrease, _, maxMergedValue) = ProcessMove(
+                _currentState.Board,
+                move.Direction
+            );
 
             var newScore = _currentState.Score + scoreIncrease;
             var newMoveCount = _currentState.MoveCount + 1;
-            var isWon = _currentState.IsWon || HasWinningTile(newBoard);
+            var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
+            var isWon = _currentState.IsWon || newMaxTile >= _config.WinTile;
 
-            _currentState = new GameState(newBoard, _currentState.Size, newScore, newMoveCount, isWon, false);
+            _currentState = new GameState(
+                newBoard,
+                newScore,
+                newMoveCount,
+                isWon,
+                false,
+                newMaxTile
+            );
 
             // Restore the spawned tile
             if (move.SpawnedTileIndex >= 0)
@@ -182,166 +223,175 @@ public class Game2048Engine
         }
     }
 
-    private void SpawnTile()
-    {
-        SpawnTileWithInfo();
-    }
-
     private (int index, int value) SpawnTileWithInfo()
     {
-        var emptyCells = new List<int>();
-        for (int i = 0; i < _currentState.Board.Length; i++)
-        {
-            if (_currentState.Board[i] == 0)
-            {
-                emptyCells.Add(i);
-            }
-        }
+        var position = _currentState.Board.GetRandomEmptyCell(_random);
 
-        if (emptyCells.Count == 0)
+        if (!position.HasValue)
         {
             return (-1, 0);
         }
 
-        var index = emptyCells[_random.Next(emptyCells.Count)];
-        var value = _random.NextDouble() < 0.9 ? 2 : 4;
+        // Get adaptive spawn values based on tracked max tile
+        var (commonValue, rareValue) = GetSpawnValues(_currentState.MaxTileValue);
+        var value = _random.NextDouble() < 0.9 ? commonValue : rareValue;
 
-        var row = index / _currentState.Size;
-        var col = index % _currentState.Size;
-        _currentState = _currentState.WithTile(row, col, value);
-        
+        _currentState = _currentState.WithTile(position.Value.Row, position.Value.Column, value);
+
+        var index = _currentState.Board.GetIndex(position.Value.Row, position.Value.Column);
         return (index, value);
     }
 
-    private bool HasWinningTile(int[] board)
-    {
-        foreach (var tile in board)
+    /// <summary>
+    /// Gets the spawn values based on the current maximum tile on the board.
+    /// Spawn values scale up as the game progresses to keep the game playable at high scores.
+    /// </summary>
+    private static (int commonValue, int rareValue) GetSpawnValues(int maxTileOnBoard) =>
+        maxTileOnBoard switch
         {
-            if (tile >= _config.WinTile)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+            >= 131072 => (32, 64), // 2^17: spawn 32 (90%) or 64 (10%)
+            >= 32768 => (16, 32), // 2^15: spawn 16 (90%) or 32 (10%)
+            >= 8192 => (8, 16), // 2^13: spawn 8 (90%) or 16 (10%)
+            >= 2048 => (4, 8), // 2^11: spawn 4 (90%) or 8 (10%)
+            _ => (2, 4), // Default: spawn 2 (90%) or 4 (10%)
+        };
 
     private bool IsGameOver()
     {
-        var size = _currentState.Size;
         var board = _currentState.Board;
 
-        // Check for empty cells
-        for (int i = 0; i < board.Length; i++)
-        {
-            if (board[i] == 0)
-            {
-                return false;
-            }
-        }
-
-        // Check for possible merges
-        for (int row = 0; row < size; row++)
-        {
-            for (int col = 0; col < size; col++)
-            {
-                var current = board[row * size + col];
-
-                // Check right
-                if (col < size - 1 && current == board[row * size + col + 1])
-                {
-                    return false;
-                }
-
-                // Check down
-                if (row < size - 1 && current == board[(row + 1) * size + col])
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        // Game is not over if there are empty cells or possible merges
+        return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
     }
 
-    private bool ProcessMove(int[] board, int size, Direction direction, ref int scoreIncrease)
+    private static (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) ProcessMove(
+        Board board,
+        Direction direction
+    )
     {
         return direction switch
         {
-            Direction.Up => ProcessMoveGeneric(board, size, true, false, ref scoreIncrease),
-            Direction.Down => ProcessMoveGeneric(board, size, true, true, ref scoreIncrease),
-            Direction.Left => ProcessMoveGeneric(board, size, false, false, ref scoreIncrease),
-            Direction.Right => ProcessMoveGeneric(board, size, false, true, ref scoreIncrease),
-            _ => false
+            Direction.Up => ProcessMoveGeneric(board, isVertical: true, isReverse: false),
+            Direction.Down => ProcessMoveGeneric(board, isVertical: true, isReverse: true),
+            Direction.Left => ProcessMoveGeneric(board, isVertical: false, isReverse: false),
+            Direction.Right => ProcessMoveGeneric(board, isVertical: false, isReverse: true),
+            _ => (board, 0, false, 0),
         };
     }
 
-    private bool ProcessMoveGeneric(int[] board, int size, bool isVertical, bool isReverse, ref int scoreIncrease)
+    private static (
+        Board newBoard,
+        int scoreIncrease,
+        bool moved,
+        int maxMergedValue
+    ) ProcessMoveGeneric(Board board, bool isVertical, bool isReverse)
     {
+        var size = board.Size;
+        var result = new int[size, size];
         var moved = false;
-        var outerCount = size;
-        
-        for (int outer = 0; outer < outerCount; outer++)
+        var scoreIncrease = 0;
+        var maxMergedValue = 0;
+
+        // Rent pooled lists to avoid allocations
+        var values = s_intListPool.Get();
+        var newValues = s_intListPool.Get();
+
+        try
         {
-            var values = new List<int>();
-            var merged = new HashSet<int>();
-
-            // Collect non-zero values
-            for (int inner = 0; inner < size; inner++)
+            for (int outer = 0; outer < size; outer++)
             {
-                var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
-                
-                var value = board[index];
-                if (value != 0)
-                {
-                    values.Add(value);
-                }
-            }
+                values.Clear();
 
-            // Merge tiles
-            var newValues = new List<int>();
-            for (int i = 0; i < values.Count; i++)
-            {
-                if (i < values.Count - 1 && values[i] == values[i + 1] && !merged.Contains(i))
+                // Collect non-zero values from board
+                for (int inner = 0; inner < size; inner++)
                 {
-                    var mergedValue = values[i] * 2;
-                    newValues.Add(mergedValue);
-                    scoreIncrease += mergedValue;
-                    merged.Add(i);
-                    merged.Add(i + 1);
-                    i++; // Skip next tile
+                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
+                    var value = board[row, col];
+                    if (value != 0)
+                    {
+                        values.Add(value);
+                    }
                 }
-                else if (!merged.Contains(i))
-                {
-                    newValues.Add(values[i]);
-                }
-            }
 
-            // Fill with zeros
-            while (newValues.Count < size)
-            {
-                newValues.Add(0);
-            }
-
-            // Update board and check if changed
-            for (int inner = 0; inner < size; inner++)
-            {
-                var index = GetBoardIndex(size, outer, inner, isVertical, isReverse);
-                
-                if (board[index] != newValues[inner])
+                // Merge tiles - using index tracking instead of HashSet
+                newValues.Clear();
+                int i = 0;
+                while (i < values.Count)
                 {
-                    moved = true;
+                    if (i < values.Count - 1 && values[i] == values[i + 1])
+                    {
+                        var mergedValue = values[i] * 2;
+                        newValues.Add(mergedValue);
+                        scoreIncrease += mergedValue;
+                        if (mergedValue > maxMergedValue)
+                            maxMergedValue = mergedValue;
+                        i += 2; // Skip both merged tiles
+                    }
+                    else
+                    {
+                        newValues.Add(values[i]);
+                        i++;
+                    }
                 }
-                board[index] = newValues[inner];
+
+                // Fill with zeros
+                while (newValues.Count < size)
+                {
+                    newValues.Add(0);
+                }
+
+                // Write to result and check if changed
+                for (int inner = 0; inner < size; inner++)
+                {
+                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
+                    result[row, col] = newValues[inner];
+                    if (board[row, col] != newValues[inner])
+                    {
+                        moved = true;
+                    }
+                }
             }
         }
+        finally
+        {
+            s_intListPool.Return(values);
+            s_intListPool.Return(newValues);
+        }
 
-        return moved;
+        return (Board.FromMutableArray(result, size), scoreIncrease, moved, maxMergedValue);
     }
 
-    private static int GetBoardIndex(int size, int outer, int inner, bool isVertical, bool isReverse)
+    private static (int row, int col) GetBoardPosition(
+        int size,
+        int outer,
+        int inner,
+        bool isVertical,
+        bool isReverse
+    )
     {
-        return isVertical
-            ? (isReverse ? (size - 1 - inner) * size + outer : inner * size + outer)
-            : (isReverse ? outer * size + (size - 1 - inner) : outer * size + inner);
+        if (isVertical)
+        {
+            var row = isReverse ? size - 1 - inner : inner;
+            return (row, outer);
+        }
+        else
+        {
+            var col = isReverse ? size - 1 - inner : inner;
+            return (outer, col);
+        }
+    }
+}
+
+/// <summary>
+/// Pooled object policy for List&lt;int&gt;.
+/// </summary>
+file sealed class IntListPooledObjectPolicy : PooledObjectPolicy<List<int>>
+{
+    public override List<int> Create() => new(8);
+
+    public override bool Return(List<int> obj)
+    {
+        obj.Clear();
+        return true;
     }
 }

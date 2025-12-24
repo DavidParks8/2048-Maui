@@ -2,12 +2,29 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TwentyFortyEight.Maui.ViewModels"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+             xmlns:behaviors="clr-namespace:TwentyFortyEight.Maui.Behaviors"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
-    <Grid Padding="20" RowSpacing="20">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem
+            Text="{x:Static strings:AppStrings.Settings}"
+            Command="{Binding OpenSettingsCommand}"
+            Order="Primary"
+            Priority="1" />
+        <ToolbarItem
+            Text="{x:Static strings:AppStrings.HowToPlay}"
+            Command="{Binding ShowHowToPlayCommand}"
+            Order="Primary"
+            Priority="0" />
+    </ContentPage.ToolbarItems>
+
+    <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -24,7 +41,7 @@
             </Grid.ColumnDefinitions>
 
             <Label Grid.Column="0"
-                   Text="2048"
+                   Text="{x:Static strings:AppStrings.GameTitle}"
                    FontSize="48"
                    FontAttributes="Bold"
                    TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
@@ -40,7 +57,7 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="SCORE"
+                    <Label Text="{x:Static strings:AppStrings.Score}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
@@ -50,7 +67,7 @@
                            FontAttributes="Bold"
                            TextColor="White"
                            HorizontalOptions="Center"
-                           SemanticProperties.Description="Current score" />
+                           SemanticProperties.Description="{x:Static strings:AppStrings.CurrentScoreDescription}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -62,7 +79,7 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="BEST"
+                    <Label Text="{x:Static strings:AppStrings.Best}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
@@ -72,7 +89,7 @@
                            FontAttributes="Bold"
                            TextColor="White"
                            HorizontalOptions="Center"
-                           SemanticProperties.Description="Best score" />
+                           SemanticProperties.Description="{x:Static strings:AppStrings.BestScoreDescription}" />
                 </VerticalStackLayout>
             </Border>
         </Grid>
@@ -87,7 +104,8 @@
                IsVisible="{Binding StatusText, Converter={StaticResource StringNotEmptyConverter}}" />
 
         <!-- Game Board -->
-        <Border Grid.Row="2"
+        <Border x:Name="BoardContainer"
+                Grid.Row="2"
                 BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
                 Stroke="Transparent"
                 StrokeThickness="0"
@@ -98,103 +116,102 @@
                 MaximumHeightRequest="500"
                 StrokeShape="RoundRectangle 10">
 
-            <!-- Grid for tiles -->
-            <Grid x:Name="GameBoard"
-                  ColumnSpacing="10"
-                  RowSpacing="10"
-                  WidthRequest="400"
-                  HeightRequest="400"
-                  SemanticProperties.Description="Game board with tiles">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <Border.Behaviors>
+                <behaviors:RippleBehavior />
+            </Border.Behaviors>
 
-                <!-- Tiles will be added programmatically in code-behind -->
+            <Grid>
+                <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
+                <Grid x:Name="GameBoard"
+                      ColumnSpacing="10"
+                      RowSpacing="10"
+                      WidthRequest="400"
+                      HeightRequest="400"
+                      SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
+                    <!-- Tiles will be added programmatically in code-behind -->
+                </Grid>
             </Grid>
         </Border>
 
         <!-- Controls -->
-        <Grid Grid.Row="3" RowSpacing="10" Margin="0,10,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <HorizontalStackLayout Grid.Row="3" Spacing="15" HorizontalOptions="Center" Margin="0,10,0,0">
 
-            <!-- Game Controls Row -->
-            <Grid Grid.Row="0" ColumnSpacing="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    StrokeThickness="0"
+                    HeightRequest="50"
+                    Padding="15,0"
+                    StrokeShape="RoundRectangle 5"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NewGameCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="↻"
+                           FontSize="18"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static strings:AppStrings.NewGame}"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
 
-                <Button Grid.Column="0"
-                        Text="New Game"
-                        Command="{Binding NewGameCommand}"
-                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        HeightRequest="50"
-                        CornerRadius="5"
-                        SemanticProperties.Description="Start a new game" />
+            <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    StrokeThickness="0"
+                    HeightRequest="50"
+                    Padding="15,0"
+                    StrokeShape="RoundRectangle 5"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding UndoCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="↩"
+                           FontSize="18"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static strings:AppStrings.Undo}"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
 
-                <Button Grid.Column="1"
-                        Text="Undo"
-                        Command="{Binding UndoCommand}"
-                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        HeightRequest="50"
-                        CornerRadius="5"
-                        SemanticProperties.Description="Undo last move" />
+            <Border BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                    StrokeThickness="0"
+                    HeightRequest="50"
+                    Padding="15,0"
+                    StrokeShape="RoundRectangle 5"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.StatisticsDescription}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenStatsCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="📊"
+                           FontSize="18"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                    <Label Text="{x:Static strings:AppStrings.Statistics}"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+        </HorizontalStackLayout>
 
-                <Button Grid.Column="2"
-                        Text="Redo"
-                        Command="{Binding RedoCommand}"
-                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        HeightRequest="50"
-                        CornerRadius="5"
-                        SemanticProperties.Description="Redo last undone move" />
-            </Grid>
+        <!-- Game Over Modal -->
+        <components:GameOverModal Grid.RowSpan="4"
+                                  IsVisible="{Binding IsGameOver}"
+                                  Score="{Binding Score}"
+                                  BestScore="{Binding BestScore}"
+                                  NewGameCommand="{Binding NewGameCommand}"
+                                  ZIndex="100" />
 
-            <!-- Game Center Controls Row (iOS only) -->
-            <Grid Grid.Row="1" ColumnSpacing="10" IsVisible="{Binding IsGameCenterAvailable}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Column="0"
-                        Text="Leaderboard"
-                        Command="{Binding ShowLeaderboardCommand}"
-                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        HeightRequest="50"
-                        CornerRadius="5"
-                        SemanticProperties.Description="Show Game Center leaderboard" />
-
-                <Button Grid.Column="1"
-                        Text="Achievements"
-                        Command="{Binding ShowAchievementsCommand}"
-                        BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        HeightRequest="50"
-                        CornerRadius="5"
-                        SemanticProperties.Description="Show Game Center achievements" />
-            </Grid>
-        </Grid>
+        <!-- How To Play Modal -->
+        <components:HowToPlayModal Grid.RowSpan="4"
+                                   IsVisible="{Binding IsHowToPlayVisible}"
+                                   CloseCommand="{Binding CloseHowToPlayCommand}"
+                                   ZIndex="100" />
     </Grid>
 </ContentPage>

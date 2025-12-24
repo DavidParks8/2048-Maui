@@ -1,4 +1,7 @@
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using SkiaSharp.Views.Maui.Controls.Hosting;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.ViewModels;
 
@@ -11,6 +14,8 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseSkiaSharp()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -22,13 +27,17 @@ public static class MauiProgram
 #endif
 
         // Register services for dependency injection
-#if IOS
-        builder.Services.AddSingleton<IGameCenterService, Services.GameCenterService>();
-#else
-        builder.Services.AddSingleton<IGameCenterService, GameCenterServiceStub>();
-#endif
+        builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        builder.Services.AddSingleton<TileAnimationService>();
+        builder.Services.AddSingleton<BoardRippleService>();
+        builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
         builder.Services.AddSingleton<GameViewModel>();
+        builder.Services.AddTransient<StatsViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<StatsPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
         return builder.Build();
     }

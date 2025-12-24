@@ -2,7 +2,8 @@
   <PropertyGroup>
     <!-- Default targets for local development -->
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows'))">net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">net10.0-android</TargetFrameworks>
     
     <!-- For CI builds without Xcode, only build Android -->
     <TargetFrameworks Condition="'$(CI)' == 'true' OR '$(GITHUB_ACTIONS)' == 'true'">net10.0-android</TargetFrameworks>
@@ -32,6 +33,17 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     <WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
+    
+    <!-- AOT and compiled bindings -->
+    <MauiStrictXamlCompilation>true</MauiStrictXamlCompilation>
+    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+    <EnableXamlCBindingDiagnostics>true</EnableXamlCBindingDiagnostics>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Disable NativeAOT for Android due to SkiaSharp compatibility issues -->
+    <PublishAot Condition="'$(TargetFramework)' != 'net10.0-android'">true</PublishAot>
+    <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'">true</RunAOTCompilation>
   </PropertyGroup>
 
   <ItemGroup>
@@ -65,10 +77,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="M.BindableProperty.Generator" />
     <PackageReference Include="Microsoft.Maui.Controls" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="CommunityToolkit.Maui" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" />
   </ItemGroup>
 
   <ItemGroup>

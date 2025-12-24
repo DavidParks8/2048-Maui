@@ -7,11 +7,6 @@ namespace TwentyFortyEight.Core;
 public class GameStateDto
 {
     /// <summary>
-    /// Version of the serialization format.
-    /// </summary>
-    public int Version { get; set; } = 1;
-
-    /// <summary>
     /// The game board as a flat array.
     /// </summary>
     public int[] Board { get; set; } = Array.Empty<int>();
@@ -48,12 +43,12 @@ public class GameStateDto
     {
         return new GameStateDto
         {
-            Board = (int[])state.Board.Clone(),
+            Board = state.Board.ToArray(),
             Size = state.Size,
             Score = state.Score,
             MoveCount = state.MoveCount,
             IsWon = state.IsWon,
-            IsGameOver = state.IsGameOver
+            IsGameOver = state.IsGameOver,
         };
     }
 
@@ -62,13 +57,8 @@ public class GameStateDto
     /// </summary>
     public GameState ToGameState()
     {
-        return new GameState(
-            (int[])Board.Clone(),
-            Size,
-            Score,
-            MoveCount,
-            IsWon,
-            IsGameOver
-        );
+        var board = new Board(Board, Size);
+        var maxTileValue = Board.Length > 0 ? Board.Max() : 0;
+        return new GameState(board, Score, MoveCount, IsWon, IsGameOver, maxTileValue);
     }
 }
