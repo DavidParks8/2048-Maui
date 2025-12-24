@@ -13,11 +13,13 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
+            x:Name="ToolbarSettingsButton"
             Text="{x:Static strings:AppStrings.Settings}"
             Command="{Binding OpenSettingsCommand}"
             Order="Secondary"
             Priority="0" />
         <ToolbarItem
+            x:Name="ToolbarHowToPlayButton"
             Text="{x:Static strings:AppStrings.HowToPlay}"
             Command="{Binding ShowHowToPlayCommand}"
             Order="Secondary"
@@ -33,14 +35,15 @@
         </Grid.RowDefinitions>
 
         <!-- Header with Title and Score -->
-        <Grid Grid.Row="0">
+        <Grid x:Name="HeaderGrid" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Label Grid.Column="0"
+            <Label x:Name="GameTitleLabel"
+                   Grid.Column="0"
                    Text="{x:Static strings:AppStrings.GameTitle}"
                    FontSize="48"
                    FontAttributes="Bold"
@@ -48,7 +51,8 @@
                    VerticalOptions="Center"
                    SemanticProperties.HeadingLevel="Level1" />
 
-            <Border Grid.Column="1"
+            <Border x:Name="ScoreBorder"
+                    Grid.Column="1"
                     BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
                     Stroke="Transparent"
                     StrokeThickness="0"
@@ -57,12 +61,14 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="{x:Static strings:AppStrings.Score}"
+                    <Label x:Name="ScoreLabelText"
+                           Text="{x:Static strings:AppStrings.Score}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                            HorizontalOptions="Center" />
-                    <Label Text="{Binding Score}"
+                    <Label x:Name="ScoreValue"
+                           Text="{Binding Score}"
                            FontSize="20"
                            FontAttributes="Bold"
                            TextColor="White"
@@ -71,7 +77,8 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Border Grid.Column="2"
+            <Border x:Name="BestScoreBorder"
+                    Grid.Column="2"
                     BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
                     Stroke="Transparent"
                     StrokeThickness="0"
@@ -79,12 +86,14 @@
                     HeightRequest="60"
                     StrokeShape="RoundRectangle 5">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="{x:Static strings:AppStrings.Best}"
+                    <Label x:Name="BestScoreLabelText"
+                           Text="{x:Static strings:AppStrings.Best}"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                            HorizontalOptions="Center" />
-                    <Label Text="{Binding BestScore}"
+                    <Label x:Name="BestScoreValue"
+                           Text="{Binding BestScore}"
                            FontSize="20"
                            FontAttributes="Bold"
                            TextColor="White"
@@ -95,7 +104,8 @@
         </Grid>
 
         <!-- Status Text -->
-        <Label Grid.Row="1"
+        <Label x:Name="StatusTextLabel"
+               Grid.Row="1"
                Text="{Binding StatusText}"
                FontSize="24"
                FontAttributes="Bold"
@@ -134,9 +144,13 @@
         </Border>
 
         <!-- Controls -->
-        <HorizontalStackLayout Grid.Row="3" Spacing="15" HorizontalOptions="Center" Margin="0,10,0,0">
+        <HorizontalStackLayout x:Name="ControlsStackLayout"
+                               Grid.Row="3"
+                               Spacing="15"
+                               HorizontalOptions="Center"
+                               Margin="0,10,0,0">
 
-            <Button 
+            <Button x:Name="NewGameButton"
                 Command="{Binding NewGameCommand}"
                 Text="{x:Static strings:AppStrings.NewGame}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
@@ -146,7 +160,7 @@
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}" />
 
-            <Button 
+            <Button x:Name="UndoButton"
                 Command="{Binding UndoCommand}"
                 Text="{x:Static strings:AppStrings.Undo}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
@@ -156,7 +170,7 @@
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
 
-            <Button 
+            <Button x:Name="StatisticsButton"
                 Command="{Binding OpenStatsCommand}"
                 Text="{x:Static strings:AppStrings.Statistics}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
@@ -168,7 +182,8 @@
         </HorizontalStackLayout>
 
         <!-- Game Over Modal -->
-        <components:GameOverModal Grid.RowSpan="4"
+        <components:GameOverModal x:Name="GameOverModal"
+                                  Grid.RowSpan="4"
                                   IsVisible="{Binding IsGameOver}"
                                   Score="{Binding Score}"
                                   BestScore="{Binding BestScore}"
@@ -176,7 +191,8 @@
                                   ZIndex="100" />
 
         <!-- How To Play Modal -->
-        <components:HowToPlayModal Grid.RowSpan="4"
+        <components:HowToPlayModal x:Name="HowToPlayModal"
+                                   Grid.RowSpan="4"
                                    IsVisible="{Binding IsHowToPlayVisible}"
                                    CloseCommand="{Binding CloseHowToPlayCommand}"
                                    ZIndex="100" />

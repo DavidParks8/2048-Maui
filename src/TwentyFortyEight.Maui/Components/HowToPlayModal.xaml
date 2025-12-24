@@ -25,14 +25,16 @@
             <VerticalStackLayout Spacing="20" HorizontalOptions="Center">
                 
                 <!-- Title -->
-                <Label Text="{x:Static strings:AppStrings.HowToPlayTitle}"
+                <Label x:Name="HowToPlayTitleLabel"
+                       Text="{x:Static strings:AppStrings.HowToPlayTitle}"
                        FontSize="32"
                        FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
                        HorizontalOptions="Center" />
                 
                 <!-- Content -->
-                <Label Text="{x:Static strings:AppStrings.HowToPlayContent}"
+                <Label x:Name="HowToPlayContentLabel"
+                       Text="{x:Static strings:AppStrings.HowToPlayContent}"
                        FontSize="16"
                        TextColor="{AppThemeBinding Light=#776e65, Dark=#a0968b}"
                        HorizontalOptions="Start"
@@ -40,7 +42,7 @@
                        MaximumWidthRequest="340" />
                 
                 <!-- Got It Button -->
-                <Button 
+                <Button x:Name="GotItButton"
                     Command="{Binding CloseCommand, Source={x:Reference this}}"
                     Text="{x:Static strings:AppStrings.GotIt}"
                     BackgroundColor="#8f7a66"
