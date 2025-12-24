@@ -89,5 +89,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
+    <ProjectReference Include="..\TwentyFortyEight.ViewModels\TwentyFortyEight.ViewModels.csproj" />
   </ItemGroup>
 </Project>

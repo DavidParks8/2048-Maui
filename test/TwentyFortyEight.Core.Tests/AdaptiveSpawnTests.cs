@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using TwentyFortyEight.Core;
 
-namespace TwentyFortyEight.Tests;
+namespace TwentyFortyEight.Core.Tests;
 
 [TestClass]
 public class AdaptiveSpawnTests

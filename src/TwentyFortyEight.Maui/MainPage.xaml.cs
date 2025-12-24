@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Behaviors;
-using TwentyFortyEight.Maui.Models;
 using TwentyFortyEight.Maui.Services;
-using TwentyFortyEight.Maui.ViewModels;
+using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Models;
 
 namespace TwentyFortyEight.Maui;
 

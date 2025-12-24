@@ -1,9 +1,11 @@
+using TwentyFortyEight.ViewModels.Services;
+
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// Service for managing application settings.
+/// MAUI-specific implementation of ISettingsService using Preferences.
 /// </summary>
-public class SettingsService : ISettingsService
+public class MauiSettingsService : ISettingsService
 {
     private const string AnimationsEnabledKey = "AnimationsEnabled";
     private const string AnimationSpeedKey = "AnimationSpeed";
@@ -11,18 +13,14 @@ public class SettingsService : ISettingsService
     private const double MinAnimationSpeed = 0.5;
     private const double MaxAnimationSpeed = 1.5;
 
-    /// <summary>
-    /// Gets or sets whether animations are enabled.
-    /// </summary>
+    /// <inheritdoc />
     public bool AnimationsEnabled
     {
         get => Preferences.Get(AnimationsEnabledKey, true);
         set => Preferences.Set(AnimationsEnabledKey, value);
     }
 
-    /// <summary>
-    /// Gets or sets the animation speed multiplier (0.5 = slow, 1.0 = normal, 1.5 = fast).
-    /// </summary>
+    /// <inheritdoc />
     public double AnimationSpeed
     {
         get

@@ -1,6 +1,6 @@
 using TwentyFortyEight.Core;
 
-namespace TwentyFortyEight.Tests;
+namespace TwentyFortyEight.Core.Tests;
 
 /// <summary>
 /// Helper methods for creating test fixtures.

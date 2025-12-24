@@ -1,4 +1,6 @@
-using TwentyFortyEight.Maui.Models;
+using TwentyFortyEight.Maui.Helpers;
+using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -306,8 +308,8 @@ public class TileAnimationService(ISettingsService settingsService)
 
     private static Border CreateOverlayTile(int value)
     {
-        var backgroundColor = TileViewModel.GetTileBackgroundColor(value);
-        var textColor = TileViewModel.GetTileTextColor(value);
+        var backgroundColor = TileColorHelper.GetTileBackgroundColor(value);
+        var textColor = TileColorHelper.GetTileTextColor(value);
 
         return new Border
         {

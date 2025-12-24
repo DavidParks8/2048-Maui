@@ -1,4 +1,4 @@
-using TwentyFortyEight.Maui.ViewModels;
+using TwentyFortyEight.ViewModels;
 
 namespace TwentyFortyEight.Maui;
 

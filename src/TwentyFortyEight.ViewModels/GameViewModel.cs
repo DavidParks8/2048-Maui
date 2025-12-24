@@ -5,11 +5,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Models;
-using TwentyFortyEight.Maui.Serialization;
-using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Serialization;
+using TwentyFortyEight.ViewModels.Services;
 
-namespace TwentyFortyEight.Maui.ViewModels;
+namespace TwentyFortyEight.ViewModels;
 
 /// <summary>
 /// ViewModel for the 2048 game.
@@ -22,6 +22,10 @@ public partial class GameViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly IRandomSource _randomSource;
+    private readonly IPreferencesService _preferencesService;
+    private readonly IAlertService _alertService;
+    private readonly INavigationService _navigationService;
+    private readonly ILocalizationService _localizationService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -35,6 +39,9 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     private TaskCompletionSource? _animationCompletionSource;
 
+    /// <summary>
+    /// The collection of tiles for the game board.
+    /// </summary>
     public ObservableCollection<TileViewModel> Tiles { get; }
 
     /// <summary>
@@ -64,7 +71,7 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnBestScoreChanged(int value)
     {
-        Preferences.Set("BestScore", value);
+        _preferencesService.SetInt("BestScore", value);
     }
 
     [ObservableProperty]
@@ -87,7 +94,11 @@ public partial class GameViewModel : ObservableObject
         IMoveAnalyzer moveAnalyzer,
         ISettingsService settingsService,
         IStatisticsTracker statisticsTracker,
-        IRandomSource randomSource
+        IRandomSource randomSource,
+        IPreferencesService preferencesService,
+        IAlertService alertService,
+        INavigationService navigationService,
+        ILocalizationService localizationService
     )
     {
         _logger = logger;
@@ -95,6 +106,10 @@ public partial class GameViewModel : ObservableObject
         _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
         _randomSource = randomSource;
+        _preferencesService = preferencesService;
+        _alertService = alertService;
+        _navigationService = navigationService;
+        _localizationService = localizationService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -119,21 +134,16 @@ public partial class GameViewModel : ObservableObject
         // Show confirmation if game is in progress (has moves and not game over)
         if (Moves > 0 && !IsGameOver)
         {
-            // Use Shell.Current.CurrentPage for displaying alerts
-            var page = Shell.Current?.CurrentPage;
-            if (page != null)
-            {
-                bool confirm = await page.DisplayAlertAsync(
-                    Resources.Strings.AppStrings.RestartConfirmTitle,
-                    Resources.Strings.AppStrings.RestartConfirmMessage,
-                    Resources.Strings.AppStrings.StartNew,
-                    Resources.Strings.AppStrings.Cancel
-                );
+            bool confirm = await _alertService.ShowConfirmationAsync(
+                _localizationService.RestartConfirmTitle,
+                _localizationService.RestartConfirmMessage,
+                _localizationService.StartNew,
+                _localizationService.Cancel
+            );
 
-                if (!confirm)
-                {
-                    return;
-                }
+            if (!confirm)
+            {
+                return;
             }
         }
 
@@ -237,13 +247,13 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task OpenStatsAsync()
     {
-        await Shell.Current.GoToAsync("stats");
+        await _navigationService.NavigateToAsync("stats");
     }
 
     [RelayCommand]
     private async Task OpenSettingsAsync()
     {
-        await Shell.Current.GoToAsync("settings");
+        await _navigationService.NavigateToAsync("settings");
     }
 
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
@@ -334,7 +344,7 @@ public partial class GameViewModel : ObservableObject
 
         if (state.IsWon)
         {
-            StatusText = Resources.Strings.AppStrings.YouWin;
+            StatusText = _localizationService.YouWin;
         }
         else
         {
@@ -351,7 +361,7 @@ public partial class GameViewModel : ObservableObject
         {
             var dto = GameStateDto.FromGameState(_engine.CurrentState);
             var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
-            Preferences.Set("SavedGame", json);
+            _preferencesService.SetString("SavedGame", json);
         }
         catch (Exception ex)
         {
@@ -364,10 +374,10 @@ public partial class GameViewModel : ObservableObject
         try
         {
             // Load best score - use property to trigger OnBestScoreChanged
-            BestScore = Preferences.Get("BestScore", 0);
+            BestScore = _preferencesService.GetInt("BestScore", 0);
 
             // Try to load saved game
-            var savedJson = Preferences.Get("SavedGame", string.Empty);
+            var savedJson = _preferencesService.GetString("SavedGame", string.Empty);
             if (!string.IsNullOrEmpty(savedJson))
             {
                 var dto = JsonSerializer.Deserialize(
@@ -390,4 +400,10 @@ public partial class GameViewModel : ObservableObject
         // If loading failed or no saved game, start new game
         _engine.NewGame();
     }
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to save game state")]
+    partial void LogSaveGameError(Exception ex);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
+    partial void LogLoadGameError(Exception ex);
 }

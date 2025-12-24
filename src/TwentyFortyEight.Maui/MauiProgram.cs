@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Services;
-using TwentyFortyEight.Maui.ViewModels;
+using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui;
 
@@ -29,7 +30,11 @@ public static class MauiProgram
         // Register services for dependency injection
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
         builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
-        builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
+        builder.Services.AddSingleton<IPreferencesService, MauiPreferencesService>();
+        builder.Services.AddSingleton<IAlertService, MauiAlertService>();
+        builder.Services.AddSingleton<INavigationService, MauiNavigationService>();
+        builder.Services.AddSingleton<ILocalizationService, MauiLocalizationService>();
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
