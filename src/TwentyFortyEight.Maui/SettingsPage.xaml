@@ -39,7 +39,9 @@
                      IsToggled="{Binding AnimationsEnabled}"
                      OnColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                      ThumbColor="White"
-                     VerticalOptions="Center" />
+                     VerticalOptions="Center"
+                     SemanticProperties.Description="{x:Static strings:AppStrings.EnableAnimations}"
+                     SemanticProperties.Hint="Toggle to enable or disable tile animations" />
                </Grid>
 
                <!-- Animation Speed Slider -->
@@ -64,7 +66,9 @@
                         MinimumTrackColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                         MaximumTrackColor="{AppThemeBinding Light=#cdc1b4, Dark=#776e65}"
                         ThumbColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center"
+                        SemanticProperties.Description="{x:Static strings:AppStrings.AnimationSpeed}"
+                        SemanticProperties.Hint="Adjust animation speed from 0.5 to 1.5 times normal speed" />
                      <Label
                         Grid.Column="2"
                         Text="{x:Static strings:AppStrings.AnimationSpeedFast}"

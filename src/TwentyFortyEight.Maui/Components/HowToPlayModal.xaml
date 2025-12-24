@@ -40,22 +40,18 @@
                        MaximumWidthRequest="340" />
                 
                 <!-- Got It Button -->
-                <Border BackgroundColor="#8f7a66"
-                        StrokeThickness="0"
-                        HeightRequest="50"
-                        Padding="30,0"
-                        StrokeShape="RoundRectangle 8"
-                        Margin="0,10,0,0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding CloseCommand, Source={x:Reference this}}" />
-                    </Border.GestureRecognizers>
-                    <Label Text="{x:Static strings:AppStrings.GotIt}"
-                           FontSize="18"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
-                </Border>
+                <Button 
+                    Command="{Binding CloseCommand, Source={x:Reference this}}"
+                    Text="{x:Static strings:AppStrings.GotIt}"
+                    BackgroundColor="#8f7a66"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    Padding="30,0"
+                    CornerRadius="8"
+                    Margin="0,10,0,0"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.GotIt}" />
                 
             </VerticalStackLayout>
         </Border>

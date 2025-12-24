@@ -26,6 +26,7 @@ public partial class GameViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
+    private readonly IScreenReaderService _screenReaderService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -66,6 +67,12 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _score;
 
+    partial void OnScoreChanged(int value)
+    {
+        // Announce score changes to screen readers
+        _screenReaderService.Announce($"Score: {value}");
+    }
+
     [ObservableProperty]
     private int _bestScore;
 
@@ -103,8 +110,26 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "";
 
+    partial void OnStatusTextChanged(string value)
+    {
+        // Announce win status to screen readers
+        if (!string.IsNullOrEmpty(value))
+        {
+            _screenReaderService.Announce(value);
+        }
+    }
+
     [ObservableProperty]
     private bool _isGameOver;
+
+    partial void OnIsGameOverChanged(bool value)
+    {
+        if (value)
+        {
+            // Announce game over with final score
+            _screenReaderService.Announce($"Game Over! Final score: {Score}");
+        }
+    }
 
     [ObservableProperty]
     private bool _canUndo;
@@ -121,7 +146,8 @@ public partial class GameViewModel : ObservableObject
         IPreferencesService preferencesService,
         IAlertService alertService,
         INavigationService navigationService,
-        ILocalizationService localizationService
+        ILocalizationService localizationService,
+        IScreenReaderService screenReaderService
     )
     {
         _logger = logger;
@@ -133,6 +159,7 @@ public partial class GameViewModel : ObservableObject
         _alertService = alertService;
         _navigationService = navigationService;
         _localizationService = localizationService;
+        _screenReaderService = screenReaderService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 

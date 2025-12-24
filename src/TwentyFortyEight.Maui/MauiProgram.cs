@@ -35,6 +35,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAlertService, MauiAlertService>();
         builder.Services.AddSingleton<INavigationService, MauiNavigationService>();
         builder.Services.AddSingleton<ILocalizationService, MauiLocalizationService>();
+        builder.Services.AddSingleton<IScreenReaderService, MauiScreenReaderService>();
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
