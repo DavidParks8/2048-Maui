@@ -74,10 +74,11 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnScoreChanged(int value)
     {
-        // Only announce score changes if the score increased by at least 10 points
-        // or if it's the first score announcement
+        // Only announce score changes if:
+        // 1. The score is greater than 0 (not a reset)
+        // 2. The score increased by at least 10 points since last announcement
         // This prevents overwhelming screen reader users with frequent announcements
-        if (_lastAnnouncedScore == 0 || value - _lastAnnouncedScore >= 10)
+        if (value > 0 && value > _lastAnnouncedScore && value - _lastAnnouncedScore >= 10)
         {
             _screenReaderService.Announce($"Score: {value}");
             _lastAnnouncedScore = value;
