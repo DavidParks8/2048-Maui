@@ -28,13 +28,16 @@ public static class MauiProgram
 
         // Register services for dependency injection
         builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<StatsPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
         return builder.Build();
     }

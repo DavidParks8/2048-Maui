@@ -8,5 +8,6 @@ public partial class AppShell : Shell
 
         // Register routes for navigation - Shell uses DI automatically
         Routing.RegisterRoute("stats", typeof(StatsPage));
+        Routing.RegisterRoute("settings", typeof(SettingsPage));
     }
 }

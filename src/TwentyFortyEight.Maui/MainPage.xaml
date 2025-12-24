@@ -12,10 +12,16 @@
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="{x:Static strings:AppStrings.HowToPlay}"
-                     Command="{Binding ShowHowToPlayCommand}"
-                     Order="Primary"
-                     Priority="0" />
+        <ToolbarItem
+            Text="{x:Static strings:AppStrings.Settings}"
+            Command="{Binding OpenSettingsCommand}"
+            Order="Primary"
+            Priority="1" />
+        <ToolbarItem
+            Text="{x:Static strings:AppStrings.HowToPlay}"
+            Command="{Binding ShowHowToPlayCommand}"
+            Order="Primary"
+            Priority="0" />
     </ContentPage.ToolbarItems>
 
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">

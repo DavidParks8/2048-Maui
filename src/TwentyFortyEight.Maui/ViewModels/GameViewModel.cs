@@ -216,6 +216,12 @@ public partial class GameViewModel : ObservableObject
         await Shell.Current.GoToAsync("stats");
     }
 
+    [RelayCommand]
+    private async Task OpenSettingsAsync()
+    {
+        await Shell.Current.GoToAsync("settings");
+    }
+
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;

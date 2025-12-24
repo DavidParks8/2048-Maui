@@ -538,5 +538,86 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("StartNew", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings.
+        /// </summary>
+        public static string Settings {
+            get {
+                return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ⚙️ Settings.
+        /// </summary>
+        public static string SettingsPageTitle {
+            get {
+                return ResourceManager.GetString("SettingsPageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open settings.
+        /// </summary>
+        public static string SettingsDescription {
+            get {
+                return ResourceManager.GetString("SettingsDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ANIMATIONS.
+        /// </summary>
+        public static string AnimationsSection {
+            get {
+                return ResourceManager.GetString("AnimationsSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Animations.
+        /// </summary>
+        public static string EnableAnimations {
+            get {
+                return ResourceManager.GetString("EnableAnimations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Animation Speed.
+        /// </summary>
+        public static string AnimationSpeed {
+            get {
+                return ResourceManager.GetString("AnimationSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Slow.
+        /// </summary>
+        public static string AnimationSpeedSlow {
+            get {
+                return ResourceManager.GetString("AnimationSpeedSlow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Normal.
+        /// </summary>
+        public static string AnimationSpeedNormal {
+            get {
+                return ResourceManager.GetString("AnimationSpeedNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fast.
+        /// </summary>
+        public static string AnimationSpeedFast {
+            get {
+                return ResourceManager.GetString("AnimationSpeedFast", resourceCulture);
+            }
+        }
     }
 }
