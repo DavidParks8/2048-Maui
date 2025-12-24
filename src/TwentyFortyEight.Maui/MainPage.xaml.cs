@@ -11,24 +11,35 @@ public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
+    private readonly IAccelerometerService _accelerometerService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
+    private CancellationTokenSource? _orientationAnimationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
+    private DeviceOrientation _currentOrientation = DeviceOrientation.Portrait;
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
     private Point _panAccumulator;
 
-    public MainPage(GameViewModel viewModel, TileAnimationService animationService)
+    public MainPage(
+        GameViewModel viewModel,
+        TileAnimationService animationService,
+        IAccelerometerService accelerometerService
+    )
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _animationService = animationService;
+        _accelerometerService = accelerometerService;
         BindingContext = _viewModel;
 
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
+
+        // Subscribe to orientation changes
+        _accelerometerService.OrientationChanged += OnOrientationChanged;
 
         // Add tiles to the grid
         CreateTiles();
@@ -95,9 +106,17 @@ public partial class MainPage : ContentPage
         // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _accelerometerService.OrientationChanged -= OnOrientationChanged;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
+        _accelerometerService.OrientationChanged += OnOrientationChanged;
+
+        // Start accelerometer monitoring if supported
+        if (_accelerometerService.IsSupported)
+        {
+            _accelerometerService.Start();
+        }
     }
 
     protected override void OnDisappearing()
@@ -109,9 +128,17 @@ public partial class MainPage : ContentPage
         _animationCts?.Dispose();
         _animationCts = null;
 
+        _orientationAnimationCts?.Cancel();
+        _orientationAnimationCts?.Dispose();
+        _orientationAnimationCts = null;
+
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _accelerometerService.OrientationChanged -= OnOrientationChanged;
+
+        // Stop accelerometer monitoring
+        _accelerometerService.Stop();
     }
 
     [UnconditionalSuppressMessage(
@@ -261,6 +288,118 @@ public partial class MainPage : ContentPage
             case GestureStatus.Canceled:
                 ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
                 break;
+        }
+    }
+
+    private async void OnOrientationChanged(object? sender, OrientationChangedEventArgs e)
+    {
+        try
+        {
+            if (_currentOrientation == e.Orientation)
+                return;
+
+            _currentOrientation = e.Orientation;
+
+            // Cancel any pending orientation animations
+            _orientationAnimationCts?.Cancel();
+            _orientationAnimationCts?.Dispose();
+            _orientationAnimationCts = new CancellationTokenSource();
+
+            // Animate layout changes based on orientation
+            await AnimateLayoutForOrientation(e.Orientation, _orientationAnimationCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Animation was cancelled - this is expected behavior
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"Error during orientation change animation: {ex.Message}"
+            );
+        }
+    }
+
+    private async Task AnimateLayoutForOrientation(
+        DeviceOrientation orientation,
+        CancellationToken cancellationToken
+    )
+    {
+        const uint animationDuration = 300;
+
+        if (orientation == DeviceOrientation.Landscape)
+        {
+            // In landscape mode, move scores and buttons to the right side of the board
+            // Fade out first
+            await Task.WhenAll(
+                ScoreContainer.FadeToAsync(0, animationDuration / 2),
+                ControlsContainer.FadeToAsync(0, animationDuration / 2)
+            );
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Position both containers in row 2, but at different vertical positions
+            Grid.SetRow(ScoreContainer, 2);
+            Grid.SetColumn(ScoreContainer, 0);
+            Grid.SetColumnSpan(ScoreContainer, 1);
+            Grid.SetRowSpan(ScoreContainer, 1);
+
+            Grid.SetRow(ControlsContainer, 3);
+            Grid.SetColumn(ControlsContainer, 0);
+
+            // Change positioning for landscape - float to the right side
+            ScoreContainer.HorizontalOptions = LayoutOptions.End;
+            ScoreContainer.VerticalOptions = LayoutOptions.Start;
+            ScoreContainer.Margin = new Thickness(20, 0, 0, 0);
+
+            ControlsContainer.HorizontalOptions = LayoutOptions.End;
+            ControlsContainer.VerticalOptions = LayoutOptions.Start;
+            ControlsContainer.Margin = new Thickness(20, 0, 0, 0);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Fade back in
+            await Task.WhenAll(
+                ScoreContainer.FadeToAsync(1, animationDuration / 2),
+                ControlsContainer.FadeToAsync(1, animationDuration / 2)
+            );
+        }
+        else
+        {
+            // In portrait mode, restore original layout
+            // Fade out first
+            await Task.WhenAll(
+                ScoreContainer.FadeToAsync(0, animationDuration / 2),
+                ControlsContainer.FadeToAsync(0, animationDuration / 2)
+            );
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Restore original positions
+            Grid.SetRow(ScoreContainer, 0);
+            Grid.SetColumn(ScoreContainer, 1);
+            Grid.SetColumnSpan(ScoreContainer, 2);
+            Grid.SetRowSpan(ScoreContainer, 1);
+
+            Grid.SetRow(ControlsContainer, 3);
+            Grid.SetColumn(ControlsContainer, 0);
+
+            // Restore original positioning
+            ScoreContainer.HorizontalOptions = LayoutOptions.End;
+            ScoreContainer.VerticalOptions = LayoutOptions.Fill;
+            ScoreContainer.Margin = new Thickness(0);
+
+            ControlsContainer.HorizontalOptions = LayoutOptions.Center;
+            ControlsContainer.VerticalOptions = LayoutOptions.Fill;
+            ControlsContainer.Margin = new Thickness(0, 10, 0, 0);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Fade back in
+            await Task.WhenAll(
+                ScoreContainer.FadeToAsync(1, animationDuration / 2),
+                ControlsContainer.FadeToAsync(1, animationDuration / 2)
+            );
         }
     }
 }
