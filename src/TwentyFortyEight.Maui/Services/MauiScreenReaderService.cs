@@ -36,7 +36,11 @@ public class MauiScreenReaderService : IScreenReaderService
             catch (Exception ex)
             {
                 // Log but don't crash if announcement fails
-                _logger.LogWarning(ex, "Failed to announce message to screen reader: {Message}", message);
+                _logger.LogWarning(
+                    ex,
+                    "Failed to announce message to screen reader: {Message}",
+                    message
+                );
             }
         });
     }

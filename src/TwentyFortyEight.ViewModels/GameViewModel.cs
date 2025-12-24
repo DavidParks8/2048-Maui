@@ -52,6 +52,11 @@ public partial class GameViewModel : ObservableObject
     private int _lastAnnouncedScore = 0;
 
     /// <summary>
+    /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
+    /// </summary>
+    private bool _isInitialized = false;
+
+    /// <summary>
     /// The collection of tiles for the game board.
     /// </summary>
     public ObservableCollection<TileViewModel> Tiles { get; }
@@ -75,6 +80,18 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnScoreChanged(int value)
     {
+        // Don't announce during initialization to avoid NullReferenceException
+        // when MAUI's SemanticScreenReader isn't fully initialized yet
+        if (!_isInitialized)
+        {
+            // Still track the score even during initialization
+            if (value >= 0)
+            {
+                _lastAnnouncedScore = value;
+            }
+            return;
+        }
+
         // Only announce score changes if:
         // 1. The score is greater than 0 (not a reset)
         // 2. The score increased by at least 10 points since last announcement
@@ -83,7 +100,7 @@ public partial class GameViewModel : ObservableObject
         {
             _screenReaderService.Announce($"Score: {value}");
         }
-        
+
         // Always track the current score for accurate announcement logic
         // This ensures proper behavior with undo operations
         if (value >= 0)
@@ -131,6 +148,12 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnStatusTextChanged(string value)
     {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
         // Announce win status to screen readers
         if (!string.IsNullOrEmpty(value))
         {
@@ -143,6 +166,12 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnIsGameOverChanged(bool value)
     {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
         if (value)
         {
             // Announce game over with final score
@@ -197,6 +226,9 @@ public partial class GameViewModel : ObservableObject
         // Load saved state or start new game
         LoadGame();
         UpdateUI();
+
+        // Mark initialization complete - now safe to announce to screen readers
+        _isInitialized = true;
     }
 
     [RelayCommand]

@@ -53,6 +53,7 @@
                 <!-- New Game Button -->
                 <Button 
                     Command="{Binding NewGameCommand, Source={x:Reference this}}"
+                    Text="{x:Static strings:AppStrings.TryAgain}"
                     BackgroundColor="#f67c5f"
                     TextColor="White"
                     FontSize="18"
@@ -61,19 +62,14 @@
                     Padding="30,0"
                     CornerRadius="8"
                     Margin="0,10,0,0"
+                    ContentLayout="Left, 10"
                     SemanticProperties.Description="{x:Static strings:AppStrings.TryAgain}">
-                    <Button.ContentLayout>
-                        <ButtonContentLayout Position="Left" Spacing="10" />
-                    </Button.ContentLayout>
                     <Button.ImageSource>
                         <FontImageSource 
                             Glyph="↻" 
-                            FontSize="20" 
+                            Size="20" 
                             Color="White" />
                     </Button.ImageSource>
-                    <Button.Text>
-                        <Binding Path="TryAgain" Source="{x:Static strings:AppStrings}" />
-                    </Button.Text>
                 </Button>
                 
             </VerticalStackLayout>
