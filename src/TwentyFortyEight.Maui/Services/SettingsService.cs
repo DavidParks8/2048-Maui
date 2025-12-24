@@ -23,6 +23,6 @@ public class SettingsService
     public double AnimationSpeed
     {
         get => Preferences.Get(AnimationSpeedKey, 1.0);
-        set => Preferences.Set(AnimationSpeedKey, value);
+        set => Preferences.Set(AnimationSpeedKey, Math.Clamp(value, 0.5, 1.5));
     }
 }

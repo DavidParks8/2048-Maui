@@ -40,6 +40,11 @@ public class TileAnimationService
     private const uint BaseNewTileScaleDuration = 100;
 
     /// <summary>
+    /// Default animation speed when the setting is invalid.
+    /// </summary>
+    private const double DefaultAnimationSpeed = 1.0;
+
+    /// <summary>
     /// Small delay to ensure UI updates before animating in milliseconds.
     /// </summary>
     private const int UiUpdateDelay = 10;
@@ -54,7 +59,13 @@ public class TileAnimationService
     /// </summary>
     private uint GetAdjustedDuration(uint baseDuration)
     {
-        return (uint)(baseDuration / _settingsService.AnimationSpeed);
+        var speed = _settingsService.AnimationSpeed;
+        // Ensure speed is never zero or negative to prevent division by zero
+        if (speed <= 0)
+        {
+            speed = DefaultAnimationSpeed;
+        }
+        return (uint)(baseDuration / speed);
     }
 
     /// <summary>
