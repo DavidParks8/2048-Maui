@@ -95,11 +95,11 @@
                 </Border.GestureRecognizers>
                 <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
                     <Label Text="?"
-                           FontSize="20"
+                           FontSize="18"
                            TextColor="White"
                            VerticalOptions="Center" />
                     <Label Text="{x:Static strings:AppStrings.HowToPlay}"
-                           FontSize="14"
+                           FontSize="13"
                            FontAttributes="Bold"
                            TextColor="White"
                            VerticalOptions="Center" />
