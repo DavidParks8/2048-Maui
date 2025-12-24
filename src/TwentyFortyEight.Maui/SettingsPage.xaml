@@ -115,7 +115,9 @@
                      IsToggled="{Binding HapticsEnabled}"
                      OnColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                      ThumbColor="White"
-                     VerticalOptions="Center" />
+                     VerticalOptions="Center"
+                     SemanticProperties.Description="{x:Static strings:AppStrings.EnableHaptics}"
+                     SemanticProperties.Hint="Toggle to enable or disable haptic feedback" />
                </Grid>
             </VerticalStackLayout>
          </Border>

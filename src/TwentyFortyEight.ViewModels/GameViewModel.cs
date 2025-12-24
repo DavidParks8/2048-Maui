@@ -26,6 +26,7 @@ public partial class GameViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
+    private readonly IScreenReaderService _screenReaderService;
     private readonly IHapticService _hapticService;
     private Game2048Engine _engine;
 
@@ -165,6 +166,7 @@ public partial class GameViewModel : ObservableObject
         IAlertService alertService,
         INavigationService navigationService,
         ILocalizationService localizationService,
+        IScreenReaderService screenReaderService,
         IHapticService hapticService
     )
     {
@@ -177,6 +179,7 @@ public partial class GameViewModel : ObservableObject
         _alertService = alertService;
         _navigationService = navigationService;
         _localizationService = localizationService;
+        _screenReaderService = screenReaderService;
         _hapticService = hapticService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);

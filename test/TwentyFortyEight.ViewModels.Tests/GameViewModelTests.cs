@@ -24,6 +24,7 @@ public class GameViewModelTests
     private Mock<IAlertService> _alertServiceMock = null!;
     private Mock<INavigationService> _navigationServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
+    private Mock<IScreenReaderService> _screenReaderServiceMock = null!;
     private Mock<IHapticService> _hapticServiceMock = null!;
 
     [TestInitialize]
@@ -38,6 +39,7 @@ public class GameViewModelTests
         _alertServiceMock = new Mock<IAlertService>();
         _navigationServiceMock = new Mock<INavigationService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
+        _screenReaderServiceMock = new Mock<IScreenReaderService>();
         _hapticServiceMock = new Mock<IHapticService>();
 
         // Setup default behavior
@@ -68,6 +70,7 @@ public class GameViewModelTests
             _alertServiceMock.Object,
             _navigationServiceMock.Object,
             _localizationServiceMock.Object,
+            _screenReaderServiceMock.Object,
             _hapticServiceMock.Object
         );
     }
