@@ -46,6 +46,11 @@ public partial class GameViewModel : ObservableObject
     private CancellationTokenSource? _bestScoreSaveDebounce;
 
     /// <summary>
+    /// Last announced score for screen reader, to avoid frequent announcements.
+    /// </summary>
+    private int _lastAnnouncedScore = 0;
+
+    /// <summary>
     /// The collection of tiles for the game board.
     /// </summary>
     public ObservableCollection<TileViewModel> Tiles { get; }
@@ -69,8 +74,14 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnScoreChanged(int value)
     {
-        // Announce score changes to screen readers
-        _screenReaderService.Announce($"Score: {value}");
+        // Only announce score changes if the score increased by at least 10 points
+        // or if it's the first score announcement
+        // This prevents overwhelming screen reader users with frequent announcements
+        if (_lastAnnouncedScore == 0 || value - _lastAnnouncedScore >= 10)
+        {
+            _screenReaderService.Announce($"Score: {value}");
+            _lastAnnouncedScore = value;
+        }
     }
 
     [ObservableProperty]
@@ -198,6 +209,9 @@ public partial class GameViewModel : ObservableObject
         }
 
         _engine.NewGame();
+
+        // Reset score announcement tracking for new game
+        _lastAnnouncedScore = 0;
 
         UpdateUI();
         SaveGame();
