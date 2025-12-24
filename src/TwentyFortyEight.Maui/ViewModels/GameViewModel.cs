@@ -76,6 +76,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _canUndo;
 
+    [ObservableProperty]
+    private bool _isHowToPlayVisible;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
@@ -104,12 +107,45 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NewGame()
+    private async Task NewGameAsync()
     {
+        // Show confirmation if game is in progress (has moves and not game over)
+        if (Moves > 0 && !IsGameOver)
+        {
+            // Use Shell.Current.CurrentPage for displaying alerts
+            var page = Shell.Current?.CurrentPage;
+            if (page != null)
+            {
+                bool confirm = await page.DisplayAlertAsync(
+                    Resources.Strings.AppStrings.RestartConfirmTitle,
+                    Resources.Strings.AppStrings.RestartConfirmMessage,
+                    Resources.Strings.AppStrings.StartNew,
+                    Resources.Strings.AppStrings.Cancel
+                );
+
+                if (!confirm)
+                {
+                    return;
+                }
+            }
+        }
+
         _engine.NewGame();
 
         UpdateUI();
         SaveGame();
+    }
+
+    [RelayCommand]
+    private void ShowHowToPlay()
+    {
+        IsHowToPlayVisible = true;
+    }
+
+    [RelayCommand]
+    private void CloseHowToPlay()
+    {
+        IsHowToPlayVisible = false;
     }
 
     [RelayCommand]

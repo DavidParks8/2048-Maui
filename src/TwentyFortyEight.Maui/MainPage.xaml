@@ -11,6 +11,13 @@
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{x:Static strings:AppStrings.HowToPlay}"
+                     Command="{Binding ShowHowToPlayCommand}"
+                     Order="Primary"
+                     Priority="0" />
+    </ContentPage.ToolbarItems>
+
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -215,5 +222,11 @@
                                   BestScore="{Binding BestScore}"
                                   NewGameCommand="{Binding NewGameCommand}"
                                   ZIndex="100" />
+
+        <!-- How To Play Modal -->
+        <components:HowToPlayModal Grid.RowSpan="4"
+                                   IsVisible="{Binding IsHowToPlayVisible}"
+                                   CloseCommand="{Binding CloseHowToPlayCommand}"
+                                   ZIndex="100" />
     </Grid>
 </ContentPage>
