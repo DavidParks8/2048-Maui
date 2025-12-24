@@ -21,26 +21,6 @@ public class TileAnimationService(ISettingsService settingsService)
     private const double DefaultBoardDimension = 400;
 
     /// <summary>
-    /// Base duration of the slide animation in milliseconds.
-    /// </summary>
-    private const uint BaseSlideAnimationDuration = AnimationConstants.BaseSlideAnimationDuration;
-
-    /// <summary>
-    /// Base duration of the scale-up animation for merged tiles in milliseconds.
-    /// </summary>
-    private const uint BaseMergePulseUpDuration = AnimationConstants.BaseMergePulseUpDuration;
-
-    /// <summary>
-    /// Base duration of the scale-down animation for merged tiles in milliseconds.
-    /// </summary>
-    private const uint BaseMergePulseDownDuration = AnimationConstants.BaseMergePulseDownDuration;
-
-    /// <summary>
-    /// Base duration of the scale animation for new tiles in milliseconds.
-    /// </summary>
-    private const uint BaseNewTileScaleDuration = AnimationConstants.BaseNewTileScaleDuration;
-
-    /// <summary>
     /// Default animation speed when the setting is invalid.
     /// </summary>
     private const double DefaultAnimationSpeed = 1.0;
@@ -227,7 +207,7 @@ public class TileAnimationService(ISettingsService settingsService)
                 overlayBorder.TranslateToAsync(
                     translateX,
                     translateY,
-                    GetAdjustedDuration(BaseSlideAnimationDuration),
+                    GetAdjustedDuration(AnimationConstants.BaseSlideAnimationDuration),
                     Easing.CubicOut
                 )
             );
@@ -258,12 +238,12 @@ public class TileAnimationService(ISettingsService settingsService)
                     border.Scale = 0.8;
                     await border.ScaleToAsync(
                         1.2,
-                        GetAdjustedDuration(BaseMergePulseUpDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseMergePulseUpDuration),
                         Easing.CubicOut
                     );
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(BaseMergePulseDownDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseMergePulseDownDuration),
                         Easing.CubicIn
                     );
                 }
@@ -297,7 +277,7 @@ public class TileAnimationService(ISettingsService settingsService)
                     await Task.Delay(UiUpdateDelay, cancellationToken);
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(BaseNewTileScaleDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseNewTileScaleDuration),
                         Easing.CubicOut
                     );
                 }
