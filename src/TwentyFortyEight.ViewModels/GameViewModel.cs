@@ -117,6 +117,9 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public int BoardSize => _config.Size;
 
+    [ObservableProperty]
+    private double _boardScaleFactor = 1.0;
+
     partial void OnBestScoreChanged(int value)
     {
         // Debounce preference saving to avoid hammering storage during rapid undos

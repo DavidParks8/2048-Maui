@@ -4,12 +4,17 @@
              xmlns:local="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
              xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
              xmlns:behaviors="clr-namespace:TwentyFortyEight.Maui.Behaviors"
+             xmlns:converters="clr-namespace:TwentyFortyEight.Maui.Converters"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
+
+    <ContentPage.Resources>
+        <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
+    </ContentPage.Resources>
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
@@ -28,7 +33,7 @@
             Priority="1" />
     </ContentPage.ToolbarItems>
 
-    <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
+    <Grid x:Name="RootLayout" Padding="20" RowSpacing="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -43,15 +48,6 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-
-            <Label x:Name="GameTitleLabel"
-                   Grid.Column="0"
-                   Text="{x:Static strings:AppStrings.GameTitle}"
-                   FontSize="48"
-                   FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
-                   VerticalOptions="Center"
-                   SemanticProperties.HeadingLevel="Level1" />
 
             <Border x:Name="ScoreBorder"
                     Grid.Column="1"
@@ -137,20 +133,22 @@
                 <Grid x:Name="GameBoard"
                       ColumnSpacing="10"
                       RowSpacing="10"
-                      WidthRequest="400"
-                      HeightRequest="400"
                       SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
                     <!-- Tiles will be added programmatically in code-behind -->
+                    <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
                 </Grid>
             </Grid>
         </Border>
 
         <!-- Controls -->
-        <HorizontalStackLayout x:Name="ControlsStackLayout"
-                               Grid.Row="3"
-                               Spacing="15"
-                               HorizontalOptions="Center"
-                               Margin="0,10,0,0">
+        <FlexLayout x:Name="ControlsFlexLayout"
+                    Grid.Row="3"
+                    Direction="Row"
+                    Wrap="Wrap"
+                    JustifyContent="Center"
+                    AlignItems="Start"
+                    AlignContent="Start"
+                    Margin="0,5,0,0">
 
             <Button x:Name="NewGameButton"
                 AutomationId="NewGameButton"
@@ -160,6 +158,7 @@
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"
+                Margin="3,2.5"
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}" />
 
@@ -171,6 +170,7 @@
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"
+                Margin="3,2.5"
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
 
@@ -182,9 +182,10 @@
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"
+                Margin="3,2.5"
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.StatisticsDescription}" />
-        </HorizontalStackLayout>
+        </FlexLayout>
 
         <!-- Game Over Modal -->
         <components:GameOverModal x:Name="GameOverModal"
