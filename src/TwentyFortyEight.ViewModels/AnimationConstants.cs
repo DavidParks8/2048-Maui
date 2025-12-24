@@ -31,3 +31,4 @@ public static class AnimationConstants
     /// </summary>
     public const uint BaseTotalSequenceDuration = BaseSlideAnimationDuration + BaseMergePulseUpDuration + BaseMergePulseDownDuration + BaseNewTileScaleDuration;
 }
+
