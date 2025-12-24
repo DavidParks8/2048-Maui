@@ -165,6 +165,7 @@
             <Button x:Name="UndoButton"
                 AutomationId="UndoButton"
                 Command="{Binding UndoCommand}"
+                IsEnabled="{Binding CanUndo}"
                 Text="{x:Static strings:AppStrings.Undo}"
                 BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                 TextColor="White"
