@@ -46,6 +46,8 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     private CancellationTokenSource? _bestScoreSaveDebounce;
 
+    private Task _bestScoreSaveTask = Task.CompletedTask;
+
     /// <summary>
     /// Last announced score for screen reader, to avoid frequent announcements.
     /// </summary>
@@ -127,8 +129,10 @@ public partial class GameViewModel : ObservableObject
         _bestScoreSaveDebounce?.Dispose();
         _bestScoreSaveDebounce = new CancellationTokenSource();
 
-        _ = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
+        _bestScoreSaveTask = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
     }
+
+    internal Task WaitForBestScoreSaveAsync() => _bestScoreSaveTask;
 
     private async Task DebouncedSaveBestScoreAsync(int value, CancellationToken cancellationToken)
     {
