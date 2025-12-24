@@ -64,12 +64,14 @@ public class TileAnimationService(ISettingsService settingsService)
     /// <param name="gameBoard">The game board Grid element.</param>
     /// <param name="boardSize">The size of the board (e.g., 4 for 4x4).</param>
     /// <param name="tileBorders">Dictionary mapping TileViewModels to their Border elements.</param>
+    /// <param name="scaleFactor">The scale factor for responsive font sizing.</param>
     /// <param name="cancellationToken">Token to cancel the animation.</param>
     public async Task AnimateAsync(
         TileUpdateEventArgs args,
         Grid gameBoard,
         int boardSize,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
+        double scaleFactor,
         CancellationToken cancellationToken
     )
     {
@@ -115,6 +117,7 @@ public class TileAnimationService(ISettingsService settingsService)
             gameBoard,
             cellStepX,
             cellStepY,
+            scaleFactor,
             cancellationToken
         );
 
@@ -183,6 +186,7 @@ public class TileAnimationService(ISettingsService settingsService)
         Grid gameBoard,
         double cellStepX,
         double cellStepY,
+        double scaleFactor,
         CancellationToken cancellationToken
     )
     {
@@ -193,7 +197,7 @@ public class TileAnimationService(ISettingsService settingsService)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var overlayBorder = CreateOverlayTile(movement.Value);
+            var overlayBorder = CreateOverlayTile(movement.Value, scaleFactor);
             overlayTiles.Add(overlayBorder);
 
             Grid.SetRow(overlayBorder, movement.From.Row);
@@ -287,10 +291,11 @@ public class TileAnimationService(ISettingsService settingsService)
         await Task.WhenAll(newTileTasks);
     }
 
-    private static Border CreateOverlayTile(int value)
+    private static Border CreateOverlayTile(int value, double scaleFactor)
     {
         var backgroundColor = TileColorHelper.GetTileBackgroundColor(value);
         var textColor = TileColorHelper.GetTileTextColor(value);
+        var baseFontSize = TileViewModel.GetTileFontSize(value);
 
         return new Border
         {
@@ -302,7 +307,7 @@ public class TileAnimationService(ISettingsService settingsService)
             Content = new Label
             {
                 Text = value.ToString(),
-                FontSize = 32,
+                FontSize = baseFontSize * scaleFactor,
                 FontAttributes = FontAttributes.Bold,
                 TextColor = textColor,
                 HorizontalOptions = LayoutOptions.Center,

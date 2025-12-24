@@ -13,13 +13,13 @@
       <VerticalStackLayout Spacing="20">
 
          <!-- Animations Section -->
-         <Border
+         <Border x:Name="AnimationsSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16">
             <VerticalStackLayout Spacing="12">
-               <Label
+               <Label x:Name="AnimationsSectionLabel"
                   Text="{x:Static strings:AppStrings.AnimationsSection}"
                   FontSize="12"
                   FontAttributes="Bold"
@@ -27,19 +27,24 @@
                   Margin="0,0,0,4" />
 
                <!-- Enable Animations Toggle -->
-               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                  <Label
+               <Grid x:Name="AnimationsToggleGrid"
+                     ColumnDefinitions="*,Auto"
+                     ColumnSpacing="10">
+                  <Label x:Name="EnableAnimationsLabel"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.EnableAnimations}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}"
                      VerticalOptions="Center" />
-                  <Switch
+                  <Switch x:Name="AnimationsEnabledSwitch"
+                     AutomationId="AnimationsEnabledSwitch"
                      Grid.Column="1"
                      IsToggled="{Binding AnimationsEnabled}"
                      OnColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                      ThumbColor="White"
-                     VerticalOptions="Center" />
+                     VerticalOptions="Center"
+                     SemanticProperties.Description="{x:Static strings:AppStrings.EnableAnimations}"
+                     SemanticProperties.Hint="Toggle to enable or disable tile animations" />
                </Grid>
 
                <!-- Animation Speed Slider -->
@@ -57,6 +62,7 @@
                         TextColor="{AppThemeBinding Light=#776e65, Dark=#cdc1b4}"
                         VerticalOptions="Center" />
                      <Slider
+                        AutomationId="AnimationSpeedSlider"
                         Grid.Column="1"
                         Value="{Binding AnimationSpeed}"
                         Minimum="0.5"
@@ -64,7 +70,9 @@
                         MinimumTrackColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                         MaximumTrackColor="{AppThemeBinding Light=#cdc1b4, Dark=#776e65}"
                         ThumbColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center"
+                        SemanticProperties.Description="{x:Static strings:AppStrings.AnimationSpeed}"
+                        SemanticProperties.Hint="Adjust animation speed from 0.5 to 1.5 times normal speed" />
                      <Label
                         Grid.Column="2"
                         Text="{x:Static strings:AppStrings.AnimationSpeedFast}"
@@ -84,14 +92,14 @@
          </Border>
 
          <!-- Haptics Section (conditionally visible) -->
-         <Border
+         <Border x:Name="HapticsSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16"
             IsVisible="{Binding IsHapticsSupported}">
             <VerticalStackLayout Spacing="12">
-               <Label
+               <Label x:Name="HapticsSectionLabel"
                   Text="{x:Static strings:AppStrings.HapticsSection}"
                   FontSize="12"
                   FontAttributes="Bold"
@@ -99,19 +107,24 @@
                   Margin="0,0,0,4" />
 
                <!-- Enable Haptics Toggle -->
-               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                  <Label
+               <Grid x:Name="HapticsToggleGrid"
+                     ColumnDefinitions="*,Auto"
+                     ColumnSpacing="10">
+                  <Label x:Name="EnableHapticsLabel"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.EnableHaptics}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}"
                      VerticalOptions="Center" />
-                  <Switch
+                  <Switch x:Name="HapticsEnabledSwitch"
+                     AutomationId="HapticsEnabledSwitch"
                      Grid.Column="1"
                      IsToggled="{Binding HapticsEnabled}"
                      OnColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
                      ThumbColor="White"
-                     VerticalOptions="Center" />
+                     VerticalOptions="Center"
+                     SemanticProperties.Description="{x:Static strings:AppStrings.EnableHaptics}"
+                     SemanticProperties.Hint="Toggle to enable or disable haptic feedback" />
                </Grid>
             </VerticalStackLayout>
          </Border>

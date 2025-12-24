@@ -26,6 +26,7 @@ public partial class GameViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
+    private readonly IScreenReaderService _screenReaderService;
     private readonly IHapticService _hapticService;
     private Game2048Engine _engine;
 
@@ -44,6 +45,16 @@ public partial class GameViewModel : ObservableObject
     /// Debounce timer for saving best score to preferences.
     /// </summary>
     private CancellationTokenSource? _bestScoreSaveDebounce;
+
+    /// <summary>
+    /// Last announced score for screen reader, to avoid frequent announcements.
+    /// </summary>
+    private int _lastAnnouncedScore = 0;
+
+    /// <summary>
+    /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
+    /// </summary>
+    private bool _isInitialized = false;
 
     /// <summary>
     /// The collection of tiles for the game board.
@@ -67,6 +78,37 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _score;
 
+    partial void OnScoreChanged(int value)
+    {
+        // Don't announce during initialization to avoid NullReferenceException
+        // when MAUI's SemanticScreenReader isn't fully initialized yet
+        if (!_isInitialized)
+        {
+            // Still track the score even during initialization
+            if (value >= 0)
+            {
+                _lastAnnouncedScore = value;
+            }
+            return;
+        }
+
+        // Only announce score changes if:
+        // 1. The score is greater than 0 (not a reset)
+        // 2. The score increased by at least 10 points since last announcement
+        // This prevents overwhelming screen reader users with frequent announcements
+        if (value > 0 && value > _lastAnnouncedScore && value - _lastAnnouncedScore >= 10)
+        {
+            _screenReaderService.Announce($"Score: {value}");
+        }
+
+        // Always track the current score for accurate announcement logic
+        // This ensures proper behavior with undo operations
+        if (value >= 0)
+        {
+            _lastAnnouncedScore = value;
+        }
+    }
+
     [ObservableProperty]
     private int _bestScore;
 
@@ -74,6 +116,9 @@ public partial class GameViewModel : ObservableObject
     /// Gets the board size for UI layout calculations.
     /// </summary>
     public int BoardSize => _config.Size;
+
+    [ObservableProperty]
+    private double _boardScaleFactor = 1.0;
 
     partial void OnBestScoreChanged(int value)
     {
@@ -104,8 +149,38 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "";
 
+    partial void OnStatusTextChanged(string value)
+    {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        // Announce win status to screen readers
+        if (!string.IsNullOrEmpty(value))
+        {
+            _screenReaderService.Announce(value);
+        }
+    }
+
     [ObservableProperty]
     private bool _isGameOver;
+
+    partial void OnIsGameOverChanged(bool value)
+    {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        if (value)
+        {
+            // Announce game over with final score
+            _screenReaderService.Announce($"Game Over! Final score: {Score}");
+        }
+    }
 
     [ObservableProperty]
     private bool _canUndo;
@@ -123,6 +198,7 @@ public partial class GameViewModel : ObservableObject
         IAlertService alertService,
         INavigationService navigationService,
         ILocalizationService localizationService,
+        IScreenReaderService screenReaderService,
         IHapticService hapticService
     )
     {
@@ -135,6 +211,7 @@ public partial class GameViewModel : ObservableObject
         _alertService = alertService;
         _navigationService = navigationService;
         _localizationService = localizationService;
+        _screenReaderService = screenReaderService;
         _hapticService = hapticService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
@@ -152,6 +229,9 @@ public partial class GameViewModel : ObservableObject
         // Load saved state or start new game
         LoadGame();
         UpdateUI();
+
+        // Mark initialization complete - now safe to announce to screen readers
+        _isInitialized = true;
     }
 
     [RelayCommand]
@@ -174,6 +254,9 @@ public partial class GameViewModel : ObservableObject
         }
 
         _engine.NewGame();
+
+        // Reset score announcement tracking before UI update to ensure consistency
+        _lastAnnouncedScore = 0;
 
         UpdateUI();
         SaveGame();

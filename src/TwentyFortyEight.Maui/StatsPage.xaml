@@ -10,7 +10,7 @@
    BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
    <ScrollView Padding="20">
-      <FlexLayout
+      <FlexLayout x:Name="StatsFlexLayout"
          Direction="Row"
          Wrap="Wrap"
          JustifyContent="Center"
@@ -20,7 +20,7 @@
          VerticalOptions="Start">
 
          <!-- Games Section -->
-         <Border
+         <Border x:Name="GamesSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
@@ -32,24 +32,24 @@
             MinimumWidthRequest="220"
             MaximumWidthRequest="1400">
             <VerticalStackLayout Spacing="8">
-               <Label
+               <Label x:Name="GamesSectionLabel"
                   Text="{x:Static strings:AppStrings.GamesSection}"
                   FontSize="12"
                   FontAttributes="Bold"
                   TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                   Margin="0,0,0,4" />
 
-               <Grid
+               <Grid x:Name="GamesStatsGrid"
                   ColumnDefinitions="*,Auto"
                   RowDefinitions="Auto,Auto,Auto"
                   RowSpacing="6">
-                  <Label
+                  <Label x:Name="GamesPlayedLabel"
                      Grid.Row="0"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.GamesPlayed}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="GamesPlayedValue"
                      Grid.Row="0"
                      Grid.Column="1"
                      Text="{Binding GamesPlayed}"
@@ -57,13 +57,13 @@
                      FontAttributes="Bold"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
 
-                  <Label
+                  <Label x:Name="GamesWonLabel"
                      Grid.Row="1"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.GamesWon}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="GamesWonValue"
                      Grid.Row="1"
                      Grid.Column="1"
                      Text="{Binding GamesWon}"
@@ -71,13 +71,13 @@
                      FontAttributes="Bold"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
 
-                  <Label
+                  <Label x:Name="WinRateLabel"
                      Grid.Row="2"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.WinRate}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="WinRateValue"
                      Grid.Row="2"
                      Grid.Column="1"
                      Text="{Binding WinRate}"
@@ -89,7 +89,7 @@
          </Border>
 
          <!-- Scores Section -->
-         <Border
+         <Border x:Name="ScoresSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
@@ -101,24 +101,24 @@
             MinimumWidthRequest="220"
             MaximumWidthRequest="1400">
             <VerticalStackLayout Spacing="8">
-               <Label
+               <Label x:Name="ScoresSectionLabel"
                   Text="{x:Static strings:AppStrings.ScoresSection}"
                   FontSize="12"
                   FontAttributes="Bold"
                   TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                   Margin="0,0,0,4" />
 
-               <Grid
+               <Grid x:Name="ScoresStatsGrid"
                   ColumnDefinitions="*,Auto"
                   RowDefinitions="Auto,Auto,Auto"
                   RowSpacing="6">
-                  <Label
+                  <Label x:Name="BestScoreLabelStats"
                      Grid.Row="0"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.BestScoreLabel}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="BestScoreValueStats"
                      Grid.Row="0"
                      Grid.Column="1"
                      Text="{Binding BestScore}"
@@ -126,13 +126,13 @@
                      FontAttributes="Bold"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
 
-                  <Label
+                  <Label x:Name="AverageScoreLabel"
                      Grid.Row="1"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.AverageScore}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="AverageScoreValue"
                      Grid.Row="1"
                      Grid.Column="1"
                      Text="{Binding AverageScore}"
@@ -140,13 +140,13 @@
                      FontAttributes="Bold"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
 
-                  <Label
+                  <Label x:Name="HighestTileLabel"
                      Grid.Row="2"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.HighestTile}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  <Label x:Name="HighestTileValue"
                      Grid.Row="2"
                      Grid.Column="1"
                      Text="{Binding HighestTile}"
@@ -158,7 +158,7 @@
          </Border>
 
          <!-- Moves Section -->
-         <Border
+         <Border x:Name="MovesSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
@@ -170,18 +170,18 @@
             MinimumWidthRequest="220"
             MaximumWidthRequest="720">
             <VerticalStackLayout Spacing="8">
-               <Label
+               <Label x:Name="MovesSectionLabel"
                   Text="{x:Static strings:AppStrings.MovesSection}"
                   FontSize="12"
                   FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                  TextColor="{AppThemeBinding Light#eee4da, Dark=#cdc1b4}"
                   Margin="0,0,0,4" />
 
-               <Label
+               <Label x:Name="TotalMovesLabel"
                   Text="{x:Static strings:AppStrings.TotalMoves}"
                   FontSize="13"
-                  TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-               <Label
+                  TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+               <Label x:Name="TotalMovesValue"
                   Text="{Binding TotalMoves}"
                   FontSize="28"
                   FontAttributes="Bold"
@@ -191,7 +191,7 @@
          </Border>
 
          <!-- Streaks Section -->
-         <Border
+         <Border x:Name="StreaksSectionBorder"
             BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
@@ -203,24 +203,24 @@
             MinimumWidthRequest="220"
             MaximumWidthRequest="720">
             <VerticalStackLayout Spacing="8">
-               <Label
+               <Label x:Name="StreaksSectionLabel"
                   Text="{x:Static strings:AppStrings.StreaksSection}"
                   FontSize="12"
                   FontAttributes="Bold"
                   TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                   Margin="0,0,0,4" />
 
-               <Grid
+               <Grid x:Name="StreaksStatsGrid"
                   ColumnDefinitions="*,Auto"
                   RowDefinitions="Auto,Auto"
                   RowSpacing="6">
-                  <Label
+                  <Label x:Name="CurrentStreakLabel"
                      Grid.Row="0"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.Current}"
                      FontSize="15"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                  <Label x:Name="CurrentStreakValue"
                      Grid.Row="0"
                      Grid.Column="1"
                      Text="{Binding CurrentStreak}"
@@ -228,13 +228,13 @@
                      FontAttributes="Bold"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
 
-                  <Label
+                  <Label x:Name="BestStreakLabel"
                      Grid.Row="1"
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.BestLabel}"
                      FontSize="15"
                      TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label
+                  <Label x:Name="BestStreakValue"
                      Grid.Row="1"
                      Grid.Column="1"
                      Text="{Binding BestStreak}"
@@ -246,7 +246,8 @@
          </Border>
 
          <!-- Reset Statistics Button -->
-         <Button
+         <Button x:Name="ResetStatisticsButton"
+            AutomationId="ResetStatisticsButton"
             Text="{x:Static strings:AppStrings.ResetStatistics}"
             Command="{Binding ResetStatisticsCommand}"
             BackgroundColor="#f67c5f"
