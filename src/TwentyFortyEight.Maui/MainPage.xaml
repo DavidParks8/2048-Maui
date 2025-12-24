@@ -144,15 +144,7 @@
                 HeightRequest="50"
                 Padding="15,0"
                 CornerRadius="5"
-                ContentLayout="Left, 8"
-                SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}">
-                <Button.ImageSource>
-                    <FontImageSource 
-                        Glyph="↻" 
-                        Size="18" 
-                        Color="White" />
-                </Button.ImageSource>
-            </Button>
+                SemanticProperties.Description="{x:Static strings:AppStrings.NewGameDescription}" />
 
             <Button 
                 Command="{Binding UndoCommand}"
@@ -162,15 +154,7 @@
                 HeightRequest="50"
                 Padding="15,0"
                 CornerRadius="5"
-                ContentLayout="Left, 8"
-                SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}">
-                <Button.ImageSource>
-                    <FontImageSource 
-                        Glyph="↩" 
-                        Size="18" 
-                        Color="White" />
-                </Button.ImageSource>
-            </Button>
+                SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
 
             <Button 
                 Command="{Binding OpenStatsCommand}"
@@ -180,15 +164,7 @@
                 HeightRequest="50"
                 Padding="15,0"
                 CornerRadius="5"
-                ContentLayout="Left, 8"
-                SemanticProperties.Description="{x:Static strings:AppStrings.StatisticsDescription}">
-                <Button.ImageSource>
-                    <FontImageSource 
-                        Glyph="📊" 
-                        Size="18" 
-                        Color="White" />
-                </Button.ImageSource>
-            </Button>
+                SemanticProperties.Description="{x:Static strings:AppStrings.StatisticsDescription}" />
         </HorizontalStackLayout>
 
         <!-- Game Over Modal -->
