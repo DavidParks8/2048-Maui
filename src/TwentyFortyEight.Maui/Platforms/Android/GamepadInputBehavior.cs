@@ -187,38 +187,26 @@ public partial class GamepadInputBehavior
     /// <summary>
     /// Key listener for handling D-pad and button presses.
     /// </summary>
-    private sealed class GamepadKeyListener : Java.Lang.Object, Android.Views.View.IOnKeyListener
+    private sealed class GamepadKeyListener(GamepadInputBehavior behavior)
+        : Java.Lang.Object,
+            Android.Views.View.IOnKeyListener
     {
-        private readonly GamepadInputBehavior _behavior;
-
-        public GamepadKeyListener(GamepadInputBehavior behavior)
-        {
-            _behavior = behavior;
-        }
-
         public bool OnKey(Android.Views.View? v, Keycode keyCode, KeyEvent? e)
         {
-            return _behavior.ProcessKeyEvent(keyCode, e);
+            return behavior.ProcessKeyEvent(keyCode, e);
         }
     }
 
     /// <summary>
     /// Motion listener for handling thumbstick movements.
     /// </summary>
-    private sealed class GamepadMotionListener
+    private sealed class GamepadMotionListener(GamepadInputBehavior behavior)
         : Java.Lang.Object,
             Android.Views.View.IOnGenericMotionListener
     {
-        private readonly GamepadInputBehavior _behavior;
-
-        public GamepadMotionListener(GamepadInputBehavior behavior)
-        {
-            _behavior = behavior;
-        }
-
         public bool OnGenericMotion(Android.Views.View? v, MotionEvent? e)
         {
-            return _behavior.ProcessMotionEvent(e);
+            return behavior.ProcessMotionEvent(e);
         }
     }
 }
