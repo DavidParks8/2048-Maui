@@ -211,10 +211,12 @@ public partial class MainPage : ContentPage
             label.SetBinding(Label.TextProperty, nameof(tile.DisplayValue));
             label.SetBinding(Label.TextColorProperty, nameof(tile.TextColor));
 
-            // Bind FontSize with scale converter
-            var fontSizeBinding = new Binding
+            // Bind FontSize with scale converter using typed binding for trim safety
+            var fontSizeBinding = new TypedBinding<TileViewModel, double>(
+                getter: static (TileViewModel t) => t.FontSize,
+                setter: null,
+                handlers: [(nameof(TileViewModel.FontSize), static (TileViewModel t) => t)])
             {
-                Path = nameof(tile.FontSize),
                 Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
                 ConverterParameter = _viewModel.BoardScaleFactor,
             };
@@ -248,10 +250,12 @@ public partial class MainPage : ContentPage
             {
                 if (border.Content is Label label)
                 {
-                    // Create a new binding with updated ConverterParameter
-                    var fontSizeBinding = new Binding
+                    // Create a new binding with updated ConverterParameter using typed binding for trim safety
+                    var fontSizeBinding = new TypedBinding<TileViewModel, double>(
+                        getter: static (TileViewModel t) => t.FontSize,
+                        setter: null,
+                        handlers: [(nameof(TileViewModel.FontSize), static (TileViewModel t) => t)])
                     {
-                        Path = "FontSize",
                         Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
                         ConverterParameter = _viewModel.BoardScaleFactor,
                     };
