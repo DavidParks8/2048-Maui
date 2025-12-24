@@ -7,7 +7,16 @@ namespace TwentyFortyEight.Core;
 public abstract class StatisticsTracker : IStatisticsTracker
 {
     private readonly Lock _lock = new();
-    private GameStatistics? _statistics;
+    private readonly Lazy<GameStatistics> _lazyStatistics;
+    private GameStatistics? _resetStatistics;
+
+    protected StatisticsTracker()
+    {
+        _lazyStatistics = new Lazy<GameStatistics>(
+            () => Load() ?? new GameStatistics(),
+            LazyThreadSafetyMode.ExecutionAndPublication
+        );
+    }
 
     /// <summary>
     /// Saves the current statistics to persistent storage.
@@ -21,22 +30,10 @@ public abstract class StatisticsTracker : IStatisticsTracker
     protected abstract GameStatistics? Load();
 
     /// <summary>
-    /// Gets or lazily initializes the statistics.
+    /// Gets the current statistics instance.
+    /// Returns reset statistics if Reset() was called, otherwise the lazily loaded instance.
     /// </summary>
-    private GameStatistics Statistics
-    {
-        get
-        {
-            if (_statistics is null)
-            {
-                lock (_lock)
-                {
-                    _statistics ??= Load() ?? new GameStatistics();
-                }
-            }
-            return _statistics;
-        }
-    }
+    private GameStatistics Statistics => _resetStatistics ?? _lazyStatistics.Value;
 
     /// <summary>
     /// Gets the current statistics. Returns a snapshot copy.
@@ -172,8 +169,8 @@ public abstract class StatisticsTracker : IStatisticsTracker
     {
         lock (_lock)
         {
-            _statistics = new GameStatistics();
-            Save(_statistics);
+            _resetStatistics = new GameStatistics();
+            Save(_resetStatistics);
         }
     }
 }

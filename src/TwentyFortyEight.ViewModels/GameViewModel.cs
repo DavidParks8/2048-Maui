@@ -29,15 +29,20 @@ public partial class GameViewModel : ObservableObject
     private Game2048Engine _engine;
 
     /// <summary>
-    /// Lock to prevent concurrent move processing.
-    /// When true, a move is currently being processed and new moves should be queued or ignored.
+    /// Semaphore to prevent concurrent move processing.
+    /// Ensures only one move is processed at a time to avoid broken board state from fast swiping.
     /// </summary>
-    private volatile bool _isProcessingMove;
+    private readonly SemaphoreSlim _moveLock = new(1, 1);
 
     /// <summary>
     /// Task completion source to signal when the current animation completes.
     /// </summary>
-    private TaskCompletionSource? _animationCompletionSource;
+    private TaskCompletionSource<bool>? _animationCompletionSource;
+
+    /// <summary>
+    /// Debounce timer for saving best score to preferences.
+    /// </summary>
+    private CancellationTokenSource? _bestScoreSaveDebounce;
 
     /// <summary>
     /// The collection of tiles for the game board.
@@ -55,7 +60,7 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public void SignalAnimationComplete()
     {
-        _animationCompletionSource?.TrySetResult();
+        _animationCompletionSource?.TrySetResult(true);
     }
 
     [ObservableProperty]
@@ -71,7 +76,25 @@ public partial class GameViewModel : ObservableObject
 
     partial void OnBestScoreChanged(int value)
     {
-        _preferencesService.SetInt("BestScore", value);
+        // Debounce preference saving to avoid hammering storage during rapid undos
+        _bestScoreSaveDebounce?.Cancel();
+        _bestScoreSaveDebounce?.Dispose();
+        _bestScoreSaveDebounce = new CancellationTokenSource();
+
+        _ = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
+    }
+
+    private async Task DebouncedSaveBestScoreAsync(int value, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(500, cancellationToken);
+            _preferencesService.SetInt("BestScore", value);
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled by newer value - expected behavior
+        }
     }
 
     [ObservableProperty]
@@ -168,13 +191,13 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task MoveAsync(Direction direction)
     {
-        // Prevent concurrent move processing to avoid broken board state from fast swiping
-        if (_isProcessingMove)
+        // Use non-blocking Wait(0) to check if we can acquire the lock immediately
+        // If not, another move is in progress - skip this one
+        if (!_moveLock.Wait(0))
         {
             return;
         }
 
-        _isProcessingMove = true;
         try
         {
             // Capture previous state before the move
@@ -184,7 +207,7 @@ public partial class GameViewModel : ObservableObject
             if (moved)
             {
                 // Create a completion source to wait for animation
-                _animationCompletionSource = new TaskCompletionSource();
+                _animationCompletionSource = new TaskCompletionSource<bool>();
 
                 UpdateUI(previousBoard, direction);
                 SaveGame();
@@ -213,7 +236,7 @@ public partial class GameViewModel : ObservableObject
         }
         finally
         {
-            _isProcessingMove = false;
+            _moveLock.Release();
         }
     }
 

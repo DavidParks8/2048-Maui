@@ -172,13 +172,16 @@ public class GameViewModelTests
     }
 
     [TestMethod]
-    public void BestScoreChanged_SavesToPreferences()
+    public async Task BestScoreChanged_SavesToPreferencesAfterDebounce()
     {
         // Arrange
         var viewModel = CreateViewModel();
 
         // Act
         viewModel.BestScore = 1000;
+
+        // Wait for debounce delay (500ms) plus buffer
+        await Task.Delay(600);
 
         // Assert
         _preferencesServiceMock.Verify(p => p.SetInt("BestScore", 1000), Times.Once);
