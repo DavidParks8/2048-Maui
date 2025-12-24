@@ -11,6 +11,13 @@
              x:DataType="local:GameViewModel"
              BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{x:Static strings:AppStrings.HowToPlay}"
+                     Command="{Binding ShowHowToPlayCommand}"
+                     Order="Primary"
+                     Priority="0" />
+    </ContentPage.ToolbarItems>
+
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -23,7 +30,6 @@
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -79,31 +85,6 @@
                            HorizontalOptions="Center"
                            SemanticProperties.Description="{x:Static strings:AppStrings.BestScoreDescription}" />
                 </VerticalStackLayout>
-            </Border>
-
-            <Border Grid.Column="3"
-                    BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
-                    Stroke="Transparent"
-                    StrokeThickness="0"
-                    Padding="15,0"
-                    Margin="10,0,0,0"
-                    HeightRequest="60"
-                    StrokeShape="RoundRectangle 5"
-                    SemanticProperties.Description="{x:Static strings:AppStrings.HowToPlayDescription}">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding ShowHowToPlayCommand}" />
-                </Border.GestureRecognizers>
-                <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
-                    <Label Text="?"
-                           FontSize="18"
-                           TextColor="White"
-                           VerticalOptions="Center" />
-                    <Label Text="{x:Static strings:AppStrings.HowToPlay}"
-                           FontSize="13"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           VerticalOptions="Center" />
-                </HorizontalStackLayout>
             </Border>
         </Grid>
 
