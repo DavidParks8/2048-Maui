@@ -208,4 +208,31 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="StartNew" xml:space="preserve">
     <value>Start New</value>
   </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsPageTitle" xml:space="preserve">
+    <value>⚙️ Settings</value>
+  </data>
+  <data name="SettingsDescription" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="AnimationsSection" xml:space="preserve">
+    <value>ANIMATIONS</value>
+  </data>
+  <data name="EnableAnimations" xml:space="preserve">
+    <value>Enable Animations</value>
+  </data>
+  <data name="AnimationSpeed" xml:space="preserve">
+    <value>Animation Speed</value>
+  </data>
+  <data name="AnimationSpeedSlow" xml:space="preserve">
+    <value>Slow</value>
+  </data>
+  <data name="AnimationSpeedNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="AnimationSpeedFast" xml:space="preserve">
+    <value>Fast</value>
+  </data>
 </root>

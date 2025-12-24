@@ -3,7 +3,7 @@ namespace TwentyFortyEight.Maui.Services;
 /// <summary>
 /// Service for managing application settings.
 /// </summary>
-public class SettingsService
+public class SettingsService : ISettingsService
 {
     private const string AnimationsEnabledKey = "AnimationsEnabled";
     private const string AnimationSpeedKey = "AnimationSpeed";

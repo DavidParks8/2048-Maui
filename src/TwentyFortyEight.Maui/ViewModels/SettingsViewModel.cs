@@ -8,7 +8,7 @@ namespace TwentyFortyEight.Maui.ViewModels;
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
-    private readonly SettingsService _settingsService;
+    private readonly ISettingsService _settingsService;
 
     [ObservableProperty]
     private bool _animationsEnabled;
@@ -16,7 +16,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private double _animationSpeed;
 
-    public SettingsViewModel(SettingsService settingsService)
+    public SettingsViewModel(ISettingsService settingsService)
     {
         _settingsService = settingsService;
 

@@ -5,10 +5,8 @@ namespace TwentyFortyEight.Maui.Services;
 /// <summary>
 /// Service responsible for animating tile movements, merges, and spawns on the game board.
 /// </summary>
-public class TileAnimationService
+public class TileAnimationService(ISettingsService settingsService)
 {
-    private readonly SettingsService _settingsService;
-
     /// <summary>
     /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
     /// </summary>
@@ -49,17 +47,12 @@ public class TileAnimationService
     /// </summary>
     private const int UiUpdateDelay = 10;
 
-    public TileAnimationService(SettingsService settingsService)
-    {
-        _settingsService = settingsService;
-    }
-
     /// <summary>
     /// Gets the adjusted animation duration based on the animation speed setting.
     /// </summary>
     private uint GetAdjustedDuration(uint baseDuration)
     {
-        var speed = _settingsService.AnimationSpeed;
+        var speed = settingsService.AnimationSpeed;
         // Ensure speed is never zero or negative to prevent division by zero
         if (speed <= 0)
         {
@@ -87,7 +80,7 @@ public class TileAnimationService
         cancellationToken.ThrowIfCancellationRequested();
 
         // Skip animations if disabled
-        if (!_settingsService.AnimationsEnabled)
+        if (!settingsService.AnimationsEnabled)
         {
             // Just update the tiles without animation
             foreach (var tile in args.MergedTiles)
