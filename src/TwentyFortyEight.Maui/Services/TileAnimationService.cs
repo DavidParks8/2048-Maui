@@ -1,4 +1,5 @@
 using TwentyFortyEight.Maui.Helpers;
+using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -22,22 +23,22 @@ public class TileAnimationService(ISettingsService settingsService)
     /// <summary>
     /// Base duration of the slide animation in milliseconds.
     /// </summary>
-    private const uint BaseSlideAnimationDuration = 220;
+    private const uint BaseSlideAnimationDuration = AnimationConstants.BaseSlideAnimationDuration;
 
     /// <summary>
     /// Base duration of the scale-up animation for merged tiles in milliseconds.
     /// </summary>
-    private const uint BaseMergePulseUpDuration = 100;
+    private const uint BaseMergePulseUpDuration = AnimationConstants.BaseMergePulseUpDuration;
 
     /// <summary>
     /// Base duration of the scale-down animation for merged tiles in milliseconds.
     /// </summary>
-    private const uint BaseMergePulseDownDuration = 75;
+    private const uint BaseMergePulseDownDuration = AnimationConstants.BaseMergePulseDownDuration;
 
     /// <summary>
     /// Base duration of the scale animation for new tiles in milliseconds.
     /// </summary>
-    private const uint BaseNewTileScaleDuration = 100;
+    private const uint BaseNewTileScaleDuration = AnimationConstants.BaseNewTileScaleDuration;
 
     /// <summary>
     /// Default animation speed when the setting is invalid.

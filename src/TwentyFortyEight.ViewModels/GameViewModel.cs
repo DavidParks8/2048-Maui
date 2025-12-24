@@ -242,8 +242,8 @@ public partial class GameViewModel : ObservableObject
 
     private TimeSpan GetAnimationWaitTimeout()
     {
-        // Base animation durations (ms) from TileAnimationService, before speed scaling.
-        const double baseSequenceMs = 220 + 100 + 75 + 100;
+        // Base animation durations (ms) from AnimationConstants, before speed scaling.
+        const double baseSequenceMs = AnimationConstants.BaseTotalSequenceDuration;
         const double bufferMs = 300;
 
         var speed = _settingsService.AnimationSpeed;
