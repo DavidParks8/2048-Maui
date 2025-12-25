@@ -9,3 +9,8 @@ public sealed class NavigateToStatsMessage;
 /// Sent when the user wants to navigate to the Settings page.
 /// </summary>
 public sealed class NavigateToSettingsMessage;
+
+/// <summary>
+/// Sent when the user wants to navigate to the About page.
+/// </summary>
+public sealed class NavigateToAboutMessage;

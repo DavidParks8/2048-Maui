@@ -289,6 +289,12 @@ public partial class GameViewModel : ObservableObject
         StrongReferenceMessenger.Default.Send(new NavigateToSettingsMessage());
     }
 
+    [RelayCommand]
+    private void OpenAbout()
+    {
+        StrongReferenceMessenger.Default.Send(new NavigateToAboutMessage());
+    }
+
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
     {
         var state = _engine.CurrentState;

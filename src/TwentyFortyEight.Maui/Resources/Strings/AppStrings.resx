@@ -262,4 +262,61 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="ScreenReaderGameOverFinalScoreFormat" xml:space="preserve">
     <value>Game Over! Final score: {0}</value>
   </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>About this app</value>
+  </data>
+  <data name="AboutPageTitle" xml:space="preserve">
+    <value>❤️ About</value>
+  </data>
+  <data name="ForTaliaTitle" xml:space="preserve">
+    <value>For Talia! 🎄</value>
+  </data>
+  <data name="AboutMessagePart1" xml:space="preserve">
+    <value>I made this game for you because I know how much you love playing 2048. Every tile that merges, every high score you achieve, reminds me of how we complement each other perfectly.</value>
+  </data>
+  <data name="AboutMessagePart2" xml:space="preserve">
+    <value>Just like in this game, life is better when we move together. Thank you for being my player two, my best score, and my forever win.</value>
+  </data>
+  <data name="AboutMessagePart3" xml:space="preserve">
+    <value>I love you more than a perfectly placed 2048 tile. ✨</value>
+  </data>
+  <data name="AboutMessageSignature" xml:space="preserve">
+    <value>— David</value>
+  </data>
+  <data name="AboutTheAppSection" xml:space="preserve">
+    <value>ABOUT THE APP</value>
+  </data>
+  <data name="AppNameForTalia" xml:space="preserve">
+    <value>2048 for Talia</value>
+  </data>
+  <data name="AppDescription" xml:space="preserve">
+    <value>A classic puzzle game built with love using .NET MAUI</value>
+  </data>
+  <data name="SupportSection" xml:space="preserve">
+    <value>SUPPORT</value>
+  </data>
+  <data name="NeedHelpOrBug" xml:space="preserve">
+    <value>Need help or found a bug?</value>
+  </data>
+  <data name="ReportAnIssue" xml:space="preserve">
+    <value>📝 Report an Issue</value>
+  </data>
+  <data name="ReportAnIssueDescription" xml:space="preserve">
+    <value>Open GitHub issues page to report problems or request features</value>
+  </data>
+  <data name="MadeWithLove" xml:space="preserve">
+    <value>Made with ❤️ by David Parks</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="UnableToOpenGitHubIssues" xml:space="preserve">
+    <value>Unable to open GitHub issues: {0}</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
 </root>

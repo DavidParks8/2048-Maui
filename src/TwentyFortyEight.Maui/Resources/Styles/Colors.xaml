@@ -29,6 +29,9 @@
     <Color x:Key="GameButtonBackgroundDark">#5a4a3a</Color>
 
     <Color x:Key="GameStatusAccent">#f67c5f</Color>
+    
+    <Color x:Key="SectionHeaderLight">#eee4da</Color>
+    <Color x:Key="SectionHeaderDark">#cdc1b4</Color>
 
     <Color x:Key="ModalBackgroundLight">#faf8ef</Color>
     <Color x:Key="ModalBackgroundDark">#2a2a2a</Color>

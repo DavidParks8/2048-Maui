@@ -700,5 +700,176 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("ScreenReaderGameOverFinalScoreFormat", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to About.
+        /// </summary>
+        public static string About {
+            get {
+                return ResourceManager.GetString("About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to About this app.
+        /// </summary>
+        public static string AboutDescription {
+            get {
+                return ResourceManager.GetString("AboutDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ❤️ About.
+        /// </summary>
+        public static string AboutPageTitle {
+            get {
+                return ResourceManager.GetString("AboutPageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to For Talia! 🎄.
+        /// </summary>
+        public static string ForTaliaTitle {
+            get {
+                return ResourceManager.GetString("ForTaliaTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to I made this game for you because I know how much you love playing 2048. Every tile that merges, every high score you achieve, reminds me of how we complement each other perfectly.
+        /// </summary>
+        public static string AboutMessagePart1 {
+            get {
+                return ResourceManager.GetString("AboutMessagePart1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Just like in this game, life is better when we move together. Thank you for being my player two, my best score, and my forever win.
+        /// </summary>
+        public static string AboutMessagePart2 {
+            get {
+                return ResourceManager.GetString("AboutMessagePart2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to I love you more than a perfectly placed 2048 tile. ✨.
+        /// </summary>
+        public static string AboutMessagePart3 {
+            get {
+                return ResourceManager.GetString("AboutMessagePart3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to — David.
+        /// </summary>
+        public static string AboutMessageSignature {
+            get {
+                return ResourceManager.GetString("AboutMessageSignature", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ABOUT THE APP.
+        /// </summary>
+        public static string AboutTheAppSection {
+            get {
+                return ResourceManager.GetString("AboutTheAppSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 2048 for Talia.
+        /// </summary>
+        public static string AppNameForTalia {
+            get {
+                return ResourceManager.GetString("AppNameForTalia", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A classic puzzle game built with love using .NET MAUI.
+        /// </summary>
+        public static string AppDescription {
+            get {
+                return ResourceManager.GetString("AppDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SUPPORT.
+        /// </summary>
+        public static string SupportSection {
+            get {
+                return ResourceManager.GetString("SupportSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Need help or found a bug?.
+        /// </summary>
+        public static string NeedHelpOrBug {
+            get {
+                return ResourceManager.GetString("NeedHelpOrBug", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 📝 Report an Issue.
+        /// </summary>
+        public static string ReportAnIssue {
+            get {
+                return ResourceManager.GetString("ReportAnIssue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open GitHub issues page to report problems or request features.
+        /// </summary>
+        public static string ReportAnIssueDescription {
+            get {
+                return ResourceManager.GetString("ReportAnIssueDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Made with ❤️ by David Parks.
+        /// </summary>
+        public static string MadeWithLove {
+            get {
+                return ResourceManager.GetString("MadeWithLove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
+        /// </summary>
+        public static string ErrorTitle {
+            get {
+                return ResourceManager.GetString("ErrorTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to open GitHub issues: {0}.
+        /// </summary>
+        public static string UnableToOpenGitHubIssues {
+            get {
+                return ResourceManager.GetString("UnableToOpenGitHubIssues", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OK.
+        /// </summary>
+        public static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
+            }
+        }
     }
 }

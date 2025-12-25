@@ -12,6 +12,7 @@ public partial class AppShell : Shell
         // Register routes for navigation - Shell uses DI automatically
         Routing.RegisterRoute("stats", typeof(StatsPage));
         Routing.RegisterRoute("settings", typeof(SettingsPage));
+        Routing.RegisterRoute("about", typeof(AboutPage));
 
         // Register navigation message handlers
         RegisterNavigationHandlers();
@@ -39,6 +40,17 @@ public partial class AppShell : Shell
                 shell.Dispatcher.Dispatch(async () =>
                 {
                     await Shell.Current.GoToAsync("settings");
+                });
+            }
+        );
+
+        messenger.Register<AppShell, NavigateToAboutMessage>(
+            this,
+            static (shell, _) =>
+            {
+                shell.Dispatcher.Dispatch(async () =>
+                {
+                    await Shell.Current.GoToAsync("about");
                 });
             }
         );
