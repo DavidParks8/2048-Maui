@@ -637,5 +637,23 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("EnableHaptics", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Score: {0}.
+        /// </summary>
+        public static string ScreenReaderScoreAnnouncementFormat {
+            get {
+                return ResourceManager.GetString("ScreenReaderScoreAnnouncementFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Game Over! Final score: {0}.
+        /// </summary>
+        public static string ScreenReaderGameOverFinalScoreFormat {
+            get {
+                return ResourceManager.GetString("ScreenReaderGameOverFinalScoreFormat", resourceCulture);
+            }
+        }
     }
 }

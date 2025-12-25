@@ -6,15 +6,9 @@ namespace TwentyFortyEight.Maui.Services;
 /// <summary>
 /// MAUI implementation of screen reader service using SemanticScreenReader.
 /// </summary>
-public class MauiScreenReaderService : IScreenReaderService
+public partial class MauiScreenReaderService(ILogger<MauiScreenReaderService> logger)
+    : IScreenReaderService
 {
-    private readonly ILogger<MauiScreenReaderService> _logger;
-
-    public MauiScreenReaderService(ILogger<MauiScreenReaderService> logger)
-    {
-        _logger = logger;
-    }
-
     /// <summary>
     /// Announces a message to screen readers using MAUI's SemanticScreenReader.
     /// </summary>
@@ -36,12 +30,14 @@ public class MauiScreenReaderService : IScreenReaderService
             catch (Exception ex)
             {
                 // Log but don't crash if announcement fails
-                _logger.LogWarning(
-                    ex,
-                    "Failed to announce message to screen reader: {Message}",
-                    message
-                );
+                LogAnnounceFailed(logger, ex, message);
             }
         });
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to announce message to screen reader: {Message}"
+    )]
+    private static partial void LogAnnounceFailed(ILogger logger, Exception ex, string message);
 }

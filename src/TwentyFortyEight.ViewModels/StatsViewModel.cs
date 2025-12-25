@@ -12,7 +12,6 @@ public partial class StatsViewModel : ObservableObject
 {
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly IAlertService _alertService;
-    private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
 
     [ObservableProperty]
@@ -45,13 +44,11 @@ public partial class StatsViewModel : ObservableObject
     public StatsViewModel(
         IStatisticsTracker statisticsTracker,
         IAlertService alertService,
-        INavigationService navigationService,
         ILocalizationService localizationService
     )
     {
         _statisticsTracker = statisticsTracker;
         _alertService = alertService;
-        _navigationService = navigationService;
         _localizationService = localizationService;
         RefreshStatistics();
     }
@@ -89,12 +86,6 @@ public partial class StatsViewModel : ObservableObject
             _statisticsTracker.Reset();
             RefreshStatistics();
         }
-    }
-
-    [RelayCommand]
-    private async Task GoBackAsync()
-    {
-        await _navigationService.GoBackAsync();
     }
 
     private static string FormatWinRate(double winRate)

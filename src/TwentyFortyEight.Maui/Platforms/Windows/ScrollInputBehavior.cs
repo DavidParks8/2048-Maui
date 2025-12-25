@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Threading;
 using TwentyFortyEight.Core;
 
 namespace TwentyFortyEight.Maui.Behaviors;
@@ -10,8 +12,10 @@ namespace TwentyFortyEight.Maui.Behaviors;
 public partial class ScrollInputBehavior
 {
     private Microsoft.UI.Xaml.UIElement? _nativeElement;
-    private DateTime _lastScrollFireTime = DateTime.MinValue;
-    private const int ScrollCooldownMs = 400; // Cooldown after firing to ignore subsequent events
+    private const int ScrollCooldownMs = 700; // Cooldown after firing to ignore subsequent events
+    private static readonly long ScrollCooldownTimestampTicks =
+        (Stopwatch.Frequency * ScrollCooldownMs) / 1000;
+    private long _lastScrollFireTimestamp;
 
     partial void AttachPlatformHandler(ContentPage page)
     {
@@ -54,13 +58,12 @@ public partial class ScrollInputBehavior
         // Always mark as handled to prevent other gesture handlers from processing
         e.Handled = true;
 
-        var now = DateTime.UtcNow;
+        long nowTimestamp = Stopwatch.GetTimestamp();
 
         // Leading-edge debounce: ignore events during cooldown period
-        if ((now - _lastScrollFireTime).TotalMilliseconds < ScrollCooldownMs)
-        {
+        long lastTimestamp = Interlocked.Read(ref _lastScrollFireTimestamp);
+        if (lastTimestamp != 0 && nowTimestamp - lastTimestamp < ScrollCooldownTimestampTicks)
             return;
-        }
 
         var properties = e.GetCurrentPoint(sender as Microsoft.UI.Xaml.UIElement).Properties;
         int delta = properties.MouseWheelDelta;
@@ -89,7 +92,20 @@ public partial class ScrollInputBehavior
 
         if (direction.HasValue)
         {
-            _lastScrollFireTime = now;
+            while (true)
+            {
+                long last = Interlocked.Read(ref _lastScrollFireTimestamp);
+
+                if (last != 0 && nowTimestamp - last < ScrollCooldownTimestampTicks)
+                    return;
+
+                if (
+                    Interlocked.CompareExchange(ref _lastScrollFireTimestamp, nowTimestamp, last)
+                    == last
+                )
+                    break;
+            }
+
             OnDirectionPressed(direction.Value);
         }
     }

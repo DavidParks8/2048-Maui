@@ -13,7 +13,6 @@ public class StatsViewModelTests
 {
     private Mock<IStatisticsTracker> _statisticsTrackerMock = null!;
     private Mock<IAlertService> _alertServiceMock = null!;
-    private Mock<INavigationService> _navigationServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
 
     [TestInitialize]
@@ -21,7 +20,6 @@ public class StatsViewModelTests
     {
         _statisticsTrackerMock = new Mock<IStatisticsTracker>();
         _alertServiceMock = new Mock<IAlertService>();
-        _navigationServiceMock = new Mock<INavigationService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
 
         // Setup default statistics
@@ -33,7 +31,6 @@ public class StatsViewModelTests
         return new StatsViewModel(
             _statisticsTrackerMock.Object,
             _alertServiceMock.Object,
-            _navigationServiceMock.Object,
             _localizationServiceMock.Object
         );
     }
@@ -83,19 +80,6 @@ public class StatsViewModelTests
 
         // Assert
         Assert.AreEqual(10, viewModel.GamesPlayed);
-    }
-
-    [TestMethod]
-    public async Task GoBackCommand_CallsNavigationService()
-    {
-        // Arrange
-        var viewModel = CreateViewModel();
-
-        // Act
-        await viewModel.GoBackCommand.ExecuteAsync(null);
-
-        // Assert
-        _navigationServiceMock.Verify(n => n.GoBackAsync(), Times.Once);
     }
 
     [TestMethod]

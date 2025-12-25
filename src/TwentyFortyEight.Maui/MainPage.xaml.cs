@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Behaviors;
 using TwentyFortyEight.Maui.Services;
@@ -10,6 +11,7 @@ public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
+    private readonly ILogger<MainPage> _logger;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
@@ -25,12 +27,17 @@ public partial class MainPage : ContentPage
     private const double MinBoardSize = 280;
     private const double MaxBoardSize = 500;
 
-    public MainPage(GameViewModel viewModel, TileAnimationService animationService)
+    public MainPage(
+        GameViewModel viewModel,
+        TileAnimationService animationService,
+        ILogger<MainPage> logger
+    )
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _animationService = animationService;
+        _logger = logger;
         BindingContext = _viewModel;
 
         // Subscribe to tiles updated event for animations
@@ -356,7 +363,7 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             // Log but don't crash - animations are non-critical
-            System.Diagnostics.Debug.WriteLine($"Animation error: {ex.Message}");
+            LogAnimationError(_logger, ex);
         }
         finally
         {
@@ -406,4 +413,7 @@ public partial class MainPage : ContentPage
             ToolbarItems.Remove(ToolbarAchievementsButton);
         }
     }
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Animation error")]
+    private static partial void LogAnimationError(ILogger logger, Exception ex);
 }

@@ -241,4 +241,10 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="EnableHaptics" xml:space="preserve">
     <value>Enable Haptic Feedback</value>
   </data>
+  <data name="ScreenReaderScoreAnnouncementFormat" xml:space="preserve">
+    <value>Score: {0}</value>
+  </data>
+  <data name="ScreenReaderGameOverFinalScoreFormat" xml:space="preserve">
+    <value>Game Over! Final score: {0}</value>
+  </data>
 </root>

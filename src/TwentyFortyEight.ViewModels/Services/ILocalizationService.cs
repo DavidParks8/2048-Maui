@@ -44,4 +44,18 @@ public interface ILocalizationService
     /// Gets the localized "Reset" button text.
     /// </summary>
     string Reset { get; }
+
+    /// <summary>
+    /// Gets the localized screen reader announcement for the current score.
+    /// </summary>
+    /// <param name="score">The current score.</param>
+    /// <returns>A formatted announcement string.</returns>
+    string ScreenReaderScoreAnnouncement(int score);
+
+    /// <summary>
+    /// Gets the localized screen reader announcement for game over with final score.
+    /// </summary>
+    /// <param name="finalScore">The final score achieved.</param>
+    /// <returns>A formatted announcement string.</returns>
+    string ScreenReaderGameOverFinalScore(int finalScore);
 }

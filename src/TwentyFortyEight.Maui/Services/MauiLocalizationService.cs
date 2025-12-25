@@ -1,3 +1,4 @@
+using System.Globalization;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -31,4 +32,20 @@ public class MauiLocalizationService : ILocalizationService
 
     /// <inheritdoc />
     public string Reset => AppStrings.Reset;
+
+    /// <inheritdoc />
+    public string ScreenReaderScoreAnnouncement(int score) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            AppStrings.ScreenReaderScoreAnnouncementFormat,
+            score
+        );
+
+    /// <inheritdoc />
+    public string ScreenReaderGameOverFinalScore(int finalScore) =>
+        string.Format(
+            CultureInfo.CurrentCulture,
+            AppStrings.ScreenReaderGameOverFinalScoreFormat,
+            finalScore
+        );
 }

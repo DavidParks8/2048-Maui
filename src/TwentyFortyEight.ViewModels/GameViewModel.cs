@@ -1,12 +1,12 @@
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
-using TwentyFortyEight.ViewModels.Serialization;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels;
@@ -22,15 +22,9 @@ public partial class GameViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly IRandomSource _randomSource;
-    private readonly IPreferencesService _preferencesService;
-    private readonly IAlertService _alertService;
-    private readonly INavigationService _navigationService;
-    private readonly ILocalizationService _localizationService;
-    private readonly IScreenReaderService _screenReaderService;
-    private readonly IHapticService _hapticService;
-    private readonly ISocialGamingService _socialGamingService;
-    private readonly IAchievementTracker _achievementTracker;
-    private readonly IAchievementIdMapper _achievementIdMapper;
+    private readonly IGameStateRepository _repository;
+    private readonly IGameSessionCoordinator _sessionCoordinator;
+    private readonly IUserFeedbackService _feedbackService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -43,18 +37,6 @@ public partial class GameViewModel : ObservableObject
     /// Task completion source to signal when the current animation completes.
     /// </summary>
     private TaskCompletionSource<bool>? _animationCompletionSource;
-
-    /// <summary>
-    /// Debounce timer for saving best score to preferences.
-    /// </summary>
-    private CancellationTokenSource? _bestScoreSaveDebounce;
-
-    private Task _bestScoreSaveTask = Task.CompletedTask;
-
-    /// <summary>
-    /// Last announced score for screen reader, to avoid frequent announcements.
-    /// </summary>
-    private int _lastAnnouncedScore = 0;
 
     /// <summary>
     /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
@@ -87,31 +69,13 @@ public partial class GameViewModel : ObservableObject
     {
         // Don't announce during initialization to avoid NullReferenceException
         // when MAUI's SemanticScreenReader isn't fully initialized yet
-        if (!_isInitialized)
+        if (!_isInitialized || value <= 0)
         {
-            // Still track the score even during initialization
-            if (value >= 0)
-            {
-                _lastAnnouncedScore = value;
-            }
             return;
         }
 
-        // Only announce score changes if:
-        // 1. The score is greater than 0 (not a reset)
-        // 2. The score increased by at least 10 points since last announcement
-        // This prevents overwhelming screen reader users with frequent announcements
-        if (value > 0 && value > _lastAnnouncedScore && value - _lastAnnouncedScore >= 10)
-        {
-            _screenReaderService.Announce($"Score: {value}");
-        }
-
-        // Always track the current score for accurate announcement logic
-        // This ensures proper behavior with undo operations
-        if (value >= 0)
-        {
-            _lastAnnouncedScore = value;
-        }
+        // Use feedback service for announcements
+        _feedbackService.AnnounceScoreIfSignificant(value, value - 10);
     }
 
     [ObservableProperty]
@@ -125,31 +89,6 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private double _boardScaleFactor = 1.0;
 
-    partial void OnBestScoreChanged(int value)
-    {
-        // Debounce preference saving to avoid hammering storage during rapid undos
-        _bestScoreSaveDebounce?.Cancel();
-        _bestScoreSaveDebounce?.Dispose();
-        _bestScoreSaveDebounce = new CancellationTokenSource();
-
-        _bestScoreSaveTask = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
-    }
-
-    internal Task WaitForBestScoreSaveAsync() => _bestScoreSaveTask;
-
-    private async Task DebouncedSaveBestScoreAsync(int value, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await Task.Delay(500, cancellationToken);
-            _preferencesService.SetInt("BestScore", value);
-        }
-        catch (OperationCanceledException)
-        {
-            // Debounce cancelled by newer value - expected behavior
-        }
-    }
-
     [ObservableProperty]
     private int _moves;
 
@@ -159,16 +98,13 @@ public partial class GameViewModel : ObservableObject
     partial void OnStatusTextChanged(string value)
     {
         // Don't announce during initialization
-        if (!_isInitialized)
+        if (!_isInitialized || string.IsNullOrEmpty(value))
         {
             return;
         }
 
-        // Announce win status to screen readers
-        if (!string.IsNullOrEmpty(value))
-        {
-            _screenReaderService.Announce(value);
-        }
+        // Announce status to screen readers
+        _feedbackService.AnnounceStatus(value);
     }
 
     [ObservableProperty]
@@ -177,16 +113,13 @@ public partial class GameViewModel : ObservableObject
     partial void OnIsGameOverChanged(bool value)
     {
         // Don't announce during initialization
-        if (!_isInitialized)
+        if (!_isInitialized || !value)
         {
             return;
         }
 
-        if (value)
-        {
-            // Announce game over with final score
-            _screenReaderService.Announce($"Game Over! Final score: {Score}");
-        }
+        // Announce game over with final score
+        _feedbackService.AnnounceGameOver(Score);
     }
 
     [ObservableProperty]
@@ -204,15 +137,9 @@ public partial class GameViewModel : ObservableObject
         ISettingsService settingsService,
         IStatisticsTracker statisticsTracker,
         IRandomSource randomSource,
-        IPreferencesService preferencesService,
-        IAlertService alertService,
-        INavigationService navigationService,
-        ILocalizationService localizationService,
-        IScreenReaderService screenReaderService,
-        IHapticService hapticService,
-        ISocialGamingService socialGamingService,
-        IAchievementTracker achievementTracker,
-        IAchievementIdMapper achievementIdMapper
+        IGameStateRepository repository,
+        IGameSessionCoordinator sessionCoordinator,
+        IUserFeedbackService feedbackService
     )
     {
         _logger = logger;
@@ -220,15 +147,9 @@ public partial class GameViewModel : ObservableObject
         _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
         _randomSource = randomSource;
-        _preferencesService = preferencesService;
-        _alertService = alertService;
-        _navigationService = navigationService;
-        _localizationService = localizationService;
-        _screenReaderService = screenReaderService;
-        _hapticService = hapticService;
-        _socialGamingService = socialGamingService;
-        _achievementTracker = achievementTracker;
-        _achievementIdMapper = achievementIdMapper;
+        _repository = repository;
+        _sessionCoordinator = sessionCoordinator;
+        _feedbackService = feedbackService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -247,15 +168,10 @@ public partial class GameViewModel : ObservableObject
         UpdateUI();
 
         // Check social gaming availability
-        UpdateSocialGamingAvailability();
+        IsSocialGamingAvailable = _sessionCoordinator.IsSocialGamingAvailable;
 
         // Mark initialization complete - now safe to announce to screen readers
         _isInitialized = true;
-    }
-
-    private void UpdateSocialGamingAvailability()
-    {
-        IsSocialGamingAvailable = _socialGamingService.IsAvailable;
     }
 
     [RelayCommand]
@@ -264,26 +180,15 @@ public partial class GameViewModel : ObservableObject
         // Show confirmation if game is in progress (has moves and not game over)
         if (Moves > 0 && !IsGameOver)
         {
-            bool confirm = await _alertService.ShowConfirmationAsync(
-                _localizationService.RestartConfirmTitle,
-                _localizationService.RestartConfirmMessage,
-                _localizationService.StartNew,
-                _localizationService.Cancel
-            );
-
-            if (!confirm)
+            if (!await _feedbackService.ConfirmNewGameAsync())
             {
                 return;
             }
         }
 
         _engine.NewGame();
-
-        // Reset score announcement tracking before UI update to ensure consistency
-        _lastAnnouncedScore = 0;
-
         UpdateUI();
-        SaveGame();
+        _repository.SaveGameState(_engine.CurrentState);
     }
 
     [RelayCommand]
@@ -312,27 +217,26 @@ public partial class GameViewModel : ObservableObject
         {
             // Capture previous state before the move
             var previousBoard = _engine.CurrentState.Board.Clone();
+            var previousScore = Score;
 
             var moved = _engine.Move(direction);
             if (moved)
             {
                 // Trigger haptic feedback if enabled and supported
-                if (_settingsService.HapticsEnabled && _hapticService.IsSupported)
-                {
-                    _hapticService.PerformHaptic();
-                }
+                _feedbackService.PerformMoveHaptic();
 
                 // Create a completion source to wait for animation
                 _animationCompletionSource = new TaskCompletionSource<bool>();
 
                 UpdateUI(previousBoard, direction);
-                SaveGame();
+                _repository.SaveGameState(_engine.CurrentState);
 
                 // Update best score and submit to social gaming service
-                if (Score > BestScore)
+                bool isNewBest = Score > BestScore;
+                if (isNewBest)
                 {
                     BestScore = Score;
-                    _ = SubmitScoreToSocialGaming(Score);
+                    _repository.UpdateBestScoreIfHigher(Score);
                 }
 
                 // Wait for animation to complete (with timeout to prevent deadlock)
@@ -349,13 +253,11 @@ public partial class GameViewModel : ObservableObject
                 {
                     _animationCompletionSource = null;
                 }
+
+                // Check and report achievements and scores
+                await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
+                await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest);
             }
-
-            // Check and report achievements
-            _ = CheckAndReportAchievements();
-
-            // Update social gaming availability
-            UpdateSocialGamingAvailability();
         }
         finally
         {
@@ -386,20 +288,20 @@ public partial class GameViewModel : ObservableObject
         if (_engine.Undo())
         {
             UpdateUI();
-            SaveGame();
+            _repository.SaveGameState(_engine.CurrentState);
         }
     }
 
     [RelayCommand]
-    private async Task OpenStatsAsync()
+    private void OpenStats()
     {
-        await _navigationService.NavigateToAsync("stats");
+        StrongReferenceMessenger.Default.Send(new NavigateToStatsMessage());
     }
 
     [RelayCommand]
-    private async Task OpenSettingsAsync()
+    private void OpenSettings()
     {
-        await _navigationService.NavigateToAsync("settings");
+        StrongReferenceMessenger.Default.Send(new NavigateToSettingsMessage());
     }
 
     private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
@@ -490,7 +392,7 @@ public partial class GameViewModel : ObservableObject
 
         if (state.IsWon)
         {
-            StatusText = _localizationService.YouWin;
+            StatusText = "You Win!"; // This will be announced via OnStatusTextChanged
         }
         else
         {
@@ -501,41 +403,19 @@ public partial class GameViewModel : ObservableObject
         UndoCommand.NotifyCanExecuteChanged();
     }
 
-    private void SaveGame()
-    {
-        try
-        {
-            GameStateDto dto = GameStateDto.FromGameState(_engine.CurrentState);
-            var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
-            _preferencesService.SetString("SavedGame", json);
-        }
-        catch (Exception ex)
-        {
-            LogSaveGameError(ex);
-        }
-    }
-
     private void LoadGame()
     {
         try
         {
-            // Load best score - use property to trigger OnBestScoreChanged
-            BestScore = _preferencesService.GetInt("BestScore", 0);
+            // Load best score from repository
+            BestScore = _repository.GetBestScore();
 
             // Try to load saved game
-            var savedJson = _preferencesService.GetString("SavedGame", string.Empty);
-            if (!string.IsNullOrEmpty(savedJson))
+            var state = _repository.LoadGameState();
+            if (state != null)
             {
-                var dto = JsonSerializer.Deserialize(
-                    savedJson,
-                    GameSerializationContext.Default.GameStateDto
-                );
-                if (dto != null)
-                {
-                    GameState state = dto.ToGameState();
-                    _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
-                    return;
-                }
+                _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
+                return;
             }
         }
         catch (Exception ex)
@@ -547,114 +427,12 @@ public partial class GameViewModel : ObservableObject
         _engine.NewGame();
     }
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to save game state")]
-    partial void LogSaveGameError(Exception ex);
-
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
 
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Error,
-        Message = "Failed to submit score to social gaming service"
-    )]
-    partial void LogScoreSubmissionError(Exception ex);
-
-    [LoggerMessage(
-        EventId = 4,
-        Level = LogLevel.Error,
-        Message = "Failed to check and report achievements"
-    )]
-    partial void LogAchievementCheckError(Exception ex);
-
-    [LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Failed to show leaderboard")]
-    partial void LogShowLeaderboardError(Exception ex);
-
-    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Failed to show achievements")]
-    partial void LogShowAchievementsError(Exception ex);
-
-    private async Task SubmitScoreToSocialGaming(int score)
-    {
-        try
-        {
-            await _socialGamingService.SubmitScoreAsync(score);
-        }
-        catch (Exception ex)
-        {
-            LogScoreSubmissionError(ex);
-        }
-    }
-
-    private async Task CheckAndReportAchievements()
-    {
-        try
-        {
-            var state = _engine.CurrentState;
-
-            // Check for tile achievements using the core tracker
-            if (_achievementTracker.CheckTileAchievement(state.MaxTileValue))
-            {
-                var tileValue = _achievementTracker.LastUnlockedTileValue!.Value;
-                var achievementId = _achievementIdMapper.GetTileAchievementId(tileValue);
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Check for first win achievement
-            if (_achievementTracker.CheckFirstWinAchievement(state.IsWon))
-            {
-                var achievementId = _achievementIdMapper.GetFirstWinAchievementId();
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Check for score achievements
-            if (_achievementTracker.CheckScoreAchievement(state.Score))
-            {
-                var scoreMilestone = _achievementTracker.LastUnlockedScoreMilestone!.Value;
-                var achievementId = _achievementIdMapper.GetScoreAchievementId(scoreMilestone);
-                if (achievementId != null)
-                {
-                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
-                }
-            }
-
-            // Reset the "just unlocked" flags after reporting
-            _achievementTracker.ResetJustUnlocked();
-        }
-        catch (Exception ex)
-        {
-            LogAchievementCheckError(ex);
-        }
-    }
+    [RelayCommand]
+    private Task ShowLeaderboard() => _sessionCoordinator.ShowLeaderboardAsync();
 
     [RelayCommand]
-    private async Task ShowLeaderboard()
-    {
-        try
-        {
-            await _socialGamingService.ShowLeaderboardAsync();
-        }
-        catch (Exception ex)
-        {
-            LogShowLeaderboardError(ex);
-        }
-    }
-
-    [RelayCommand]
-    private async Task ShowAchievements()
-    {
-        try
-        {
-            await _socialGamingService.ShowAchievementsAsync();
-        }
-        catch (Exception ex)
-        {
-            LogShowAchievementsError(ex);
-        }
-    }
+    private Task ShowAchievements() => _sessionCoordinator.ShowAchievementsAsync();
 }
