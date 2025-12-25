@@ -28,6 +28,9 @@ public partial class GameViewModel : ObservableObject
     private readonly ILocalizationService _localizationService;
     private readonly IScreenReaderService _screenReaderService;
     private readonly IHapticService _hapticService;
+    private readonly ISocialGamingService _socialGamingService;
+    private readonly IAchievementTracker _achievementTracker;
+    private readonly IAchievementIdMapper _achievementIdMapper;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -192,6 +195,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isHowToPlayVisible;
 
+    [ObservableProperty]
+    private bool _isSocialGamingAvailable;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
@@ -203,7 +209,10 @@ public partial class GameViewModel : ObservableObject
         INavigationService navigationService,
         ILocalizationService localizationService,
         IScreenReaderService screenReaderService,
-        IHapticService hapticService
+        IHapticService hapticService,
+        ISocialGamingService socialGamingService,
+        IAchievementTracker achievementTracker,
+        IAchievementIdMapper achievementIdMapper
     )
     {
         _logger = logger;
@@ -217,6 +226,9 @@ public partial class GameViewModel : ObservableObject
         _localizationService = localizationService;
         _screenReaderService = screenReaderService;
         _hapticService = hapticService;
+        _socialGamingService = socialGamingService;
+        _achievementTracker = achievementTracker;
+        _achievementIdMapper = achievementIdMapper;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -234,8 +246,16 @@ public partial class GameViewModel : ObservableObject
         LoadGame();
         UpdateUI();
 
+        // Check social gaming availability
+        UpdateSocialGamingAvailability();
+
         // Mark initialization complete - now safe to announce to screen readers
         _isInitialized = true;
+    }
+
+    private void UpdateSocialGamingAvailability()
+    {
+        IsSocialGamingAvailable = _socialGamingService.IsAvailable;
     }
 
     [RelayCommand]
@@ -308,10 +328,11 @@ public partial class GameViewModel : ObservableObject
                 UpdateUI(previousBoard, direction);
                 SaveGame();
 
-                // Update best score
+                // Update best score and submit to social gaming service
                 if (Score > BestScore)
                 {
                     BestScore = Score;
+                    _ = SubmitScoreToSocialGaming(Score);
                 }
 
                 // Wait for animation to complete (with timeout to prevent deadlock)
@@ -329,6 +350,12 @@ public partial class GameViewModel : ObservableObject
                     _animationCompletionSource = null;
                 }
             }
+
+            // Check and report achievements
+            _ = CheckAndReportAchievements();
+
+            // Update social gaming availability
+            UpdateSocialGamingAvailability();
         }
         finally
         {
@@ -525,4 +552,109 @@ public partial class GameViewModel : ObservableObject
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Error,
+        Message = "Failed to submit score to social gaming service"
+    )]
+    partial void LogScoreSubmissionError(Exception ex);
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Error,
+        Message = "Failed to check and report achievements"
+    )]
+    partial void LogAchievementCheckError(Exception ex);
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Failed to show leaderboard")]
+    partial void LogShowLeaderboardError(Exception ex);
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Failed to show achievements")]
+    partial void LogShowAchievementsError(Exception ex);
+
+    private async Task SubmitScoreToSocialGaming(int score)
+    {
+        try
+        {
+            await _socialGamingService.SubmitScoreAsync(score);
+        }
+        catch (Exception ex)
+        {
+            LogScoreSubmissionError(ex);
+        }
+    }
+
+    private async Task CheckAndReportAchievements()
+    {
+        try
+        {
+            var state = _engine.CurrentState;
+
+            // Check for tile achievements using the core tracker
+            if (_achievementTracker.CheckTileAchievement(state.MaxTileValue))
+            {
+                var tileValue = _achievementTracker.LastUnlockedTileValue!.Value;
+                var achievementId = _achievementIdMapper.GetTileAchievementId(tileValue);
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Check for first win achievement
+            if (_achievementTracker.CheckFirstWinAchievement(state.IsWon))
+            {
+                var achievementId = _achievementIdMapper.GetFirstWinAchievementId();
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Check for score achievements
+            if (_achievementTracker.CheckScoreAchievement(state.Score))
+            {
+                var scoreMilestone = _achievementTracker.LastUnlockedScoreMilestone!.Value;
+                var achievementId = _achievementIdMapper.GetScoreAchievementId(scoreMilestone);
+                if (achievementId != null)
+                {
+                    await _socialGamingService.ReportAchievementAsync(achievementId, 100.0);
+                }
+            }
+
+            // Reset the "just unlocked" flags after reporting
+            _achievementTracker.ResetJustUnlocked();
+        }
+        catch (Exception ex)
+        {
+            LogAchievementCheckError(ex);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ShowLeaderboard()
+    {
+        try
+        {
+            await _socialGamingService.ShowLeaderboardAsync();
+        }
+        catch (Exception ex)
+        {
+            LogShowLeaderboardError(ex);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ShowAchievements()
+    {
+        try
+        {
+            await _socialGamingService.ShowAchievementsAsync();
+        }
+        catch (Exception ex)
+        {
+            LogShowAchievementsError(ex);
+        }
+    }
 }

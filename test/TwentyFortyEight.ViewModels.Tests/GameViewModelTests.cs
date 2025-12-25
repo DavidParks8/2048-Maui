@@ -26,6 +26,9 @@ public class GameViewModelTests
     private Mock<ILocalizationService> _localizationServiceMock = null!;
     private Mock<IScreenReaderService> _screenReaderServiceMock = null!;
     private Mock<IHapticService> _hapticServiceMock = null!;
+    private Mock<ISocialGamingService> _socialGamingServiceMock = null!;
+    private Mock<IAchievementTracker> _achievementTrackerMock = null!;
+    private Mock<IAchievementIdMapper> _achievementIdMapperMock = null!;
 
     [TestInitialize]
     public void Setup()
@@ -41,6 +44,9 @@ public class GameViewModelTests
         _localizationServiceMock = new Mock<ILocalizationService>();
         _screenReaderServiceMock = new Mock<IScreenReaderService>();
         _hapticServiceMock = new Mock<IHapticService>();
+        _socialGamingServiceMock = new Mock<ISocialGamingService>();
+        _achievementTrackerMock = new Mock<IAchievementTracker>();
+        _achievementIdMapperMock = new Mock<IAchievementIdMapper>();
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.AnimationSpeed).Returns(1.0);
@@ -71,7 +77,10 @@ public class GameViewModelTests
             _navigationServiceMock.Object,
             _localizationServiceMock.Object,
             _screenReaderServiceMock.Object,
-            _hapticServiceMock.Object
+            _hapticServiceMock.Object,
+            _socialGamingServiceMock.Object,
+            _achievementTrackerMock.Object,
+            _achievementIdMapperMock.Object
         );
     }
 

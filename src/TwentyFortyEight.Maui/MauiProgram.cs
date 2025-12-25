@@ -32,6 +32,20 @@ public static class MauiProgram
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
+
+        // Register achievement tracker
+        builder.Services.AddSingleton<IAchievementTracker, AchievementTracker>();
+
+        // Register achievement ID mapper - uses partial class pattern for platform-specific IDs
+        builder.Services.AddSingleton<
+            TwentyFortyEight.ViewModels.Services.IAchievementIdMapper,
+            AchievementIdMapper
+        >();
+
+        // Register social gaming service - uses partial class pattern
+        // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
+        builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
+
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();

@@ -18,19 +18,33 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
+            x:Name="ToolbarLeaderboardButton"
+            AutomationId="ToolbarLeaderboardButton"
+            Text="🏆 Leaderboard"
+            Command="{Binding ShowLeaderboardCommand}"
+            Order="Secondary"
+            Priority="0" />
+        <ToolbarItem
+            x:Name="ToolbarAchievementsButton"
+            AutomationId="ToolbarAchievementsButton"
+            Text="🎖️ Achievements"
+            Command="{Binding ShowAchievementsCommand}"
+            Order="Secondary"
+            Priority="1" />
+        <ToolbarItem
             x:Name="ToolbarSettingsButton"
             AutomationId="ToolbarSettingsButton"
             Text="{x:Static strings:AppStrings.Settings}"
             Command="{Binding OpenSettingsCommand}"
             Order="Secondary"
-            Priority="0" />
+            Priority="2" />
         <ToolbarItem
             x:Name="ToolbarHowToPlayButton"
             AutomationId="ToolbarHowToPlayButton"
             Text="{x:Static strings:AppStrings.HowToPlay}"
             Command="{Binding ShowHowToPlayCommand}"
             Order="Secondary"
-            Priority="1" />
+            Priority="3" />
     </ContentPage.ToolbarItems>
 
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="10">
