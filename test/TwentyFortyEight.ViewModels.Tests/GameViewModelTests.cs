@@ -188,8 +188,7 @@ public class GameViewModelTests
         // Act
         viewModel.BestScore = 1000;
 
-        // Wait for debounce delay (500ms) plus buffer
-        await Task.Delay(600);
+        await viewModel.WaitForBestScoreSaveAsync();
 
         // Assert
         _preferencesServiceMock.Verify(p => p.SetInt("BestScore", 1000), Times.Once);

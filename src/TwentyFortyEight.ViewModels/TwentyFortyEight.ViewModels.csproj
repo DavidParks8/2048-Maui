@@ -22,4 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TwentyFortyEight.ViewModels.Tests" />
+  </ItemGroup>
 </Project>

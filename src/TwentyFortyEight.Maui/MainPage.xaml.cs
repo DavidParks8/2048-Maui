@@ -13,6 +13,8 @@ public partial class MainPage : ContentPage
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
+    private readonly GamepadInputBehavior _gamepadBehavior;
+    private readonly ScrollInputBehavior _scrollBehavior;
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
@@ -44,6 +46,16 @@ public partial class MainPage : ContentPage
         _keyboardBehavior = new KeyboardInputBehavior();
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
         this.Behaviors.Add(_keyboardBehavior);
+
+        // Set up gamepad/controller handling via platform behavior
+        _gamepadBehavior = new GamepadInputBehavior();
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        this.Behaviors.Add(_gamepadBehavior);
+
+        // Set up scroll/trackpad handling via platform behavior (desktop only)
+        _scrollBehavior = new ScrollInputBehavior();
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
+        this.Behaviors.Add(_scrollBehavior);
     }
 
     /// <summary>
@@ -69,6 +81,16 @@ public partial class MainPage : ContentPage
         _viewModel.MoveCommand.Execute(direction);
     }
 
+    private void OnGamepadDirectionPressed(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
+
+    private void OnScrollDirectionPressed(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
+
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
         _pointerStartPoint = e.GetPosition(RootLayout);
@@ -81,7 +103,10 @@ public partial class MainPage : ContentPage
 
         var endPoint = e.GetPosition(RootLayout);
         if (endPoint is null)
+        {
+            _pointerStartPoint = null;
             return;
+        }
 
         var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
         var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
@@ -100,10 +125,14 @@ public partial class MainPage : ContentPage
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
     }
 
     protected override void OnDisappearing()
@@ -119,6 +148,8 @@ public partial class MainPage : ContentPage
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
     }
 
     protected override void OnSizeAllocated(double width, double height)
