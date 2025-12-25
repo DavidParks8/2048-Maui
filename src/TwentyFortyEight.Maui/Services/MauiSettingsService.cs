@@ -10,6 +10,7 @@ public class MauiSettingsService : ISettingsService
     private const string AnimationsEnabledKey = "AnimationsEnabled";
     private const string AnimationSpeedKey = "AnimationSpeed";
     private const string HapticsEnabledKey = "HapticsEnabled";
+    private const string AdsRemovedKey = "AdsRemoved";
     private const double DefaultAnimationSpeed = 1.0;
     private const double MinAnimationSpeed = 0.5;
     private const double MaxAnimationSpeed = 1.5;
@@ -56,5 +57,12 @@ public class MauiSettingsService : ISettingsService
     {
         get => Preferences.Get(HapticsEnabledKey, true);
         set => Preferences.Set(HapticsEnabledKey, value);
+    }
+
+    /// <inheritdoc />
+    public bool AdsRemoved
+    {
+        get => Preferences.Get(AdsRemovedKey, false);
+        set => Preferences.Set(AdsRemovedKey, value);
     }
 }

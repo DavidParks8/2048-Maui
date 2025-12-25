@@ -194,6 +194,51 @@ This project uses modern .NET scaffolding:
 - JSON serialization for game state persistence
 - Preferences API for local storage
 
+## Ads and In-App Purchases
+
+The app includes infrastructure for displaying ads and processing in-app purchases to remove ads. The implementation provides the following services:
+
+### Services
+
+- **`IAdsService`**: Platform-agnostic interface for displaying banner ads
+- **`IInAppPurchaseService`**: Platform-agnostic interface for in-app purchases
+
+### Configuration
+
+Platform-specific product IDs and ad unit IDs are configured in:
+- `src/TwentyFortyEight.Maui/Services/PlatformProductIds.cs`
+
+### Integration
+
+To integrate with actual ad and IAP SDKs:
+
+1. **Android (Google AdMob + Play Billing)**:
+   - Add `Plugin.AdMob` or `Xamarin.GooglePlayServices.Ads` NuGet package
+   - Add `Xamarin.Android.Google.BillingClient` NuGet package
+   - Set `IsSupported = true` in `AdsService.cs` and `InAppPurchaseService.cs`
+   - Implement the SDK-specific code in the TODO sections
+
+2. **iOS (Google AdMob + StoreKit)**:
+   - Add `Xamarin.Google.iOS.MobileAds` NuGet package
+   - StoreKit is built into the iOS SDK
+   - Set `IsSupported = true` in `AdsService.cs` and `InAppPurchaseService.cs`
+   - Implement the SDK-specific code in the TODO sections
+
+3. **Windows (Microsoft Store)**:
+   - Windows.Services.Store is built into the Windows SDK
+   - Set `IsSupported = true` in the services
+   - Implement the SDK-specific code in the TODO sections
+
+### Developer Console Setup
+
+Configure the following in each platform's developer console:
+
+| Platform | Ads Console | IAP Console | Product ID |
+|----------|------------|-------------|------------|
+| Android | AdMob Console | Google Play Console | `com.davidparks.twentyfourtyeight.remove_ads` |
+| iOS | AdMob Console | App Store Connect | `com.davidparks.twentyfourtyeight.remove_ads` |
+| Windows | Partner Center | Partner Center | `remove_ads` |
+
 ## Game Rules
 
 1. **Objective**: Combine tiles to create a tile with the value 2048

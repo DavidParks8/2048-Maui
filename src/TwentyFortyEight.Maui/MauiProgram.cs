@@ -52,6 +52,11 @@ public static class MauiProgram
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
         builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
 
+        // Register ads and in-app purchase services - uses partial class pattern
+        // Platform-specific implementations are in Platforms/Android, Platforms/iOS, etc.
+        builder.Services.AddSingleton<IAdsService, AdsService>();
+        builder.Services.AddSingleton<IInAppPurchaseService, InAppPurchaseService>();
+
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();

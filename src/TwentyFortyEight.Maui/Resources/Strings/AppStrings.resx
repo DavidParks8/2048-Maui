@@ -262,4 +262,16 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="ScreenReaderGameOverFinalScoreFormat" xml:space="preserve">
     <value>Game Over! Final score: {0}</value>
   </data>
+  <data name="RemoveAdsSection" xml:space="preserve">
+    <value>REMOVE ADS</value>
+  </data>
+  <data name="RemoveAdsDescription" xml:space="preserve">
+    <value>Purchase to permanently remove all ads from the game.</value>
+  </data>
+  <data name="RestorePurchases" xml:space="preserve">
+    <value>Restore Purchases</value>
+  </data>
+  <data name="RestorePurchasesDescription" xml:space="preserve">
+    <value>Restore previously made purchases</value>
+  </data>
 </root>

@@ -19,4 +19,9 @@ public interface ISettingsService
     /// Gets or sets whether haptic feedback is enabled.
     /// </summary>
     bool HapticsEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether ads have been removed via in-app purchase.
+    /// </summary>
+    bool AdsRemoved { get; set; }
 }

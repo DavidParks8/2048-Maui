@@ -129,6 +129,65 @@
             </VerticalStackLayout>
          </Border>
 
+         <!-- Remove Ads Section (conditionally visible when ads are supported and not removed) -->
+         <Border x:Name="RemoveAdsSectionBorder"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 10"
+            Padding="16"
+            IsVisible="{Binding ShowRemoveAdsSection}">
+            <VerticalStackLayout Spacing="12">
+               <Label x:Name="RemoveAdsSectionLabel"
+                  Text="{x:Static strings:AppStrings.RemoveAdsSection}"
+                  FontSize="12"
+                  FontAttributes="Bold"
+                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                  Margin="0,0,0,4" />
+
+               <Label x:Name="RemoveAdsDescriptionLabel"
+                  Text="{x:Static strings:AppStrings.RemoveAdsDescription}"
+                  FontSize="14"
+                  TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
+                  LineBreakMode="WordWrap" />
+
+               <!-- Purchase Button -->
+               <Button x:Name="PurchaseRemoveAdsButton"
+                  AutomationId="PurchaseRemoveAdsButton"
+                  Command="{Binding PurchaseRemoveAdsCommand}"
+                  Text="{Binding RemoveAdsPrice, StringFormat='Remove Ads - {0}', TargetNullValue='Remove Ads'}"
+                  Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
+                  TextColor="White"
+                  HeightRequest="50"
+                  Padding="20,0"
+                  CornerRadius="5"
+                  IsEnabled="{Binding IsPurchaseInProgress, Converter={StaticResource InvertedBoolConverter}}"
+                  SemanticProperties.Description="{x:Static strings:AppStrings.RemoveAdsDescription}" />
+
+               <!-- Restore Purchases Button -->
+               <Button x:Name="RestorePurchasesButton"
+                  AutomationId="RestorePurchasesButton"
+                  Command="{Binding RestorePurchasesCommand}"
+                  Text="{x:Static strings:AppStrings.RestorePurchases}"
+                  Background="Transparent"
+                  BorderColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                  BorderWidth="1"
+                  TextColor="{AppThemeBinding Light=#8f7a66, Dark=#cdc1b4}"
+                  HeightRequest="44"
+                  Padding="20,0"
+                  CornerRadius="5"
+                  IsEnabled="{Binding IsPurchaseInProgress, Converter={StaticResource InvertedBoolConverter}}"
+                  SemanticProperties.Description="{x:Static strings:AppStrings.RestorePurchasesDescription}" />
+
+               <!-- Loading Indicator -->
+               <ActivityIndicator
+                  IsRunning="{Binding IsPurchaseInProgress}"
+                  IsVisible="{Binding IsPurchaseInProgress}"
+                  Color="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                  HeightRequest="30"
+                  HorizontalOptions="Center" />
+            </VerticalStackLayout>
+         </Border>
+
       </VerticalStackLayout>
    </ScrollView>
 </ContentPage>
