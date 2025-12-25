@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Behaviors;
 using TwentyFortyEight.Maui.Services;
@@ -194,11 +193,6 @@ public partial class MainPage : ContentPage
         GameBoard.RowSpacing = tileSpacing;
     }
 
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
-        Justification = "String-based bindings are safe here as the types are preserved by MAUI and the binding context is set explicitly."
-    )]
     private void CreateTiles()
     {
         var boardSize = _viewModel.BoardSize;
@@ -236,21 +230,17 @@ public partial class MainPage : ContentPage
             };
 
             // Set up bindings
-            border.SetBinding(Border.BackgroundColorProperty, nameof(tile.BackgroundColor));
+            border.SetBinding(
+                Border.BackgroundColorProperty,
+                static (TileViewModel vm) => vm.BackgroundColor
+            );
 
             var label = (Label)border.Content;
-            label.SetBinding(Label.TextProperty, nameof(tile.DisplayValue));
-            label.SetBinding(Label.TextColorProperty, nameof(tile.TextColor));
+            label.SetBinding(Label.TextProperty, static (TileViewModel vm) => vm.DisplayValue);
+            label.SetBinding(Label.TextColorProperty, static (TileViewModel vm) => vm.TextColor);
 
             // Bind FontSize with scale converter
-            var fontSizeBinding = new Binding
-            {
-                Path = nameof(tile.FontSize),
-                Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
-                ConverterParameter = _viewModel.BoardScaleFactor,
-            };
-
-            label.SetBinding(Label.FontSizeProperty, fontSizeBinding);
+            BindScaledFontSize(label);
 
             border.BindingContext = tile;
 
@@ -267,6 +257,19 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
+    private void BindScaledFontSize(Label label)
+    {
+        var converter = (IValueConverter)Resources["FontSizeScaleConverter"];
+
+        label.SetBinding(
+            Label.FontSizeProperty,
+            static (TileViewModel vm) => vm.FontSize,
+            mode: BindingMode.OneWay,
+            converter: converter,
+            converterParameter: _viewModel.BoardScaleFactor
+        );
+    }
+
     private void OnViewModelPropertyChanged(
         object? sender,
         System.ComponentModel.PropertyChangedEventArgs e
@@ -279,15 +282,7 @@ public partial class MainPage : ContentPage
             {
                 if (border.Content is Label label)
                 {
-                    // Create a new binding with updated ConverterParameter
-                    var fontSizeBinding = new Binding
-                    {
-                        Path = "FontSize",
-                        Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
-                        ConverterParameter = _viewModel.BoardScaleFactor,
-                    };
-
-                    label.SetBinding(Label.FontSizeProperty, fontSizeBinding);
+                    BindScaledFontSize(label);
                 }
             }
         }
