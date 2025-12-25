@@ -149,7 +149,7 @@ public class TileAnimationService(ISettingsService settingsService)
         IReadOnlyDictionary<TileViewModel, Border> tileBorders
     )
     {
-        var newTileValues = new Dictionary<TileViewModel, int>();
+        Dictionary<TileViewModel, int> newTileValues = new();
 
         foreach (var tile in newTiles)
         {
@@ -190,8 +190,8 @@ public class TileAnimationService(ISettingsService settingsService)
         CancellationToken cancellationToken
     )
     {
-        var overlayTiles = new List<Border>();
-        var slideAnimationTasks = new List<Task>();
+        List<Border> overlayTiles = new();
+        List<Task> slideAnimationTasks = new();
 
         foreach (var movement in tileMovements)
         {
@@ -231,7 +231,7 @@ public class TileAnimationService(ISettingsService settingsService)
         CancellationToken cancellationToken
     )
     {
-        var mergedTileTasks = mergedTiles
+        List<Task> mergedTileTasks = mergedTiles
             .Select(async tile =>
             {
                 if (tileBorders.TryGetValue(tile, out var border))
@@ -264,7 +264,7 @@ public class TileAnimationService(ISettingsService settingsService)
         CancellationToken cancellationToken
     )
     {
-        var newTileTasks = newTiles
+        List<Task> newTileTasks = newTiles
             .Select(async tile =>
             {
                 if (

@@ -14,8 +14,8 @@ public class GameStateSerializationTests
         var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
-        var dto = GameStateDto.FromGameState(state);
-        var restored = dto.ToGameState();
+        GameStateDto dto = GameStateDto.FromGameState(state);
+        GameState restored = dto.ToGameState();
 
         // Assert
         CollectionAssert.AreEqual(state.Board.ToArray(), restored.Board.ToArray());
@@ -34,7 +34,7 @@ public class GameStateSerializationTests
         var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false);
 
         // Act
-        var dto = GameStateDto.FromGameState(state);
+        GameStateDto dto = GameStateDto.FromGameState(state);
         dto.Board[0] = 999; // Modify DTO board
 
         // Assert
@@ -45,7 +45,7 @@ public class GameStateSerializationTests
     public void GameState_WithTile_CreatesNewState()
     {
         // Arrange
-        var state = new GameState(4);
+        GameState state = new(4);
 
         // Act
         var newState = state.WithTile(0, 0, 2);
@@ -59,7 +59,7 @@ public class GameStateSerializationTests
     public void GameState_WithUpdate_CreatesNewState()
     {
         // Arrange
-        var state = new GameState(4);
+        GameState state = new(4);
 
         // Act
         var newState = state.WithUpdate(score: 100, moveCount: 5, isWon: true);

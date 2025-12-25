@@ -20,7 +20,7 @@ public sealed partial class BoardRippleService
 
         // RenderTargetBitmap must be created and used on the UI thread (STA).
         // Marshal the entire capture operation to the dispatcher to avoid COMException.
-        var tcs = new TaskCompletionSource<(int Width, int Height, byte[] Bytes)?>();
+        TaskCompletionSource<(int Width, int Height, byte[] Bytes)?> tcs = new();
 
         await boardContainer.Dispatcher.DispatchAsync(async () =>
         {
@@ -28,7 +28,7 @@ public sealed partial class BoardRippleService
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var rtb = new RenderTargetBitmap();
+                RenderTargetBitmap rtb = new();
                 await rtb.RenderAsync(fe);
 
                 var width = rtb.PixelWidth;
@@ -59,13 +59,13 @@ public sealed partial class BoardRippleService
             return null;
 
         var (capturedWidth, capturedHeight, capturedBytes) = result.Value;
-        var info = new SKImageInfo(
+        SKImageInfo info = new(
             capturedWidth,
             capturedHeight,
             SKColorType.Bgra8888,
             SKAlphaType.Premul
         );
-        var bitmap = new SKBitmap(info);
+        SKBitmap bitmap = new(info);
         Marshal.Copy(capturedBytes, 0, bitmap.GetPixels(), capturedBytes.Length);
         return bitmap;
     }

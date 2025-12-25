@@ -53,9 +53,9 @@ public sealed partial class BoardRippleService
 
         // Flag to signal paint handler that resources are being disposed.
         // Using a class wrapper so the closure captures the reference, not the value.
-        var disposedFlag = new DisposedFlag();
+        DisposedFlag disposedFlag = new();
         // Counter to track in-flight paint operations
-        var paintInFlight = new PaintInFlightCounter();
+        PaintInFlightCounter paintInFlight = new();
 
         try
         {
@@ -82,12 +82,12 @@ public sealed partial class BoardRippleService
             await rippleOverlay.Dispatcher.DispatchAsync(() => rippleOverlay.IsVisible = true);
 
             var startUtc = DateTimeOffset.UtcNow;
-            var tcs = new TaskCompletionSource();
+            TaskCompletionSource tcs = new();
 
             // Capture DIPs once; convert to pixels each frame based on actual canvas size.
             var boardDipWidth = (float)boardWidth;
             var boardDipHeight = (float)boardHeight;
-            var originDip = new Vector2((float)originInBoard.X, (float)originInBoard.Y);
+            Vector2 originDip = new((float)originInBoard.X, (float)originInBoard.Y);
             var durationSeconds = (float)TotalDurationSeconds;
 
             paintHandler = (_, e) =>
@@ -117,12 +117,12 @@ public sealed partial class BoardRippleService
                     // Source rect is the captured image size; dest rect is the canvas size
                     // Apply a manual scale factor to compensate for sizing mismatch
                     const float scaleFactor = 1.05f;
-                    var srcRect = SKRect.Create(capturedWidth, capturedHeight);
+                    SKRect srcRect = SKRect.Create(capturedWidth, capturedHeight);
                     var scaledW = info.Width * scaleFactor;
                     var scaledH = info.Height * scaleFactor;
                     var offsetX = (info.Width - scaledW) / 2f;
                     var offsetY = (info.Height - scaledH) / 2f;
-                    var dstRect = SKRect.Create(offsetX, offsetY, scaledW, scaledH);
+                    SKRect dstRect = SKRect.Create(offsetX, offsetY, scaledW, scaledH);
 
                     var elapsed = (float)(DateTimeOffset.UtcNow - startUtc).TotalSeconds;
                     var env = Envelope(elapsed, durationSeconds);
@@ -153,7 +153,7 @@ public sealed partial class BoardRippleService
                     // Convert origin in DIPs to pixels in the current canvas.
                     var dipToPxX = boardDipWidth > 0 ? (info.Width / boardDipWidth) : 1f;
                     var dipToPxY = boardDipHeight > 0 ? (info.Height / boardDipHeight) : 1f;
-                    var originPx = new Vector2(originDip.X * dipToPxX, originDip.Y * dipToPxY);
+                    Vector2 originPx = new(originDip.X * dipToPxX, originDip.Y * dipToPxY);
 
                     // Update displacement map pixels.
                     UpdateDisplacementMap(
@@ -166,7 +166,7 @@ public sealed partial class BoardRippleService
 
                     // SkiaSharp 2.88 docs: CreateDisplacementMapEffect expects SKImageFilter displacement,
                     // not a shader. We generate an image filter from the displacement bitmap.
-                    using var displacementImage = SKImage.FromBitmap(displacementMap);
+                    using SKImage? displacementImage = SKImage.FromBitmap(displacementMap);
                     if (displacementImage is null || disposedFlag.IsDisposed)
                     {
                         if (!disposedFlag.IsDisposed)
@@ -174,7 +174,7 @@ public sealed partial class BoardRippleService
                         return;
                     }
 
-                    using var displacementFilter = SKImageFilter.CreateImage(
+                    using SKImageFilter displacementFilter = SKImageFilter.CreateImage(
                         displacementImage,
                         SKRect.Create(mapW, mapH),
                         dstRect,
@@ -184,7 +184,7 @@ public sealed partial class BoardRippleService
                     // AAA-level displacement amplitude (pixels) - scales with envelope
                     var scalePx = 28f * env;
 
-                    using var rippleFilter = SKImageFilter.CreateDisplacementMapEffect(
+                    using SKImageFilter rippleFilter = SKImageFilter.CreateDisplacementMapEffect(
                         SKColorChannel.R,
                         SKColorChannel.G,
                         scalePx,
@@ -192,11 +192,7 @@ public sealed partial class BoardRippleService
                         null
                     );
 
-                    using var paint = new SKPaint
-                    {
-                        IsAntialias = true,
-                        ImageFilter = rippleFilter,
-                    };
+                    using SKPaint paint = new() { IsAntialias = true, ImageFilter = rippleFilter };
                     if (!disposedFlag.IsDisposed)
                         canvas.DrawImage(capturedImage, srcRect, dstRect, paint);
                 }
@@ -355,7 +351,7 @@ public sealed partial class BoardRippleService
             for (var x = 0; x < width; x++)
             {
                 var px = (x + 0.5f) * sx;
-                var p = new Vector2(px, py);
+                Vector2 p = new(px, py);
 
                 var disp = Vector2.Zero;
 
@@ -366,7 +362,7 @@ public sealed partial class BoardRippleService
                     {
                         var reflections = Math.Abs(nx) + Math.Abs(ny);
                         var rf = MathF.Pow(damp, reflections);
-                        var shift = new Vector2(2 * nx * res.X, 2 * ny * res.Y);
+                        Vector2 shift = new(2 * nx * res.X, 2 * ny * res.Y);
 
                         disp += Contribution(
                             p,

@@ -12,7 +12,7 @@ public class TileViewModelTests
     public void DisplayValue_WhenZero_ReturnsEmptyString()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 0 };
+        TileViewModel tile = new() { Value = 0 };
 
         // Assert
         Assert.AreEqual("", tile.DisplayValue);
@@ -22,7 +22,7 @@ public class TileViewModelTests
     public void DisplayValue_WhenNonZero_ReturnsValueAsString()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2048 };
+        TileViewModel tile = new() { Value = 2048 };
 
         // Assert
         Assert.AreEqual("2048", tile.DisplayValue);
@@ -32,7 +32,7 @@ public class TileViewModelTests
     public void ValueCategory_WhenEmpty_ReturnsEmpty()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 0 };
+        TileViewModel tile = new() { Value = 0 };
 
         // Assert
         Assert.AreEqual(TileValueCategory.Empty, tile.ValueCategory);
@@ -42,7 +42,7 @@ public class TileViewModelTests
     public void ValueCategory_When2048_ReturnsValue2048()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2048 };
+        TileViewModel tile = new() { Value = 2048 };
 
         // Assert
         Assert.AreEqual(TileValueCategory.Value2048, tile.ValueCategory);
@@ -52,7 +52,7 @@ public class TileViewModelTests
     public void ValueCategory_WhenOver2048_ReturnsHighValue()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 4096 };
+        TileViewModel tile = new() { Value = 4096 };
 
         // Assert
         Assert.AreEqual(TileValueCategory.HighValue, tile.ValueCategory);
@@ -62,7 +62,7 @@ public class TileViewModelTests
     public void PowerOf2_WhenZero_ReturnsZero()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 0 };
+        TileViewModel tile = new() { Value = 0 };
 
         // Assert
         Assert.AreEqual(0, tile.PowerOf2);
@@ -72,7 +72,7 @@ public class TileViewModelTests
     public void PowerOf2_When2_Returns1()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2 };
+        TileViewModel tile = new() { Value = 2 };
 
         // Assert
         Assert.AreEqual(1, tile.PowerOf2);
@@ -82,7 +82,7 @@ public class TileViewModelTests
     public void PowerOf2_When2048_Returns11()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2048 };
+        TileViewModel tile = new() { Value = 2048 };
 
         // Assert
         Assert.AreEqual(11, tile.PowerOf2);
@@ -92,7 +92,7 @@ public class TileViewModelTests
     public void UsesDarkText_WhenValue2_ReturnsTrue()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2 };
+        TileViewModel tile = new() { Value = 2 };
 
         // Assert
         Assert.IsTrue(tile.UsesDarkText);
@@ -102,7 +102,7 @@ public class TileViewModelTests
     public void UsesDarkText_WhenValue4_ReturnsTrue()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 4 };
+        TileViewModel tile = new() { Value = 4 };
 
         // Assert
         Assert.IsTrue(tile.UsesDarkText);
@@ -112,7 +112,7 @@ public class TileViewModelTests
     public void UsesDarkText_WhenValue8_ReturnsFalse()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 8 };
+        TileViewModel tile = new() { Value = 8 };
 
         // Assert
         Assert.IsFalse(tile.UsesDarkText);
@@ -122,7 +122,7 @@ public class TileViewModelTests
     public void FontSizeCategoryValue_WhenSmallNumber_ReturnsLarge()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 64 };
+        TileViewModel tile = new() { Value = 64 };
 
         // Assert
         Assert.AreEqual(FontSizeCategory.Large, tile.FontSizeCategoryValue);
@@ -132,7 +132,7 @@ public class TileViewModelTests
     public void FontSizeCategoryValue_When128_ReturnsMedium()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 128 };
+        TileViewModel tile = new() { Value = 128 };
 
         // Assert
         Assert.AreEqual(FontSizeCategory.Medium, tile.FontSizeCategoryValue);
@@ -142,7 +142,7 @@ public class TileViewModelTests
     public void FontSizeCategoryValue_When1024_ReturnsSmall()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 1024 };
+        TileViewModel tile = new() { Value = 1024 };
 
         // Assert
         Assert.AreEqual(FontSizeCategory.Small, tile.FontSizeCategoryValue);
@@ -152,7 +152,7 @@ public class TileViewModelTests
     public void UpdateValue_ChangesValue()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2 };
+        TileViewModel tile = new() { Value = 2 };
 
         // Act
         tile.UpdateValue(4);
@@ -165,7 +165,7 @@ public class TileViewModelTests
     public void UpdateValue_NotifiesDisplayValueChanged()
     {
         // Arrange
-        var tile = new TileViewModel { Value = 2 };
+        TileViewModel tile = new() { Value = 2 };
         var propertyChangedRaised = false;
         tile.PropertyChanged += (_, e) =>
         {
@@ -186,7 +186,7 @@ public class TileViewModelTests
     public void IsNewTile_DefaultsFalse()
     {
         // Arrange & Act
-        var tile = new TileViewModel();
+        TileViewModel tile = new();
 
         // Assert
         Assert.IsFalse(tile.IsNewTile);
@@ -196,7 +196,7 @@ public class TileViewModelTests
     public void IsMerged_DefaultsFalse()
     {
         // Arrange & Act
-        var tile = new TileViewModel();
+        TileViewModel tile = new();
 
         // Assert
         Assert.IsFalse(tile.IsMerged);
@@ -206,7 +206,7 @@ public class TileViewModelTests
     public void Row_CanBeSetAndGet()
     {
         // Arrange
-        var tile = new TileViewModel { Row = 2 };
+        TileViewModel tile = new() { Row = 2 };
 
         // Assert
         Assert.AreEqual(2, tile.Row);
@@ -216,7 +216,7 @@ public class TileViewModelTests
     public void Column_CanBeSetAndGet()
     {
         // Arrange
-        var tile = new TileViewModel { Column = 3 };
+        TileViewModel tile = new() { Column = 3 };
 
         // Assert
         Assert.AreEqual(3, tile.Column);

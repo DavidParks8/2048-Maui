@@ -68,12 +68,12 @@ public partial class MainPage : ContentPage
     private void SetupGestureRecognizers()
     {
         // Pan gesture for touch swipes (works on mobile)
-        var panGesture = new PanGestureRecognizer();
+        PanGestureRecognizer panGesture = new();
         panGesture.PanUpdated += OnPanUpdated;
         RootLayout.GestureRecognizers.Add(panGesture);
 
         // Pointer gesture for better mouse/touch support (especially on Windows)
-        var pointerGesture = new PointerGestureRecognizer();
+        PointerGestureRecognizer pointerGesture = new();
         pointerGesture.PointerPressed += OnPointerPressed;
         pointerGesture.PointerReleased += OnPointerReleased;
         RootLayout.GestureRecognizers.Add(pointerGesture);
@@ -211,7 +211,7 @@ public partial class MainPage : ContentPage
         for (int i = 0; i < _viewModel.Tiles.Count; i++)
         {
             var tile = _viewModel.Tiles[i];
-            var border = new Border
+            Border border = new()
             {
                 Stroke = Colors.Transparent,
                 StrokeThickness = 0,
@@ -238,7 +238,7 @@ public partial class MainPage : ContentPage
                 static (TileViewModel vm) => vm.BackgroundColor
             );
 
-            var label = (Label)border.Content;
+            Label label = (Label)border.Content;
             label.SetBinding(Label.TextProperty, static (TileViewModel vm) => vm.DisplayValue);
             label.SetBinding(Label.TextColorProperty, static (TileViewModel vm) => vm.TextColor);
 
@@ -262,7 +262,7 @@ public partial class MainPage : ContentPage
 
     private void BindScaledFontSize(Label label)
     {
-        var converter = (IValueConverter)Resources["FontSizeScaleConverter"];
+        IValueConverter converter = (IValueConverter)Resources["FontSizeScaleConverter"];
 
         label.SetBinding(
             Label.FontSizeProperty,

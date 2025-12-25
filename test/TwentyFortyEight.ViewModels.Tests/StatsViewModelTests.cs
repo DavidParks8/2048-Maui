@@ -42,7 +42,7 @@ public class StatsViewModelTests
     public void Constructor_LoadsStatisticsFromTracker()
     {
         // Arrange
-        var stats = new GameStatistics
+        GameStatistics stats = new()
         {
             GamesPlayed = 10,
             GamesWon = 5,
@@ -71,8 +71,8 @@ public class StatsViewModelTests
     public void RefreshStatistics_ReloadsFromTracker()
     {
         // Arrange
-        var initialStats = new GameStatistics { GamesPlayed = 5 };
-        var updatedStats = new GameStatistics { GamesPlayed = 10 };
+        GameStatistics initialStats = new() { GamesPlayed = 5 };
+        GameStatistics updatedStats = new() { GamesPlayed = 10 };
         _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(initialStats);
         var viewModel = CreateViewModel();
 
@@ -150,7 +150,7 @@ public class StatsViewModelTests
     public void WinRate_FormatsCorrectly()
     {
         // Arrange
-        var stats = new GameStatistics { GamesPlayed = 10, GamesWon = 3 }; // 30% win rate
+        GameStatistics stats = new() { GamesPlayed = 10, GamesWon = 3 }; // 30% win rate
         _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(stats);
 
         // Act

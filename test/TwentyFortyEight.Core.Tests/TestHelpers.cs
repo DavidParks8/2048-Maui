@@ -19,7 +19,7 @@ internal static class TestHelpers
         bool isGameOver = false
     )
     {
-        var board = new Board(boardData, size);
+        Board board = new(boardData, size);
         var maxTileValue = boardData.Length > 0 ? boardData.Max() : 0;
         return new GameState(board, score, moveCount, isWon, isGameOver, maxTileValue);
     }

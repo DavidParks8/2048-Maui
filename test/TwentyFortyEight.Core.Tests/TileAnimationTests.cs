@@ -11,8 +11,8 @@ public class AnimationDetectionTests
     public void GameEngine_Move_DetectsNewTileSpawn()
     {
         // Arrange
-        var config = new GameConfig();
-        var randomMock = new Mock<IRandomSource>();
+        GameConfig config = new();
+        Mock<IRandomSource> randomMock = new();
 
         // Setup random to return predictable values
         randomMock
@@ -27,7 +27,7 @@ public class AnimationDetectionTests
             .Returns(0.5) // Second spawn value (2)
             .Returns(0.5); // Third spawn value (2) - new tile
 
-        var engine = new Game2048Engine(config, randomMock.Object, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(config, randomMock.Object, NullStatisticsTracker.Instance);
         var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
         // Act
@@ -50,8 +50,8 @@ public class AnimationDetectionTests
     public void GameEngine_Move_DetectsTileMerge()
     {
         // Arrange - Create a board with two 2's that can merge
-        var config = new GameConfig();
-        var randomMock = new Mock<IRandomSource>();
+        GameConfig config = new();
+        Mock<IRandomSource> randomMock = new();
 
         // Create initial state with two 2's in the same row
         var initialBoard = new int[16];
@@ -59,7 +59,7 @@ public class AnimationDetectionTests
         initialBoard[1] = 2; // Next to it
         var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
-        var engine = new Game2048Engine(
+        Game2048Engine engine = new(
             initialState,
             config,
             randomMock.Object,
@@ -88,15 +88,15 @@ public class AnimationDetectionTests
     public void GameEngine_Move_DetectsTileSlide()
     {
         // Arrange - Create a board with a tile that needs to slide
-        var config = new GameConfig();
-        var randomMock = new Mock<IRandomSource>();
+        GameConfig config = new();
+        Mock<IRandomSource> randomMock = new();
 
         // Create initial state with a single tile not at the edge
         var initialBoard = new int[16];
         initialBoard[1] = 2; // Position 1 (will slide to position 0)
         var initialState = TestHelpers.CreateGameState(initialBoard, 4, 0, 0, false, false);
 
-        var engine = new Game2048Engine(
+        Game2048Engine engine = new(
             initialState,
             config,
             randomMock.Object,
@@ -120,13 +120,13 @@ public class AnimationDetectionTests
     public void GameEngine_MultipleDirections_AnimationsWorkCorrectly()
     {
         // Arrange
-        var config = new GameConfig();
-        var randomMock = new Mock<IRandomSource>();
+        GameConfig config = new();
+        Mock<IRandomSource> randomMock = new();
 
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
 
-        var engine = new Game2048Engine(config, randomMock.Object, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(config, randomMock.Object, NullStatisticsTracker.Instance);
 
         // Act & Assert for each direction
         var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };

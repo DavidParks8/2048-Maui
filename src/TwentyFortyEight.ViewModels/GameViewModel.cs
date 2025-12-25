@@ -415,9 +415,9 @@ public partial class GameViewModel : ObservableObject
                 moveDirection.Value
             );
 
-            var movedTiles = new HashSet<TileViewModel>();
-            var newTiles = new HashSet<TileViewModel>();
-            var mergedTiles = new HashSet<TileViewModel>();
+            HashSet<TileViewModel> movedTiles = new();
+            HashSet<TileViewModel> newTiles = new();
+            HashSet<TileViewModel> mergedTiles = new();
 
             for (int i = 0; i < state.Board.Length; i++)
             {
@@ -457,9 +457,9 @@ public partial class GameViewModel : ObservableObject
             {
                 // IMPORTANT: Copy the movements list because analysis.Movements is a pooled
                 // reference that gets cleared on the next Analyze() call.
-                var movementsCopy = analysis.Movements.ToList();
+                List<TileMovement> movementsCopy = analysis.Movements.ToList();
 
-                var eventArgs = new TileUpdateEventArgs
+                TileUpdateEventArgs eventArgs = new()
                 {
                     MovedTiles = movedTiles.ToFrozenSet(),
                     NewTiles = newTiles.ToFrozenSet(),
@@ -505,7 +505,7 @@ public partial class GameViewModel : ObservableObject
     {
         try
         {
-            var dto = GameStateDto.FromGameState(_engine.CurrentState);
+            GameStateDto dto = GameStateDto.FromGameState(_engine.CurrentState);
             var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
             _preferencesService.SetString("SavedGame", json);
         }
@@ -532,7 +532,7 @@ public partial class GameViewModel : ObservableObject
                 );
                 if (dto != null)
                 {
-                    var state = dto.ToGameState();
+                    GameState state = dto.ToGameState();
                     _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
                     return;
                 }

@@ -25,7 +25,7 @@ public class BasicTests
     public void TestMoqIsAvailable()
     {
         // Arrange & Act
-        var mock = new Mock<ITestInterface>();
+        Mock<ITestInterface> mock = new();
         mock.Setup(x => x.GetValue()).Returns(42);
 
         // Assert

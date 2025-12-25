@@ -126,7 +126,7 @@ public class MoveAnalyzer : IMoveAnalyzer
         var size = previousBoard.Size;
 
         // Use SpanOwner for pooled array allocation
-        using var indicesOwner = SpanOwner<int>.Allocate(size);
+        using SpanOwner<int> indicesOwner = SpanOwner<int>.Allocate(size);
         var indices = indicesOwner.Span;
 
         // Rent tiles list from pool
@@ -186,7 +186,7 @@ public class MoveAnalyzer : IMoveAnalyzer
                         // No merge: tile just moves (or stays)
                         var destIdx = indices[destPosition];
                         var (destRow, destCol) = previousBoard.GetPosition(destIdx);
-                        var dest = new Position(destRow, destCol);
+                        Position dest = new(destRow, destCol);
 
                         // Only record if actually moving
                         if (source != dest)

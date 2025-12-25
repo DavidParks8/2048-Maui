@@ -10,7 +10,7 @@ public class AchievementTrackerTests
     public void CheckTileAchievement_ReportsFirstMilestone()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckTileAchievement(128);
@@ -24,7 +24,7 @@ public class AchievementTrackerTests
     public void CheckTileAchievement_DoesNotReportSameMilestoneTwice()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         tracker.CheckTileAchievement(128);
@@ -39,7 +39,7 @@ public class AchievementTrackerTests
     public void CheckTileAchievement_ReportsMultipleMilestonesInSequence()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act & Assert
         Assert.IsTrue(tracker.CheckTileAchievement(128));
@@ -56,7 +56,7 @@ public class AchievementTrackerTests
     public void CheckTileAchievement_IgnoresBelowMinimum()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckTileAchievement(64);
@@ -70,7 +70,7 @@ public class AchievementTrackerTests
     public void CheckScoreAchievement_ReportsFirstMilestone()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckScoreAchievement(10000);
@@ -84,7 +84,7 @@ public class AchievementTrackerTests
     public void CheckScoreAchievement_DoesNotReportSameMilestoneTwice()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         tracker.CheckScoreAchievement(10000);
@@ -99,7 +99,7 @@ public class AchievementTrackerTests
     public void CheckScoreAchievement_ReportsMultipleMilestonesInOneCheck()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckScoreAchievement(50000);
@@ -114,7 +114,7 @@ public class AchievementTrackerTests
     public void CheckFirstWinAchievement_UnlocksOnFirstWin()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckFirstWinAchievement(true);
@@ -128,7 +128,7 @@ public class AchievementTrackerTests
     public void CheckFirstWinAchievement_DoesNotUnlockTwice()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         tracker.CheckFirstWinAchievement(true);
@@ -143,7 +143,7 @@ public class AchievementTrackerTests
     public void CheckFirstWinAchievement_DoesNotUnlockWhenNotWon()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act
         var unlocked = tracker.CheckFirstWinAchievement(false);
@@ -157,7 +157,7 @@ public class AchievementTrackerTests
     public void ResetJustUnlocked_ClearsAllJustUnlockedFlags()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
         tracker.CheckTileAchievement(128);
         tracker.CheckScoreAchievement(10000);
         tracker.CheckFirstWinAchievement(true);
@@ -175,7 +175,7 @@ public class AchievementTrackerTests
     public void AchievementTracker_MaintainsStateAcrossMultipleChecks()
     {
         // Arrange
-        var tracker = new AchievementTracker();
+        AchievementTracker tracker = new();
 
         // Act & Assert - Simulate game progression
         Assert.IsTrue(tracker.CheckTileAchievement(128));

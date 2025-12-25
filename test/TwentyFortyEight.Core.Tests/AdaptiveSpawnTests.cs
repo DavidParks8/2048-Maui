@@ -13,7 +13,7 @@ public class AdaptiveSpawnTests
     public void MaxTileValue_EmptyBoard_ReturnsZero()
     {
         // Arrange
-        var state = new GameState(4);
+        GameState state = new(4);
 
         // Act & Assert
         Assert.AreEqual(0, state.MaxTileValue);
@@ -55,7 +55,7 @@ public class AdaptiveSpawnTests
     public void MaxTileValue_WithTile_UpdatesWhenHigher()
     {
         // Arrange
-        var state = new GameState(4);
+        GameState state = new(4);
         Assert.AreEqual(0, state.MaxTileValue);
 
         // Act - add a tile
@@ -89,10 +89,10 @@ public class AdaptiveSpawnTests
     public void Move_With2048OnBoard_SpawnsHigherValues()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
+        GameConfig config = new() { Size = 4 };
 
         // Create a mock random that always returns 0.5 (should spawn common value)
-        var mockRandom = new Mock<IRandomSource>();
+        Mock<IRandomSource> mockRandom = new();
         mockRandom.Setup(r => r.NextDouble()).Returns(0.5); // 0.5 < 0.9, so common value
         mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0); // Always pick first empty cell
 
@@ -104,7 +104,7 @@ public class AdaptiveSpawnTests
         data[4] = 4;
         // Leave rest empty for spawning
         var state = TestHelpers.CreateGameState(data, 4, 1000, 10, false, false);
-        var engine = new Game2048Engine(
+        Game2048Engine engine = new(
             state,
             config,
             mockRandom.Object,
@@ -134,10 +134,10 @@ public class AdaptiveSpawnTests
     public void Move_WithLowTiles_SpawnsDefaultValues()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
+        GameConfig config = new() { Size = 4 };
 
         // Create a mock random that always returns 0.5 (should spawn common value = 2)
-        var mockRandom = new Mock<IRandomSource>();
+        Mock<IRandomSource> mockRandom = new();
         mockRandom.Setup(r => r.NextDouble()).Returns(0.5);
         mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
 
@@ -148,7 +148,7 @@ public class AdaptiveSpawnTests
         data[4] = 32;
         // Leave rest empty for spawning
         var state = TestHelpers.CreateGameState(data, 4, 100, 5, false, false);
-        var engine = new Game2048Engine(
+        Game2048Engine engine = new(
             state,
             config,
             mockRandom.Object,

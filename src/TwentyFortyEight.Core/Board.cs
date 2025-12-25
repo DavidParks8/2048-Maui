@@ -320,7 +320,7 @@ public readonly struct Board : IEquatable<Board>
 
     public override int GetHashCode()
     {
-        var hash = new HashCode();
+        HashCode hash = new();
         hash.Add(Size);
         var span = AsReadOnlySpan2D();
         foreach (var value in span)

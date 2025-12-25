@@ -57,7 +57,7 @@ public class GameStateDto
     /// </summary>
     public GameState ToGameState()
     {
-        var board = new Board(Board, Size);
+        Board board = new(Board, Size);
         var maxTileValue = Board.Length > 0 ? Board.Max() : 0;
         return new GameState(board, Score, MoveCount, IsWon, IsGameOver, maxTileValue);
     }

@@ -200,7 +200,7 @@ public sealed class RippleBehavior : Behavior<View>
                 oldCts.Dispose();
             }
 
-            var newCts = new CancellationTokenSource();
+            CancellationTokenSource newCts = new();
             var task = _rippleService.TryPlayAsync(
                 rippleOverlay: _rippleOverlay,
                 boardContainer: _attachedElement,

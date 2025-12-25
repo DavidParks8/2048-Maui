@@ -58,7 +58,7 @@ public class StatisticsTrackerTests
     public void OnGameStarted_IncrementsGamesPlayed()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
 
         // Act
         tracker.OnGameStarted();
@@ -74,7 +74,7 @@ public class StatisticsTrackerTests
     public void OnMoveMade_IncrementsTotalMoves()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
 
         // Act
@@ -91,7 +91,7 @@ public class StatisticsTrackerTests
     public void OnGameWon_IncrementsGamesWonAndStreak()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
 
         // Act
@@ -109,7 +109,7 @@ public class StatisticsTrackerTests
     public void OnGameWon_OnlyCountsOncePerGame()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
 
         // Act - call OnGameWon multiple times
@@ -127,7 +127,7 @@ public class StatisticsTrackerTests
     public void OnGameEnded_UpdatesCompletedGamesAndTotalScore()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
 
         // Act
@@ -144,7 +144,7 @@ public class StatisticsTrackerTests
     public void OnGameEnded_ResetsStreakOnLoss()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
 
         // Win two games to build streak
         tracker.OnGameStarted();
@@ -174,7 +174,7 @@ public class StatisticsTrackerTests
     public void UpdateBestScore_UpdatesOnlyWhenHigher()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
 
         // Act
         tracker.UpdateBestScore(500);
@@ -190,7 +190,7 @@ public class StatisticsTrackerTests
     public void UpdateHighestTile_UpdatesOnlyWhenHigher()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
 
         // Act
         tracker.UpdateHighestTile(256);
@@ -206,7 +206,7 @@ public class StatisticsTrackerTests
     public void Reset_ClearsAllStatistics()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
         tracker.OnMoveMade();
         tracker.UpdateBestScore(1000);
@@ -229,7 +229,7 @@ public class StatisticsTrackerTests
     public void GetStatistics_ReturnsSnapshot()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
 
         // Act
@@ -246,7 +246,7 @@ public class StatisticsTrackerTests
     public void Save_CalledOnSignificantChanges()
     {
         // Arrange
-        var tracker = new InMemoryStatisticsTracker();
+        InMemoryStatisticsTracker tracker = new();
 
         // Act - perform operations that should trigger saves
         tracker.OnGameStarted(); // Should save (1)
@@ -262,7 +262,7 @@ public class StatisticsTrackerTests
     public void WinRate_CalculatesCorrectly()
     {
         // Arrange
-        var stats = new GameStatistics { GamesPlayed = 10, GamesWon = 3 };
+        GameStatistics stats = new() { GamesPlayed = 10, GamesWon = 3 };
 
         // Assert
         Assert.AreEqual(30.0, stats.WinRate);
@@ -272,7 +272,7 @@ public class StatisticsTrackerTests
     public void AverageScore_CalculatesCorrectly()
     {
         // Arrange
-        var stats = new GameStatistics { CompletedGames = 5, TotalScore = 5000 };
+        GameStatistics stats = new() { CompletedGames = 5, TotalScore = 5000 };
 
         // Assert
         Assert.AreEqual(1000, stats.AverageScore);
@@ -282,7 +282,7 @@ public class StatisticsTrackerTests
     public void Clone_CreatesDeepCopy()
     {
         // Arrange
-        var original = new GameStatistics
+        GameStatistics original = new()
         {
             GamesPlayed = 10,
             GamesWon = 5,

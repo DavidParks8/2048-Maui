@@ -10,7 +10,7 @@ public class GameEngineTests
     public void NewGame_CreatesEmptyBoardWithTwoTiles()
     {
         // Arrange & Act
-        var engine = new Game2048Engine(
+        Game2048Engine engine = new(
             new GameConfig(),
             new SystemRandomSource(),
             NullStatisticsTracker.Instance
@@ -30,9 +30,9 @@ public class GameEngineTests
     public void MoveLeft_CompressesTiles()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
-        var engine = new Game2048Engine(config, random, NullStatisticsTracker.Instance);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
+        Game2048Engine engine = new(config, random, NullStatisticsTracker.Instance);
 
         // Create a specific board state
         var board = new int[16];
@@ -56,15 +56,15 @@ public class GameEngineTests
     public void MoveLeft_MergesMultiplePairs()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 2;
         board[2] = 2;
         board[3] = 2; // [2,2,2,2] -> [4,4,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Left);
@@ -80,15 +80,15 @@ public class GameEngineTests
     public void MoveLeft_OneMergePerTilePerMove()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 2;
         board[2] = 2;
         board[3] = 0; // [2,2,2,0] -> [4,2,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Left);
@@ -105,15 +105,15 @@ public class GameEngineTests
     public void MoveRight_CompressesTiles()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 0;
         board[1] = 2;
         board[2] = 0;
         board[3] = 2; // [0,2,0,2] -> [0,0,0,4]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Right);
@@ -130,8 +130,8 @@ public class GameEngineTests
     public void MoveUp_CompressesTiles()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2; // Row 0
         board[4] = 0; // Row 1
@@ -139,7 +139,7 @@ public class GameEngineTests
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [4,0,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Up);
@@ -156,8 +156,8 @@ public class GameEngineTests
     public void MoveDown_CompressesTiles()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2; // Row 0
         board[4] = 0; // Row 1
@@ -165,7 +165,7 @@ public class GameEngineTests
         board[12] = 0; // Row 3
         // Column 0: [2,0,2,0] -> [0,0,0,4]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Down);
@@ -182,8 +182,8 @@ public class GameEngineTests
     public void NoOpMove_DoesNotSpawnTile()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 4;
@@ -191,7 +191,7 @@ public class GameEngineTests
         board[3] = 16;
         // All tiles already at the left
         var state = TestHelpers.CreateGameState(board, 4, 10, 5, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         var moved = engine.Move(Direction.Left);
@@ -211,20 +211,20 @@ public class GameEngineTests
     public void SpawnTile_Uses90Percent2And10Percent4()
     {
         // This test verifies the spawn distribution using a seeded RNG
-        var config = new GameConfig { Size = 4 };
-        var spawnedValues = new List<int>();
+        GameConfig config = new() { Size = 4 };
+        List<int> spawnedValues = new();
 
         // Run multiple games to check spawn distribution
         for (int i = 0; i < 100; i++)
         {
-            var random = new SystemRandomSource(i);
+            SystemRandomSource random = new(i);
             var board = new int[16];
             board[0] = 2;
             board[1] = 0;
             board[2] = 2;
             board[3] = 0;
             var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-            var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+            Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
             // Get initial tiles count
             var initialCount = state.Board.Length - state.Board.CountEmptyCells();
@@ -258,13 +258,13 @@ public class GameEngineTests
     public void WinDetection_TriggersWhenReachingWinTile()
     {
         // Arrange
-        var config = new GameConfig { Size = 4, WinTile = 2048 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4, WinTile = 2048 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 1024;
         board[1] = 1024;
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act
         engine.Move(Direction.Left);
@@ -277,11 +277,11 @@ public class GameEngineTests
     public void GameOver_DetectedWhenNoMovesAvailable()
     {
         // Arrange - Create a full board with no possible merges
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16] { 2, 4, 8, 16, 16, 8, 4, 2, 2, 4, 8, 16, 16, 8, 4, 2 };
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // The current state should already be game over since the board is full
         // and no merges are possible
@@ -301,9 +301,9 @@ public class GameEngineTests
     public void Undo_RevertsLastMove()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
-        var engine = new Game2048Engine(config, random, NullStatisticsTracker.Instance);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
+        Game2048Engine engine = new(config, random, NullStatisticsTracker.Instance);
         var initialBoard = engine.CurrentState.Board.ToArray();
         var initialScore = engine.CurrentState.Score;
 
@@ -329,8 +329,8 @@ public class GameEngineTests
     public void Undo_BoundedCapacity()
     {
         // Arrange
-        var config = new GameConfig { Size = 4 };
-        var random = new SystemRandomSource(42);
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
         var board = new int[16];
         board[0] = 2;
         board[1] = 0;
@@ -341,7 +341,7 @@ public class GameEngineTests
         board[6] = 0;
         board[7] = 0;
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        var engine = new Game2048Engine(state, config, random, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         // Act - Make more than 50 moves
         for (int i = 0; i < 60; i++)
