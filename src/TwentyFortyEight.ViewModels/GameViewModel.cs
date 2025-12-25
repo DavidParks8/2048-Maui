@@ -35,11 +35,6 @@ public partial class GameViewModel : ObservableObject
     private readonly SemaphoreSlim _moveLock = new(1, 1);
 
     /// <summary>
-    /// Task completion source to signal when the current animation completes.
-    /// </summary>
-    private TaskCompletionSource<bool>? _animationCompletionSource;
-
-    /// <summary>
     /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
     /// </summary>
     private bool _isInitialized = false;
@@ -53,15 +48,6 @@ public partial class GameViewModel : ObservableObject
     /// Event raised when tiles are updated and need animations.
     /// </summary>
     public event EventHandler<TileUpdateEventArgs>? TilesUpdated;
-
-    /// <summary>
-    /// Signals that the animation for the current move has completed.
-    /// Called by the view layer after animations finish.
-    /// </summary>
-    public void SignalAnimationComplete()
-    {
-        _animationCompletionSource?.TrySetResult(true);
-    }
 
     [ObservableProperty]
     private int _score;
@@ -239,9 +225,6 @@ public partial class GameViewModel : ObservableObject
                 // Trigger haptic feedback if enabled and supported
                 _feedbackService.PerformMoveHaptic();
 
-                // Create a completion source to wait for animation
-                _animationCompletionSource = new TaskCompletionSource<bool>();
-
                 UpdateUI(previousBoard, direction);
                 _repository.SaveGameState(_engine.CurrentState);
 
@@ -253,20 +236,9 @@ public partial class GameViewModel : ObservableObject
                     _repository.UpdateBestScoreIfHigher(Score);
                 }
 
-                // Wait for animation to complete (with timeout to prevent deadlock)
-                using CancellationTokenSource cts = new(GetAnimationWaitTimeout());
-                try
-                {
-                    await _animationCompletionSource.Task.WaitAsync(cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Animation timed out or was cancelled - continue anyway
-                }
-                finally
-                {
-                    _animationCompletionSource = null;
-                }
+                // Wait for the slide duration to block input, ensuring the game feels responsive
+                // but prevents rapid-fire moves that could break the animation state.
+                await Task.Delay(GetInputBlockDuration());
 
                 // Check and report achievements and scores
                 await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
@@ -279,21 +251,20 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    private TimeSpan GetAnimationWaitTimeout()
+    private TimeSpan GetInputBlockDuration()
     {
-        // Base animation durations (ms) from AnimationConstants, before speed scaling.
-        const double baseSequenceMs = AnimationConstants.BaseTotalSequenceDuration;
-        const double bufferMs = 300;
-
         var speed = _settingsService.AnimationSpeed;
         if (!double.IsFinite(speed) || speed <= 0)
         {
             speed = 1.0;
         }
 
-        var timeoutMs = (baseSequenceMs / speed) + bufferMs;
-        timeoutMs = Math.Clamp(timeoutMs, 250, 5000);
-        return TimeSpan.FromMilliseconds(timeoutMs);
+        // Only block input during the slide.
+        // This makes the game feel responsive even if animations overlap.
+        var durationMs = AnimationConstants.BaseSlideAnimationDuration / speed;
+
+        // Add a tiny buffer (e.g. 10ms) to ensure the UI thread has picked up the change
+        return TimeSpan.FromMilliseconds(durationMs + 10);
     }
 
     [RelayCommand(CanExecute = nameof(CanUndo))]

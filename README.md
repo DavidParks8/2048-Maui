@@ -1,4 +1,5 @@
 # 2048-Maui
+
 The classic 2048 game built with .NET MAUI
 
 ## Overview
@@ -26,23 +27,27 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 ## Setup
 
 1. **Install .NET MAUI workload:**
+
    ```bash
    dotnet workload install maui
    ```
 
 2. **Restore dependencies:**
+
    ```bash
-   dotnet restore 2048-Maui.slnx
+   dotnet restore
    ```
 
 3. **Build the solution:**
+
    ```bash
-   dotnet build 2048-Maui.slnx
+   dotnet build
    ```
 
 4. **Run tests:**
+
    ```bash
-   dotnet run --project test/TwentyFortyEight.Tests/TwentyFortyEight.Tests.csproj
+   dotnet test
    ```
 
 ## Running the App
@@ -83,6 +88,7 @@ The game includes Game Center integration on iOS with leaderboards and achieveme
 ### 2. Create Leaderboard
 
 Create a leaderboard with the following details:
+
 - **Leaderboard ID**: `com.davidparks.twentyfourtyeight.highscores`
 - **Leaderboard Name**: "High Scores"
 - **Score Format**: Integer
@@ -128,6 +134,7 @@ A fully-testable, UI-independent game engine that implements the classic 2048 ru
 - **GameStateDto**: JSON-friendly serialization for persistence
 
 **Key Features:**
+
 - Correct merge behavior (e.g., `[2,2,2,2]` → `[4,4,0,0]`)
 - No-op moves don't spawn tiles or change score
 - 90% chance of spawning 2, 10% chance of spawning 4
@@ -142,10 +149,12 @@ Cross-platform UI built with .NET MAUI using MVVM pattern:
 - **MainPage**: Responsive game board with gesture and keyboard input
 
 **Input Methods:**
+
 - Touch: Swipe gestures (up/down/left/right)
 - Keyboard: Arrow keys or WASD
 
 **UI Features:**
+
 - Score and best score display
 - Visual feedback for game state (won/game over)
 - Tile colors that match classic 2048 design

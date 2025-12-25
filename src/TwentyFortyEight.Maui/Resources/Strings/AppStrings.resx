@@ -184,6 +184,12 @@
   <data name="HowToPlayDescription" xml:space="preserve">
     <value>Learn how to play the game</value>
   </data>
+  <data name="LeaderboardToolbarText" xml:space="preserve">
+    <value>🏆 Leaderboard</value>
+  </data>
+  <data name="AchievementsToolbarText" xml:space="preserve">
+    <value>🎖️ Achievements</value>
+  </data>
   <data name="HowToPlayTitle" xml:space="preserve">
     <value>How to Play</value>
   </data>
@@ -223,8 +229,14 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="EnableAnimations" xml:space="preserve">
     <value>Enable Animations</value>
   </data>
+  <data name="EnableAnimationsHint" xml:space="preserve">
+    <value>Toggle to enable or disable tile animations</value>
+  </data>
   <data name="AnimationSpeed" xml:space="preserve">
     <value>Animation Speed</value>
+  </data>
+  <data name="AnimationSpeedHint" xml:space="preserve">
+    <value>Adjust animation speed from 0.5 to 1.5 times normal speed</value>
   </data>
   <data name="AnimationSpeedSlow" xml:space="preserve">
     <value>Slow</value>
@@ -240,6 +252,9 @@ Keep combining tiles to reach the 2048 tile and win the game!
   </data>
   <data name="EnableHaptics" xml:space="preserve">
     <value>Enable Haptic Feedback</value>
+  </data>
+  <data name="EnableHapticsHint" xml:space="preserve">
+    <value>Toggle to enable or disable haptic feedback</value>
   </data>
   <data name="ScreenReaderScoreAnnouncementFormat" xml:space="preserve">
     <value>Score: {0}</value>

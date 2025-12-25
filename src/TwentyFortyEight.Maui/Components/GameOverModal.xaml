@@ -11,11 +11,11 @@
           InputTransparent="False">
         
         <!-- Dark overlay background -->
-        <BoxView BackgroundColor="#80000000" />
+       <BoxView Color="{StaticResource ModalOverlay}" />
         
         <!-- Modal dialog -->
-        <Border BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#2a2a2a}"
-                Stroke="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+       <Border Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+              Stroke="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                 StrokeThickness="3"
                 Padding="40,30"
                 HorizontalOptions="Center"
@@ -29,7 +29,7 @@
                        Text="{x:Static strings:AppStrings.GameOver}"
                        FontSize="36"
                        FontAttributes="Bold"
-                       TextColor="#f67c5f"
+                       TextColor="{StaticResource GameStatusAccent}"
                        HorizontalOptions="Center" />
                 
                 <!-- Score display -->
@@ -39,7 +39,7 @@
                     <Label x:Name="YourScoreLabel"
                            Text="{x:Static strings:AppStrings.YourScore}"
                            FontSize="16"
-                           TextColor="{AppThemeBinding Light=#776e65, Dark=#a0968b}"
+                           TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource GameTextMutedDark}}"
                            HorizontalOptions="Center" />
                     <Label x:Name="ModalScoreValue"
                            Text="{Binding Score, Source={x:Reference this}}"
@@ -61,7 +61,7 @@
                     AutomationId="TryAgainButton"
                     Command="{Binding NewGameCommand, Source={x:Reference this}}"
                     Text="{x:Static strings:AppStrings.TryAgain}"
-                    BackgroundColor="#f67c5f"
+                                   Background="{StaticResource GameStatusAccent}"
                     TextColor="White"
                     FontSize="18"
                     FontAttributes="Bold"

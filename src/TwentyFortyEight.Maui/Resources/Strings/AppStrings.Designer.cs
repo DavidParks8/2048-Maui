@@ -478,6 +478,24 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("HowToPlayDescription", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 🏆 Leaderboard.
+        /// </summary>
+        public static string LeaderboardToolbarText {
+            get {
+                return ResourceManager.GetString("LeaderboardToolbarText", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 🎖️ Achievements.
+        /// </summary>
+        public static string AchievementsToolbarText {
+            get {
+                return ResourceManager.GetString("AchievementsToolbarText", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to How to Play.
@@ -583,6 +601,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("EnableAnimations", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Toggle to enable or disable tile animations.
+        /// </summary>
+        public static string EnableAnimationsHint {
+            get {
+                return ResourceManager.GetString("EnableAnimationsHint", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Animation Speed.
@@ -590,6 +617,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         public static string AnimationSpeed {
             get {
                 return ResourceManager.GetString("AnimationSpeed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Adjust animation speed from 0.5 to 1.5 times normal speed.
+        /// </summary>
+        public static string AnimationSpeedHint {
+            get {
+                return ResourceManager.GetString("AnimationSpeedHint", resourceCulture);
             }
         }
         
@@ -635,6 +671,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         public static string EnableHaptics {
             get {
                 return ResourceManager.GetString("EnableHaptics", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Toggle to enable or disable haptic feedback.
+        /// </summary>
+        public static string EnableHapticsHint {
+            get {
+                return ResourceManager.GetString("EnableHapticsHint", resourceCulture);
             }
         }
         

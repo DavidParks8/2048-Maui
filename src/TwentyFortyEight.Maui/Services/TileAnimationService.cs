@@ -326,7 +326,7 @@ public class TileAnimationService(ISettingsService settingsService)
             Stroke = Colors.Transparent,
             StrokeThickness = 0,
             Padding = 0,
-            BackgroundColor = backgroundColor,
+            Background = new SolidColorBrush(backgroundColor),
             ZIndex = 100,
             Content = new Label
             {
@@ -353,11 +353,12 @@ public class TileAnimationService(ISettingsService settingsService)
     )
     {
         // Remove any overlay tiles (ZIndex = 100)
-        var overlaysToRemove = gameBoard.Children.OfType<Border>().Where(b => b.ZIndex == 100);
-
-        foreach (var overlay in overlaysToRemove)
+        for (int i = gameBoard.Children.Count - 1; i >= 0; i--)
         {
-            gameBoard.Children.Remove(overlay);
+            if (gameBoard.Children[i] is Border border && border.ZIndex == 100)
+            {
+                gameBoard.Children.RemoveAt(i);
+            }
         }
 
         // Reset all tile borders to normal state

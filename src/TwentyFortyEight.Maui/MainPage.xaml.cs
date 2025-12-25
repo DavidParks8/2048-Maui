@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Behaviors;
+using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
@@ -223,7 +224,7 @@ public partial class MainPage : ContentPage
                 Stroke = Colors.Transparent,
                 StrokeThickness = 0,
                 Padding = 0,
-                BackgroundColor = tile.BackgroundColor,
+                Background = new SolidColorBrush(tile.BackgroundColor),
                 Content = new Label
                 {
                     Text = tile.DisplayValue,
@@ -241,8 +242,9 @@ public partial class MainPage : ContentPage
 
             // Set up bindings
             border.SetBinding(
-                Border.BackgroundColorProperty,
-                static (TileViewModel vm) => vm.BackgroundColor
+                Border.BackgroundProperty,
+                static (TileViewModel vm) => vm.BackgroundColor,
+                converter: ColorToBrushConverter.Instance
             );
 
             Label label = (Label)border.Content;
@@ -364,11 +366,6 @@ public partial class MainPage : ContentPage
         {
             // Log but don't crash - animations are non-critical
             LogAnimationError(_logger, ex);
-        }
-        finally
-        {
-            // Signal the ViewModel that animation is complete so next move can proceed
-            _viewModel.SignalAnimationComplete();
         }
     }
 

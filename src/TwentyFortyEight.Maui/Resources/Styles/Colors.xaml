@@ -18,4 +18,22 @@
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
 
+    <!-- 2048 Game Theme Colors -->
+    <Color x:Key="GamePageBackgroundLight">#faf8ef</Color>
+    <Color x:Key="GamePageBackgroundDark">#1a1a1a</Color>
+
+    <Color x:Key="GamePanelBackgroundLight">#bbada0</Color>
+    <Color x:Key="GamePanelBackgroundDark">#3c3a32</Color>
+
+    <Color x:Key="GameButtonBackgroundLight">#8f7a66</Color>
+    <Color x:Key="GameButtonBackgroundDark">#5a4a3a</Color>
+
+    <Color x:Key="GameStatusAccent">#f67c5f</Color>
+
+    <Color x:Key="ModalBackgroundLight">#faf8ef</Color>
+    <Color x:Key="ModalBackgroundDark">#2a2a2a</Color>
+    <Color x:Key="ModalOverlay">#80000000</Color>
+
+    <Color x:Key="GameTextMutedDark">#a0968b</Color>
+
 </ResourceDictionary>

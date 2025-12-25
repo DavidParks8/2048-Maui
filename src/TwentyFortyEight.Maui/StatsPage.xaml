@@ -7,7 +7,7 @@
    x:Class="TwentyFortyEight.Maui.StatsPage"
    x:DataType="vm:StatsViewModel"
    Title="{x:Static strings:AppStrings.StatisticsPageTitle}"
-   BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
+   Background="{AppThemeBinding Light={StaticResource GamePageBackgroundLight}, Dark={StaticResource GamePageBackgroundDark}}">
 
    <ScrollView Padding="20">
       <FlexLayout x:Name="StatsFlexLayout"
@@ -21,7 +21,7 @@
 
          <!-- Games Section -->
          <Border x:Name="GamesSectionBorder"
-            BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16"
@@ -48,7 +48,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.GamesPlayed}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="GamesPlayedValue"
                      Grid.Row="0"
                      Grid.Column="1"
@@ -62,7 +62,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.GamesWon}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="GamesWonValue"
                      Grid.Row="1"
                      Grid.Column="1"
@@ -76,7 +76,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.WinRate}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="WinRateValue"
                      Grid.Row="2"
                      Grid.Column="1"
@@ -90,7 +90,7 @@
 
          <!-- Scores Section -->
          <Border x:Name="ScoresSectionBorder"
-            BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16"
@@ -117,7 +117,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.BestScoreLabel}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="BestScoreValueStats"
                      Grid.Row="0"
                      Grid.Column="1"
@@ -131,7 +131,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.AverageScore}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="AverageScoreValue"
                      Grid.Row="1"
                      Grid.Column="1"
@@ -145,7 +145,7 @@
                      Grid.Column="0"
                      Text="{x:Static strings:AppStrings.HighestTile}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                   <Label x:Name="HighestTileValue"
                      Grid.Row="2"
                      Grid.Column="1"
@@ -159,7 +159,7 @@
 
          <!-- Moves Section -->
          <Border x:Name="MovesSectionBorder"
-            BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16"
@@ -174,13 +174,13 @@
                   Text="{x:Static strings:AppStrings.MovesSection}"
                   FontSize="12"
                   FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light#eee4da, Dark=#cdc1b4}"
+                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
                   Margin="0,0,0,4" />
 
                <Label x:Name="TotalMovesLabel"
                   Text="{x:Static strings:AppStrings.TotalMoves}"
                   FontSize="13"
-                  TextColor="{AppThemeBinding Light#776e65, Dark=#f9f6f2}" />
+                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
                <Label x:Name="TotalMovesValue"
                   Text="{Binding TotalMoves}"
                   FontSize="28"
@@ -192,7 +192,7 @@
 
          <!-- Streaks Section -->
          <Border x:Name="StreaksSectionBorder"
-            BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
             Stroke="Transparent"
             StrokeShape="RoundRectangle 10"
             Padding="16"
@@ -250,7 +250,7 @@
             AutomationId="ResetStatisticsButton"
             Text="{x:Static strings:AppStrings.ResetStatistics}"
             Command="{Binding ResetStatisticsCommand}"
-            BackgroundColor="#f67c5f"
+            Background="{StaticResource GameStatusAccent}"
             TextColor="White"
             FontSize="14"
             FontAttributes="Bold"

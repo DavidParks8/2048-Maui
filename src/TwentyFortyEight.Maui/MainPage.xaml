@@ -10,7 +10,7 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
-             BackgroundColor="{AppThemeBinding Light=#faf8ef, Dark=#1a1a1a}">
+             Background="{AppThemeBinding Light={StaticResource GamePageBackgroundLight}, Dark={StaticResource GamePageBackgroundDark}}">
 
     <ContentPage.Resources>
         <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
@@ -20,14 +20,14 @@
         <ToolbarItem
             x:Name="ToolbarLeaderboardButton"
             AutomationId="ToolbarLeaderboardButton"
-            Text="🏆 Leaderboard"
+            Text="{x:Static strings:AppStrings.LeaderboardToolbarText}"
             Command="{Binding ShowLeaderboardCommand}"
             Order="Secondary"
             Priority="0" />
         <ToolbarItem
             x:Name="ToolbarAchievementsButton"
             AutomationId="ToolbarAchievementsButton"
-            Text="🎖️ Achievements"
+            Text="{x:Static strings:AppStrings.AchievementsToolbarText}"
             Command="{Binding ShowAchievementsCommand}"
             Order="Secondary"
             Priority="1" />
@@ -65,7 +65,7 @@
 
             <Border x:Name="ScoreBorder"
                     Grid.Column="1"
-                    BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                    Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                     Stroke="Transparent"
                     StrokeThickness="0"
                     Padding="20,10"
@@ -91,7 +91,7 @@
 
             <Border x:Name="BestScoreBorder"
                     Grid.Column="2"
-                    BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+                    Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                     Stroke="Transparent"
                     StrokeThickness="0"
                     Padding="20,10"
@@ -121,14 +121,14 @@
                Text="{Binding StatusText}"
                FontSize="24"
                FontAttributes="Bold"
-               TextColor="#f67c5f"
+             TextColor="{StaticResource GameStatusAccent}"
                HorizontalOptions="Center"
                IsVisible="{Binding StatusText, Converter={StaticResource StringNotEmptyConverter}}" />
 
         <!-- Game Board -->
         <Border x:Name="BoardContainer"
                 Grid.Row="2"
-                BackgroundColor="{AppThemeBinding Light=#bbada0, Dark=#3c3a32}"
+            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                 Stroke="Transparent"
                 StrokeThickness="0"
                 Padding="10"
@@ -168,7 +168,7 @@
                 AutomationId="NewGameButton"
                 Command="{Binding NewGameCommand}"
                 Text="{x:Static strings:AppStrings.NewGame}"
-                BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"
@@ -181,7 +181,7 @@
                 Command="{Binding UndoCommand}"
                 IsEnabled="{Binding CanUndo}"
                 Text="{x:Static strings:AppStrings.Undo}"
-                BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"
@@ -193,7 +193,7 @@
                 AutomationId="StatisticsButton"
                 Command="{Binding OpenStatsCommand}"
                 Text="{x:Static strings:AppStrings.Statistics}"
-                BackgroundColor="{AppThemeBinding Light=#8f7a66, Dark=#5a4a3a}"
+                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
                 TextColor="White"
                 HeightRequest="50"
                 Padding="15,0"

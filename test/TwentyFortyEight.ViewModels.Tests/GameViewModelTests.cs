@@ -194,14 +194,4 @@ public class GameViewModelTests
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
     }
-
-    [TestMethod]
-    public void SignalAnimationComplete_DoesNotThrow()
-    {
-        // Arrange
-        var viewModel = CreateViewModel();
-
-        // Act & Assert - Should not throw even when no animation is pending
-        viewModel.SignalAnimationComplete();
-    }
 }
