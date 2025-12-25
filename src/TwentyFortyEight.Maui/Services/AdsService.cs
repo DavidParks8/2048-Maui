@@ -61,8 +61,14 @@ public sealed partial class AdsService(
     /// </summary>
     public void ShowBannerAd(object container)
     {
-        if (!AreAdsEnabled || _isBannerVisible)
+        if (!AreAdsEnabled)
         {
+            return;
+        }
+
+        if (_isBannerVisible)
+        {
+            LogBannerAdAlreadyVisible();
             return;
         }
 
@@ -146,4 +152,7 @@ public sealed partial class AdsService(
 
     [LoggerMessage(EventId = 9, Level = LogLevel.Warning, Message = "Interstitial ad failed to load")]
     partial void LogInterstitialFailedToLoad();
+
+    [LoggerMessage(EventId = 10, Level = LogLevel.Debug, Message = "Banner ad already visible, ignoring request")]
+    partial void LogBannerAdAlreadyVisible();
 }

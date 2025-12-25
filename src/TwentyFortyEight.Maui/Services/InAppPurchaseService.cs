@@ -73,7 +73,9 @@ public sealed partial class InAppPurchaseService(
                 ItemType.InAppPurchase,
                 productId);
 
-            var product = products?.FirstOrDefault();
+            // GetProductInfoAsync returns only products matching the requested IDs
+            // Use FirstOrDefault with explicit filter for clarity
+            var product = products?.FirstOrDefault(p => p.ProductId == productId);
             return product?.LocalizedPrice;
         }
         catch (InAppBillingPurchaseException ex)
