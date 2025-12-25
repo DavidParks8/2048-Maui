@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui;
 

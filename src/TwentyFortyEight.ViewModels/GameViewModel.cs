@@ -28,6 +28,9 @@ public partial class GameViewModel : ObservableObject
     private readonly ILocalizationService _localizationService;
     private readonly IScreenReaderService _screenReaderService;
     private readonly IHapticService _hapticService;
+    private readonly ISocialGamingService _socialGamingService;
+    private readonly IAchievementTracker _achievementTracker;
+    private readonly IAchievementIdMapper _achievementIdMapper;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -206,7 +209,10 @@ public partial class GameViewModel : ObservableObject
         INavigationService navigationService,
         ILocalizationService localizationService,
         IScreenReaderService screenReaderService,
-        IHapticService hapticService
+        IHapticService hapticService,
+        ISocialGamingService socialGamingService,
+        IAchievementTracker achievementTracker,
+        IAchievementIdMapper achievementIdMapper
     )
     {
         _logger = logger;
@@ -220,6 +226,9 @@ public partial class GameViewModel : ObservableObject
         _localizationService = localizationService;
         _screenReaderService = screenReaderService;
         _hapticService = hapticService;
+        _socialGamingService = socialGamingService;
+        _achievementTracker = achievementTracker;
+        _achievementIdMapper = achievementIdMapper;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -237,8 +246,16 @@ public partial class GameViewModel : ObservableObject
         LoadGame();
         UpdateUI();
 
+        // Check social gaming availability
+        UpdateSocialGamingAvailability();
+
         // Mark initialization complete - now safe to announce to screen readers
         _isInitialized = true;
+    }
+
+    private void UpdateSocialGamingAvailability()
+    {
+        IsSocialGamingAvailable = _socialGamingService.IsAvailable;
     }
 
     [RelayCommand]
