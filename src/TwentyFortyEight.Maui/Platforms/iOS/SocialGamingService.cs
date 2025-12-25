@@ -1,7 +1,6 @@
 using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
-using UIKit;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
@@ -9,16 +8,10 @@ namespace TwentyFortyEight.Maui.Services;
 /// <summary>
 /// iOS/macOS implementation of social gaming service using Game Center.
 /// </summary>
-public partial class SocialGamingService : ISocialGamingService
+public partial class SocialGamingService(ILogger<SocialGamingService> logger) : ISocialGamingService
 {
-    private readonly ILogger<SocialGamingService> _logger;
     private bool _isAuthenticated;
     private readonly HashSet<string> _reportedAchievements = new();
-
-    public SocialGamingService(ILogger<SocialGamingService> logger)
-    {
-        _logger = logger;
-    }
 
     public bool IsAvailable => _isAuthenticated;
 
