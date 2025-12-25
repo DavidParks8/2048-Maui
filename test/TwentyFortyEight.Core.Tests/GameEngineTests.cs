@@ -212,7 +212,7 @@ public class GameEngineTests
     {
         // This test verifies the spawn distribution using a seeded RNG
         GameConfig config = new() { Size = 4 };
-        List<int> spawnedValues = new();
+        List<int> spawnedValues = [];
 
         // Run multiple games to check spawn distribution
         for (int i = 0; i < 100; i++)

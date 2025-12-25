@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Controls;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
@@ -154,7 +155,7 @@ public partial class GameViewModel : ObservableObject
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
-        Tiles = new ObservableCollection<TileViewModel>();
+        Tiles = [];
         for (int row = 0; row < _config.Size; row++)
         {
             for (int col = 0; col < _config.Size; col++)
@@ -172,6 +173,19 @@ public partial class GameViewModel : ObservableObject
 
         // Mark initialization complete - now safe to announce to screen readers
         _isInitialized = true;
+
+        // Subscribe to theme changes to update tile colors
+        Application.Current?.RequestedThemeChanged += OnAppThemeChanged;
+    }
+
+    private void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
+    {
+        // Refresh all tiles to update their colors based on the new theme
+        foreach (var tile in Tiles)
+        {
+            // Force update of color properties
+            tile.RefreshColors();
+        }
     }
 
     [RelayCommand]
@@ -317,9 +331,9 @@ public partial class GameViewModel : ObservableObject
                 moveDirection.Value
             );
 
-            HashSet<TileViewModel> movedTiles = new();
-            HashSet<TileViewModel> newTiles = new();
-            HashSet<TileViewModel> mergedTiles = new();
+            HashSet<TileViewModel> movedTiles = [];
+            HashSet<TileViewModel> newTiles = [];
+            HashSet<TileViewModel> mergedTiles = [];
 
             for (int i = 0; i < state.Board.Length; i++)
             {

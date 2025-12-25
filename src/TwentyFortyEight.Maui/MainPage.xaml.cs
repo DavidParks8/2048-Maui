@@ -12,7 +12,7 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
     private readonly ILogger<MainPage> _logger;
-    private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
+    private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
     private readonly GamepadInputBehavior _gamepadBehavior;

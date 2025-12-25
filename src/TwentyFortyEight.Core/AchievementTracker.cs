@@ -7,8 +7,8 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class AchievementTracker : IAchievementTracker
 {
-    private readonly HashSet<int> _unlockedTiles = new();
-    private readonly HashSet<int> _unlockedScores = new();
+    private readonly HashSet<int> _unlockedTiles = [];
+    private readonly HashSet<int> _unlockedScores = [];
     private bool _firstWinUnlocked;
 
     // Track what was just unlocked in the current check

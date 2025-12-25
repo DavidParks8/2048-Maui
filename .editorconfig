@@ -1,0 +1,4 @@
+[*.cs]
+
+# CsWinRT1030: Project does not enable unsafe blocks
+dotnet_diagnostic.CsWinRT1030.severity = none

@@ -1,4 +1,7 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TwentyFortyEight.Core;
+
+[assembly: Parallelize(Scope = ExecutionScope.MethodLevel, Workers = 0)]
 
 namespace TwentyFortyEight.Core.Tests;
 

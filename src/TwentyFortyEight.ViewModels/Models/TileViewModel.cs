@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using CommunityToolkit.Mvvm.ComponentModel;
+using TwentyFortyEight.ViewModels.Helpers;
 #if ANDROID || IOS || MACCATALYST || WINDOWS
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Controls;
@@ -66,142 +67,17 @@ public partial class TileViewModel : ObservableObject
     /// <summary>
     /// Gets the background color for this tile (MAUI-specific).
     /// </summary>
-    public Color BackgroundColor => GetTileBackgroundColor(Value);
+    public Color BackgroundColor => TileColorHelper.GetTileBackgroundColor(Value);
 
     /// <summary>
     /// Gets the text color for this tile (MAUI-specific).
     /// </summary>
-    public Color TextColor => GetTileTextColor(Value);
+    public Color TextColor => TileColorHelper.GetTileTextColor(Value);
 
     /// <summary>
     /// Gets the font size for this tile (MAUI-specific).
     /// </summary>
     public double FontSize => GetTileFontSize(Value);
-
-    #region Theme Caching
-
-    private static bool s_isDarkModeCached;
-    private static bool s_themeCacheInitialized;
-
-    static TileViewModel()
-    {
-        if (Application.Current is not null)
-        {
-            Application.Current.RequestedThemeChanged += OnAppThemeChanged;
-            UpdateThemeCache();
-        }
-    }
-
-    private static void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
-    {
-        UpdateThemeCache();
-    }
-
-    private static void UpdateThemeCache()
-    {
-        s_isDarkModeCached = Application.Current?.RequestedTheme == AppTheme.Dark;
-        s_themeCacheInitialized = true;
-    }
-
-    private static bool IsDarkMode
-    {
-        get
-        {
-            if (!s_themeCacheInitialized)
-            {
-                UpdateThemeCache();
-            }
-            return s_isDarkModeCached;
-        }
-    }
-
-    #endregion
-
-    #region Cached Colors
-
-    private static readonly Color TextColorDark = Color.FromArgb("#776e65");
-    private static readonly Color TextColorLight = Color.FromArgb("#f9f6f2");
-
-    private static readonly FrozenDictionary<int, Color> LightModeColors = new Dictionary<
-        int,
-        Color
-    >
-    {
-        [0] = Color.FromArgb("#cdc1b4"),
-        [2] = Color.FromArgb("#eee4da"),
-        [4] = Color.FromArgb("#ede0c8"),
-        [8] = Color.FromArgb("#f2b179"),
-        [16] = Color.FromArgb("#f59563"),
-        [32] = Color.FromArgb("#f67c5f"),
-        [64] = Color.FromArgb("#f65e3b"),
-        [128] = Color.FromArgb("#edcf72"),
-        [256] = Color.FromArgb("#edcc61"),
-        [512] = Color.FromArgb("#edc850"),
-        [1024] = Color.FromArgb("#edc53f"),
-        [2048] = Color.FromArgb("#edc22e"),
-    }.ToFrozenDictionary();
-
-    private static readonly FrozenDictionary<int, Color> DarkModeColors = new Dictionary<int, Color>
-    {
-        [0] = Color.FromArgb("#524b44"),
-        [2] = Color.FromArgb("#5c6b7a"),
-        [4] = Color.FromArgb("#7a6b5c"),
-        [8] = Color.FromArgb("#f2b179"),
-        [16] = Color.FromArgb("#f59563"),
-        [32] = Color.FromArgb("#f67c5f"),
-        [64] = Color.FromArgb("#f65e3b"),
-        [128] = Color.FromArgb("#edcf72"),
-        [256] = Color.FromArgb("#edcc61"),
-        [512] = Color.FromArgb("#edc850"),
-        [1024] = Color.FromArgb("#edc53f"),
-        [2048] = Color.FromArgb("#edc22e"),
-    }.ToFrozenDictionary();
-
-    #endregion
-
-    /// <summary>
-    /// Gets the text color for a tile with the specified value.
-    /// </summary>
-    public static Color GetTileTextColor(int value)
-    {
-        if (value > DarkTextThreshold)
-            return Colors.White;
-
-        return IsDarkMode ? TextColorLight : TextColorDark;
-    }
-
-    /// <summary>
-    /// Gets the background color for a tile with the specified value.
-    /// </summary>
-    public static Color GetTileBackgroundColor(int value)
-    {
-        var colorMap = IsDarkMode ? DarkModeColors : LightModeColors;
-
-        if (colorMap.TryGetValue(value, out var color))
-            return color;
-
-        return GetHighValueColor(value);
-    }
-
-    private static Color GetHighValueColor(int value)
-    {
-        var power = (int)Math.Log2(value);
-
-        return power switch
-        {
-            12 => Color.FromRgb(0xed, 0xb4, 0x22),
-            13 => Color.FromRgb(0xe8, 0x7e, 0x2c),
-            14 => Color.FromRgb(0xe0, 0x4a, 0x38),
-            15 => Color.FromRgb(0xd4, 0x2e, 0x55),
-            16 => Color.FromRgb(0xb8, 0x2e, 0x8c),
-            17 => Color.FromRgb(0x8e, 0x2e, 0xb8),
-            18 => Color.FromRgb(0x5a, 0x2e, 0xd4),
-            19 => Color.FromRgb(0x2e, 0x4a, 0xe8),
-            20 => Color.FromRgb(0x2e, 0x8e, 0xe8),
-            21 => Color.FromRgb(0x2e, 0xc4, 0xd4),
-            _ => Color.FromRgb(0x2e, 0xd4, 0x8e),
-        };
-    }
 
     /// <summary>
     /// Gets the appropriate font size for a tile based on the number of digits.
@@ -250,6 +126,18 @@ public partial class TileViewModel : ObservableObject
     public void UpdateValue(int newValue)
     {
         Value = newValue;
+    }
+
+    /// <summary>
+    /// Forces a refresh of the color properties.
+    /// Useful when the app theme changes.
+    /// </summary>
+    public void RefreshColors()
+    {
+#if ANDROID || IOS || MACCATALYST || WINDOWS
+        OnPropertyChanged(nameof(BackgroundColor));
+        OnPropertyChanged(nameof(TextColor));
+#endif
     }
 
     private static TileValueCategory GetValueCategory(int value)

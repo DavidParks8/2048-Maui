@@ -1,5 +1,5 @@
-using TwentyFortyEight.Maui.Helpers;
 using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Helpers;
 using TwentyFortyEight.ViewModels.Models;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -149,7 +149,7 @@ public class TileAnimationService(ISettingsService settingsService)
         IReadOnlyDictionary<TileViewModel, Border> tileBorders
     )
     {
-        Dictionary<TileViewModel, int> newTileValues = new();
+        Dictionary<TileViewModel, int> newTileValues = [];
 
         foreach (var tile in newTiles)
         {
@@ -190,8 +190,8 @@ public class TileAnimationService(ISettingsService settingsService)
         CancellationToken cancellationToken
     )
     {
-        List<Border> overlayTiles = new();
-        List<Task> slideAnimationTasks = new();
+        List<Border> overlayTiles = [];
+        List<Task> slideAnimationTasks = [];
 
         foreach (var movement in tileMovements)
         {
