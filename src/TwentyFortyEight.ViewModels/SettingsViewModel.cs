@@ -73,13 +73,20 @@ public partial class SettingsViewModel : ObservableObject
         // Load remove ads price if purchases are supported
         if (IsPurchaseSupported && !AdsRemoved)
         {
-            _ = LoadRemoveAdsPriceAsync();
+            _ = SafeLoadRemoveAdsPriceAsync();
         }
     }
 
-    private async Task LoadRemoveAdsPriceAsync()
+    private async Task SafeLoadRemoveAdsPriceAsync()
     {
-        RemoveAdsPrice = await _purchaseService.GetPriceAsync(_purchaseService.RemoveAdsProductId);
+        try
+        {
+            RemoveAdsPrice = await _purchaseService.GetPriceAsync(_purchaseService.RemoveAdsProductId);
+        }
+        catch
+        {
+            // Silently ignore errors loading price - the button will show without price
+        }
     }
 
     partial void OnAnimationsEnabledChanged(bool value)
@@ -156,7 +163,9 @@ public partial class SettingsViewModel : ObservableObject
             var restored = await _purchaseService.RestorePurchasesAsync();
             if (restored)
             {
-                AdsRemoved = _settingsService.AdsRemoved;
+                // The restore operation updates settings via AdsService.DisableAds()
+                // Refresh our local state to match
+                AdsRemoved = true;
             }
         }
         finally
