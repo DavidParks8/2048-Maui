@@ -56,6 +56,9 @@ public partial class MainPage : ContentPage
         _scrollBehavior = new ScrollInputBehavior();
         _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
         this.Behaviors.Add(_scrollBehavior);
+
+        // Handle social gaming toolbar items visibility
+        UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
     }
 
     /// <summary>
@@ -286,6 +289,10 @@ public partial class MainPage : ContentPage
                 }
             }
         }
+        else if (e.PropertyName == nameof(GameViewModel.IsSocialGamingAvailable))
+        {
+            UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
+        }
     }
 
     /// <summary>
@@ -375,6 +382,28 @@ public partial class MainPage : ContentPage
             case GestureStatus.Canceled:
                 ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
                 break;
+        }
+    }
+
+    private void UpdateToolbarItems(bool isSocialGamingAvailable)
+    {
+        if (isSocialGamingAvailable)
+        {
+            // Add social gaming toolbar items if not already present
+            if (!ToolbarItems.Contains(ToolbarLeaderboardButton))
+            {
+                ToolbarItems.Insert(0, ToolbarLeaderboardButton);
+            }
+            if (!ToolbarItems.Contains(ToolbarAchievementsButton))
+            {
+                ToolbarItems.Insert(1, ToolbarAchievementsButton);
+            }
+        }
+        else
+        {
+            // Remove social gaming toolbar items
+            ToolbarItems.Remove(ToolbarLeaderboardButton);
+            ToolbarItems.Remove(ToolbarAchievementsButton);
         }
     }
 }

@@ -23,16 +23,14 @@
             Text="🏆 Leaderboard"
             Command="{Binding ShowLeaderboardCommand}"
             Order="Secondary"
-            Priority="0"
-            IsVisible="{Binding IsSocialGamingAvailable}" />
+            Priority="0" />
         <ToolbarItem
             x:Name="ToolbarAchievementsButton"
             AutomationId="ToolbarAchievementsButton"
             Text="🎖️ Achievements"
             Command="{Binding ShowAchievementsCommand}"
             Order="Secondary"
-            Priority="1"
-            IsVisible="{Binding IsSocialGamingAvailable}" />
+            Priority="1" />
         <ToolbarItem
             x:Name="ToolbarSettingsButton"
             AutomationId="ToolbarSettingsButton"
