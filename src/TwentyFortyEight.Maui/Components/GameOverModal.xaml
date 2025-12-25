@@ -25,19 +25,24 @@
             <VerticalStackLayout Spacing="20" HorizontalOptions="Center">
                 
                 <!-- Game Over Title -->
-                <Label Text="{x:Static strings:AppStrings.GameOver}"
+                <Label x:Name="GameOverTitleLabel"
+                       Text="{x:Static strings:AppStrings.GameOver}"
                        FontSize="36"
                        FontAttributes="Bold"
                        TextColor="#f67c5f"
                        HorizontalOptions="Center" />
                 
                 <!-- Score display -->
-                <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
-                    <Label Text="{x:Static strings:AppStrings.YourScore}"
+                <VerticalStackLayout x:Name="ScoreDisplayStack"
+                                     Spacing="5"
+                                     HorizontalOptions="Center">
+                    <Label x:Name="YourScoreLabel"
+                           Text="{x:Static strings:AppStrings.YourScore}"
                            FontSize="16"
                            TextColor="{AppThemeBinding Light=#776e65, Dark=#a0968b}"
                            HorizontalOptions="Center" />
-                    <Label Text="{Binding Score, Source={x:Reference this}}"
+                    <Label x:Name="ModalScoreValue"
+                           Text="{Binding Score, Source={x:Reference this}}"
                            FontSize="48"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
@@ -45,33 +50,26 @@
                 </VerticalStackLayout>
                 
                 <!-- Best score indicator -->
-                <Label Text="{Binding BestScoreText, Source={x:Reference this}}"
+                <Label x:Name="BestScoreIndicator"
+                       Text="{Binding BestScoreText, Source={x:Reference this}}"
                        FontSize="14"
                        TextColor="{AppThemeBinding Light=#bbada0, Dark=#6a6458}"
                        HorizontalOptions="Center" />
                 
                 <!-- New Game Button -->
-                <Border BackgroundColor="#f67c5f"
-                        StrokeThickness="0"
-                        HeightRequest="55"
-                        Padding="30,0"
-                        StrokeShape="RoundRectangle 8"
-                        Margin="0,10,0,0">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding NewGameCommand, Source={x:Reference this}}" />
-                    </Border.GestureRecognizers>
-                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
-                        <Label Text="↻"
-                               FontSize="20"
-                               TextColor="White"
-                               VerticalOptions="Center" />
-                        <Label Text="{x:Static strings:AppStrings.TryAgain}"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="White"
-                               VerticalOptions="Center" />
-                    </HorizontalStackLayout>
-                </Border>
+                <Button x:Name="TryAgainButton"
+                    AutomationId="TryAgainButton"
+                    Command="{Binding NewGameCommand, Source={x:Reference this}}"
+                    Text="{x:Static strings:AppStrings.TryAgain}"
+                    BackgroundColor="#f67c5f"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    HeightRequest="55"
+                    Padding="30,0"
+                    CornerRadius="8"
+                    Margin="0,10,0,0"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.TryAgain}" />
                 
             </VerticalStackLayout>
         </Border>

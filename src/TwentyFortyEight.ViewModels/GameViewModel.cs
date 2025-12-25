@@ -26,9 +26,8 @@ public partial class GameViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly INavigationService _navigationService;
     private readonly ILocalizationService _localizationService;
-    private readonly ISocialGamingService _socialGamingService;
-    private readonly IAchievementTracker _achievementTracker;
-    private readonly IAchievementIdMapper _achievementIdMapper;
+    private readonly IScreenReaderService _screenReaderService;
+    private readonly IHapticService _hapticService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -46,6 +45,18 @@ public partial class GameViewModel : ObservableObject
     /// Debounce timer for saving best score to preferences.
     /// </summary>
     private CancellationTokenSource? _bestScoreSaveDebounce;
+
+    private Task _bestScoreSaveTask = Task.CompletedTask;
+
+    /// <summary>
+    /// Last announced score for screen reader, to avoid frequent announcements.
+    /// </summary>
+    private int _lastAnnouncedScore = 0;
+
+    /// <summary>
+    /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
+    /// </summary>
+    private bool _isInitialized = false;
 
     /// <summary>
     /// The collection of tiles for the game board.
@@ -69,6 +80,37 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _score;
 
+    partial void OnScoreChanged(int value)
+    {
+        // Don't announce during initialization to avoid NullReferenceException
+        // when MAUI's SemanticScreenReader isn't fully initialized yet
+        if (!_isInitialized)
+        {
+            // Still track the score even during initialization
+            if (value >= 0)
+            {
+                _lastAnnouncedScore = value;
+            }
+            return;
+        }
+
+        // Only announce score changes if:
+        // 1. The score is greater than 0 (not a reset)
+        // 2. The score increased by at least 10 points since last announcement
+        // This prevents overwhelming screen reader users with frequent announcements
+        if (value > 0 && value > _lastAnnouncedScore && value - _lastAnnouncedScore >= 10)
+        {
+            _screenReaderService.Announce($"Score: {value}");
+        }
+
+        // Always track the current score for accurate announcement logic
+        // This ensures proper behavior with undo operations
+        if (value >= 0)
+        {
+            _lastAnnouncedScore = value;
+        }
+    }
+
     [ObservableProperty]
     private int _bestScore;
 
@@ -77,6 +119,9 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public int BoardSize => _config.Size;
 
+    [ObservableProperty]
+    private double _boardScaleFactor = 1.0;
+
     partial void OnBestScoreChanged(int value)
     {
         // Debounce preference saving to avoid hammering storage during rapid undos
@@ -84,8 +129,10 @@ public partial class GameViewModel : ObservableObject
         _bestScoreSaveDebounce?.Dispose();
         _bestScoreSaveDebounce = new CancellationTokenSource();
 
-        _ = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
+        _bestScoreSaveTask = DebouncedSaveBestScoreAsync(value, _bestScoreSaveDebounce.Token);
     }
+
+    internal Task WaitForBestScoreSaveAsync() => _bestScoreSaveTask;
 
     private async Task DebouncedSaveBestScoreAsync(int value, CancellationToken cancellationToken)
     {
@@ -106,8 +153,38 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "";
 
+    partial void OnStatusTextChanged(string value)
+    {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        // Announce win status to screen readers
+        if (!string.IsNullOrEmpty(value))
+        {
+            _screenReaderService.Announce(value);
+        }
+    }
+
     [ObservableProperty]
     private bool _isGameOver;
+
+    partial void OnIsGameOverChanged(bool value)
+    {
+        // Don't announce during initialization
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        if (value)
+        {
+            // Announce game over with final score
+            _screenReaderService.Announce($"Game Over! Final score: {Score}");
+        }
+    }
 
     [ObservableProperty]
     private bool _canUndo;
@@ -128,9 +205,8 @@ public partial class GameViewModel : ObservableObject
         IAlertService alertService,
         INavigationService navigationService,
         ILocalizationService localizationService,
-        ISocialGamingService socialGamingService,
-        IAchievementTracker achievementTracker,
-        IAchievementIdMapper achievementIdMapper
+        IScreenReaderService screenReaderService,
+        IHapticService hapticService
     )
     {
         _logger = logger;
@@ -142,9 +218,8 @@ public partial class GameViewModel : ObservableObject
         _alertService = alertService;
         _navigationService = navigationService;
         _localizationService = localizationService;
-        _socialGamingService = socialGamingService;
-        _achievementTracker = achievementTracker;
-        _achievementIdMapper = achievementIdMapper;
+        _screenReaderService = screenReaderService;
+        _hapticService = hapticService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
 
@@ -162,13 +237,8 @@ public partial class GameViewModel : ObservableObject
         LoadGame();
         UpdateUI();
 
-        // Update social gaming availability when service becomes available
-        UpdateSocialGamingAvailability();
-    }
-
-    private void UpdateSocialGamingAvailability()
-    {
-        IsSocialGamingAvailable = _socialGamingService.IsAvailable;
+        // Mark initialization complete - now safe to announce to screen readers
+        _isInitialized = true;
     }
 
     [RelayCommand]
@@ -191,6 +261,9 @@ public partial class GameViewModel : ObservableObject
         }
 
         _engine.NewGame();
+
+        // Reset score announcement tracking before UI update to ensure consistency
+        _lastAnnouncedScore = 0;
 
         UpdateUI();
         SaveGame();
@@ -226,6 +299,12 @@ public partial class GameViewModel : ObservableObject
             var moved = _engine.Move(direction);
             if (moved)
             {
+                // Trigger haptic feedback if enabled and supported
+                if (_settingsService.HapticsEnabled && _hapticService.IsSupported)
+                {
+                    _hapticService.PerformHaptic();
+                }
+
                 // Create a completion source to wait for animation
                 _animationCompletionSource = new TaskCompletionSource<bool>();
 
@@ -269,8 +348,8 @@ public partial class GameViewModel : ObservableObject
 
     private TimeSpan GetAnimationWaitTimeout()
     {
-        // Base animation durations (ms) from TileAnimationService, before speed scaling.
-        const double baseSequenceMs = 220 + 100 + 75 + 100;
+        // Base animation durations (ms) from AnimationConstants, before speed scaling.
+        const double baseSequenceMs = AnimationConstants.BaseTotalSequenceDuration;
         const double bufferMs = 300;
 
         var speed = _settingsService.AnimationSpeed;

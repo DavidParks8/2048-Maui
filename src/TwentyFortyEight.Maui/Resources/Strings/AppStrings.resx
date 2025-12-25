@@ -74,10 +74,10 @@
     <value>BEST</value>
   </data>
   <data name="NewGame" xml:space="preserve">
-    <value>New Game</value>
+    <value>↻ New Game</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>Undo</value>
+    <value>↩ Undo</value>
   </data>
   <data name="CurrentScoreDescription" xml:space="preserve">
     <value>Current score</value>
@@ -101,10 +101,10 @@
     <value>Best: {0}</value>
   </data>
   <data name="TryAgain" xml:space="preserve">
-    <value>Try Again</value>
+    <value>↻ Try Again</value>
   </data>
   <data name="Statistics" xml:space="preserve">
-    <value>Statistics</value>
+    <value>📊 Statistics</value>
   </data>
   <data name="StatisticsPageTitle" xml:space="preserve">
     <value>📊 Statistics</value>
@@ -234,5 +234,11 @@ Keep combining tiles to reach the 2048 tile and win the game!
   </data>
   <data name="AnimationSpeedFast" xml:space="preserve">
     <value>Fast</value>
+  </data>
+  <data name="HapticsSection" xml:space="preserve">
+    <value>HAPTICS</value>
+  </data>
+  <data name="EnableHaptics" xml:space="preserve">
+    <value>Enable Haptic Feedback</value>
   </data>
 </root>

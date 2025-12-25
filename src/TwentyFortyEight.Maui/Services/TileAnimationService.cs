@@ -1,4 +1,5 @@
 using TwentyFortyEight.Maui.Helpers;
+using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -18,26 +19,6 @@ public class TileAnimationService(ISettingsService settingsService)
     /// Default board dimension when actual size cannot be determined.
     /// </summary>
     private const double DefaultBoardDimension = 400;
-
-    /// <summary>
-    /// Base duration of the slide animation in milliseconds.
-    /// </summary>
-    private const uint BaseSlideAnimationDuration = 220;
-
-    /// <summary>
-    /// Base duration of the scale-up animation for merged tiles in milliseconds.
-    /// </summary>
-    private const uint BaseMergePulseUpDuration = 100;
-
-    /// <summary>
-    /// Base duration of the scale-down animation for merged tiles in milliseconds.
-    /// </summary>
-    private const uint BaseMergePulseDownDuration = 75;
-
-    /// <summary>
-    /// Base duration of the scale animation for new tiles in milliseconds.
-    /// </summary>
-    private const uint BaseNewTileScaleDuration = 100;
 
     /// <summary>
     /// Default animation speed when the setting is invalid.
@@ -83,12 +64,14 @@ public class TileAnimationService(ISettingsService settingsService)
     /// <param name="gameBoard">The game board Grid element.</param>
     /// <param name="boardSize">The size of the board (e.g., 4 for 4x4).</param>
     /// <param name="tileBorders">Dictionary mapping TileViewModels to their Border elements.</param>
+    /// <param name="scaleFactor">The scale factor for responsive font sizing.</param>
     /// <param name="cancellationToken">Token to cancel the animation.</param>
     public async Task AnimateAsync(
         TileUpdateEventArgs args,
         Grid gameBoard,
         int boardSize,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
+        double scaleFactor,
         CancellationToken cancellationToken
     )
     {
@@ -134,6 +117,7 @@ public class TileAnimationService(ISettingsService settingsService)
             gameBoard,
             cellStepX,
             cellStepY,
+            scaleFactor,
             cancellationToken
         );
 
@@ -202,6 +186,7 @@ public class TileAnimationService(ISettingsService settingsService)
         Grid gameBoard,
         double cellStepX,
         double cellStepY,
+        double scaleFactor,
         CancellationToken cancellationToken
     )
     {
@@ -212,7 +197,7 @@ public class TileAnimationService(ISettingsService settingsService)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var overlayBorder = CreateOverlayTile(movement.Value);
+            var overlayBorder = CreateOverlayTile(movement.Value, scaleFactor);
             overlayTiles.Add(overlayBorder);
 
             Grid.SetRow(overlayBorder, movement.From.Row);
@@ -226,7 +211,7 @@ public class TileAnimationService(ISettingsService settingsService)
                 overlayBorder.TranslateToAsync(
                     translateX,
                     translateY,
-                    GetAdjustedDuration(BaseSlideAnimationDuration),
+                    GetAdjustedDuration(AnimationConstants.BaseSlideAnimationDuration),
                     Easing.CubicOut
                 )
             );
@@ -257,12 +242,12 @@ public class TileAnimationService(ISettingsService settingsService)
                     border.Scale = 0.8;
                     await border.ScaleToAsync(
                         1.2,
-                        GetAdjustedDuration(BaseMergePulseUpDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseMergePulseUpDuration),
                         Easing.CubicOut
                     );
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(BaseMergePulseDownDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseMergePulseDownDuration),
                         Easing.CubicIn
                     );
                 }
@@ -296,7 +281,7 @@ public class TileAnimationService(ISettingsService settingsService)
                     await Task.Delay(UiUpdateDelay, cancellationToken);
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(BaseNewTileScaleDuration),
+                        GetAdjustedDuration(AnimationConstants.BaseNewTileScaleDuration),
                         Easing.CubicOut
                     );
                 }
@@ -306,10 +291,11 @@ public class TileAnimationService(ISettingsService settingsService)
         await Task.WhenAll(newTileTasks);
     }
 
-    private static Border CreateOverlayTile(int value)
+    private static Border CreateOverlayTile(int value, double scaleFactor)
     {
         var backgroundColor = TileColorHelper.GetTileBackgroundColor(value);
         var textColor = TileColorHelper.GetTileTextColor(value);
+        var baseFontSize = TileViewModel.GetTileFontSize(value);
 
         return new Border
         {
@@ -321,7 +307,7 @@ public class TileAnimationService(ISettingsService settingsService)
             Content = new Label
             {
                 Text = value.ToString(),
-                FontSize = 32,
+                FontSize = baseFontSize * scaleFactor,
                 FontAttributes = FontAttributes.Bold,
                 TextColor = textColor,
                 HorizontalOptions = LayoutOptions.Center,

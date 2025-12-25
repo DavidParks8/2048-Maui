@@ -14,10 +14,17 @@ public partial class MainPage : ContentPage
     private readonly Dictionary<TileViewModel, Border> _tileBorders = new();
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
+    private readonly GamepadInputBehavior _gamepadBehavior;
+    private readonly ScrollInputBehavior _scrollBehavior;
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
     private Point _panAccumulator;
+
+    // Responsive sizing
+    private const double DefaultBoardSize = 400;
+    private const double MinBoardSize = 280;
+    private const double MaxBoardSize = 500;
 
     public MainPage(GameViewModel viewModel, TileAnimationService animationService)
     {
@@ -40,6 +47,16 @@ public partial class MainPage : ContentPage
         _keyboardBehavior = new KeyboardInputBehavior();
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
         this.Behaviors.Add(_keyboardBehavior);
+
+        // Set up gamepad/controller handling via platform behavior
+        _gamepadBehavior = new GamepadInputBehavior();
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        this.Behaviors.Add(_gamepadBehavior);
+
+        // Set up scroll/trackpad handling via platform behavior (desktop only)
+        _scrollBehavior = new ScrollInputBehavior();
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
+        this.Behaviors.Add(_scrollBehavior);
     }
 
     /// <summary>
@@ -65,6 +82,16 @@ public partial class MainPage : ContentPage
         _viewModel.MoveCommand.Execute(direction);
     }
 
+    private void OnGamepadDirectionPressed(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
+
+    private void OnScrollDirectionPressed(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
+
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
         _pointerStartPoint = e.GetPosition(RootLayout);
@@ -77,7 +104,10 @@ public partial class MainPage : ContentPage
 
         var endPoint = e.GetPosition(RootLayout);
         if (endPoint is null)
+        {
+            _pointerStartPoint = null;
             return;
+        }
 
         var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
         var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
@@ -94,10 +124,16 @@ public partial class MainPage : ContentPage
         // Re-subscribe to events (they are unsubscribed in OnDisappearing)
         // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
         _viewModel.TilesUpdated -= OnTilesUpdated;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
     }
 
     protected override void OnDisappearing()
@@ -111,7 +147,51 @@ public partial class MainPage : ContentPage
 
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
+        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
+        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
+    }
+
+    protected override void OnSizeAllocated(double width, double height)
+    {
+        base.OnSizeAllocated(width, height);
+
+        if (width <= 0 || height <= 0)
+            return;
+
+        UpdateBoardSize(width, height);
+    }
+
+    private void UpdateBoardSize(double pageWidth, double pageHeight)
+    {
+        // Cancel any ongoing animations during resize
+        _animationCts?.Cancel();
+
+        // Account for padding and non-board UI elements
+        const double horizontalReserved = 80; // 20px page padding + 10px border padding + 20px safety margin on each side
+        const double verticalReserved = 280; // header ~80px, status ~30px, controls ~70px, spacing ~30px, padding 40px, board padding 20px, margins ~10px
+
+        double availableWidth = pageWidth - horizontalReserved;
+        double availableHeight = pageHeight - verticalReserved;
+
+        // Take the smaller dimension to maintain square aspect ratio
+        double targetSize = Math.Min(availableWidth, availableHeight);
+
+        // Apply min/max constraints
+        double boardSize = Math.Clamp(targetSize, MinBoardSize, MaxBoardSize);
+
+        // Apply to GameBoard
+        GameBoard.WidthRequest = boardSize;
+        GameBoard.HeightRequest = boardSize;
+
+        // Calculate and update scale factor for font sizes
+        _viewModel.BoardScaleFactor = boardSize / DefaultBoardSize;
+
+        // Scale tile spacing for very small boards
+        double tileSpacing = Math.Max(5, boardSize / 40);
+        GameBoard.ColumnSpacing = tileSpacing;
+        GameBoard.RowSpacing = tileSpacing;
     }
 
     [UnconditionalSuppressMessage(
@@ -161,7 +241,16 @@ public partial class MainPage : ContentPage
             var label = (Label)border.Content;
             label.SetBinding(Label.TextProperty, nameof(tile.DisplayValue));
             label.SetBinding(Label.TextColorProperty, nameof(tile.TextColor));
-            label.SetBinding(Label.FontSizeProperty, nameof(tile.FontSize));
+
+            // Bind FontSize with scale converter
+            var fontSizeBinding = new Binding
+            {
+                Path = nameof(tile.FontSize),
+                Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
+                ConverterParameter = _viewModel.BoardScaleFactor,
+            };
+
+            label.SetBinding(Label.FontSizeProperty, fontSizeBinding);
 
             border.BindingContext = tile;
 
@@ -172,6 +261,35 @@ public partial class MainPage : ContentPage
             _tileBorders[tile] = border;
 
             GameBoard.Children.Add(border);
+        }
+
+        // Subscribe once to BoardScaleFactor changes to update all label font size bindings
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(
+        object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e
+    )
+    {
+        if (e.PropertyName == nameof(_viewModel.BoardScaleFactor))
+        {
+            // Update font size bindings for all tiles with new scale factor
+            foreach (var border in _tileBorders.Values)
+            {
+                if (border.Content is Label label)
+                {
+                    // Create a new binding with updated ConverterParameter
+                    var fontSizeBinding = new Binding
+                    {
+                        Path = "FontSize",
+                        Converter = (IValueConverter)Resources["FontSizeScaleConverter"],
+                        ConverterParameter = _viewModel.BoardScaleFactor,
+                    };
+
+                    label.SetBinding(Label.FontSizeProperty, fontSizeBinding);
+                }
+            }
         }
     }
 
@@ -224,6 +342,7 @@ public partial class MainPage : ContentPage
                 GameBoard,
                 _viewModel.BoardSize,
                 _tileBorders,
+                _viewModel.BoardScaleFactor,
                 _animationCts.Token
             );
         }

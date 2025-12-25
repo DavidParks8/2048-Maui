@@ -24,6 +24,8 @@ public class GameViewModelTests
     private Mock<IAlertService> _alertServiceMock = null!;
     private Mock<INavigationService> _navigationServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
+    private Mock<IScreenReaderService> _screenReaderServiceMock = null!;
+    private Mock<IHapticService> _hapticServiceMock = null!;
 
     [TestInitialize]
     public void Setup()
@@ -37,9 +39,13 @@ public class GameViewModelTests
         _alertServiceMock = new Mock<IAlertService>();
         _navigationServiceMock = new Mock<INavigationService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
+        _screenReaderServiceMock = new Mock<IScreenReaderService>();
+        _hapticServiceMock = new Mock<IHapticService>();
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.AnimationSpeed).Returns(1.0);
+        _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
+        _hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
         _preferencesServiceMock
             .Setup(p => p.GetInt(It.IsAny<string>(), It.IsAny<int>()))
             .Returns(0);
@@ -63,7 +69,9 @@ public class GameViewModelTests
             _preferencesServiceMock.Object,
             _alertServiceMock.Object,
             _navigationServiceMock.Object,
-            _localizationServiceMock.Object
+            _localizationServiceMock.Object,
+            _screenReaderServiceMock.Object,
+            _hapticServiceMock.Object
         );
     }
 
@@ -180,8 +188,7 @@ public class GameViewModelTests
         // Act
         viewModel.BestScore = 1000;
 
-        // Wait for debounce delay (500ms) plus buffer
-        await Task.Delay(600);
+        await viewModel.WaitForBestScoreSaveAsync();
 
         // Assert
         _preferencesServiceMock.Verify(p => p.SetInt("BestScore", 1000), Times.Once);
