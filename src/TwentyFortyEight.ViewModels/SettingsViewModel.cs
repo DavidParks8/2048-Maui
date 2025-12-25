@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels;
@@ -13,6 +14,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IHapticService _hapticService;
     private readonly IAdsService _adsService;
     private readonly IInAppPurchaseService _purchaseService;
+    private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty]
     private bool _animationsEnabled;
@@ -57,12 +59,14 @@ public partial class SettingsViewModel : ObservableObject
         ISettingsService settingsService,
         IHapticService hapticService,
         IAdsService adsService,
-        IInAppPurchaseService purchaseService)
+        IInAppPurchaseService purchaseService,
+        ILogger<SettingsViewModel> logger)
     {
         _settingsService = settingsService;
         _hapticService = hapticService;
         _adsService = adsService;
         _purchaseService = purchaseService;
+        _logger = logger;
 
         // Load current settings
         _animationsEnabled = _settingsService.AnimationsEnabled;
@@ -83,9 +87,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             RemoveAdsPrice = await _purchaseService.GetPriceAsync(_purchaseService.RemoveAdsProductId);
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently ignore errors loading price - the button will show without price
+            LogLoadPriceFailed(ex);
         }
     }
 
@@ -173,4 +177,7 @@ public partial class SettingsViewModel : ObservableObject
             IsPurchaseInProgress = false;
         }
     }
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to load remove ads price")]
+    partial void LogLoadPriceFailed(Exception ex);
 }

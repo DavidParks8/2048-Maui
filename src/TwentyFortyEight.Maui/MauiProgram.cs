@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using Plugin.MauiMTAdmob;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Services;
@@ -13,7 +14,12 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
-        builder.UseMauiApp<App>().UseMauiCommunityToolkit().UseSkiaSharp().ConfigureFonts(_ => { });
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseSkiaSharp()
+            .UseMauiMTAdmob()
+            .ConfigureFonts(_ => { });
 
 #if DEBUG
         builder.Logging.AddDebug();

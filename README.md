@@ -196,7 +196,9 @@ This project uses modern .NET scaffolding:
 
 ## Ads and In-App Purchases
 
-The app includes infrastructure for displaying ads and processing in-app purchases to remove ads. The implementation provides the following services:
+The app includes full support for displaying ads and processing in-app purchases to remove ads using:
+- **Plugin.MauiMTAdmob** for cross-platform AdMob ads (Android, iOS, Mac Catalyst)
+- **Plugin.InAppBilling** for cross-platform in-app purchases (Android, iOS, Windows)
 
 ### Services
 
@@ -208,26 +210,9 @@ The app includes infrastructure for displaying ads and processing in-app purchas
 Platform-specific product IDs and ad unit IDs are configured in:
 - `src/TwentyFortyEight.Maui/Services/PlatformProductIds.cs`
 
-### Integration
-
-To integrate with actual ad and IAP SDKs:
-
-1. **Android (Google AdMob + Play Billing)**:
-   - Add `Plugin.AdMob` or `Xamarin.GooglePlayServices.Ads` NuGet package
-   - Add `Xamarin.Android.Google.BillingClient` NuGet package
-   - Set `IsSupported = true` in `AdsService.cs` and `InAppPurchaseService.cs`
-   - Implement the SDK-specific code in the TODO sections
-
-2. **iOS (Google AdMob + StoreKit)**:
-   - Add `Xamarin.Google.iOS.MobileAds` NuGet package
-   - StoreKit is built into the iOS SDK
-   - Set `IsSupported = true` in `AdsService.cs` and `InAppPurchaseService.cs`
-   - Implement the SDK-specific code in the TODO sections
-
-3. **Windows (Microsoft Store)**:
-   - Windows.Services.Store is built into the Windows SDK
-   - Set `IsSupported = true` in the services
-   - Implement the SDK-specific code in the TODO sections
+**Important**: Replace the test ad unit IDs with your production IDs before publishing:
+- Android: Get IDs from [AdMob Console](https://admob.google.com/)
+- iOS: Get IDs from [AdMob Console](https://admob.google.com/)
 
 ### Developer Console Setup
 

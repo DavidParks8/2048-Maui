@@ -86,6 +86,8 @@
     <PackageReference Include="CommunityToolkit.Maui" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.Views.Maui.Controls" />
+    <PackageReference Include="Plugin.MauiMTAdmob" />
+    <PackageReference Include="Plugin.InAppBilling" />
   </ItemGroup>
 
   <ItemGroup>

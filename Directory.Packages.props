@@ -19,6 +19,9 @@
     <!-- Skia (cross-platform shader-capable rendering) -->
     <PackageVersion Include="SkiaSharp" Version="2.88.9" />
     <PackageVersion Include="SkiaSharp.Views.Maui.Controls" Version="2.88.9" />
+    <!-- Ads and In-App Purchases -->
+    <PackageVersion Include="Plugin.MauiMTAdmob" Version="2.2.0" />
+    <PackageVersion Include="Plugin.InAppBilling" Version="10.0.0" />
     <!-- Testing Dependencies -->
     <PackageVersion Include="Moq" Version="4.18.4" />
     <!-- Code Formatting -->

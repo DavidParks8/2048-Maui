@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
@@ -14,6 +15,7 @@ public class SettingsViewModelTests
     private Mock<IHapticService> _hapticServiceMock = null!;
     private Mock<IAdsService> _adsServiceMock = null!;
     private Mock<IInAppPurchaseService> _purchaseServiceMock = null!;
+    private Mock<ILogger<SettingsViewModel>> _loggerMock = null!;
 
     [TestInitialize]
     public void Setup()
@@ -22,6 +24,7 @@ public class SettingsViewModelTests
         _hapticServiceMock = new Mock<IHapticService>();
         _adsServiceMock = new Mock<IAdsService>();
         _purchaseServiceMock = new Mock<IInAppPurchaseService>();
+        _loggerMock = new Mock<ILogger<SettingsViewModel>>();
 
         // Default setup
         _settingsServiceMock.Setup(s => s.AnimationsEnabled).Returns(true);
@@ -40,7 +43,8 @@ public class SettingsViewModelTests
             _settingsServiceMock.Object,
             _hapticServiceMock.Object,
             _adsServiceMock.Object,
-            _purchaseServiceMock.Object);
+            _purchaseServiceMock.Object,
+            _loggerMock.Object);
     }
 
     [TestMethod]

@@ -1,28 +1,24 @@
 using Microsoft.Extensions.Logging;
+using Plugin.MauiMTAdmob;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// Implementation of IAdsService.
-/// This is a placeholder implementation that provides the infrastructure for ads integration.
-/// 
-/// To integrate with actual ad SDKs:
-/// - Android: Add Plugin.AdMob or Xamarin.GooglePlayServices.Ads NuGet package
-/// - iOS: Add Xamarin.Google.iOS.MobileAds NuGet package
-/// - Windows: Consider community ad solutions or Microsoft Advertising SDK
-/// 
-/// See PlatformProductIds.cs for ad unit IDs configuration.
+/// Implementation of IAdsService using Plugin.MauiMTAdmob for cross-platform AdMob support.
+/// Supports Android, iOS, and Mac Catalyst.
 /// </summary>
 public sealed partial class AdsService(
     ISettingsService settingsService,
     ILogger<AdsService> logger) : IAdsService
 {
+    private bool _isInitialized;
+    private bool _isBannerVisible;
+
     /// <summary>
     /// Gets whether ads are supported on this platform.
-    /// Set to true when integrating with an actual ad SDK.
     /// </summary>
-    public bool IsSupported => false; // TODO: Set to true after integrating ad SDK
+    public bool IsSupported => true;
 
     /// <summary>
     /// Gets whether ads are currently enabled (supported and not removed via purchase).
@@ -30,21 +26,33 @@ public sealed partial class AdsService(
     public bool AreAdsEnabled => IsSupported && !settingsService.AdsRemoved;
 
     /// <summary>
+    /// Gets the banner ad unit ID for the current platform.
+    /// Implemented in platform-specific partial class files.
+    /// </summary>
+    private static partial string GetBannerAdUnitId();
+
+    /// <summary>
     /// Initializes the ads service.
     /// </summary>
     public Task InitializeAsync()
     {
-        if (!IsSupported)
+        if (_isInitialized)
         {
-            LogAdsNotSupported();
             return Task.CompletedTask;
         }
 
-        // TODO: Initialize ad SDK here
-        // Example for AdMob:
-        // MobileAds.Initialize(context);
+        try
+        {
+            CrossMauiMTAdmob.Current.OnInterstitialLoaded += OnInterstitialLoaded;
+            CrossMauiMTAdmob.Current.OnInterstitialFailedToLoad += OnInterstitialFailedToLoad;
+            _isInitialized = true;
+            LogAdsInitialized();
+        }
+        catch (Exception ex)
+        {
+            LogAdsInitializationFailed(ex);
+        }
 
-        LogAdsInitialized();
         return Task.CompletedTask;
     }
 
@@ -53,17 +61,21 @@ public sealed partial class AdsService(
     /// </summary>
     public void ShowBannerAd(object container)
     {
-        if (!AreAdsEnabled)
+        if (!AreAdsEnabled || _isBannerVisible)
         {
             return;
         }
 
-        // TODO: Implement banner ad display
-        // Example for AdMob:
-        // var adView = new AdView(context) { AdUnitId = PlatformProductIds.Android.BannerAdUnitId };
-        // adView.LoadAd(new AdRequest.Builder().Build());
-
-        LogBannerAdRequested();
+        try
+        {
+            CrossMauiMTAdmob.Current.LoadBanner(GetBannerAdUnitId());
+            _isBannerVisible = true;
+            LogBannerAdShown();
+        }
+        catch (Exception ex)
+        {
+            LogShowBannerAdFailed(ex);
+        }
     }
 
     /// <summary>
@@ -71,8 +83,21 @@ public sealed partial class AdsService(
     /// </summary>
     public void HideBannerAd()
     {
-        // TODO: Implement banner ad hiding
-        LogBannerAdHidden();
+        if (!_isBannerVisible)
+        {
+            return;
+        }
+
+        try
+        {
+            CrossMauiMTAdmob.Current.HideBanner();
+            _isBannerVisible = false;
+            LogBannerAdHidden();
+        }
+        catch (Exception ex)
+        {
+            LogHideBannerAdFailed(ex);
+        }
     }
 
     /// <summary>
@@ -85,18 +110,40 @@ public sealed partial class AdsService(
         LogAdsDisabled();
     }
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "Ads not supported on this platform")]
-    partial void LogAdsNotSupported();
+    private void OnInterstitialLoaded(object? sender, EventArgs e)
+    {
+        LogInterstitialLoaded();
+    }
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Ads service initialized")]
+    private void OnInterstitialFailedToLoad(object? sender, EventArgs e)
+    {
+        LogInterstitialFailedToLoad();
+    }
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Ads service initialized")]
     partial void LogAdsInitialized();
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Banner ad requested")]
-    partial void LogBannerAdRequested();
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to initialize ads service")]
+    partial void LogAdsInitializationFailed(Exception ex);
 
-    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "Banner ad hidden")]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Banner ad shown")]
+    partial void LogBannerAdShown();
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "Failed to show banner ad")]
+    partial void LogShowBannerAdFailed(Exception ex);
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = "Banner ad hidden")]
     partial void LogBannerAdHidden();
 
-    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Ads disabled via purchase")]
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Failed to hide banner ad")]
+    partial void LogHideBannerAdFailed(Exception ex);
+
+    [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "Ads disabled via purchase")]
     partial void LogAdsDisabled();
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Debug, Message = "Interstitial ad loaded")]
+    partial void LogInterstitialLoaded();
+
+    [LoggerMessage(EventId = 9, Level = LogLevel.Warning, Message = "Interstitial ad failed to load")]
+    partial void LogInterstitialFailedToLoad();
 }
