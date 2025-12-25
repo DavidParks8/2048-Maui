@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Helpers;
 using TwentyFortyEight.ViewModels.Models;
@@ -108,8 +109,8 @@ public class TileAnimationService(ISettingsService settingsService)
         // Store new tile values and hide them during slide animation
         var newTileValues = PrepareNewTiles(args.NewTiles, tileBorders);
 
-        // Hide merged tiles initially
-        PrepareMergedTiles(args.MergedTiles, tileBorders);
+        // Prepare destination tiles (both merged and simple moves) to look empty
+        var savedDestinationValues = PrepareDestinationTiles(args.TileMovements, tileBorders);
 
         // Animate slide movements
         var overlayTiles = await AnimateSlideMovementsAsync(
@@ -126,6 +127,9 @@ public class TileAnimationService(ISettingsService settingsService)
         {
             gameBoard.Children.Remove(overlay);
         }
+
+        // Restore destination tiles to their actual values
+        RestoreDestinationTiles(savedDestinationValues);
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -166,18 +170,38 @@ public class TileAnimationService(ISettingsService settingsService)
         return newTileValues;
     }
 
-    private static void PrepareMergedTiles(
-        IReadOnlySet<TileViewModel> mergedTiles,
+    private static Dictionary<TileViewModel, int> PrepareDestinationTiles(
+        IReadOnlyList<Core.TileMovement> movements,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders
     )
     {
-        foreach (var tile in mergedTiles)
+        var tileMap = tileBorders.Keys.ToDictionary(t => (t.Row, t.Column));
+        Dictionary<TileViewModel, int> savedValues = [];
+
+        foreach (var movement in movements)
         {
-            if (tileBorders.TryGetValue(tile, out var border))
+            if (tileMap.TryGetValue((movement.To.Row, movement.To.Column), out var tile))
             {
-                border.Opacity = 0;
-                border.Scale = 1;
+                if (savedValues.TryAdd(tile, tile.Value))
+                {
+                    tile.UpdateValue(0); // Show as empty cell during slide animation
+
+                    if (tileBorders.TryGetValue(tile, out var border))
+                    {
+                        border.Opacity = 1;
+                        border.Scale = 1;
+                    }
+                }
             }
+        }
+        return savedValues;
+    }
+
+    private static void RestoreDestinationTiles(Dictionary<TileViewModel, int> savedValues)
+    {
+        foreach (var (tile, value) in savedValues)
+        {
+            tile.UpdateValue(value);
         }
     }
 
