@@ -18,7 +18,7 @@
     <ApplicationTitle>2048 MAUI</ApplicationTitle>
     
     <!-- App Identifier -->
-    <ApplicationId>com.davidparks.twentyfourtyeight</ApplicationId>
+    <ApplicationId>com.dappermagna.2048</ApplicationId>
     
     <!-- Versions -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
