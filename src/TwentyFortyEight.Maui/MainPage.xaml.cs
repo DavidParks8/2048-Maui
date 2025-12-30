@@ -72,6 +72,8 @@ public partial class MainPage : ContentPage
     /// <summary>
     /// Sets up gesture recognizers for cross-platform swipe detection.
     /// Uses both Pan and Pointer gestures for maximum compatibility.
+    /// Adds gestures to both RootLayout and BoardContainer to ensure
+    /// swipes work on the board itself (important for Android/iOS).
     /// </summary>
     private void SetupGestureRecognizers()
     {
@@ -85,6 +87,18 @@ public partial class MainPage : ContentPage
         pointerGesture.PointerPressed += OnPointerPressed;
         pointerGesture.PointerReleased += OnPointerReleased;
         RootLayout.GestureRecognizers.Add(pointerGesture);
+
+        // Also add gesture recognizers to the BoardContainer to ensure swipes
+        // on the board are detected on Android/iOS where child gesture recognizers
+        // can prevent event bubbling to the parent
+        PanGestureRecognizer boardPanGesture = new();
+        boardPanGesture.PanUpdated += OnPanUpdated;
+        BoardContainer.GestureRecognizers.Add(boardPanGesture);
+
+        PointerGestureRecognizer boardPointerGesture = new();
+        boardPointerGesture.PointerPressed += OnPointerPressed;
+        boardPointerGesture.PointerReleased += OnPointerReleased;
+        BoardContainer.GestureRecognizers.Add(boardPointerGesture);
     }
 
     private void OnKeyboardDirectionPressed(object? sender, Direction direction)
