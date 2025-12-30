@@ -2,10 +2,6 @@ using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
-/// <summary>
-/// Default implementation of ISocialGamingService for platforms without social gaming support.
-/// Platform-specific implementations should be placed in their respective platform folders.
-/// </summary>
 public partial class SocialGamingService : ISocialGamingService
 {
     public bool IsAvailable => false;

@@ -18,14 +18,14 @@
     <ApplicationTitle>2048 MAUI</ApplicationTitle>
     
     <!-- App Identifier -->
-    <ApplicationId>com.dappermagna.2048</ApplicationId>
+    <ApplicationId>com.dappermagna.twentyfourtyeight</ApplicationId>
     
     <!-- Versions -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     
     <!-- Android specific -->
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>
     
     <!-- iOS/Mac Catalyst specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
@@ -46,6 +46,11 @@
     <!-- Disable NativeAOT for Android due to SkiaSharp compatibility issues -->
     <PublishAot Condition="'$(TargetFramework)' != 'net10.0-android'">true</PublishAot>
     <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'">true</RunAOTCompilation>
+  </PropertyGroup>
+  
+  <!-- Disable Fast Deployment for Android to fix manual APK installation crashes -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,3 +2,12 @@
 
 # CsWinRT1030: Project does not enable unsafe blocks
 dotnet_diagnostic.CsWinRT1030.severity = none
+
+# CA1416: Platform compatibility analyzer - suppress for MAUI platform-specific code
+# Platform folders contain code that is only called from platform-specific entry points
+[**/Platforms/**/*.cs]
+dotnet_diagnostic.CA1416.severity = none
+
+# CA1416: Also suppress for MauiProgram.cs since it's only called from platform entry points
+[**/MauiProgram.cs]
+dotnet_diagnostic.CA1416.severity = none

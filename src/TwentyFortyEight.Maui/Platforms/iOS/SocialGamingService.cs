@@ -2,6 +2,7 @@ using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.ViewModels.Services;
+using UIKit;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -60,7 +61,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                 else
                 {
                     // Successfully authenticated
-                    _isAuthenticated = GKLocalPlayer.Local.IsAuthenticated;
+                    _isAuthenticated = GKLocalPlayer.Local.Authenticated;
                     LogAuthenticationResult(_isAuthenticated);
                     tcs.TrySetResult(_isAuthenticated);
                 }
@@ -157,9 +158,11 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var viewController = new GKGameCenterViewController();
-                viewController.ViewState = GKGameCenterViewControllerState.Leaderboards;
-                viewController.LeaderboardIdentifier = PlatformAchievementIds.iOS.LeaderboardId;
+                GKGameCenterViewController viewController = new(string.Empty)
+                {
+                    ViewState = GKGameCenterViewControllerState.Leaderboards,
+                    LeaderboardIdentifier = PlatformAchievementIds.iOS.LeaderboardId,
+                };
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
@@ -199,8 +202,10 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var viewController = new GKGameCenterViewController();
-                viewController.ViewState = GKGameCenterViewControllerState.Achievements;
+                GKGameCenterViewController viewController = new(string.Empty)
+                {
+                    ViewState = GKGameCenterViewControllerState.Achievements,
+                };
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);

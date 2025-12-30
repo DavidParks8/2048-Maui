@@ -118,7 +118,7 @@ public partial class GamepadInputBehavior
     private void SetupExtendedGamepad(GCExtendedGamepad gamepad)
     {
         // D-pad handlers
-        gamepad.Dpad.Up.PressedChangedHandler = (_, _, pressed) =>
+        gamepad.DPad.Up.PressedChangedHandler = (_, _, pressed) =>
         {
             if (pressed)
             {
@@ -126,7 +126,7 @@ public partial class GamepadInputBehavior
             }
         };
 
-        gamepad.Dpad.Down.PressedChangedHandler = (_, _, pressed) =>
+        gamepad.DPad.Down.PressedChangedHandler = (_, _, pressed) =>
         {
             if (pressed)
             {
@@ -134,7 +134,7 @@ public partial class GamepadInputBehavior
             }
         };
 
-        gamepad.Dpad.Left.PressedChangedHandler = (_, _, pressed) =>
+        gamepad.DPad.Left.PressedChangedHandler = (_, _, pressed) =>
         {
             if (pressed)
             {
@@ -142,7 +142,7 @@ public partial class GamepadInputBehavior
             }
         };
 
-        gamepad.Dpad.Right.PressedChangedHandler = (_, _, pressed) =>
+        gamepad.DPad.Right.PressedChangedHandler = (_, _, pressed) =>
         {
             if (pressed)
             {
