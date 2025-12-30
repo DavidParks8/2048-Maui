@@ -24,7 +24,10 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
 
         foreach (var scene in connectedScenes)
         {
-            if (scene is UIWindowScene windowScene && windowScene.ActivationState == UISceneActivationState.ForegroundActive)
+            if (
+                scene is UIWindowScene windowScene
+                && windowScene.ActivationState == UISceneActivationState.ForegroundActive
+            )
             {
                 foreach (var window in windowScene.Windows)
                 {
@@ -122,7 +125,8 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                     (nint)score,
                     0, // context
                     GKLocalPlayer.Local,
-                    [PlatformAchievementIds.iOS.LeaderboardId]);
+                    [PlatformAchievementIds.iOS.LeaderboardId]
+                );
                 LogScoreSubmitted(score);
             });
         }
@@ -186,12 +190,15 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
+#pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
                 var viewController = new GKGameCenterViewController(
-                    GKGameCenterViewControllerState.Leaderboards);
+                    GKGameCenterViewControllerState.Leaderboards
+                );
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
+#pragma warning restore CA1422
 
                 var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
@@ -225,12 +232,15 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
+#pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
                 var viewController = new GKGameCenterViewController(
-                    GKGameCenterViewControllerState.Achievements);
+                    GKGameCenterViewControllerState.Achievements
+                );
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
+#pragma warning restore CA1422
 
                 var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
