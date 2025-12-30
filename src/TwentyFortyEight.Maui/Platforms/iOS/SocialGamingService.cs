@@ -16,6 +16,38 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
 
     public bool IsAvailable => _isAuthenticated;
 
+    private static UIWindow? GetKeyWindow()
+    {
+        var connectedScenes = UIApplication.SharedApplication?.ConnectedScenes;
+        if (connectedScenes == null)
+            return null;
+
+        foreach (var scene in connectedScenes)
+        {
+            if (scene is UIWindowScene windowScene && windowScene.ActivationState == UISceneActivationState.ForegroundActive)
+            {
+                foreach (var window in windowScene.Windows)
+                {
+                    if (window.IsKeyWindow)
+                        return window;
+                }
+                // Return first window if no key window found
+                return windowScene.Windows.FirstOrDefault();
+            }
+        }
+
+        // Fallback to any window scene
+        foreach (var scene in connectedScenes)
+        {
+            if (scene is UIWindowScene windowScene)
+            {
+                return windowScene.Windows.FirstOrDefault();
+            }
+        }
+
+        return null;
+    }
+
     public async Task AuthenticateAsync()
     {
         try
@@ -29,9 +61,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                     // Present the Game Center login view controller
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        var window =
-                            UIApplication.SharedApplication?.KeyWindow
-                            ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                        var window = GetKeyWindow();
                         var rootViewController = window?.RootViewController;
 
                         if (rootViewController != null)
@@ -88,13 +118,11 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                var scoreReporter = new GKScore(PlatformAchievementIds.iOS.LeaderboardId)
-                {
-                    Value = score,
-                };
-
-                var scores = new[] { scoreReporter };
-                await GKScore.ReportScoresAsync(scores);
+                await GKLeaderboard.SubmitScoreAsync(
+                    (nint)score,
+                    0, // context
+                    GKLocalPlayer.Local,
+                    [PlatformAchievementIds.iOS.LeaderboardId]);
                 LogScoreSubmitted(score);
             });
         }
@@ -158,19 +186,14 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                GKGameCenterViewController viewController = new(string.Empty)
-                {
-                    ViewState = GKGameCenterViewControllerState.Leaderboards,
-                    LeaderboardIdentifier = PlatformAchievementIds.iOS.LeaderboardId,
-                };
+                var viewController = new GKGameCenterViewController(
+                    GKGameCenterViewControllerState.Leaderboards);
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
 
-                var window =
-                    UIApplication.SharedApplication?.KeyWindow
-                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
 
                 if (rootViewController != null)
@@ -202,18 +225,14 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                GKGameCenterViewController viewController = new(string.Empty)
-                {
-                    ViewState = GKGameCenterViewControllerState.Achievements,
-                };
+                var viewController = new GKGameCenterViewController(
+                    GKGameCenterViewControllerState.Achievements);
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
 
-                var window =
-                    UIApplication.SharedApplication?.KeyWindow
-                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
 
                 if (rootViewController != null)
