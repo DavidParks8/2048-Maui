@@ -4,6 +4,7 @@
    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
    xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
    xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
+   xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
    x:Class="TwentyFortyEight.Maui.SettingsPage"
    x:DataType="vm:SettingsViewModel"
    Title="{x:Static strings:AppStrings.SettingsPageTitle}"
@@ -29,26 +30,11 @@
                <VerticalStackLayout Spacing="0">
 
                   <!-- Enable Animations Toggle -->
-                  <Grid x:Name="AnimationsToggleGrid"
-                        ColumnDefinitions="*,Auto"
-                        ColumnSpacing="16"
-                        Padding="16,12">
-                     <Label x:Name="EnableAnimationsLabel"
-                        Grid.Column="0"
-                        Text="{x:Static strings:AppStrings.EnableAnimations}"
-                        FontSize="17"
-                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-                        VerticalOptions="Center" />
-                     <Switch x:Name="AnimationsEnabledSwitch"
-                        AutomationId="AnimationsEnabledSwitch"
-                        Grid.Column="1"
-                        IsToggled="{Binding AnimationsEnabled}"
-                        OnColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
-                        ThumbColor="White"
-                        VerticalOptions="Center"
-                        SemanticProperties.Description="{x:Static strings:AppStrings.EnableAnimations}"
-                        SemanticProperties.Hint="{x:Static strings:AppStrings.EnableAnimationsHint}" />
-                  </Grid>
+                  <components:SettingToggleRow x:Name="AnimationsToggleRow"
+                     Label="{x:Static strings:AppStrings.EnableAnimations}"
+                     IsToggled="{Binding AnimationsEnabled}"
+                     AutomationId="AnimationsEnabledSwitch"
+                     SemanticHint="{x:Static strings:AppStrings.EnableAnimationsHint}" />
                   
                   <!-- Separator -->
                   <BoxView HeightRequest="0.5"
@@ -116,26 +102,11 @@
                <Border.StrokeShape>
                   <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
                </Border.StrokeShape>
-               <Grid x:Name="HapticsToggleGrid"
-                     ColumnDefinitions="*,Auto"
-                     ColumnSpacing="16"
-                     Padding="16,12">
-                  <Label x:Name="EnableHapticsLabel"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.EnableHaptics}"
-                     FontSize="17"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-                     VerticalOptions="Center" />
-                  <Switch x:Name="HapticsEnabledSwitch"
-                     AutomationId="HapticsEnabledSwitch"
-                     Grid.Column="1"
-                     IsToggled="{Binding HapticsEnabled}"
-                     OnColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
-                     ThumbColor="White"
-                     VerticalOptions="Center"
-                     SemanticProperties.Description="{x:Static strings:AppStrings.EnableHaptics}"
-                     SemanticProperties.Hint="{x:Static strings:AppStrings.EnableHapticsHint}" />
-               </Grid>
+               <components:SettingToggleRow x:Name="HapticsToggleRow"
+                  Label="{x:Static strings:AppStrings.EnableHaptics}"
+                  IsToggled="{Binding HapticsEnabled}"
+                  AutomationId="HapticsEnabledSwitch"
+                  SemanticHint="{x:Static strings:AppStrings.EnableHapticsHint}" />
             </Border>
          </VerticalStackLayout>
 
