@@ -7,263 +7,256 @@
    x:Class="TwentyFortyEight.Maui.StatsPage"
    x:DataType="vm:StatsViewModel"
    Title="{x:Static strings:AppStrings.StatisticsPageTitle}"
-   Background="{AppThemeBinding Light={StaticResource GamePageBackgroundLight}, Dark={StaticResource GamePageBackgroundDark}}">
+   Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
 
-   <ScrollView Padding="20">
-      <FlexLayout x:Name="StatsFlexLayout"
-         Direction="Row"
-         Wrap="Wrap"
-         JustifyContent="Center"
-         AlignItems="Start"
-         AlignContent="Start"
-         HorizontalOptions="Fill"
-         VerticalOptions="Start">
+   <ScrollView Padding="16">
+      <VerticalStackLayout Spacing="20">
 
          <!-- Games Section -->
-         <Border x:Name="GamesSectionBorder"
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="16"
-            Margin="8"
-            FlexLayout.Basis="100%"
-            FlexLayout.Grow="1"
-            FlexLayout.Shrink="1"
-            MinimumWidthRequest="220"
-            MaximumWidthRequest="1400">
-            <VerticalStackLayout Spacing="8">
-               <Label x:Name="GamesSectionLabel"
-                  Text="{x:Static strings:AppStrings.GamesSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                  Margin="0,0,0,4" />
-
-               <Grid x:Name="GamesStatsGrid"
-                  ColumnDefinitions="*,Auto"
-                  RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="6">
-                  <Label x:Name="GamesPlayedLabel"
-                     Grid.Row="0"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.GamesPlayed}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="GamesPlayedValue"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     Text="{Binding GamesPlayed}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-
-                  <Label x:Name="GamesWonLabel"
-                     Grid.Row="1"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.GamesWon}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="GamesWonValue"
-                     Grid.Row="1"
-                     Grid.Column="1"
-                     Text="{Binding GamesWon}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-
-                  <Label x:Name="WinRateLabel"
-                     Grid.Row="2"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.WinRate}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="WinRateValue"
-                     Grid.Row="2"
-                     Grid.Column="1"
-                     Text="{Binding WinRate}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-               </Grid>
-            </VerticalStackLayout>
-         </Border>
+         <VerticalStackLayout Spacing="8">
+            <Label x:Name="GamesSectionLabel"
+               Text="{x:Static strings:AppStrings.GamesSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border x:Name="GamesSectionBorder"
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               StrokeShape="RoundRectangle {StaticResource NativeCardCornerRadius}"
+               Padding="16,0">
+               <VerticalStackLayout Spacing="0">
+                  <!-- Games Played -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="GamesPlayedLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.GamesPlayed}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="GamesPlayedValue"
+                        Grid.Column="1"
+                        Text="{Binding GamesPlayed}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+                  
+                  <BoxView HeightRequest="0.5"
+                           Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                  
+                  <!-- Games Won -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="GamesWonLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.GamesWon}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="GamesWonValue"
+                        Grid.Column="1"
+                        Text="{Binding GamesWon}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+                  
+                  <BoxView HeightRequest="0.5"
+                           Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                  
+                  <!-- Win Rate -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="WinRateLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.WinRate}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="WinRateValue"
+                        Grid.Column="1"
+                        Text="{Binding WinRate}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Scores Section -->
-         <Border x:Name="ScoresSectionBorder"
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="16"
-            Margin="8"
-            FlexLayout.Basis="100%"
-            FlexLayout.Grow="1"
-            FlexLayout.Shrink="1"
-            MinimumWidthRequest="220"
-            MaximumWidthRequest="1400">
-            <VerticalStackLayout Spacing="8">
-               <Label x:Name="ScoresSectionLabel"
-                  Text="{x:Static strings:AppStrings.ScoresSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                  Margin="0,0,0,4" />
-
-               <Grid x:Name="ScoresStatsGrid"
-                  ColumnDefinitions="*,Auto"
-                  RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="6">
-                  <Label x:Name="BestScoreLabelStats"
-                     Grid.Row="0"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.BestScoreLabel}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="BestScoreValueStats"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     Text="{Binding BestScore}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-
-                  <Label x:Name="AverageScoreLabel"
-                     Grid.Row="1"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.AverageScore}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="AverageScoreValue"
-                     Grid.Row="1"
-                     Grid.Column="1"
-                     Text="{Binding AverageScore}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-
-                  <Label x:Name="HighestTileLabel"
-                     Grid.Row="2"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.HighestTile}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-                  <Label x:Name="HighestTileValue"
-                     Grid.Row="2"
-                     Grid.Column="1"
-                     Text="{Binding HighestTile}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-               </Grid>
-            </VerticalStackLayout>
-         </Border>
+         <VerticalStackLayout Spacing="8">
+            <Label x:Name="ScoresSectionLabel"
+               Text="{x:Static strings:AppStrings.ScoresSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border x:Name="ScoresSectionBorder"
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               StrokeShape="RoundRectangle {StaticResource NativeCardCornerRadius}"
+               Padding="16,0">
+               <VerticalStackLayout Spacing="0">
+                  <!-- Best Score -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="BestScoreLabelStats"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.BestScoreLabel}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="BestScoreValueStats"
+                        Grid.Column="1"
+                        Text="{Binding BestScore}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+                  
+                  <BoxView HeightRequest="0.5"
+                           Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                  
+                  <!-- Average Score -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="AverageScoreLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.AverageScore}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="AverageScoreValue"
+                        Grid.Column="1"
+                        Text="{Binding AverageScore}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+                  
+                  <BoxView HeightRequest="0.5"
+                           Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                  
+                  <!-- Highest Tile -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="HighestTileLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.HighestTile}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="HighestTileValue"
+                        Grid.Column="1"
+                        Text="{Binding HighestTile}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Moves Section -->
-         <Border x:Name="MovesSectionBorder"
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="16"
-            Margin="8"
-            FlexLayout.Basis="320"
-            FlexLayout.Grow="1"
-            FlexLayout.Shrink="1"
-            MinimumWidthRequest="220"
-            MaximumWidthRequest="720">
-            <VerticalStackLayout Spacing="8">
-               <Label x:Name="MovesSectionLabel"
-                  Text="{x:Static strings:AppStrings.MovesSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                  Margin="0,0,0,4" />
-
-               <Label x:Name="TotalMovesLabel"
-                  Text="{x:Static strings:AppStrings.TotalMoves}"
-                  FontSize="13"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-               <Label x:Name="TotalMovesValue"
-                  Text="{Binding TotalMoves}"
-                  FontSize="28"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}"
-                  HorizontalOptions="Center" />
-            </VerticalStackLayout>
-         </Border>
+         <VerticalStackLayout Spacing="8">
+            <Label x:Name="MovesSectionLabel"
+               Text="{x:Static strings:AppStrings.MovesSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border x:Name="MovesSectionBorder"
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               StrokeShape="RoundRectangle {StaticResource NativeCardCornerRadius}"
+               Padding="16,20">
+               <VerticalStackLayout Spacing="8">
+                  <Label x:Name="TotalMovesLabel"
+                     Text="{x:Static strings:AppStrings.TotalMoves}"
+                     FontSize="15"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                     HorizontalOptions="Center" />
+                  <Label x:Name="TotalMovesValue"
+                     Text="{Binding TotalMoves}"
+                     FontSize="32"
+                     FontAttributes="Bold"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                     HorizontalOptions="Center" />
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Streaks Section -->
-         <Border x:Name="StreaksSectionBorder"
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="16"
-            Margin="8"
-            FlexLayout.Basis="320"
-            FlexLayout.Grow="1"
-            FlexLayout.Shrink="1"
-            MinimumWidthRequest="220"
-            MaximumWidthRequest="720">
-            <VerticalStackLayout Spacing="8">
-               <Label x:Name="StreaksSectionLabel"
-                  Text="{x:Static strings:AppStrings.StreaksSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                  Margin="0,0,0,4" />
-
-               <Grid x:Name="StreaksStatsGrid"
-                  ColumnDefinitions="*,Auto"
-                  RowDefinitions="Auto,Auto"
-                  RowSpacing="6">
-                  <Label x:Name="CurrentStreakLabel"
-                     Grid.Row="0"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.Current}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label x:Name="CurrentStreakValue"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     Text="{Binding CurrentStreak}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-
-                  <Label x:Name="BestStreakLabel"
-                     Grid.Row="1"
-                     Grid.Column="0"
-                     Text="{x:Static strings:AppStrings.BestLabel}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-                  <Label x:Name="BestStreakValue"
-                     Grid.Row="1"
-                     Grid.Column="1"
-                     Text="{Binding BestStreak}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light=#776e65, Dark=#f9f6f2}" />
-               </Grid>
-            </VerticalStackLayout>
-         </Border>
+         <VerticalStackLayout Spacing="8">
+            <Label x:Name="StreaksSectionLabel"
+               Text="{x:Static strings:AppStrings.StreaksSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border x:Name="StreaksSectionBorder"
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               StrokeShape="RoundRectangle {StaticResource NativeCardCornerRadius}"
+               Padding="16,0">
+               <VerticalStackLayout Spacing="0">
+                  <!-- Current Streak -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="CurrentStreakLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.Current}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="CurrentStreakValue"
+                        Grid.Column="1"
+                        Text="{Binding CurrentStreak}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+                  
+                  <BoxView HeightRequest="0.5"
+                           Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                  
+                  <!-- Best Streak -->
+                  <Grid ColumnDefinitions="*,Auto" Padding="0,14">
+                     <Label x:Name="BestStreakLabel"
+                        Grid.Column="0"
+                        Text="{x:Static strings:AppStrings.BestLabel}"
+                        FontSize="17"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                     <Label x:Name="BestStreakValue"
+                        Grid.Column="1"
+                        Text="{Binding BestStreak}"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                        VerticalOptions="Center" />
+                  </Grid>
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Reset Statistics Button -->
          <Button x:Name="ResetStatisticsButton"
             AutomationId="ResetStatisticsButton"
             Text="{x:Static strings:AppStrings.ResetStatistics}"
             Command="{Binding ResetStatisticsCommand}"
-            Background="{StaticResource GameStatusAccent}"
-            TextColor="White"
-            FontSize="14"
+            Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+            TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
+            FontSize="17"
             FontAttributes="Bold"
-            HeightRequest="44"
-            CornerRadius="8"
-            Margin="8,16,8,0"
-            FlexLayout.Basis="100%"
-            FlexLayout.Grow="0"
-            FlexLayout.Shrink="1"
-            HorizontalOptions="Center"
-            WidthRequest="220"
-            MinimumWidthRequest="180" />
+            HeightRequest="50"
+            CornerRadius="10"
+            Margin="0,8,0,0"
+            HorizontalOptions="Fill" />
 
-      </FlexLayout>
+      </VerticalStackLayout>
    </ScrollView>
 </ContentPage>

@@ -179,8 +179,8 @@ public partial class MainPage : ContentPage
         _animationCts?.Cancel();
 
         // Account for padding and non-board UI elements
-        const double horizontalReserved = 80; // 20px page padding + 10px border padding + 20px safety margin on each side
-        const double verticalReserved = 280; // header ~80px, status ~30px, controls ~70px, spacing ~30px, padding 40px, board padding 20px, margins ~10px
+        const double horizontalReserved = 50; // 20px page padding + 10px border padding + 5px safety margin on each side
+        const double verticalReserved = 260; // header ~80px, status ~30px, controls ~70px, spacing ~30px, padding 40px, board padding 20px
 
         double availableWidth = pageWidth - horizontalReserved;
         double availableHeight = pageHeight - verticalReserved;

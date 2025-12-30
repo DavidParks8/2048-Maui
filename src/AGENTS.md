@@ -26,6 +26,50 @@ Both light and dark mode must be supported:
 - Define theme-aware colors in `Resources/Styles/Colors.xaml`
 - Test UI in both light and dark modes
 
+### Native iOS Styling Guidelines
+
+When creating pages that should match native iOS appearance (Settings, About, Stats):
+
+#### Section Headers
+
+- **Always place section headers OUTSIDE the cards/borders**
+- Font size: `13`
+- Text color: `NativeTextTertiaryLight/Dark`
+- Left margin: `8,0,0,0`
+- Example:
+
+```xml
+<VerticalStackLayout Spacing="8">
+    <Label Text="SECTION NAME"
+           FontSize="13"
+           TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, 
+                                      Dark={StaticResource NativeTextTertiaryDark}}"
+           Margin="8,0,0,0" />
+    <Border><!-- Card content here --></Border>
+</VerticalStackLayout>
+```
+
+#### Card/Cell Styling
+
+- Background: `NativeSettingsCellBackgroundLight/Dark`
+- Corner radius: Use `{StaticResource NativeCardCornerRadius}`
+- Padding: `16` for general content, `16,0` for row-based layouts
+- Font sizes for content:
+  - Primary labels: `17` (bold for emphasis)
+  - Secondary text: `15`
+  - Body text: `17` with `LineHeight="1.5"`
+
+#### Page Background
+
+- Use `NativeSettingsBackgroundLight/Dark` (not `GamePageBackground`)
+- ScrollView padding: `16`
+
+#### Text Color Hierarchy
+
+- Primary text: `NativeTextPrimaryLight/Dark` (main labels, titles)
+- Secondary text: `NativeTextSecondaryLight/Dark` (descriptions, body text)
+- Tertiary text: `NativeTextTertiaryLight/Dark` (section headers, footer text)
+
 ### Examples
 
 #### ViewModel (using CommunityToolkit.Mvvm)

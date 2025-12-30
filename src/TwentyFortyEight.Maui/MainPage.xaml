@@ -10,7 +10,7 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
-             Background="{AppThemeBinding Light={StaticResource GamePageBackgroundLight}, Dark={StaticResource GamePageBackgroundDark}}">
+             Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
 
     <ContentPage.Resources>
         <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
@@ -54,7 +54,7 @@
             Priority="4" />
     </ContentPage.ToolbarItems>
 
-    <Grid x:Name="RootLayout" Padding="20" RowSpacing="10">
+    <Grid x:Name="RootLayout" Padding="16" RowSpacing="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -141,8 +141,8 @@
                 Padding="10"
                 VerticalOptions="Center"
                 HorizontalOptions="Center"
-                MaximumWidthRequest="500"
-                MaximumHeightRequest="500"
+                MaximumWidthRequest="520"
+                MaximumHeightRequest="520"
                 StrokeShape="RoundRectangle 10">
 
             <Border.Behaviors>
@@ -175,8 +175,8 @@
                 AutomationId="NewGameButton"
                 Command="{Binding NewGameCommand}"
                 Text="{x:Static strings:AppStrings.NewGame}"
-                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
-                TextColor="White"
+                Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+                TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                 HeightRequest="50"
                 Padding="15,0"
                 Margin="3,2.5"
@@ -188,8 +188,8 @@
                 Command="{Binding UndoCommand}"
                 IsEnabled="{Binding CanUndo}"
                 Text="{x:Static strings:AppStrings.Undo}"
-                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
-                TextColor="White"
+                Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+                TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                 HeightRequest="50"
                 Padding="15,0"
                 Margin="3,2.5"
@@ -200,8 +200,8 @@
                 AutomationId="StatisticsButton"
                 Command="{Binding OpenStatsCommand}"
                 Text="{x:Static strings:AppStrings.Statistics}"
-                Background="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
-                TextColor="White"
+                Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+                TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                 HeightRequest="50"
                 Padding="15,0"
                 Margin="3,2.5"

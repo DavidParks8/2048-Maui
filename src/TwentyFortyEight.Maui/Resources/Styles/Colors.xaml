@@ -19,8 +19,8 @@
     <Color x:Key="Gray950">#141414</Color>
 
     <!-- 2048 Game Theme Colors -->
-    <Color x:Key="GamePageBackgroundLight">#faf8ef</Color>
-    <Color x:Key="GamePageBackgroundDark">#1a1a1a</Color>
+    <Color x:Key="PageBackgroundLight">#F2F2F7</Color>
+    <Color x:Key="PageBackgroundDark">#000000</Color>
 
     <Color x:Key="GamePanelBackgroundLight">#bbada0</Color>
     <Color x:Key="GamePanelBackgroundDark">#3c3a32</Color>
@@ -38,5 +38,30 @@
     <Color x:Key="ModalOverlay">#80000000</Color>
 
     <Color x:Key="GameTextMutedDark">#a0968b</Color>
+
+    <!-- Native-looking Button Colors -->
+    <Color x:Key="NativeButtonBackgroundLight">#007AFF</Color>
+    <Color x:Key="NativeButtonBackgroundDark">#0A84FF</Color>
+    <Color x:Key="NativeButtonTextLight">White</Color>
+    <Color x:Key="NativeButtonTextDark">White</Color>
+
+    <!-- Native Text Colors -->
+    <Color x:Key="NativeTextPrimaryLight">#000000</Color>
+    <Color x:Key="NativeTextPrimaryDark">#FFFFFF</Color>
+    <Color x:Key="NativeTextSecondaryLight">#3C3C43</Color>
+    <Color x:Key="NativeTextSecondaryDark">#EBEBF5</Color>
+    <Color x:Key="NativeTextTertiaryLight">#8E8E93</Color>
+    <Color x:Key="NativeTextTertiaryDark">#AEAEB2</Color>
+
+    <!-- Native Switch/Slider Accent -->
+    <Color x:Key="NativeAccentLight">#007AFF</Color>
+    <Color x:Key="NativeAccentDark">#0A84FF</Color>
+
+    <!-- Native Settings/List Backgrounds -->
+    <Color x:Key="NativeSettingsCellBackgroundLight">#FFFFFF</Color>
+    <Color x:Key="NativeSettingsCellBackgroundDark">#1C1C1E</Color>
+
+    <!-- Corner Radius -->
+    <x:Double x:Key="NativeCardCornerRadius">20</x:Double>
 
 </ResourceDictionary>

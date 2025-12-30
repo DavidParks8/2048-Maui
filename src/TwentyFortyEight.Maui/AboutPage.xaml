@@ -5,111 +5,121 @@
    xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
    x:Class="TwentyFortyEight.Maui.AboutPage"
    Title="{x:Static strings:AppStrings.AboutPageTitle}"
-   Background="{AppThemeBinding Light={StaticResource GamePageBackgroundLight}, Dark={StaticResource GamePageBackgroundDark}}">
+   Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
 
-   <ScrollView Padding="20">
-      <VerticalStackLayout Spacing="20" MaximumWidthRequest="600" HorizontalOptions="Center">
+   <ScrollView Padding="16">
+      <VerticalStackLayout Spacing="20">
 
          <!-- Main Message Section -->
-         <Border
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="20">
-            <VerticalStackLayout Spacing="16">
-               <Label
-                  Text="{x:Static strings:AppStrings.ForTaliaTitle}"
-                  FontSize="24"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}"
-                  HorizontalOptions="Center" />
+         <VerticalStackLayout Spacing="8">
+            <Border
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               Padding="20,24">
+               <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
+               </Border.StrokeShape>
+               <VerticalStackLayout Spacing="20">
+                  <Label
+                     Text="{x:Static strings:AppStrings.ForTaliaTitle}"
+                     FontSize="28"
+                     FontAttributes="Bold"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                     HorizontalOptions="Center" />
 
-               <Label
-                  FontSize="16"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}"
-                  LineHeight="1.5"
-                  HorizontalTextAlignment="Center">
-                  <Label.FormattedText>
-                     <FormattedString>
-                        <Span Text="{x:Static strings:AppStrings.AboutMessagePart1}" />
-                        <Span Text="&#x0a;&#x0a;" />
-                        <Span Text="{x:Static strings:AppStrings.AboutMessagePart2}" />
-                        <Span Text="&#x0a;&#x0a;" />
-                        <Span Text="{x:Static strings:AppStrings.AboutMessagePart3}" />
-                        <Span Text="&#x0a;&#x0a;" />
-                        <Span Text="{x:Static strings:AppStrings.AboutMessageSignature}" FontAttributes="Italic" />
-                     </FormattedString>
-                  </Label.FormattedText>
-               </Label>
-            </VerticalStackLayout>
-         </Border>
+                  <Label
+                     FontSize="17"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                     LineHeight="1.5"
+                     HorizontalTextAlignment="Center">
+                     <Label.FormattedText>
+                        <FormattedString>
+                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart1}" />
+                           <Span Text="&#x0a;&#x0a;" />
+                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart2}" />
+                           <Span Text="&#x0a;&#x0a;" />
+                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart3}" />
+                           <Span Text="&#x0a;&#x0a;" />
+                           <Span Text="{x:Static strings:AppStrings.AboutMessageSignature}" FontAttributes="Italic" />
+                        </FormattedString>
+                     </Label.FormattedText>
+                  </Label>
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- App Info Section -->
-         <Border
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="20">
-            <VerticalStackLayout Spacing="12">
-               <Label
-                  Text="{x:Static strings:AppStrings.AboutTheAppSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light={StaticResource SectionHeaderLight}, Dark={StaticResource SectionHeaderDark}}"
-                  Margin="0,0,0,4" />
+         <VerticalStackLayout Spacing="8">
+            <Label
+               Text="{x:Static strings:AppStrings.AboutTheAppSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               Padding="16">
+               <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
+               </Border.StrokeShape>
+               <VerticalStackLayout Spacing="8">
+                  <Label
+                     Text="{x:Static strings:AppStrings.AppNameForTalia}"
+                     FontSize="17"
+                     FontAttributes="Bold"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}" />
 
-               <Label
-                  Text="{x:Static strings:AppStrings.AppNameForTalia}"
-                  FontSize="18"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-
-               <Label
-                  Text="{x:Static strings:AppStrings.AppDescription}"
-                  FontSize="14"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}"
-                  LineHeight="1.4" />
-            </VerticalStackLayout>
-         </Border>
+                  <Label
+                     Text="{x:Static strings:AppStrings.AppDescription}"
+                     FontSize="15"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                     LineHeight="1.4" />
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Support Section -->
-         <Border
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-            Stroke="Transparent"
-            StrokeShape="RoundRectangle 10"
-            Padding="20">
-            <VerticalStackLayout Spacing="12">
-               <Label
-                  Text="{x:Static strings:AppStrings.SupportSection}"
-                  FontSize="12"
-                  FontAttributes="Bold"
-                  TextColor="{AppThemeBinding Light={StaticResource SectionHeaderLight}, Dark={StaticResource SectionHeaderDark}}"
-                  Margin="0,0,0,4" />
+         <VerticalStackLayout Spacing="8">
+            <Label
+               Text="{x:Static strings:AppStrings.SupportSection}"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+               Margin="8,0,0,0" />
+            
+            <Border
+               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
+               Stroke="Transparent"
+               Padding="16">
+               <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
+               </Border.StrokeShape>
+               <VerticalStackLayout Spacing="16">
+                  <Label
+                     Text="{x:Static strings:AppStrings.NeedHelpOrBug}"
+                     FontSize="15"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
 
-               <Label
-                  Text="{x:Static strings:AppStrings.NeedHelpOrBug}"
-                  FontSize="14"
-                  TextColor="{AppThemeBinding Light={StaticResource TileTextDark}, Dark={StaticResource TileTextLight}}" />
-
-               <Button
-                  x:Name="GitHubIssuesButton"
-                  Text="{x:Static strings:AppStrings.ReportAnIssue}"
-                  FontSize="16"
-                  FontAttributes="Bold"
-                  BackgroundColor="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
-                  TextColor="White"
-                  CornerRadius="5"
-                  Padding="20,12"
-                  Clicked="OnGitHubIssuesClicked"
-                  SemanticProperties.Description="{x:Static strings:AppStrings.ReportAnIssueDescription}" />
-            </VerticalStackLayout>
-         </Border>
+                  <Button
+                     x:Name="GitHubIssuesButton"
+                     Text="{x:Static strings:AppStrings.ReportAnIssue}"
+                     FontSize="17"
+                     FontAttributes="Bold"
+                     BackgroundColor="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+                     TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
+                     CornerRadius="8"
+                     Padding="16,12"
+                     Clicked="OnGitHubIssuesClicked"
+                     SemanticProperties.Description="{x:Static strings:AppStrings.ReportAnIssueDescription}" />
+               </VerticalStackLayout>
+            </Border>
+         </VerticalStackLayout>
 
          <!-- Footer -->
          <Label
             Text="{x:Static strings:AppStrings.MadeWithLove}"
             FontSize="12"
-            TextColor="{AppThemeBinding Light={StaticResource GameButtonBackgroundLight}, Dark={StaticResource GameButtonBackgroundDark}}"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
             HorizontalOptions="Center"
             Margin="0,10,0,20" />
 
