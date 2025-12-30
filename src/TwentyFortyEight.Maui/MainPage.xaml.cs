@@ -120,7 +120,10 @@ public partial class MainPage : ContentPage
     {
         // Get position relative to the element that received the event
         // This ensures correct coordinate space for gestures on different elements
-        _pointerStartPoint = sender is View view ? e.GetPosition(view) : e.GetPosition(RootLayout);
+        if (sender is View view)
+        {
+            _pointerStartPoint = e.GetPosition(view);
+        }
     }
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
@@ -128,8 +131,14 @@ public partial class MainPage : ContentPage
         if (_pointerStartPoint is null)
             return;
 
-        // Get position relative to the same element type as the press event
-        var endPoint = sender is View view ? e.GetPosition(view) : e.GetPosition(RootLayout);
+        // Get position relative to the same element as the press event
+        if (sender is not View view)
+        {
+            _pointerStartPoint = null;
+            return;
+        }
+
+        var endPoint = e.GetPosition(view);
         if (endPoint is null)
         {
             _pointerStartPoint = null;
