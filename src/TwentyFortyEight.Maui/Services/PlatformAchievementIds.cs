@@ -23,8 +23,7 @@ public static class PlatformAchievementIds
         public const string Achievement_Score10000 = "com.dappermagna.2048.score10000";
         public const string Achievement_Score25000 = "com.dappermagna.2048.score25000";
         public const string Achievement_Score50000 = "com.dappermagna.2048.score50000";
-        public const string Achievement_Score100000 =
-            "com.dappermagna.2048.score100000";
+        public const string Achievement_Score100000 = "com.dappermagna.2048.score100000";
     }
 
     // Future: Xbox achievement IDs for Windows

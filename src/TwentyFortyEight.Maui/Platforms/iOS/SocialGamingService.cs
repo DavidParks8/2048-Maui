@@ -2,6 +2,7 @@ using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.ViewModels.Services;
+using UIKit;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -14,6 +15,41 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
     private readonly HashSet<string> _reportedAchievements = new();
 
     public bool IsAvailable => _isAuthenticated;
+
+    private static UIWindow? GetKeyWindow()
+    {
+        var connectedScenes = UIApplication.SharedApplication?.ConnectedScenes;
+        if (connectedScenes == null)
+            return null;
+
+        foreach (var scene in connectedScenes)
+        {
+            if (
+                scene is UIWindowScene windowScene
+                && windowScene.ActivationState == UISceneActivationState.ForegroundActive
+            )
+            {
+                foreach (var window in windowScene.Windows)
+                {
+                    if (window.IsKeyWindow)
+                        return window;
+                }
+                // Return first window if no key window found
+                return windowScene.Windows.FirstOrDefault();
+            }
+        }
+
+        // Fallback to any window scene
+        foreach (var scene in connectedScenes)
+        {
+            if (scene is UIWindowScene windowScene)
+            {
+                return windowScene.Windows.FirstOrDefault();
+            }
+        }
+
+        return null;
+    }
 
     public async Task AuthenticateAsync()
     {
@@ -28,9 +64,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                     // Present the Game Center login view controller
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        var window =
-                            UIApplication.SharedApplication?.KeyWindow
-                            ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                        var window = GetKeyWindow();
                         var rootViewController = window?.RootViewController;
 
                         if (rootViewController != null)
@@ -60,7 +94,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                 else
                 {
                     // Successfully authenticated
-                    _isAuthenticated = GKLocalPlayer.Local.IsAuthenticated;
+                    _isAuthenticated = GKLocalPlayer.Local.Authenticated;
                     LogAuthenticationResult(_isAuthenticated);
                     tcs.TrySetResult(_isAuthenticated);
                 }
@@ -87,13 +121,12 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                var scoreReporter = new GKScore(PlatformAchievementIds.iOS.LeaderboardId)
-                {
-                    Value = score,
-                };
-
-                var scores = new[] { scoreReporter };
-                await GKScore.ReportScoresAsync(scores);
+                await GKLeaderboard.SubmitScoreAsync(
+                    (nint)score,
+                    0, // context
+                    GKLocalPlayer.Local,
+                    [PlatformAchievementIds.iOS.LeaderboardId]
+                );
                 LogScoreSubmitted(score);
             });
         }
@@ -157,17 +190,17 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var viewController = new GKGameCenterViewController();
-                viewController.ViewState = GKGameCenterViewControllerState.Leaderboards;
-                viewController.LeaderboardIdentifier = PlatformAchievementIds.iOS.LeaderboardId;
+#pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
+                var viewController = new GKGameCenterViewController(
+                    GKGameCenterViewControllerState.Leaderboards
+                );
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
+#pragma warning restore CA1422
 
-                var window =
-                    UIApplication.SharedApplication?.KeyWindow
-                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
 
                 if (rootViewController != null)
@@ -199,16 +232,17 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var viewController = new GKGameCenterViewController();
-                viewController.ViewState = GKGameCenterViewControllerState.Achievements;
+#pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
+                var viewController = new GKGameCenterViewController(
+                    GKGameCenterViewControllerState.Achievements
+                );
                 viewController.Finished += (sender, e) =>
                 {
                     viewController.DismissViewController(true, null);
                 };
+#pragma warning restore CA1422
 
-                var window =
-                    UIApplication.SharedApplication?.KeyWindow
-                    ?? UIApplication.SharedApplication?.Windows?.FirstOrDefault();
+                var window = GetKeyWindow();
                 var rootViewController = window?.RootViewController;
 
                 if (rootViewController != null)

@@ -5,9 +5,9 @@ namespace TwentyFortyEight.Maui.Services;
 /// <summary>
 /// iOS implementation of achievement ID mapper using Game Center achievement IDs.
 /// </summary>
-public partial class AchievementIdMapper : IAchievementIdMapper
+public class AchievementIdMapper : IAchievementIdMapper
 {
-    public override string? GetTileAchievementId(int tileValue)
+    public string? GetTileAchievementId(int tileValue)
     {
         return tileValue switch
         {
@@ -21,12 +21,12 @@ public partial class AchievementIdMapper : IAchievementIdMapper
         };
     }
 
-    public override string? GetFirstWinAchievementId()
+    public string? GetFirstWinAchievementId()
     {
         return PlatformAchievementIds.iOS.Achievement_FirstWin;
     }
 
-    public override string? GetScoreAchievementId(int score)
+    public string? GetScoreAchievementId(int score)
     {
         return score switch
         {
