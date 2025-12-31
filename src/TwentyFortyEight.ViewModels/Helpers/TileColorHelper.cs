@@ -70,7 +70,7 @@ public static class TileColorHelper
                 262144 => Color.FromArgb("#5a2ed4"),
                 524288 => Color.FromArgb("#2e4ae8"),
                 1048576 => Color.FromArgb("#2e8ee8"),
-                _ => Color.FromArgb("#524b44") // fallback
+                _ => Color.FromArgb("#524b44"), // fallback
             };
         }
         else // Light theme
@@ -98,7 +98,7 @@ public static class TileColorHelper
                 262144 => Color.FromArgb("#5a2ed4"),
                 524288 => Color.FromArgb("#2e4ae8"),
                 1048576 => Color.FromArgb("#2e8ee8"),
-                _ => Color.FromArgb("#cdc1b4") // fallback
+                _ => Color.FromArgb("#cdc1b4"), // fallback
             };
         }
     }
