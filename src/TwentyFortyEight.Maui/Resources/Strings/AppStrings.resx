@@ -190,6 +190,9 @@
   <data name="AchievementsToolbarText" xml:space="preserve">
     <value>🎖️ Achievements</value>
   </data>
+  <data name="StatisticsToolbarText" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
   <data name="HowToPlayTitle" xml:space="preserve">
     <value>How to Play</value>
   </data>

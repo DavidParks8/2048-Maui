@@ -742,6 +742,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Statistics.
+        /// </summary>
+        internal static string StatisticsToolbarText {
+            get {
+                return ResourceManager.GetString("StatisticsToolbarText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to STREAKS.
         /// </summary>
         internal static string StreaksSection {

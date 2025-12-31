@@ -32,26 +32,33 @@
             Order="Secondary"
             Priority="1" />
         <ToolbarItem
+            x:Name="ToolbarStatisticsButton"
+            AutomationId="ToolbarStatisticsButton"
+            Text="{x:Static strings:AppStrings.StatisticsToolbarText}"
+            Command="{Binding OpenStatsCommand}"
+            Order="Secondary"
+            Priority="2" />
+        <ToolbarItem
             x:Name="ToolbarSettingsButton"
             AutomationId="ToolbarSettingsButton"
             Text="{x:Static strings:AppStrings.Settings}"
             Command="{Binding OpenSettingsCommand}"
             Order="Secondary"
-            Priority="2" />
+            Priority="3" />
         <ToolbarItem
             x:Name="ToolbarHowToPlayButton"
             AutomationId="ToolbarHowToPlayButton"
             Text="{x:Static strings:AppStrings.HowToPlay}"
             Command="{Binding ShowHowToPlayCommand}"
             Order="Secondary"
-            Priority="3" />
+            Priority="4" />
         <ToolbarItem
             x:Name="ToolbarAboutButton"
             AutomationId="ToolbarAboutButton"
             Text="{x:Static strings:AppStrings.About}"
             Command="{Binding OpenAboutCommand}"
             Order="Secondary"
-            Priority="4" />
+            Priority="5" />
     </ContentPage.ToolbarItems>
 
     <Grid x:Name="RootLayout" Padding="16" RowSpacing="10">
@@ -195,18 +202,6 @@
                 Margin="3,2.5"
                 CornerRadius="5"
                 SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
-
-            <Button x:Name="StatisticsButton"
-                AutomationId="StatisticsButton"
-                Command="{Binding OpenStatsCommand}"
-                Text="{x:Static strings:AppStrings.Statistics}"
-                Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
-                TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
-                HeightRequest="50"
-                Padding="15,0"
-                Margin="3,2.5"
-                CornerRadius="5"
-                SemanticProperties.Description="{x:Static strings:AppStrings.StatisticsDescription}" />
         </FlexLayout>
 
         <!-- Game Over Modal -->
