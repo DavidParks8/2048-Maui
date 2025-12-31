@@ -2,7 +2,7 @@
 using Android.Content;
 using Android.Views;
 using AndroidX.Core.View;
-using Com.Google.Android.Material.Card;
+using Google.Android.Material.Card;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using TwentyFortyEight.Maui.Controls;
@@ -103,26 +103,28 @@ public class BottomBarHandler : ContentViewHandler
         {
             // This isn't perfect; many apps will want Material's colorSurface.
             // But it keeps things "native" without hardcoding.
-            card.SetCardBackgroundColor(
-                new global::Android.Content.Res.ColorStateList(
-                    new int[][] { new int[] { } },
-                    new int[] { tv.Data }
-                )
-            );
+            card.SetCardBackgroundColor(tv.Data);
         }
     }
 
     class InsetsListener : Java.Lang.Object, IOnApplyWindowInsetsListener
     {
-        public WindowInsetsCompat OnApplyWindowInsets(
-            global::Android.Views.View v,
-            WindowInsetsCompat insets
+        public WindowInsetsCompat? OnApplyWindowInsets(
+            global::Android.Views.View? v,
+            WindowInsetsCompat? insets
         )
         {
+            if (v == null || insets == null)
+                return insets;
+
+            var view = v!;
+
             var sysBars = insets.GetInsets(
                 WindowInsetsCompat.Type.SystemBars() | WindowInsetsCompat.Type.DisplayCutout()
             );
-            v.SetPadding(v.PaddingLeft, v.PaddingTop, v.PaddingRight, sysBars.Bottom);
+
+            var bottomInset = sysBars?.Bottom ?? 0;
+            view.SetPadding(view.PaddingLeft, view.PaddingTop, view.PaddingRight, bottomInset);
             return insets;
         }
     }

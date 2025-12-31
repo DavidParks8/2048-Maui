@@ -74,10 +74,10 @@
     <value>BEST</value>
   </data>
   <data name="NewGame" xml:space="preserve">
-    <value>↻ New Game</value>
+    <value>New Game</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>↩ Undo</value>
+    <value>Undo</value>
   </data>
   <data name="CurrentScoreDescription" xml:space="preserve">
     <value>Current score</value>
@@ -185,10 +185,10 @@
     <value>Learn how to play the game</value>
   </data>
   <data name="LeaderboardToolbarText" xml:space="preserve">
-    <value>🏆 Leaderboard</value>
+    <value>Leaderboard</value>
   </data>
   <data name="AchievementsToolbarText" xml:space="preserve">
-    <value>🎖️ Achievements</value>
+    <value>Achievements</value>
   </data>
   <data name="StatisticsToolbarText" xml:space="preserve">
     <value>Statistics</value>
@@ -225,30 +225,6 @@ Keep combining tiles to reach the 2048 tile and win the game!
   </data>
   <data name="SettingsDescription" xml:space="preserve">
     <value>Open settings</value>
-  </data>
-  <data name="AnimationsSection" xml:space="preserve">
-    <value>ANIMATIONS</value>
-  </data>
-  <data name="EnableAnimations" xml:space="preserve">
-    <value>Enable Animations</value>
-  </data>
-  <data name="EnableAnimationsHint" xml:space="preserve">
-    <value>Toggle to enable or disable tile animations</value>
-  </data>
-  <data name="AnimationSpeed" xml:space="preserve">
-    <value>Animation Speed</value>
-  </data>
-  <data name="AnimationSpeedHint" xml:space="preserve">
-    <value>Adjust animation speed from 0.5 to 1.5 times normal speed</value>
-  </data>
-  <data name="AnimationSpeedSlow" xml:space="preserve">
-    <value>Slow</value>
-  </data>
-  <data name="AnimationSpeedNormal" xml:space="preserve">
-    <value>Normal</value>
-  </data>
-  <data name="AnimationSpeedFast" xml:space="preserve">
-    <value>Fast</value>
   </data>
   <data name="HapticsSection" xml:space="preserve">
     <value>HAPTICS</value>

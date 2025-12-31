@@ -133,65 +133,11 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 🎖️ Achievements.
+        ///   Looks up a localized string similar to Achievements.
         /// </summary>
         internal static string AchievementsToolbarText {
             get {
                 return ResourceManager.GetString("AchievementsToolbarText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Animation Speed.
-        /// </summary>
-        internal static string AnimationSpeed {
-            get {
-                return ResourceManager.GetString("AnimationSpeed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Fast.
-        /// </summary>
-        internal static string AnimationSpeedFast {
-            get {
-                return ResourceManager.GetString("AnimationSpeedFast", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Adjust animation speed from 0.5 to 1.5 times normal speed.
-        /// </summary>
-        internal static string AnimationSpeedHint {
-            get {
-                return ResourceManager.GetString("AnimationSpeedHint", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Normal.
-        /// </summary>
-        internal static string AnimationSpeedNormal {
-            get {
-                return ResourceManager.GetString("AnimationSpeedNormal", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Slow.
-        /// </summary>
-        internal static string AnimationSpeedSlow {
-            get {
-                return ResourceManager.GetString("AnimationSpeedSlow", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ANIMATIONS.
-        /// </summary>
-        internal static string AnimationsSection {
-            get {
-                return ResourceManager.GetString("AnimationsSection", resourceCulture);
             }
         }
         
@@ -327,24 +273,6 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string CurrentStreak {
             get {
                 return ResourceManager.GetString("CurrentStreak", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable Animations.
-        /// </summary>
-        internal static string EnableAnimations {
-            get {
-                return ResourceManager.GetString("EnableAnimations", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Toggle to enable or disable tile animations.
-        /// </summary>
-        internal static string EnableAnimationsHint {
-            get {
-                return ResourceManager.GetString("EnableAnimationsHint", resourceCulture);
             }
         }
         
@@ -508,7 +436,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 🏆 Leaderboard.
+        ///   Looks up a localized string similar to Leaderboard.
         /// </summary>
         internal static string LeaderboardToolbarText {
             get {
@@ -544,7 +472,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ↻ New Game.
+        ///   Looks up a localized string similar to New Game.
         /// </summary>
         internal static string NewGame {
             get {
@@ -796,7 +724,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ↩ Undo.
+        ///   Looks up a localized string similar to Undo.
         /// </summary>
         internal static string Undo {
             get {

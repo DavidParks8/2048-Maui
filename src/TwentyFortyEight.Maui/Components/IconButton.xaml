@@ -6,21 +6,29 @@
     <Border Background="{OnPlatform iOS=#40FFFFFF, Default={AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}}"
             Stroke="Transparent"
             StrokeThickness="0"
-            HeightRequest="70"
+            WidthRequest="{Binding ButtonSize, Source={x:Reference Root}}"
+            HeightRequest="{Binding ButtonSize, Source={x:Reference Root}}"
             Padding="12,8"
-            StrokeShape="RoundRectangle 35"
-            Opacity="{Binding IsButtonEnabled, Source={x:Reference Root}, Converter={StaticResource BoolToOpacityConverter}}">
+            StrokeShape="{Binding ButtonStrokeShape, Source={x:Reference Root}}"
+            Opacity="{Binding IsButtonEnabled, Source={x:Reference Root}, Converter={StaticResource BoolToOpacityConverter}}"
+            IsEnabled="{Binding IsButtonEnabled, Source={x:Reference Root}}">
         <Border.GestureRecognizers>
             <TapGestureRecognizer Command="{Binding Command, Source={x:Reference Root}}" />
         </Border.GestureRecognizers>
         <VerticalStackLayout Spacing="4"
                              VerticalOptions="Center"
                              HorizontalOptions="Center">
+            <Image Source="{Binding IconImageSource, Source={x:Reference Root}}"
+                   HeightRequest="24"
+                   WidthRequest="24"
+                   HorizontalOptions="Center"
+                   IsVisible="{Binding HasIconImageSource, Source={x:Reference Root}}" />
             <Label Text="{Binding Icon, Source={x:Reference Root}}"
                    FontSize="24"
                    FontAttributes="Bold"
                    TextColor="{OnPlatform iOS=White, Default={AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}}"
-                   HorizontalOptions="Center" />
+                   HorizontalOptions="Center"
+                   IsVisible="{Binding HasIconText, Source={x:Reference Root}}" />
             <Label Text="{Binding ButtonText, Source={x:Reference Root}}"
                    FontSize="12"
                    TextColor="{OnPlatform iOS=White, Default={AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}}"

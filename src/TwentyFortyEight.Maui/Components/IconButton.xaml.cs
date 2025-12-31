@@ -1,5 +1,7 @@
 using System.Windows.Input;
 using Maui.BindableProperty.Generator.Core;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace TwentyFortyEight.Maui.Components;
 
@@ -35,6 +37,49 @@ public partial class IconButton : ContentView
     private readonly bool _isButtonEnabled;
 
 #pragma warning restore CS0169
+
+    public static readonly BindableProperty IconImageSourceProperty = BindableProperty.Create(
+        nameof(IconImageSource),
+        typeof(ImageSource),
+        typeof(IconButton),
+        defaultValue: null,
+        propertyChanged: static (bindable, _, _) =>
+        {
+            var control = (IconButton)bindable;
+            control.OnPropertyChanged(nameof(HasIconImageSource));
+            control.OnPropertyChanged(nameof(HasIconText));
+        }
+    );
+
+    public ImageSource? IconImageSource
+    {
+        get => (ImageSource?)GetValue(IconImageSourceProperty);
+        set => SetValue(IconImageSourceProperty, value);
+    }
+
+    public static readonly BindableProperty ButtonSizeProperty = BindableProperty.Create(
+        nameof(ButtonSize),
+        typeof(double),
+        typeof(IconButton),
+        defaultValue: 70d,
+        propertyChanged: static (bindable, _, _) =>
+        {
+            var control = (IconButton)bindable;
+            control.OnPropertyChanged(nameof(ButtonStrokeShape));
+        }
+    );
+
+    public double ButtonSize
+    {
+        get => (double)GetValue(ButtonSizeProperty);
+        set => SetValue(ButtonSizeProperty, value);
+    }
+
+    public bool HasIconImageSource => IconImageSource is not null;
+
+    public bool HasIconText => !HasIconImageSource;
+
+    public RoundRectangle ButtonStrokeShape => new() { CornerRadius = (float)(ButtonSize / 2d) };
 
     public IconButton()
     {

@@ -13,6 +13,7 @@ public partial class MainPage : ContentPage
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
     private readonly ILogger<MainPage> _logger;
+    private readonly IToolbarIconService _toolbarIconService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private CancellationTokenSource? _animationCts;
     private readonly KeyboardInputBehavior _keyboardBehavior;
@@ -31,7 +32,8 @@ public partial class MainPage : ContentPage
     public MainPage(
         GameViewModel viewModel,
         TileAnimationService animationService,
-        ILogger<MainPage> logger
+        ILogger<MainPage> logger,
+        IToolbarIconService toolbarIconService
     )
     {
         InitializeComponent();
@@ -39,7 +41,11 @@ public partial class MainPage : ContentPage
         _viewModel = viewModel;
         _animationService = animationService;
         _logger = logger;
+        _toolbarIconService = toolbarIconService;
         BindingContext = _viewModel;
+
+        // Native/system icons (set in code-behind to keep XAML platform-agnostic)
+        UndoButton.IconImageSource = _toolbarIconService.Undo;
 
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;

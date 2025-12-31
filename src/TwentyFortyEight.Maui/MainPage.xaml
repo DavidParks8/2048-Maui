@@ -20,6 +20,13 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
+            x:Name="ToolbarNewGameButton"
+            AutomationId="ToolbarNewGameButton"
+            Text="{x:Static strings:AppStrings.NewGame}"
+            Command="{Binding NewGameCommand}"
+            Order="Primary"
+            Priority="0" />
+        <ToolbarItem
             x:Name="ToolbarLeaderboardButton"
             AutomationId="ToolbarLeaderboardButton"
             Text="{x:Static strings:AppStrings.LeaderboardToolbarText}"
@@ -173,24 +180,20 @@
         <!-- Controls -->
         <controls:BottomBar x:Name="ControlsBottomBar"
                               Grid.Row="3"
-                              BackgroundColor="Transparent"
+                              Background="Transparent"
                               BarHeight="80"
                               Elevation="10"
                               IosMaterial="SystemChromeMaterial"
                               UseWindowsMica="True"
                               Padding="16,12">
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                <components:IconButton Grid.Column="0"
-                                       Icon="↻"
-                                       ButtonText="{x:Static strings:AppStrings.NewGame}"
-                                       Command="{Binding NewGameCommand}"
-                                       IsButtonEnabled="True" />
-
+            <Grid ColumnDefinitions="*,Auto">
                 <components:IconButton Grid.Column="1"
-                                       Icon="⎌"
+                                       x:Name="UndoButton"
                                        ButtonText="{x:Static strings:AppStrings.Undo}"
                                        Command="{Binding UndoCommand}"
-                                       IsButtonEnabled="{Binding CanUndo}" />
+                                       IsButtonEnabled="{Binding CanUndo}"
+                                       ButtonSize="70"
+                                       HorizontalOptions="End" />
             </Grid>
         </controls:BottomBar>
 
