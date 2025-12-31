@@ -5,6 +5,7 @@ using Microsoft.Maui.Devices;
 namespace TwentyFortyEight.Maui.Helpers;
 
 [ContentProperty(nameof(Multiplier))]
+[AcceptEmptyServiceProvider]
 public sealed class OnePixelExtension : IMarkupExtension<double>
 {
     public double Multiplier { get; set; } = 1;
