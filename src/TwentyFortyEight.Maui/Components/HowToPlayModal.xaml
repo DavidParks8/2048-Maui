@@ -21,23 +21,27 @@
             </BoxView.GestureRecognizers>
         </BoxView>
         
-        <!-- Modal dialog - centered -->
-        <Border BackgroundColor="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-                Stroke="Transparent"
-                StrokeThickness="0"
-                AbsoluteLayout.LayoutBounds="0.5,0.5,-1,-1"
-                AbsoluteLayout.LayoutFlags="PositionProportional"
-                MaximumWidthRequest="400"
-                Margin="20">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="16" />
-            </Border.StrokeShape>
-            <Border.Shadow>
-                <Shadow Brush="Black"
-                        Offset="0,4"
-                        Radius="20"
-                        Opacity="0.3" />
-            </Border.Shadow>
+        <!-- Modal dialog - centered with scroll support -->
+        <ScrollView AbsoluteLayout.LayoutBounds="0,0,1,1"
+                    AbsoluteLayout.LayoutFlags="All"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                    Stroke="Transparent"
+                    StrokeThickness="0"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="400"
+                    Margin="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="Black"
+                            Offset="0,4"
+                            Radius="20"
+                            Opacity="0.3" />
+                </Border.Shadow>
             
             <!-- Inner container with padding -->
             <Grid RowDefinitions="Auto,*,Auto" 
@@ -81,5 +85,6 @@
                 
             </Grid>
         </Border>
+        </ScrollView>
     </AbsoluteLayout>
 </ContentView>
