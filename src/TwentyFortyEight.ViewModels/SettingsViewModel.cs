@@ -12,12 +12,6 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IHapticService _hapticService;
 
     [ObservableProperty]
-    private bool _animationsEnabled;
-
-    [ObservableProperty]
-    private double _animationSpeed;
-
-    [ObservableProperty]
     private bool _hapticsEnabled;
 
     /// <summary>
@@ -31,19 +25,7 @@ public partial class SettingsViewModel : ObservableObject
         _hapticService = hapticService;
 
         // Load current settings
-        _animationsEnabled = _settingsService.AnimationsEnabled;
-        _animationSpeed = _settingsService.AnimationSpeed;
         _hapticsEnabled = _settingsService.HapticsEnabled;
-    }
-
-    partial void OnAnimationsEnabledChanged(bool value)
-    {
-        _settingsService.AnimationsEnabled = value;
-    }
-
-    partial void OnAnimationSpeedChanged(double value)
-    {
-        _settingsService.AnimationSpeed = value;
     }
 
     partial void OnHapticsEnabledChanged(bool value)

@@ -253,15 +253,11 @@ public partial class GameViewModel : ObservableObject
 
     private TimeSpan GetInputBlockDuration()
     {
-        var speed = _settingsService.AnimationSpeed;
-        if (!double.IsFinite(speed) || speed <= 0)
-        {
-            speed = 1.0;
-        }
-
         // Only block input during the slide.
         // This makes the game feel responsive even if animations overlap.
-        var durationMs = AnimationConstants.BaseSlideAnimationDuration / speed;
+        // The MAUI animation system automatically respects OS accessibility settings
+        // (like reduced motion on iOS/Android) and will skip or shorten animations appropriately.
+        var durationMs = AnimationConstants.BaseSlideAnimationDuration;
 
         // Add a tiny buffer (e.g. 10ms) to ensure the UI thread has picked up the change
         return TimeSpan.FromMilliseconds(durationMs + 10);

@@ -13,64 +13,6 @@
    <ScrollView Padding="16">
       <VerticalStackLayout Spacing="28">
 
-         <!-- Animations Section -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.AnimationsSection}">
-            <components:NativeListSection.Items>
-               <!-- Enable Animations Toggle -->
-               <components:SettingToggleRow x:Name="AnimationsToggleRow"
-                  Label="{x:Static strings:AppStrings.EnableAnimations}"
-                  IsToggled="{Binding AnimationsEnabled}"
-                  AutomationId="AnimationsEnabledSwitch"
-                  SemanticHint="{x:Static strings:AppStrings.EnableAnimationsHint}" />
-               
-               <!-- Separator -->
-               <components:NativeListSeparator IsVisible="{Binding AnimationsEnabled}" Margin="16,0" />
-
-               <!-- Animation Speed Slider -->
-               <VerticalStackLayout Spacing="8" IsVisible="{Binding AnimationsEnabled}" Padding="16,12">
-                  <Label
-                     Text="{x:Static strings:AppStrings.AnimationSpeed}"
-                     FontSize="17"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}" />
-                  
-                  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
-                     <Label
-                        Grid.Column="0"
-                        Text="{x:Static strings:AppStrings.AnimationSpeedSlow}"
-                        FontSize="13"
-                        TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-                        VerticalOptions="Center" />
-                     <Slider
-                        AutomationId="AnimationSpeedSlider"
-                        Grid.Column="1"
-                        Value="{Binding AnimationSpeed}"
-                        Minimum="0.5"
-                        Maximum="1.5"
-                        MinimumTrackColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
-                        MaximumTrackColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
-                        ThumbColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
-                        VerticalOptions="Center"
-                        SemanticProperties.Description="{x:Static strings:AppStrings.AnimationSpeed}"
-                        SemanticProperties.Hint="{x:Static strings:AppStrings.AnimationSpeedHint}" />
-                     <Label
-                        Grid.Column="2"
-                        Text="{x:Static strings:AppStrings.AnimationSpeedFast}"
-                        FontSize="13"
-                        TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-                        VerticalOptions="Center" />
-                  </Grid>
-
-                  <Label
-                     Text="{Binding AnimationSpeed, StringFormat='{0:F1}x'}"
-                     FontSize="15"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-                     HorizontalOptions="Center"
-                     Margin="0,4,0,0" />
-               </VerticalStackLayout>
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
-
          <!-- Haptics Section (conditionally visible) -->
          <components:NativeListSection Header="{x:Static strings:AppStrings.HapticsSection}" IsVisible="{Binding IsHapticsSupported}">
             <components:NativeListSection.Items>

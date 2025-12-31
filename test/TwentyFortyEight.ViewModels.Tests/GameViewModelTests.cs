@@ -37,7 +37,6 @@ public class GameViewModelTests
         _feedbackServiceMock = new Mock<IUserFeedbackService>();
 
         // Setup default behavior
-        _settingsServiceMock.Setup(s => s.AnimationSpeed).Returns(1.0);
         _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
         _repositoryMock.Setup(r => r.GetBestScore()).Returns(0);
         _repositoryMock.Setup(r => r.LoadGameState()).Returns((GameState?)null);

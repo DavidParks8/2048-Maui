@@ -8,8 +8,9 @@ namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
 /// Service responsible for animating tile movements, merges, and spawns on the game board.
+/// Animations automatically respect OS accessibility settings for reduced motion.
 /// </summary>
-public class TileAnimationService(ISettingsService settingsService)
+public class TileAnimationService
 {
     /// <summary>
     /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
@@ -22,41 +23,9 @@ public class TileAnimationService(ISettingsService settingsService)
     private const double DefaultBoardDimension = 400;
 
     /// <summary>
-    /// Default animation speed when the setting is invalid.
-    /// </summary>
-    private const double DefaultAnimationSpeed = 1.0;
-
-    /// <summary>
-    /// Minimum duration for an animation to be perceptible (in milliseconds).
-    /// </summary>
-    private const uint MinimumAnimationDuration = 16;
-
-    /// <summary>
     /// Small delay to ensure UI updates before animating in milliseconds.
     /// </summary>
     private const int UiUpdateDelay = 10;
-
-    /// <summary>
-    /// Gets the adjusted animation duration based on the animation speed setting.
-    /// </summary>
-    private uint GetAdjustedDuration(uint baseDuration)
-    {
-        var speed = settingsService.AnimationSpeed;
-        if (!double.IsFinite(speed) || speed <= 0)
-        {
-            speed = DefaultAnimationSpeed;
-        }
-
-        var adjusted = baseDuration / speed;
-        if (!double.IsFinite(adjusted) || adjusted <= 0)
-        {
-            return MinimumAnimationDuration;
-        }
-
-        // Round rather than truncate to avoid 0ms due to casting.
-        var adjustedMs = (uint)Math.Round(adjusted, MidpointRounding.AwayFromZero);
-        return adjustedMs < MinimumAnimationDuration ? MinimumAnimationDuration : adjustedMs;
-    }
 
     /// <summary>
     /// Animates tile updates with cancellation support.
@@ -78,31 +47,8 @@ public class TileAnimationService(ISettingsService settingsService)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Skip animations if disabled
-        if (!settingsService.AnimationsEnabled)
-        {
-            // Just update the tiles without animation
-            foreach (var tile in args.MergedTiles)
-            {
-                if (tileBorders.TryGetValue(tile, out var border))
-                {
-                    border.Opacity = 1;
-                    border.Scale = 1;
-                }
-            }
-
-            foreach (var tile in args.NewTiles)
-            {
-                if (tileBorders.TryGetValue(tile, out var border))
-                {
-                    border.Opacity = 1;
-                    border.Scale = 1;
-                }
-            }
-
-            return;
-        }
-
+        // Animations will automatically respect OS accessibility settings (reduced motion)
+        // If the OS has animations disabled, MAUI will skip to the finished state
         var cellStepX = CalculateCellStep(gameBoard.Width, boardSize);
         var cellStepY = CalculateCellStep(gameBoard.Height, boardSize);
 
@@ -235,7 +181,7 @@ public class TileAnimationService(ISettingsService settingsService)
                 overlayBorder.TranslateToAsync(
                     translateX,
                     translateY,
-                    GetAdjustedDuration(AnimationConstants.BaseSlideAnimationDuration),
+                    AnimationConstants.BaseSlideAnimationDuration,
                     Easing.CubicOut
                 )
             );
@@ -266,12 +212,12 @@ public class TileAnimationService(ISettingsService settingsService)
                     border.Scale = 0.8;
                     await border.ScaleToAsync(
                         1.2,
-                        GetAdjustedDuration(AnimationConstants.BaseMergePulseUpDuration),
+                        AnimationConstants.BaseMergePulseUpDuration,
                         Easing.CubicOut
                     );
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(AnimationConstants.BaseMergePulseDownDuration),
+                        AnimationConstants.BaseMergePulseDownDuration,
                         Easing.CubicIn
                     );
                 }
@@ -305,7 +251,7 @@ public class TileAnimationService(ISettingsService settingsService)
                     await Task.Delay(UiUpdateDelay, cancellationToken);
                     await border.ScaleToAsync(
                         1.0,
-                        GetAdjustedDuration(AnimationConstants.BaseNewTileScaleDuration),
+                        AnimationConstants.BaseNewTileScaleDuration,
                         Easing.CubicOut
                     );
                 }
