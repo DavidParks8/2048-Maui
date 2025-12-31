@@ -31,13 +31,9 @@
                             Label="{x:Static strings:AppStrings.GamesPlayed}"
                             Value="{Binding GamesPlayed}" />
 
-                        <components:NativeListSeparator />
-
                         <components:NativeListRow x:Name="GamesWonRow"
                             Label="{x:Static strings:AppStrings.GamesWon}"
                             Value="{Binding GamesWon}" />
-
-                        <components:NativeListSeparator />
 
                         <components:NativeListRow x:Name="WinRateRow"
                             Label="{x:Static strings:AppStrings.WinRate}"
@@ -57,13 +53,9 @@
                             Label="{x:Static strings:AppStrings.BestScoreLabel}"
                             Value="{Binding BestScore}" />
 
-                        <components:NativeListSeparator />
-
                         <components:NativeListRow x:Name="AverageScoreRow"
                             Label="{x:Static strings:AppStrings.AverageScore}"
                             Value="{Binding AverageScore}" />
-
-                        <components:NativeListSeparator />
 
                         <components:NativeListRow x:Name="HighestTileRow"
                             Label="{x:Static strings:AppStrings.HighestTile}"
@@ -104,8 +96,6 @@
                         <components:NativeListRow x:Name="CurrentStreakRow"
                             Label="{x:Static strings:AppStrings.Current}"
                             Value="{Binding CurrentStreak}" />
-
-                        <components:NativeListSeparator />
 
                         <components:NativeListRow x:Name="BestStreakRow"
                             Label="{x:Static strings:AppStrings.BestLabel}"

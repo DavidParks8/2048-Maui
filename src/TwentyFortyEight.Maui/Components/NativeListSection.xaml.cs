@@ -38,6 +38,8 @@ public partial class NativeListSection : ContentView
     {
         InitializeComponent();
         Items.CollectionChanged += OnItemsCollectionChanged;
+
+        RebuildContentContainer();
     }
 
     private void OnHeaderChanged(string? oldValue, string? newValue)
@@ -48,43 +50,32 @@ public partial class NativeListSection : ContentView
 
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        switch (e.Action)
+        RebuildContentContainer();
+    }
+
+    private void RebuildContentContainer()
+    {
+        ContentContainer.Children.Clear();
+
+        // Treat the Items collection as the "logical" items; ignore any explicitly-added separators
+        // to avoid double separators.
+        List<View> logicalItems = new(Items.Count);
+        foreach (var item in Items)
         {
-            case NotifyCollectionChangedAction.Add:
-                if (e.NewItems != null)
-                {
-                    int index = e.NewStartingIndex;
-                    foreach (View item in e.NewItems)
-                    {
-                        ContentContainer.Children.Insert(index++, item);
-                    }
-                }
-                break;
+            if (item is not NativeListSeparator)
+            {
+                logicalItems.Add(item);
+            }
+        }
 
-            case NotifyCollectionChangedAction.Remove:
-                if (e.OldItems != null)
-                {
-                    foreach (View item in e.OldItems)
-                    {
-                        ContentContainer.Children.Remove(item);
-                    }
-                }
-                break;
+        for (int i = 0; i < logicalItems.Count; i++)
+        {
+            ContentContainer.Children.Add(logicalItems[i]);
 
-            case NotifyCollectionChangedAction.Reset:
-                ContentContainer.Children.Clear();
-                break;
-
-            case NotifyCollectionChangedAction.Replace:
-                if (e.OldItems != null && e.NewItems != null)
-                {
-                    int index = e.OldStartingIndex;
-                    foreach (View item in e.NewItems)
-                    {
-                        ContentContainer.Children[index++] = item;
-                    }
-                }
-                break;
+            if (i < logicalItems.Count - 1)
+            {
+                ContentContainer.Children.Add(new NativeListSeparator());
+            }
         }
     }
 }
