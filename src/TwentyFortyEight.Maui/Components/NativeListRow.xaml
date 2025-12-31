@@ -10,13 +10,11 @@
         <Label Grid.Column="0"
                Text="{Binding Label, Source={x:Reference this}}"
                FontSize="17"
-               TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
                VerticalOptions="Center" />
         <Label Grid.Column="1"
                Text="{Binding Value, Source={x:Reference this}}"
                FontSize="17"
                FontAttributes="Bold"
-               TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
                VerticalOptions="Center" />
     </Grid>
 </ContentView>

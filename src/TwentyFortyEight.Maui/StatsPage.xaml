@@ -83,13 +83,11 @@
                             <Label x:Name="TotalMovesLabel"
                                 Text="{x:Static strings:AppStrings.TotalMoves}"
                                 FontSize="15"
-                                TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                                 HorizontalOptions="Center" />
                             <Label x:Name="TotalMovesValue"
                                 Text="{Binding TotalMoves}"
                                 FontSize="32"
                                 FontAttributes="Bold"
-                                TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
                                 HorizontalOptions="Center" />
                         </VerticalStackLayout>
                     </components:NativeSection.SectionContent>
@@ -123,8 +121,6 @@
                     AutomationId="ResetStatisticsButton"
                     Text="{x:Static strings:AppStrings.ResetStatistics}"
                     Command="{Binding ResetStatisticsCommand}"
-                    Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
-                    TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                     FontSize="17"
                     FontAttributes="Bold"
                     HeightRequest="50"

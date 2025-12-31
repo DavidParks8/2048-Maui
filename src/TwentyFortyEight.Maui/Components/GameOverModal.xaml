@@ -39,13 +39,11 @@
                     <Label x:Name="YourScoreLabel"
                            Text="{x:Static strings:AppStrings.YourScore}"
                            FontSize="16"
-                           TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                            HorizontalOptions="Center" />
                     <Label x:Name="ModalScoreValue"
                            Text="{Binding Score, Source={x:Reference this}}"
                            FontSize="48"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
                 
@@ -53,7 +51,6 @@
                 <Label x:Name="BestScoreIndicator"
                        Text="{Binding BestScoreText, Source={x:Reference this}}"
                        FontSize="14"
-                       TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
                        HorizontalOptions="Center" />
                 
                 <!-- New Game Button -->
@@ -61,8 +58,6 @@
                     AutomationId="TryAgainButton"
                     Command="{Binding NewGameCommand, Source={x:Reference this}}"
                     Text="{x:Static strings:AppStrings.TryAgain}"
-                    Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
-                    TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                     FontSize="18"
                     FontAttributes="Bold"
                     HeightRequest="55"

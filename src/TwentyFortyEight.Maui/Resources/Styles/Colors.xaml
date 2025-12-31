@@ -39,12 +39,6 @@
 
     <Color x:Key="GameTextMutedDark">#a0968b</Color>
 
-    <!-- Native-looking Button Colors -->
-    <Color x:Key="NativeButtonBackgroundLight">#007AFF</Color>
-    <Color x:Key="NativeButtonBackgroundDark">#0A84FF</Color>
-    <Color x:Key="NativeButtonTextLight">White</Color>
-    <Color x:Key="NativeButtonTextDark">White</Color>
-
     <!-- Native Text Colors -->
     <Color x:Key="NativeTextPrimaryLight">#000000</Color>
     <Color x:Key="NativeTextPrimaryDark">#FFFFFF</Color>

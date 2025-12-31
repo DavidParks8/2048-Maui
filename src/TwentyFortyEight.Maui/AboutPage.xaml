@@ -19,12 +19,10 @@
                      Text="{x:Static strings:AppStrings.ForTaliaTitle}"
                      FontSize="28"
                      FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
                      HorizontalOptions="Center" />
 
                   <Label
                      FontSize="17"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                      LineHeight="1.5"
                      HorizontalTextAlignment="Center">
                      <Label.FormattedText>
@@ -50,13 +48,11 @@
                   <Label
                      Text="{x:Static strings:AppStrings.AppNameForTalia}"
                      FontSize="17"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}" />
+                     FontAttributes="Bold" />
 
                   <Label
                      Text="{x:Static strings:AppStrings.AppDescription}"
                      FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                      LineHeight="1.4" />
                </VerticalStackLayout>
             </components:NativeSection.SectionContent>
@@ -68,16 +64,13 @@
                <VerticalStackLayout Spacing="16">
                   <Label
                      Text="{x:Static strings:AppStrings.NeedHelpOrBug}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
+                     FontSize="15" />
 
                   <Button
                      x:Name="GitHubIssuesButton"
                      Text="{x:Static strings:AppStrings.ReportAnIssue}"
                      FontSize="17"
                      FontAttributes="Bold"
-                     BackgroundColor="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
                      CornerRadius="8"
                      Padding="16,12"
                      Clicked="OnGitHubIssuesClicked"
@@ -90,7 +83,6 @@
          <Label
             Text="{x:Static strings:AppStrings.MadeWithLove}"
             FontSize="12"
-            TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
             HorizontalOptions="Center"
             Margin="0,10,0,20" />
 
