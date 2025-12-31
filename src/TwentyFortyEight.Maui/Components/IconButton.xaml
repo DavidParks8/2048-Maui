@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TwentyFortyEight.Maui.Components.IconButton"
              x:Name="Root">
-    <Border Background="{OnPlatform iOS=#40FFFFFF, Default={AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}}"
+    <Border
             Stroke="Transparent"
             StrokeThickness="0"
             WidthRequest="{Binding ButtonSize, Source={x:Reference Root}}"
@@ -26,12 +26,10 @@
             <Label Text="{Binding Icon, Source={x:Reference Root}}"
                    FontSize="24"
                    FontAttributes="Bold"
-                   TextColor="{OnPlatform iOS=White, Default={AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}}"
                    HorizontalOptions="Center"
                    IsVisible="{Binding HasIconText, Source={x:Reference Root}}" />
             <Label Text="{Binding ButtonText, Source={x:Reference Root}}"
                    FontSize="12"
-                   TextColor="{OnPlatform iOS=White, Default={AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}}"
                    HorizontalOptions="Center" />
         </VerticalStackLayout>
     </Border>

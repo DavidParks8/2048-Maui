@@ -6,7 +6,7 @@ public class AppDelegate : MauiUIApplicationDelegate
 {
     protected override MauiApp CreateMauiApp() => TwentyFortyEight.Maui.MauiProgram.CreateMauiApp();
 
-    public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions)
+    public override bool FinishedLaunching(UIApplication application, NSDictionary? launchOptions)
     {
         ConfigureLiquidGlassNavigationBar();
         return base.FinishedLaunching(application, launchOptions);

@@ -32,14 +32,9 @@ public static class MauiProgram
         // Register custom handlers
         builder.ConfigureMauiHandlers(handlers =>
         {
-#if IOS
             handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
-#endif
 #if ANDROID
-            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
-#endif
-#if WINDOWS
-            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+            handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
         });
 

@@ -10,107 +10,129 @@
    Title="{x:Static strings:AppStrings.StatisticsPageTitle}"
    Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
 
-   <ScrollView Padding="16">
-      <VerticalStackLayout Spacing="20">
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="0,16">
+            <!-- Flex container for stats sections -->
+            <FlexLayout
+                Wrap="Wrap"
+                JustifyContent="Center"
+                AlignContent="Start"
+                AlignItems="Start">
 
-         <!-- Games Section -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.GamesSection}">
-            <components:NativeListSection.Items>
-               <!-- Games Played -->
-               <components:NativeListRow x:Name="GamesPlayedRow"
-                  Label="{x:Static strings:AppStrings.GamesPlayed}"
-                  Value="{Binding GamesPlayed}" />
-               
-               <components:NativeListSeparator />
-               
-               <!-- Games Won -->
-               <components:NativeListRow x:Name="GamesWonRow"
-                  Label="{x:Static strings:AppStrings.GamesWon}"
-                  Value="{Binding GamesWon}" />
-               
-               <components:NativeListSeparator />
-               
-               <!-- Win Rate -->
-               <components:NativeListRow x:Name="WinRateRow"
-                  Label="{x:Static strings:AppStrings.WinRate}"
-                  Value="{Binding WinRate}" />
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
+                <!-- Games Section -->
+                <components:NativeListSection Header="{x:Static strings:AppStrings.GamesSection}"
+                    FlexLayout.Basis="320"
+                    FlexLayout.Grow="1"
+                    FlexLayout.Shrink="1"
+                    MaximumWidthRequest="400"
+                    Margin="6,0,6,12">
+                    <components:NativeListSection.Items>
+                        <components:NativeListRow x:Name="GamesPlayedRow"
+                            Label="{x:Static strings:AppStrings.GamesPlayed}"
+                            Value="{Binding GamesPlayed}" />
 
-         <!-- Scores Section -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.ScoresSection}">
-            <components:NativeListSection.Items>
-               <!-- Best Score -->
-               <components:NativeListRow x:Name="BestScoreRow"
-                  Label="{x:Static strings:AppStrings.BestScoreLabel}"
-                  Value="{Binding BestScore}" />
-               
-               <components:NativeListSeparator />
-               
-               <!-- Average Score -->
-               <components:NativeListRow x:Name="AverageScoreRow"
-                  Label="{x:Static strings:AppStrings.AverageScore}"
-                  Value="{Binding AverageScore}" />
-               
-               <components:NativeListSeparator />
-               
-               <!-- Highest Tile -->
-               <components:NativeListRow x:Name="HighestTileRow"
-                  Label="{x:Static strings:AppStrings.HighestTile}"
-                  Value="{Binding HighestTile}" />
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
+                        <components:NativeListSeparator />
 
-         <!-- Moves Section -->
-         <components:NativeSection Header="{x:Static strings:AppStrings.MovesSection}" ContentPadding="16,20">
-            <components:NativeSection.SectionContent>
-               <VerticalStackLayout Spacing="8">
-                  <Label x:Name="TotalMovesLabel"
-                     Text="{x:Static strings:AppStrings.TotalMoves}"
-                     FontSize="15"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-                     HorizontalOptions="Center" />
-                  <Label x:Name="TotalMovesValue"
-                     Text="{Binding TotalMoves}"
-                     FontSize="32"
-                     FontAttributes="Bold"
-                     TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-                     HorizontalOptions="Center" />
-               </VerticalStackLayout>
-            </components:NativeSection.SectionContent>
-         </components:NativeSection>
+                        <components:NativeListRow x:Name="GamesWonRow"
+                            Label="{x:Static strings:AppStrings.GamesWon}"
+                            Value="{Binding GamesWon}" />
 
-         <!-- Streaks Section -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.StreaksSection}">
-            <components:NativeListSection.Items>
-               <!-- Current Streak -->
-               <components:NativeListRow x:Name="CurrentStreakRow"
-                  Label="{x:Static strings:AppStrings.Current}"
-                  Value="{Binding CurrentStreak}" />
-               
-               <components:NativeListSeparator />
-               
-               <!-- Best Streak -->
-               <components:NativeListRow x:Name="BestStreakRow"
-                  Label="{x:Static strings:AppStrings.BestLabel}"
-                  Value="{Binding BestStreak}" />
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
+                        <components:NativeListSeparator />
 
-         <!-- Reset Statistics Button -->
-         <Button x:Name="ResetStatisticsButton"
-            AutomationId="ResetStatisticsButton"
-            Text="{x:Static strings:AppStrings.ResetStatistics}"
-            Command="{Binding ResetStatisticsCommand}"
-            Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
-            TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
-            FontSize="17"
-            FontAttributes="Bold"
-            HeightRequest="50"
-            CornerRadius="10"
-            Margin="0,8,0,0"
-            HorizontalOptions="Fill" />
+                        <components:NativeListRow x:Name="WinRateRow"
+                            Label="{x:Static strings:AppStrings.WinRate}"
+                            Value="{Binding WinRate}" />
+                    </components:NativeListSection.Items>
+                </components:NativeListSection>
 
-      </VerticalStackLayout>
-   </ScrollView>
+                <!-- Scores Section -->
+                <components:NativeListSection Header="{x:Static strings:AppStrings.ScoresSection}"
+                    FlexLayout.Basis="320"
+                    FlexLayout.Grow="1"
+                    FlexLayout.Shrink="1"
+                    MaximumWidthRequest="400"
+                    Margin="6,0,6,12">
+                    <components:NativeListSection.Items>
+                        <components:NativeListRow x:Name="BestScoreRow"
+                            Label="{x:Static strings:AppStrings.BestScoreLabel}"
+                            Value="{Binding BestScore}" />
+
+                        <components:NativeListSeparator />
+
+                        <components:NativeListRow x:Name="AverageScoreRow"
+                            Label="{x:Static strings:AppStrings.AverageScore}"
+                            Value="{Binding AverageScore}" />
+
+                        <components:NativeListSeparator />
+
+                        <components:NativeListRow x:Name="HighestTileRow"
+                            Label="{x:Static strings:AppStrings.HighestTile}"
+                            Value="{Binding HighestTile}" />
+                    </components:NativeListSection.Items>
+                </components:NativeListSection>
+
+                <!-- Moves Section -->
+                <components:NativeSection Header="{x:Static strings:AppStrings.MovesSection}" ContentPadding="16,20"
+                    FlexLayout.Basis="320"
+                    FlexLayout.Grow="1"
+                    FlexLayout.Shrink="1"
+                    MaximumWidthRequest="400"
+                    Margin="6,0,6,12">
+                    <components:NativeSection.SectionContent>
+                        <VerticalStackLayout Spacing="8">
+                            <Label x:Name="TotalMovesLabel"
+                                Text="{x:Static strings:AppStrings.TotalMoves}"
+                                FontSize="15"
+                                TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                                HorizontalOptions="Center" />
+                            <Label x:Name="TotalMovesValue"
+                                Text="{Binding TotalMoves}"
+                                FontSize="32"
+                                FontAttributes="Bold"
+                                TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                                HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </components:NativeSection.SectionContent>
+                </components:NativeSection>
+
+                <!-- Streaks Section -->
+                <components:NativeListSection Header="{x:Static strings:AppStrings.StreaksSection}"
+                    FlexLayout.Basis="320"
+                    FlexLayout.Grow="1"
+                    FlexLayout.Shrink="1"
+                    MaximumWidthRequest="400"
+                    Margin="6,0,6,12">
+                    <components:NativeListSection.Items>
+                        <components:NativeListRow x:Name="CurrentStreakRow"
+                            Label="{x:Static strings:AppStrings.Current}"
+                            Value="{Binding CurrentStreak}" />
+
+                        <components:NativeListSeparator />
+
+                        <components:NativeListRow x:Name="BestStreakRow"
+                            Label="{x:Static strings:AppStrings.BestLabel}"
+                            Value="{Binding BestStreak}" />
+                    </components:NativeListSection.Items>
+                </components:NativeListSection>
+
+            </FlexLayout>
+
+            <!-- Reset Statistics Button -->
+            <Grid Padding="12,0">
+                <Button x:Name="ResetStatisticsButton"
+                    AutomationId="ResetStatisticsButton"
+                    Text="{x:Static strings:AppStrings.ResetStatistics}"
+                    Command="{Binding ResetStatisticsCommand}"
+                    Background="{AppThemeBinding Light={StaticResource NativeButtonBackgroundLight}, Dark={StaticResource NativeButtonBackgroundDark}}"
+                    TextColor="{AppThemeBinding Light={StaticResource NativeButtonTextLight}, Dark={StaticResource NativeButtonTextDark}}"
+                    FontSize="17"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="10"
+                    HorizontalOptions="Center"
+                    MaximumWidthRequest="386" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+
 </ContentPage>

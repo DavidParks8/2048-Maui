@@ -101,13 +101,13 @@
     <value>Best: {0}</value>
   </data>
   <data name="TryAgain" xml:space="preserve">
-    <value>↻ Try Again</value>
+    <value>Try Again</value>
   </data>
   <data name="Statistics" xml:space="preserve">
-    <value>📊 Statistics</value>
+    <value>Statistics</value>
   </data>
   <data name="StatisticsPageTitle" xml:space="preserve">
-    <value>📊 Statistics</value>
+    <value>Statistics</value>
   </data>
   <data name="StatisticsDescription" xml:space="preserve">
     <value>View gameplay statistics</value>
@@ -221,7 +221,7 @@ Keep combining tiles to reach the 2048 tile and win the game!
     <value>Settings</value>
   </data>
   <data name="SettingsPageTitle" xml:space="preserve">
-    <value>⚙️ Settings</value>
+    <value>Settings</value>
   </data>
   <data name="SettingsDescription" xml:space="preserve">
     <value>Open settings</value>
@@ -248,7 +248,7 @@ Keep combining tiles to reach the 2048 tile and win the game!
     <value>About this app</value>
   </data>
   <data name="AboutPageTitle" xml:space="preserve">
-    <value>❤️ About</value>
+    <value>About</value>
   </data>
   <data name="ForTaliaTitle" xml:space="preserve">
     <value>For Talia! 🎄</value>
