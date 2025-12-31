@@ -196,21 +196,5 @@
                                        HorizontalOptions="End" />
             </Grid>
         </controls:BottomBar>
-
-        <!-- Game Over Modal -->
-        <components:GameOverModal x:Name="GameOverModal"
-                                  Grid.RowSpan="4"
-                                  IsVisible="{Binding IsGameOver}"
-                                  Score="{Binding Score}"
-                                  BestScore="{Binding BestScore}"
-                                  NewGameCommand="{Binding NewGameCommand}"
-                                  ZIndex="100" />
-
-        <!-- How To Play Modal -->
-        <components:HowToPlayModal x:Name="HowToPlayModal"
-                                   Grid.RowSpan="4"
-                                   IsVisible="{Binding IsHowToPlayVisible}"
-                                   CloseCommand="{Binding CloseHowToPlayCommand}"
-                                   ZIndex="100" />
     </Grid>
 </ContentPage>

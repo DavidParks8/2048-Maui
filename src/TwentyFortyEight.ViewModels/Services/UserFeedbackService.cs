@@ -63,4 +63,29 @@ public sealed class UserFeedbackService(
             localizationService.Cancel
         );
     }
+
+    public Task<bool> ShowGameOverAsync(int score, int bestScore)
+    {
+        string message = $"{localizationService.YourScore}\n{score}";
+        if (score >= bestScore && bestScore > 0)
+        {
+            message += $"\n\n{localizationService.BestFormat.Replace("{0}", bestScore.ToString())}";
+        }
+
+        return alertService.ShowConfirmationAsync(
+            localizationService.GameOver,
+            message,
+            localizationService.TryAgain,
+            localizationService.Cancel
+        );
+    }
+
+    public Task ShowHowToPlayAsync()
+    {
+        return alertService.ShowAlertAsync(
+            localizationService.HowToPlayTitle,
+            localizationService.HowToPlayContent,
+            localizationService.GotIt
+        );
+    }
 }

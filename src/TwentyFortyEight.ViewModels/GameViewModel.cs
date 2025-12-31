@@ -95,25 +95,7 @@ public partial class GameViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    private bool _isGameOver;
-
-    partial void OnIsGameOverChanged(bool value)
-    {
-        // Don't announce during initialization
-        if (!_isInitialized || !value)
-        {
-            return;
-        }
-
-        // Announce game over with final score
-        _feedbackService.AnnounceGameOver(Score);
-    }
-
-    [ObservableProperty]
     private bool _canUndo;
-
-    [ObservableProperty]
-    private bool _isHowToPlayVisible;
 
     [ObservableProperty]
     private bool _isSocialGamingAvailable;
@@ -178,7 +160,7 @@ public partial class GameViewModel : ObservableObject
     private async Task NewGameAsync()
     {
         // Show confirmation if game is in progress (has moves and not game over)
-        if (Moves > 0 && !IsGameOver)
+        if (Moves > 0 && !_engine.CurrentState.IsGameOver)
         {
             if (!await _feedbackService.ConfirmNewGameAsync())
             {
@@ -192,15 +174,9 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowHowToPlay()
+    private Task ShowHowToPlay()
     {
-        IsHowToPlayVisible = true;
-    }
-
-    [RelayCommand]
-    private void CloseHowToPlay()
-    {
-        IsHowToPlayVisible = false;
+        return _feedbackService.ShowHowToPlayAsync();
     }
 
     [RelayCommand]
@@ -374,8 +350,17 @@ public partial class GameViewModel : ObservableObject
         Moves = state.MoveCount;
         CanUndo = _engine.CanUndo;
 
-        // Update game over state and status text
-        IsGameOver = state.IsGameOver;
+        // Handle game over state
+        if (state.IsGameOver)
+        {
+            // Don't announce during initialization
+            if (_isInitialized)
+            {
+                _feedbackService.AnnounceGameOver(Score);
+                // Show game over dialog asynchronously (fire and forget)
+                _ = ShowGameOverDialogAsync();
+            }
+        }
 
         if (state.IsWon)
         {
@@ -416,6 +401,15 @@ public partial class GameViewModel : ObservableObject
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
+
+    private async Task ShowGameOverDialogAsync()
+    {
+        var tryAgain = await _feedbackService.ShowGameOverAsync(Score, BestScore);
+        if (tryAgain)
+        {
+            await NewGameAsync();
+        }
+    }
 
     [RelayCommand]
     private Task ShowLeaderboard() => _sessionCoordinator.ShowLeaderboardAsync();

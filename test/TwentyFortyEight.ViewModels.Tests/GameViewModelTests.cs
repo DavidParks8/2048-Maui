@@ -93,50 +93,16 @@ public class GameViewModelTests
     }
 
     [TestMethod]
-    public void IsGameOver_InitiallyFalse()
-    {
-        // Arrange & Act
-        var viewModel = CreateViewModel();
-
-        // Assert
-        Assert.IsFalse(viewModel.IsGameOver);
-    }
-
-    [TestMethod]
-    public void IsHowToPlayVisible_InitiallyFalse()
-    {
-        // Arrange & Act
-        var viewModel = CreateViewModel();
-
-        // Assert
-        Assert.IsFalse(viewModel.IsHowToPlayVisible);
-    }
-
-    [TestMethod]
-    public void ShowHowToPlayCommand_SetsIsHowToPlayVisibleToTrue()
+    public async Task ShowHowToPlayCommand_CallsFeedbackService()
     {
         // Arrange
         var viewModel = CreateViewModel();
 
         // Act
-        viewModel.ShowHowToPlayCommand.Execute(null);
+        await viewModel.ShowHowToPlayCommand.ExecuteAsync(null);
 
         // Assert
-        Assert.IsTrue(viewModel.IsHowToPlayVisible);
-    }
-
-    [TestMethod]
-    public void CloseHowToPlayCommand_SetsIsHowToPlayVisibleToFalse()
-    {
-        // Arrange
-        var viewModel = CreateViewModel();
-        viewModel.ShowHowToPlayCommand.Execute(null);
-
-        // Act
-        viewModel.CloseHowToPlayCommand.Execute(null);
-
-        // Assert
-        Assert.IsFalse(viewModel.IsHowToPlayVisible);
+        _feedbackServiceMock.Verify(f => f.ShowHowToPlayAsync(), Times.Once);
     }
 
     [TestMethod]

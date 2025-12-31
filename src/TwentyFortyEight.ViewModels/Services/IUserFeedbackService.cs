@@ -42,4 +42,17 @@ public interface IUserFeedbackService
     /// </summary>
     /// <returns>True if user confirmed, false if cancelled.</returns>
     Task<bool> ConfirmNewGameAsync();
+
+    /// <summary>
+    /// Shows the game over dialog with final score.
+    /// </summary>
+    /// <param name="score">The final score achieved.</param>
+    /// <param name="bestScore">The best score.</param>
+    /// <returns>True if user wants to try again, false otherwise.</returns>
+    Task<bool> ShowGameOverAsync(int score, int bestScore);
+
+    /// <summary>
+    /// Shows the how to play instructions.
+    /// </summary>
+    Task ShowHowToPlayAsync();
 }

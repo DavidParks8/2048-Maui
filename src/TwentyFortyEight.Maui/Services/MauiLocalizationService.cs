@@ -22,6 +22,27 @@ public class MauiLocalizationService : ILocalizationService
     public string Cancel => AppStrings.Cancel;
 
     /// <inheritdoc />
+    public string GameOver => AppStrings.GameOver;
+
+    /// <inheritdoc />
+    public string YourScore => AppStrings.YourScore;
+
+    /// <inheritdoc />
+    public string BestFormat => AppStrings.BestFormat;
+
+    /// <inheritdoc />
+    public string TryAgain => AppStrings.TryAgain;
+
+    /// <inheritdoc />
+    public string HowToPlayTitle => AppStrings.HowToPlayTitle;
+
+    /// <inheritdoc />
+    public string HowToPlayContent => AppStrings.HowToPlayContent;
+
+    /// <inheritdoc />
+    public string GotIt => AppStrings.GotIt;
+
+    /// <inheritdoc />
     public string YouWin => AppStrings.YouWin;
 
     /// <inheritdoc />
