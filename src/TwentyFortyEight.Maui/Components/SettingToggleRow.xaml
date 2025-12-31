@@ -6,9 +6,32 @@
              x:DataType="local:SettingToggleRow"
              x:Name="this">
     
-    <Grid ColumnDefinitions="*,40"
-          ColumnSpacing="16"
+    <Grid ColumnSpacing="16"
           Padding="16,12">
+        <Grid.ColumnDefinitions>
+            <OnPlatform x:TypeArguments="ColumnDefinitionCollection">
+                <On Platform="WinUI">
+                    <ColumnDefinitionCollection>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="40" />
+                    </ColumnDefinitionCollection>
+                </On>
+                <On Platform="iOS,MacCatalyst,Android">
+                    <ColumnDefinitionCollection>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </ColumnDefinitionCollection>
+                </On>
+            </OnPlatform>
+        </Grid.ColumnDefinitions>
+        <Grid.Padding>
+            <OnPlatform x:TypeArguments="Thickness">
+                <On Platform="iOS" Value="16,12,8,12" />
+                <On Platform="WinUI" Value="16,12" />
+                <On Platform="Android" Value="16,12" />
+                <On Platform="MacCatalyst" Value="16,12,8,12" />
+            </OnPlatform>
+        </Grid.Padding>
         <Label Grid.Column="0"
                Text="{Binding Label, Source={x:Reference this}}"
                FontSize="17"
@@ -19,9 +42,15 @@
                 IsToggled="{Binding IsToggled, Source={x:Reference this}}"
                 OnColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
                 ThumbColor="White"
-                HorizontalOptions="Center"
                 VerticalOptions="Center"
                 SemanticProperties.Description="{Binding Label, Source={x:Reference this}}"
-                SemanticProperties.Hint="{Binding SemanticHint, Source={x:Reference this}}" />
+                SemanticProperties.Hint="{Binding SemanticHint, Source={x:Reference this}}">
+            <Switch.HorizontalOptions>
+                <OnPlatform x:TypeArguments="LayoutOptions">
+                    <On Platform="WinUI" Value="Center" />
+                    <On Platform="iOS,MacCatalyst,Android" Value="End" />
+                </OnPlatform>
+            </Switch.HorizontalOptions>
+        </Switch>
     </Grid>
 </ContentView>

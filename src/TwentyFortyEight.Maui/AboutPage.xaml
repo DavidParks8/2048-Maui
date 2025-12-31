@@ -3,6 +3,7 @@
    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
    xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+   xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
    x:Class="TwentyFortyEight.Maui.AboutPage"
    Title="{x:Static strings:AppStrings.AboutPageTitle}"
    Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
@@ -11,14 +12,8 @@
       <VerticalStackLayout Spacing="20">
 
          <!-- Main Message Section -->
-         <VerticalStackLayout Spacing="8">
-            <Border
-               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
-               Stroke="Transparent"
-               Padding="20,24">
-               <Border.StrokeShape>
-                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
-               </Border.StrokeShape>
+         <components:NativeSection ContentPadding="20,24">
+            <components:NativeSection.SectionContent>
                <VerticalStackLayout Spacing="20">
                   <Label
                      Text="{x:Static strings:AppStrings.ForTaliaTitle}"
@@ -45,24 +40,12 @@
                      </Label.FormattedText>
                   </Label>
                </VerticalStackLayout>
-            </Border>
-         </VerticalStackLayout>
+            </components:NativeSection.SectionContent>
+         </components:NativeSection>
 
          <!-- App Info Section -->
-         <VerticalStackLayout Spacing="8">
-            <Label
-               Text="{x:Static strings:AppStrings.AboutTheAppSection}"
-               FontSize="13"
-               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
-               Margin="8,0,0,0" />
-            
-            <Border
-               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
-               Stroke="Transparent"
-               Padding="16">
-               <Border.StrokeShape>
-                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
-               </Border.StrokeShape>
+         <components:NativeSection Header="{x:Static strings:AppStrings.AboutTheAppSection}" ContentPadding="16">
+            <components:NativeSection.SectionContent>
                <VerticalStackLayout Spacing="8">
                   <Label
                      Text="{x:Static strings:AppStrings.AppNameForTalia}"
@@ -76,24 +59,12 @@
                      TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                      LineHeight="1.4" />
                </VerticalStackLayout>
-            </Border>
-         </VerticalStackLayout>
+            </components:NativeSection.SectionContent>
+         </components:NativeSection>
 
          <!-- Support Section -->
-         <VerticalStackLayout Spacing="8">
-            <Label
-               Text="{x:Static strings:AppStrings.SupportSection}"
-               FontSize="13"
-               TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
-               Margin="8,0,0,0" />
-            
-            <Border
-               Background="{AppThemeBinding Light={StaticResource NativeSettingsCellBackgroundLight}, Dark={StaticResource NativeSettingsCellBackgroundDark}}"
-               Stroke="Transparent"
-               Padding="16">
-               <Border.StrokeShape>
-                  <RoundRectangle CornerRadius="{StaticResource NativeCardCornerRadius}" />
-               </Border.StrokeShape>
+         <components:NativeSection Header="{x:Static strings:AppStrings.SupportSection}" ContentPadding="16">
+            <components:NativeSection.SectionContent>
                <VerticalStackLayout Spacing="16">
                   <Label
                      Text="{x:Static strings:AppStrings.NeedHelpOrBug}"
@@ -112,8 +83,8 @@
                      Clicked="OnGitHubIssuesClicked"
                      SemanticProperties.Description="{x:Static strings:AppStrings.ReportAnIssueDescription}" />
                </VerticalStackLayout>
-            </Border>
-         </VerticalStackLayout>
+            </components:NativeSection.SectionContent>
+         </components:NativeSection>
 
          <!-- Footer -->
          <Label
