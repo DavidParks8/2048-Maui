@@ -2,9 +2,19 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Controls;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
+#if IOS
+using TwentyFortyEight.Maui.Platforms.iOS.Handlers;
+#endif
+#if ANDROID
+using TwentyFortyEight.Maui.Platforms.Android.Handlers;
+#endif
+#if WINDOWS
+using TwentyFortyEight.Maui.Platforms.Windows.Handlers;
+#endif
 
 namespace TwentyFortyEight.Maui;
 
@@ -14,6 +24,24 @@ public static class MauiProgram
     {
         var builder = MauiApp.CreateBuilder();
         builder.UseMauiApp<App>().UseMauiCommunityToolkit().UseSkiaSharp().ConfigureFonts(_ => { });
+
+#if DEBUG
+        builder.Logging.AddDebug();
+#endif
+
+        // Register custom handlers
+        builder.ConfigureMauiHandlers(handlers =>
+        {
+#if IOS
+            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+#endif
+#if ANDROID
+            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+#endif
+#if WINDOWS
+            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+#endif
+        });
 
 #if DEBUG
         builder.Logging.AddDebug();
