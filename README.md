@@ -82,14 +82,14 @@ The game includes Game Center integration on iOS with leaderboards and achieveme
 ### 1. Configure in App Store Connect
 
 1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/)
-2. Navigate to your app (Bundle ID: `com.dappermagna.2048`)
+2. Navigate to your app (Bundle ID: `com.dappermagna.twentyfortyeight`)
 3. Go to **Features** → **Game Center**
 
 ### 2. Create Leaderboard
 
 Create a leaderboard with the following details:
 
-- **Leaderboard ID**: `com.dappermagna.2048.highscores`
+- **Leaderboard ID**: `com.dappermagna.twentyfortyeight.highscores`
 - **Leaderboard Name**: "High Scores"
 - **Score Format**: Integer
 - **Sort Order**: High to Low
@@ -100,17 +100,17 @@ Create the following achievements (all should be 100% completion):
 
 | Achievement ID | Name | Description |
 |---------------|------|-------------|
-| `com.dappermagna.2048.tile128` | Tile 128 | Create a 128 tile |
-| `com.dappermagna.2048.tile256` | Tile 256 | Create a 256 tile |
-| `com.dappermagna.2048.tile512` | Tile 512 | Create a 512 tile |
-| `com.dappermagna.2048.tile1024` | Tile 1024 | Create a 1024 tile |
-| `com.dappermagna.2048.tile2048` | Tile 2048 | Create a 2048 tile |
-| `com.dappermagna.2048.tile4096` | Tile 4096 | Create a 4096 tile |
-| `com.dappermagna.2048.firstwin` | First Win | Reach 2048 for the first time |
-| `com.dappermagna.2048.score10000` | Score 10,000 | Reach a score of 10,000 |
-| `com.dappermagna.2048.score25000` | Score 25,000 | Reach a score of 25,000 |
-| `com.dappermagna.2048.score50000` | Score 50,000 | Reach a score of 50,000 |
-| `com.dappermagna.2048.score100000` | Score 100,000 | Reach a score of 100,000 |
+| `com.dappermagna.twentyfortyeight.tile128` | Tile 128 | Create a 128 tile |
+| `com.dappermagna.twentyfortyeight.tile256` | Tile 256 | Create a 256 tile |
+| `com.dappermagna.twentyfortyeight.tile512` | Tile 512 | Create a 512 tile |
+| `com.dappermagna.twentyfortyeight.tile1024` | Tile 1024 | Create a 1024 tile |
+| `com.dappermagna.twentyfortyeight.tile2048` | Tile 2048 | Create a 2048 tile |
+| `com.dappermagna.twentyfortyeight.tile4096` | Tile 4096 | Create a 4096 tile |
+| `com.dappermagna.twentyfortyeight.firstwin` | First Win | Reach 2048 for the first time |
+| `com.dappermagna.twentyfortyeight.score10000` | Score 10,000 | Reach a score of 10,000 |
+| `com.dappermagna.twentyfortyeight.score25000` | Score 25,000 | Reach a score of 25,000 |
+| `com.dappermagna.twentyfortyeight.score50000` | Score 50,000 | Reach a score of 50,000 |
+| `com.dappermagna.twentyfortyeight.score100000` | Score 100,000 | Reach a score of 100,000 |
 
 ### 4. Testing Game Center
 

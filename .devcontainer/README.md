@@ -44,7 +44,7 @@ dotnet build src/TwentyFortyEight.Maui -f net10.0-android
 
 The APK will be at:
 ```
-src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.2048-Signed.apk
+src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Start the emulator (optional, slow on Windows)
@@ -62,7 +62,7 @@ Then open http://localhost:6080 in your browser (password: `vscode`)
 adb devices
 
 # Install the APK
-adb install src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.2048-Signed.apk
+adb install src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Build and run directly

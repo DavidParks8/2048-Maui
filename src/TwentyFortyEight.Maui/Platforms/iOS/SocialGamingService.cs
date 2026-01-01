@@ -55,7 +55,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
     {
         try
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new();
 
             GKLocalPlayer.Local.AuthenticateHandler = (viewController, error) =>
             {
@@ -155,7 +155,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                var achievement = new GKAchievement(achievementId)
+                GKAchievement achievement = new(achievementId)
                 {
                     PercentComplete = percentComplete,
                     ShowsCompletionBanner = percentComplete >= 100.0,
@@ -191,7 +191,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
 #pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
-                var viewController = new GKGameCenterViewController(
+                GKGameCenterViewController viewController = new(
                     GKGameCenterViewControllerState.Leaderboards
                 );
                 viewController.Finished += (sender, e) =>
@@ -233,7 +233,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
 #pragma warning disable CA1422 // GKGameCenterViewController is deprecated on iOS 26 but no replacement is available in .NET bindings yet
-                var viewController = new GKGameCenterViewController(
+                GKGameCenterViewController viewController = new(
                     GKGameCenterViewControllerState.Achievements
                 );
                 viewController.Finished += (sender, e) =>
