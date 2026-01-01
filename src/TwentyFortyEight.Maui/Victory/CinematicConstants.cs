@@ -18,7 +18,6 @@ public static class CinematicTimingConstants
     /// </summary>
     public const float WarpTransitionDuration = 400f;
 
-    
     /// <summary>
     /// Number of warp lines to draw.
     /// </summary>

@@ -79,11 +79,12 @@ public static class MauiProgram
         builder.Services.AddTransient<CinematicOverlayView>();
         builder.Services.AddTransient<VictoryModalOverlay>();
 
+        // Victory ViewModel and animation service
+        builder.Services.AddSingleton<VictoryViewModel>();
+        builder.Services.AddSingleton<IVictoryAnimationService, VictoryAnimationService>();
+
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
-
-        // Victory animation orchestrator
-        builder.Services.AddTransient<TwentyFortyEight.Maui.Helpers.VictoryAnimationOrchestrator>();
 
         // Register achievement tracker
         builder.Services.AddSingleton<IAchievementTracker, AchievementTracker>();

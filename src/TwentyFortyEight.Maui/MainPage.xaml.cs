@@ -3,22 +3,23 @@ using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
-using TwentyFortyEight.Maui.Helpers;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.Maui.Victory;
 using TwentyFortyEight.Maui.Victory.Phases;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui;
 
 public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
+    private readonly VictoryViewModel _victoryViewModel;
     private readonly TileAnimationService _animationService;
     private readonly IInputCoordinationService _inputCoordinationService;
     private readonly IGestureRecognizerService _gestureRecognizerService;
-    private readonly VictoryAnimationOrchestrator _victoryOrchestrator;
+    private readonly VictoryAnimationService _victoryAnimationService;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly CinematicOverlayView _cinematicOverlay;
@@ -34,10 +35,11 @@ public partial class MainPage : ContentPage
 
     public MainPage(
         GameViewModel viewModel,
+        VictoryViewModel victoryViewModel,
         TileAnimationService animationService,
         IInputCoordinationService inputCoordinationService,
         IGestureRecognizerService gestureRecognizerService,
-        VictoryAnimationOrchestrator victoryOrchestrator,
+        IVictoryAnimationService victoryAnimationService,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService,
         CinematicOverlayView cinematicOverlay,
@@ -47,10 +49,11 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 
         _viewModel = viewModel;
+        _victoryViewModel = victoryViewModel;
         _animationService = animationService;
         _inputCoordinationService = inputCoordinationService;
         _gestureRecognizerService = gestureRecognizerService;
-        _victoryOrchestrator = victoryOrchestrator;
+        _victoryAnimationService = (VictoryAnimationService)victoryAnimationService;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         _cinematicOverlay = cinematicOverlay;
@@ -58,8 +61,7 @@ public partial class MainPage : ContentPage
         BindingContext = _viewModel;
 
         // Add overlays to view hierarchy
-        var boardGrid = (BoardContainer as Border)?.Content as Grid;
-        if (boardGrid != null)
+        if (BoardContainer is Border { Content: Grid boardGrid })
         {
             _cinematicOverlay.HorizontalOptions = LayoutOptions.Fill;
             _cinematicOverlay.VerticalOptions = LayoutOptions.Fill;
@@ -70,16 +72,16 @@ public partial class MainPage : ContentPage
             boardGrid.Children.Add(_victoryModal);
         }
 
-        // Initialize orchestrator with overlay references
-        _victoryOrchestrator.Initialize(_cinematicOverlay, _victoryModal);
-
         // Keep gameplay input blocking state in sync with overlay/modal lifecycle.
         _cinematicOverlay.AnimationCompleted += OnCinematicAnimationCompleted;
         _cinematicOverlay.PropertyChanged += OnVictoryOverlayPropertyChanged;
         _victoryModal.PropertyChanged += OnVictoryOverlayPropertyChanged;
 
-        // Wire up ViewModel victory event
+        // Wire up ViewModel victory event to VictoryViewModel
         _viewModel.VictoryAnimationRequested += OnVictoryAnimationRequested;
+
+        // Wire up VictoryViewModel events
+        _victoryViewModel.NewGameRequested += OnNewGameRequested;
 
         // Native/system icons (set in code-behind to keep XAML platform-agnostic)
         UndoButton.IconImageSource = _toolbarIconService.Undo;
@@ -89,6 +91,13 @@ public partial class MainPage : ContentPage
 
         // Add tiles to the grid
         CreateTiles();
+
+        // Set up board references for victory animation service (after tiles are created)
+        _victoryAnimationService.SetBoardReferences(
+            GameBoard,
+            () => _viewModel.Tiles,
+            () => _tileBorders
+        );
 
         // Set up input coordination (keyboard, gamepad, scroll)
         _inputCoordinationService.RegisterBehaviors(this);
@@ -100,6 +109,11 @@ public partial class MainPage : ContentPage
 
         // Handle social gaming toolbar items visibility
         UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
+    }
+
+    private void OnNewGameRequested(object? sender, EventArgs e)
+    {
+        _viewModel.NewGameCommand.Execute(null);
     }
 
     private void SyncInputBlockingState()
@@ -337,13 +351,8 @@ public partial class MainPage : ContentPage
             // Proceed with victory handling using the best available final state.
         }
 
-        await _victoryOrchestrator.HandleVictoryAsync(
-            e,
-            _viewModel.Score,
-            _viewModel.Tiles,
-            _tileBorders,
-            GameBoard
-        );
+        // Trigger victory through the VictoryViewModel (MVVM pattern)
+        _victoryViewModel.TriggerVictory(e, _viewModel.Score);
     }
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)

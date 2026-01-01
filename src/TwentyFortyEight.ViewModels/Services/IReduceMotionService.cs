@@ -1,4 +1,4 @@
-namespace TwentyFortyEight.Maui.Services;
+namespace TwentyFortyEight.ViewModels.Services;
 
 /// <summary>
 /// Service to check if the user has enabled reduce motion accessibility settings.

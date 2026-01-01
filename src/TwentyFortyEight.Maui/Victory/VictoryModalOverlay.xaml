@@ -2,8 +2,10 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:resx="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
              x:Class="TwentyFortyEight.Maui.Victory.VictoryModalOverlay"
-             IsVisible="False"
+             x:DataType="vm:VictoryViewModel"
+             IsVisible="{Binding State.IsModalVisible}"
              ZIndex="300"
              InputTransparent="False">
 
@@ -42,6 +44,7 @@
 
                 <!-- Score display -->
                 <Label x:Name="ScoreLabel"
+                       Text="{Binding ScoreDisplayText}"
                        FontSize="16"
                        TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                        HorizontalOptions="Center" />
@@ -50,13 +53,13 @@
                 <HorizontalStackLayout Spacing="16" HorizontalOptions="Center" Margin="0,16,0,0">
                     <Button x:Name="KeepPlayingButton"
                             Text="{x:Static resx:AppStrings.KeepPlaying}"
-                            Clicked="OnKeepPlayingClicked"
+                            Command="{Binding KeepPlayingCommand}"
                             SemanticProperties.Hint="{x:Static resx:AppStrings.KeepPlayingHint}" />
 
                     <!-- Use default Button style resources; override only what the plan calls for. -->
                     <Button x:Name="NewGameButton"
                             Text="{x:Static resx:AppStrings.NewGame}"
-                            Clicked="OnNewGameClicked"
+                            Command="{Binding NewGameCommand}"
                             Background="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                             TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                             SemanticProperties.Hint="{x:Static resx:AppStrings.NewGameHint}" />

@@ -69,4 +69,8 @@ public class MauiLocalizationService : ILocalizationService
             AppStrings.ScreenReaderGameOverFinalScoreFormat,
             finalScore
         );
+
+    /// <inheritdoc />
+    public string FormatScore(int score) =>
+        string.Format(CultureInfo.CurrentCulture, AppStrings.ScoreFormat, score);
 }

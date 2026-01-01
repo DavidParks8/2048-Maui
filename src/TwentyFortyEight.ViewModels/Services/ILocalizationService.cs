@@ -93,4 +93,11 @@ public interface ILocalizationService
     /// <param name="finalScore">The final score achieved.</param>
     /// <returns>A formatted announcement string.</returns>
     string ScreenReaderGameOverFinalScore(int finalScore);
+
+    /// <summary>
+    /// Gets the localized score display string.
+    /// </summary>
+    /// <param name="score">The score value.</param>
+    /// <returns>A formatted score string (e.g., "Score: 2048").</returns>
+    string FormatScore(int score);
 }

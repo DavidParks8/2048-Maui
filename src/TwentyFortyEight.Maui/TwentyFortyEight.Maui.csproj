@@ -15,14 +15,14 @@
     <SingleProject>true</SingleProject>
     
     <!-- Display name -->
-    <ApplicationTitle>2048 MAUI</ApplicationTitle>
+    <ApplicationTitle>2048 🎮</ApplicationTitle>
     
     <!-- App Identifier -->
     <ApplicationId>com.dappermagna.twentyfortyeight</ApplicationId>
     
     <!-- Versions -->
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
     
     <!-- Android specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>
