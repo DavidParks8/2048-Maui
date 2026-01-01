@@ -154,7 +154,7 @@ jobs:
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       uses: apple-actions/upload-testflight-build@v1
       with:
-        app-path: src/TwentyFortyEight.Maui/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa
+        app-path: src/TwentyFortyEight.Maui/bin/Release/net10.0-ios/ios-arm64/publish/TwentyFortyEight.Maui.ipa
         issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
         api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
         api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
