@@ -767,5 +767,77 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("YouWin", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Keep Playing.
+        /// </summary>
+        internal static string KeepPlaying {
+            get {
+                return ResourceManager.GetString("KeepPlaying", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Continue playing to reach higher tiles.
+        /// </summary>
+        internal static string KeepPlayingHint {
+            get {
+                return ResourceManager.GetString("KeepPlayingHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Start a fresh game.
+        /// </summary>
+        internal static string NewGameHint {
+            get {
+                return ResourceManager.GetString("NewGameHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Score: {0:N0}.
+        /// </summary>
+        internal static string ScoreFormat {
+            get {
+                return ResourceManager.GetString("ScoreFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Victory! You reached 2048!.
+        /// </summary>
+        internal static string VictoryAnnouncement {
+            get {
+                return ResourceManager.GetString("VictoryAnnouncement", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You reached 2048!.
+        /// </summary>
+        internal static string VictorySubtitle {
+            get {
+                return ResourceManager.GetString("VictorySubtitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Victory!.
+        /// </summary>
+        internal static string VictoryTitle {
+            get {
+                return ResourceManager.GetString("VictoryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 🏆.
+        /// </summary>
+        internal static string VictoryTrophyEmoji {
+            get {
+                return ResourceManager.GetString("VictoryTrophyEmoji", resourceCulture);
+            }
+        }
     }
 }

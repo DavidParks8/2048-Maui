@@ -7,6 +7,7 @@ namespace TwentyFortyEight.Maui;
     Theme = "@style/Maui.SplashTheme",
     MainLauncher = true,
     LaunchMode = LaunchMode.SingleTop,
+    Icon = "@mipmap/appicon",
     ConfigurationChanges = ConfigChanges.ScreenSize
         | ConfigChanges.Orientation
         | ConfigChanges.UiMode

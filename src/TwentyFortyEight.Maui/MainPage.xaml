@@ -9,6 +9,7 @@
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             xmlns:victory="clr-namespace:TwentyFortyEight.Maui.Victory"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
@@ -138,16 +139,6 @@
             </Border>
         </Grid>
 
-        <!-- Status Text -->
-        <Label x:Name="StatusTextLabel"
-               Grid.Row="1"
-               Text="{Binding StatusText}"
-               FontSize="24"
-               FontAttributes="Bold"
-             TextColor="{StaticResource GameStatusAccent}"
-               HorizontalOptions="Center"
-               IsVisible="{Binding StatusText, Converter={StaticResource StringNotEmptyConverter}}" />
-
         <!-- Game Board -->
         <Border x:Name="BoardContainer"
                 Grid.Row="2"
@@ -174,6 +165,7 @@
                     <!-- Tiles will be added programmatically in code-behind -->
                     <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
                 </Grid>
+
             </Grid>
         </Border>
 

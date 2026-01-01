@@ -50,7 +50,17 @@ public sealed class UserFeedbackService(
     {
         if (settingsService.HapticsEnabled && hapticService.IsSupported)
         {
+            // Backwards-compatible default (move) haptic.
             hapticService.PerformHaptic();
+        }
+    }
+
+    public void PerformVictoryHaptic()
+    {
+        if (settingsService.HapticsEnabled && hapticService.IsSupported)
+        {
+            // Distinct, stronger victory haptic.
+            hapticService.PerformHaptic(HapticPattern.Victory);
         }
     }
 

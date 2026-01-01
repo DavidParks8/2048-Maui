@@ -367,4 +367,104 @@ public class GameEngineTests
             $"Should be able to undo at most 50 moves, but got {undoCount}"
         );
     }
+
+    [TestMethod]
+    public void VictoryAchieved_FiresOnce_WhenReachingWinTile()
+    {
+        // Arrange: deterministic spawns, win on first move
+        GameConfig config = new() { Size = 4, WinTile = 2048 };
+        IRandomSource random = new FixedRandomSource(next: 0, nextDouble: 0.0);
+
+        var board = new int[16];
+        board[0] = 1024;
+        board[1] = 1024;
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
+
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
+
+        int eventCount = 0;
+        VictoryEventArgs? args = null;
+        engine.VictoryAchieved += (_, e) =>
+        {
+            eventCount++;
+            args = e;
+        };
+
+        // Act
+        engine.Move(Direction.Left); // win
+        engine.Move(Direction.Right); // still won; should not re-fire
+
+        // Assert
+        Assert.AreEqual(1, eventCount, "Victory event should fire once per game");
+        Assert.IsNotNull(args, "Victory event args should be provided");
+        Assert.AreEqual(0, args!.WinningTileRow);
+        Assert.AreEqual(0, args!.WinningTileColumn);
+    }
+
+    [TestMethod]
+    public void UndoAfterWin_DoesNotReFireVictoryEvent()
+    {
+        // Arrange
+        GameConfig config = new() { Size = 4, WinTile = 2048 };
+        IRandomSource random = new FixedRandomSource(next: 0, nextDouble: 0.0);
+
+        var board = new int[16];
+        board[0] = 1024;
+        board[1] = 1024;
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
+
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
+
+        int eventCount = 0;
+        engine.VictoryAchieved += (_, _) => eventCount++;
+
+        // Act
+        engine.Move(Direction.Left); // win => fires
+        engine.Undo(); // back to not-won
+        engine.Move(Direction.Left); // would win again, but latch should suppress
+
+        // Assert
+        Assert.AreEqual(1, eventCount, "Victory event should not re-fire after Undo");
+    }
+
+    [TestMethod]
+    public void NewGame_ResetsVictoryLatch_AllowingVictoryToFireAgain()
+    {
+        // Arrange: small WinTile makes deterministic win feasible
+        GameConfig config = new() { Size = 4, WinTile = 4 };
+        IRandomSource random = new FixedRandomSource(next: 0, nextDouble: 0.0);
+
+        Game2048Engine engine = new(config, random, NullStatisticsTracker.Instance);
+
+        int eventCount = 0;
+        engine.VictoryAchieved += (_, _) => eventCount++;
+
+        // Act
+        engine.Move(Direction.Left); // start tiles spawn at (0,0) and (0,1) => merge to 4 => win
+        engine.NewGame();
+        engine.Move(Direction.Left); // should be able to win again in the new game
+
+        // Assert
+        Assert.AreEqual(
+            2,
+            eventCount,
+            "Victory event should fire again after NewGame resets latch"
+        );
+    }
+
+    private sealed class FixedRandomSource(int next, double nextDouble) : IRandomSource
+    {
+        public int Next(int maxExclusive)
+        {
+            // Keep deterministic, but still obey the contract.
+            if (maxExclusive <= 0)
+            {
+                return 0;
+            }
+
+            return Math.Clamp(next, 0, maxExclusive - 1);
+        }
+
+        public double NextDouble() => nextDouble;
+    }
 }

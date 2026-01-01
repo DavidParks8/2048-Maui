@@ -13,9 +13,24 @@ public class MauiHapticService : IHapticService
     /// <inheritdoc />
     public void PerformHaptic()
     {
-        if (IsSupported)
+        PerformHaptic(HapticPattern.Move);
+    }
+
+    /// <inheritdoc />
+    public void PerformHaptic(HapticPattern pattern)
+    {
+        if (!IsSupported)
         {
-            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+            return;
         }
+
+        // Map semantic patterns to platform built-ins.
+        HapticFeedbackType type = pattern switch
+        {
+            HapticPattern.Victory => HapticFeedbackType.LongPress,
+            _ => HapticFeedbackType.Click,
+        };
+
+        HapticFeedback.Default.Perform(type);
     }
 }

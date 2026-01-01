@@ -4,6 +4,8 @@ using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Controls;
 using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.Maui.Victory;
+using TwentyFortyEight.Maui.Victory.Phases;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
 #if IOS
@@ -60,17 +62,34 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAlertService, MauiAlertService>();
         builder.Services.AddSingleton<ILocalizationService, MauiLocalizationService>();
         builder.Services.AddSingleton<IScreenReaderService, MauiScreenReaderService>();
+
+        // Accessibility and feedback services
+        builder.Services.AddSingleton<IReduceMotionService, ReduceMotionService>();
+
+        // Input and gesture services
+        builder.Services.AddSingleton<IScreenCaptureService, ScreenCaptureService>();
+        builder.Services.AddSingleton<IInputCoordinationService, InputCoordinationService>();
+        builder.Services.AddSingleton<IGestureRecognizerService, GestureRecognizerService>();
+
+        // Victory animation components
+        builder.Services.AddSingleton<WarpLineRenderer>();
+        builder.Services.AddTransient<ImpactPhaseDrawer>();
+        builder.Services.AddTransient<WarpTransitionPhaseDrawer>();
+        builder.Services.AddTransient<WarpSustainPhaseDrawer>();
+        builder.Services.AddTransient<CinematicOverlayView>();
+        builder.Services.AddTransient<VictoryModalOverlay>();
+
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
+
+        // Victory animation orchestrator
+        builder.Services.AddTransient<TwentyFortyEight.Maui.Helpers.VictoryAnimationOrchestrator>();
 
         // Register achievement tracker
         builder.Services.AddSingleton<IAchievementTracker, AchievementTracker>();
 
         // Register achievement ID mapper - uses partial class pattern for platform-specific IDs
-        builder.Services.AddSingleton<
-            TwentyFortyEight.ViewModels.Services.IAchievementIdMapper,
-            AchievementIdMapper
-        >();
+        builder.Services.AddSingleton<IAchievementIdMapper, AchievementIdMapper>();
 
         // Register social gaming service - uses partial class pattern
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.

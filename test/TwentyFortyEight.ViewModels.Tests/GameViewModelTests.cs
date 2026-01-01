@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -158,5 +159,77 @@ public class GameViewModelTests
 
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
+    }
+
+    [TestMethod]
+    public void VictoryAnimationRequested_ForwardsEngineVictoryEvent_AfterInitialization()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+
+        int eventCount = 0;
+        VictoryEventArgs? forwardedArgs = null;
+        viewModel.VictoryAnimationRequested += (_, e) =>
+        {
+            eventCount++;
+            forwardedArgs = e;
+        };
+
+        var args = new VictoryEventArgs { WinningTileRow = 2, WinningTileColumn = 3 };
+
+        // Act: simulate the engine raising VictoryAchieved by invoking the private handler.
+        InvokePrivateEngineVictoryHandler(viewModel, args);
+
+        // Assert
+        Assert.AreEqual(1, eventCount);
+        Assert.IsNotNull(forwardedArgs);
+        Assert.AreEqual(2, forwardedArgs!.WinningTileRow);
+        Assert.AreEqual(3, forwardedArgs!.WinningTileColumn);
+    }
+
+    [TestMethod]
+    public void VictoryAnimationRequested_DoesNotForward_WhenNotInitialized()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+
+        // Force the initialization gate back to false.
+        SetPrivateField(viewModel, "_isInitialized", false);
+
+        int eventCount = 0;
+        viewModel.VictoryAnimationRequested += (_, _) => eventCount++;
+
+        // Act
+        InvokePrivateEngineVictoryHandler(
+            viewModel,
+            new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 }
+        );
+
+        // Assert
+        Assert.AreEqual(0, eventCount);
+    }
+
+    private static void InvokePrivateEngineVictoryHandler(
+        GameViewModel viewModel,
+        VictoryEventArgs args
+    )
+    {
+        var method = typeof(GameViewModel).GetMethod(
+            "OnEngineVictoryAchieved",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+
+        Assert.IsNotNull(method);
+        method!.Invoke(viewModel, [null, args]);
+    }
+
+    private static void SetPrivateField<T>(GameViewModel viewModel, string fieldName, T value)
+    {
+        var field = typeof(GameViewModel).GetField(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+        Assert.IsNotNull(field);
+        field!.SetValue(viewModel, value);
     }
 }

@@ -1,8 +1,12 @@
+using System.Linq;
 using Microsoft.Extensions.Logging;
+using SkiaSharp;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Behaviors;
 using TwentyFortyEight.Maui.Converters;
+using TwentyFortyEight.Maui.Helpers;
 using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.Maui.Victory;
+using TwentyFortyEight.Maui.Victory.Phases;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
 
@@ -12,17 +16,16 @@ public partial class MainPage : ContentPage
 {
     private readonly GameViewModel _viewModel;
     private readonly TileAnimationService _animationService;
+    private readonly IInputCoordinationService _inputCoordinationService;
+    private readonly IGestureRecognizerService _gestureRecognizerService;
+    private readonly VictoryAnimationOrchestrator _victoryOrchestrator;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
+    private readonly CinematicOverlayView _cinematicOverlay;
+    private readonly VictoryModalOverlay _victoryModal;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private CancellationTokenSource? _animationCts;
-    private readonly KeyboardInputBehavior _keyboardBehavior;
-    private readonly GamepadInputBehavior _gamepadBehavior;
-    private readonly ScrollInputBehavior _scrollBehavior;
-
-    // Touch/pointer tracking for swipe detection
-    private Point? _pointerStartPoint;
-    private Point _panAccumulator;
+    private Task _activeTileAnimationTask = Task.CompletedTask;
 
     // Responsive sizing
     private const double DefaultBoardSize = 400;
@@ -32,17 +35,51 @@ public partial class MainPage : ContentPage
     public MainPage(
         GameViewModel viewModel,
         TileAnimationService animationService,
+        IInputCoordinationService inputCoordinationService,
+        IGestureRecognizerService gestureRecognizerService,
+        VictoryAnimationOrchestrator victoryOrchestrator,
         ILogger<MainPage> logger,
-        IToolbarIconService toolbarIconService
+        IToolbarIconService toolbarIconService,
+        CinematicOverlayView cinematicOverlay,
+        VictoryModalOverlay victoryModal
     )
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _animationService = animationService;
+        _inputCoordinationService = inputCoordinationService;
+        _gestureRecognizerService = gestureRecognizerService;
+        _victoryOrchestrator = victoryOrchestrator;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
+        _cinematicOverlay = cinematicOverlay;
+        _victoryModal = victoryModal;
         BindingContext = _viewModel;
+
+        // Add overlays to view hierarchy
+        var boardGrid = (BoardContainer as Border)?.Content as Grid;
+        if (boardGrid != null)
+        {
+            _cinematicOverlay.HorizontalOptions = LayoutOptions.Fill;
+            _cinematicOverlay.VerticalOptions = LayoutOptions.Fill;
+            _victoryModal.HorizontalOptions = LayoutOptions.Fill;
+            _victoryModal.VerticalOptions = LayoutOptions.Fill;
+
+            boardGrid.Children.Add(_cinematicOverlay);
+            boardGrid.Children.Add(_victoryModal);
+        }
+
+        // Initialize orchestrator with overlay references
+        _victoryOrchestrator.Initialize(_cinematicOverlay, _victoryModal);
+
+        // Keep gameplay input blocking state in sync with overlay/modal lifecycle.
+        _cinematicOverlay.AnimationCompleted += OnCinematicAnimationCompleted;
+        _cinematicOverlay.PropertyChanged += OnVictoryOverlayPropertyChanged;
+        _victoryModal.PropertyChanged += OnVictoryOverlayPropertyChanged;
+
+        // Wire up ViewModel victory event
+        _viewModel.VictoryAnimationRequested += OnVictoryAnimationRequested;
 
         // Native/system icons (set in code-behind to keep XAML platform-agnostic)
         UndoButton.IconImageSource = _toolbarIconService.Undo;
@@ -53,84 +90,48 @@ public partial class MainPage : ContentPage
         // Add tiles to the grid
         CreateTiles();
 
+        // Set up input coordination (keyboard, gamepad, scroll)
+        _inputCoordinationService.RegisterBehaviors(this);
+        _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
+
         // Set up gesture recognizers for swipe detection
-        SetupGestureRecognizers();
-
-        // Set up keyboard handling via platform behavior
-        _keyboardBehavior = new KeyboardInputBehavior();
-        _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
-        this.Behaviors.Add(_keyboardBehavior);
-
-        // Set up gamepad/controller handling via platform behavior
-        _gamepadBehavior = new GamepadInputBehavior();
-        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
-        this.Behaviors.Add(_gamepadBehavior);
-
-        // Set up scroll/trackpad handling via platform behavior (desktop only)
-        _scrollBehavior = new ScrollInputBehavior();
-        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
-        this.Behaviors.Add(_scrollBehavior);
+        _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
+        _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
 
         // Handle social gaming toolbar items visibility
         UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
     }
 
-    /// <summary>
-    /// Sets up gesture recognizers for cross-platform swipe detection.
-    /// Uses both Pan and Pointer gestures for maximum compatibility.
-    /// </summary>
-    private void SetupGestureRecognizers()
+    private void SyncInputBlockingState()
     {
-        // Pan gesture for touch swipes (works on mobile)
-        PanGestureRecognizer panGesture = new();
-        panGesture.PanUpdated += OnPanUpdated;
-        RootLayout.GestureRecognizers.Add(panGesture);
-
-        // Pointer gesture for better mouse/touch support (especially on Windows)
-        PointerGestureRecognizer pointerGesture = new();
-        pointerGesture.PointerPressed += OnPointerPressed;
-        pointerGesture.PointerReleased += OnPointerReleased;
-        RootLayout.GestureRecognizers.Add(pointerGesture);
+        _inputCoordinationService.IsInputBlocked =
+            _cinematicOverlay.IsVisible || _victoryModal.IsVisible;
     }
 
-    private void OnKeyboardDirectionPressed(object? sender, Direction direction)
+    private void OnCinematicAnimationCompleted(object? sender, EventArgs e)
     {
-        _viewModel.MoveCommand.Execute(direction);
+        SyncInputBlockingState();
     }
 
-    private void OnGamepadDirectionPressed(object? sender, Direction direction)
+    private void OnVictoryOverlayPropertyChanged(
+        object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e
+    )
     {
-        _viewModel.MoveCommand.Execute(direction);
-    }
-
-    private void OnScrollDirectionPressed(object? sender, Direction direction)
-    {
-        _viewModel.MoveCommand.Execute(direction);
-    }
-
-    private void OnPointerPressed(object? sender, PointerEventArgs e)
-    {
-        _pointerStartPoint = e.GetPosition(RootLayout);
-    }
-
-    private void OnPointerReleased(object? sender, PointerEventArgs e)
-    {
-        if (_pointerStartPoint is null)
-            return;
-
-        var endPoint = e.GetPosition(RootLayout);
-        if (endPoint is null)
+        if (e.PropertyName == nameof(VisualElement.IsVisible))
         {
-            _pointerStartPoint = null;
-            return;
+            SyncInputBlockingState();
         }
+    }
 
-        var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
-        var deltaY = endPoint.Value.Y - _pointerStartPoint.Value.Y;
+    private void OnDirectionInputReceived(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
+    }
 
-        ProcessSwipe(deltaX, deltaY);
-
-        _pointerStartPoint = null;
+    private void OnSwipeDetected(object? sender, Direction direction)
+    {
+        _viewModel.MoveCommand.Execute(direction);
     }
 
     protected override void OnAppearing()
@@ -141,15 +142,16 @@ public partial class MainPage : ContentPage
         // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
-        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
-        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
+        _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
+        _gestureRecognizerService.SwipeDetected -= OnSwipeDetected;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        _keyboardBehavior.DirectionPressed += OnKeyboardDirectionPressed;
-        _gamepadBehavior.DirectionPressed += OnGamepadDirectionPressed;
-        _scrollBehavior.DirectionPressed += OnScrollDirectionPressed;
+        _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
+        _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
+
+        // Sync input blocking state with overlay visibility
+        SyncInputBlockingState();
     }
 
     protected override void OnDisappearing()
@@ -164,9 +166,12 @@ public partial class MainPage : ContentPage
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        _keyboardBehavior.DirectionPressed -= OnKeyboardDirectionPressed;
-        _gamepadBehavior.DirectionPressed -= OnGamepadDirectionPressed;
-        _scrollBehavior.DirectionPressed -= OnScrollDirectionPressed;
+        _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
+        _gestureRecognizerService.SwipeDetected -= OnSwipeDetected;
+
+        _cinematicOverlay.AnimationCompleted -= OnCinematicAnimationCompleted;
+        _cinematicOverlay.PropertyChanged -= OnVictoryOverlayPropertyChanged;
+        _victoryModal.PropertyChanged -= OnVictoryOverlayPropertyChanged;
     }
 
     protected override void OnSizeAllocated(double width, double height)
@@ -310,39 +315,35 @@ public partial class MainPage : ContentPage
         }
     }
 
-    /// <summary>
-    /// Minimum distance in pixels required to register a swipe gesture.
-    /// </summary>
-    private const double MinSwipeDistance = 30;
-
-    /// <summary>
-    /// Processes a swipe gesture and executes the corresponding move command.
-    /// </summary>
-    /// <param name="deltaX">Horizontal displacement.</param>
-    /// <param name="deltaY">Vertical displacement.</param>
-    private void ProcessSwipe(double deltaX, double deltaY)
+    private async void OnVictoryAnimationRequested(object? sender, VictoryEventArgs e)
     {
-        Direction? direction = null;
+        // Block input during victory animation
+        _inputCoordinationService.IsInputBlocked = true;
 
-        if (Math.Abs(deltaX) > Math.Abs(deltaY))
+        // The Core engine raises VictoryAchieved before the ViewModel raises TilesUpdated for
+        // the move that produced the winning tile. Yield once so the TilesUpdated handler can
+        // start (and set _activeTileAnimationTask), then await that animation to finish so
+        // victory snapshots aren't captured mid-transition.
+        await Task.Yield();
+
+        Task tileAnimationTask = _activeTileAnimationTask;
+        try
         {
-            if (Math.Abs(deltaX) > MinSwipeDistance)
-            {
-                direction = deltaX > 0 ? Direction.Right : Direction.Left;
-            }
+            await tileAnimationTask;
         }
-        else
+        catch (OperationCanceledException)
         {
-            if (Math.Abs(deltaY) > MinSwipeDistance)
-            {
-                direction = deltaY > 0 ? Direction.Down : Direction.Up;
-            }
+            // If animations were cancelled (e.g., resize/navigation), OnTilesUpdated resets the UI.
+            // Proceed with victory handling using the best available final state.
         }
 
-        if (direction.HasValue)
-        {
-            _viewModel.MoveCommand.Execute(direction.Value);
-        }
+        await _victoryOrchestrator.HandleVictoryAsync(
+            e,
+            _viewModel.Score,
+            _viewModel.Tiles,
+            _tileBorders,
+            GameBoard
+        );
     }
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
@@ -352,16 +353,18 @@ public partial class MainPage : ContentPage
         _animationCts?.Dispose();
         _animationCts = new CancellationTokenSource();
 
+        _activeTileAnimationTask = _animationService.AnimateAsync(
+            e,
+            GameBoard,
+            _viewModel.BoardSize,
+            _tileBorders,
+            _viewModel.BoardScaleFactor,
+            _animationCts.Token
+        );
+
         try
         {
-            await _animationService.AnimateAsync(
-                e,
-                GameBoard,
-                _viewModel.BoardSize,
-                _tileBorders,
-                _viewModel.BoardScaleFactor,
-                _animationCts.Token
-            );
+            await _activeTileAnimationTask;
         }
         catch (OperationCanceledException)
         {
@@ -373,25 +376,10 @@ public partial class MainPage : ContentPage
             // Log but don't crash - animations are non-critical
             LogAnimationError(_logger, ex);
         }
-    }
-
-    private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
-    {
-        switch (e.StatusType)
+        finally
         {
-            case GestureStatus.Started:
-                _panAccumulator = new Point(0, 0);
-                break;
-
-            case GestureStatus.Running:
-                // Track the cumulative pan distance
-                _panAccumulator = new Point(e.TotalX, e.TotalY);
-                break;
-
-            case GestureStatus.Completed:
-            case GestureStatus.Canceled:
-                ProcessSwipe(_panAccumulator.X, _panAccumulator.Y);
-                break;
+            // Ensure future awaiters don't get stuck on a faulted/canceled task.
+            _activeTileAnimationTask = Task.CompletedTask;
         }
     }
 

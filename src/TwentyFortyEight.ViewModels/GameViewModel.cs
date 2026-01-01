@@ -49,6 +49,12 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public event EventHandler<TileUpdateEventArgs>? TilesUpdated;
 
+    /// <summary>
+    /// Event raised when victory animation should play.
+    /// Forwarded from the Core engine's VictoryAchieved event.
+    /// </summary>
+    public event EventHandler<VictoryEventArgs>? VictoryAnimationRequested;
+
     [ObservableProperty]
     private int _score;
 
@@ -80,21 +86,6 @@ public partial class GameViewModel : ObservableObject
     private int _moves;
 
     [ObservableProperty]
-    private string _statusText = "";
-
-    partial void OnStatusTextChanged(string value)
-    {
-        // Don't announce during initialization
-        if (!_isInitialized || string.IsNullOrEmpty(value))
-        {
-            return;
-        }
-
-        // Announce status to screen readers
-        _feedbackService.AnnounceStatus(value);
-    }
-
-    [ObservableProperty]
     private bool _canUndo;
 
     [ObservableProperty]
@@ -121,6 +112,7 @@ public partial class GameViewModel : ObservableObject
         _feedbackService = feedbackService;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
+        _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
         Tiles = [];
@@ -362,15 +354,6 @@ public partial class GameViewModel : ObservableObject
             }
         }
 
-        if (state.IsWon)
-        {
-            StatusText = "You Win!"; // This will be announced via OnStatusTextChanged
-        }
-        else
-        {
-            StatusText = "";
-        }
-
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
     }
@@ -386,7 +369,11 @@ public partial class GameViewModel : ObservableObject
             var state = _repository.LoadGameState();
             if (state != null)
             {
+                // IMPORTANT: Unsubscribe before replacing engine to prevent leaks/double firing.
+                _engine.VictoryAchieved -= OnEngineVictoryAchieved;
+
                 _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
+                _engine.VictoryAchieved += OnEngineVictoryAchieved;
                 return;
             }
         }
@@ -401,6 +388,22 @@ public partial class GameViewModel : ObservableObject
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
+
+    private void OnEngineVictoryAchieved(object? sender, VictoryEventArgs e)
+    {
+        // Only forward if initialization is complete (avoid early MAUI issues)
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        // The Core engine raises VictoryAchieved during Move(), which happens before the
+        // ViewModel has copied the latest engine state (including Score) into observable properties.
+        // Sync now so victory UI always sees the final, up-to-date values.
+        UpdateUI();
+
+        VictoryAnimationRequested?.Invoke(this, e);
+    }
 
     private async Task ShowGameOverDialogAsync()
     {

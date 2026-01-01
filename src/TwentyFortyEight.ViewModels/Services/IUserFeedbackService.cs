@@ -38,6 +38,12 @@ public interface IUserFeedbackService
     void PerformMoveHaptic();
 
     /// <summary>
+    /// Triggers a distinct haptic feedback for a victory.
+    /// Respects user's haptic settings internally.
+    /// </summary>
+    void PerformVictoryHaptic();
+
+    /// <summary>
     /// Shows a confirmation dialog for starting a new game.
     /// </summary>
     /// <returns>True if user confirmed, false if cancelled.</returns>

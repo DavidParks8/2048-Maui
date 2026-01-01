@@ -79,6 +79,30 @@
   <data name="Undo" xml:space="preserve">
     <value>Undo</value>
   </data>
+  <data name="VictoryTitle" xml:space="preserve">
+    <value>Victory!</value>
+  </data>
+  <data name="VictorySubtitle" xml:space="preserve">
+    <value>You reached 2048!</value>
+  </data>
+  <data name="VictoryAnnouncement" xml:space="preserve">
+    <value>Victory! You reached 2048!</value>
+  </data>
+  <data name="ScoreFormat" xml:space="preserve">
+    <value>Score: {0:N0}</value>
+  </data>
+  <data name="KeepPlaying" xml:space="preserve">
+    <value>Keep Playing</value>
+  </data>
+  <data name="KeepPlayingHint" xml:space="preserve">
+    <value>Continue playing to reach higher tiles</value>
+  </data>
+  <data name="NewGameHint" xml:space="preserve">
+    <value>Start a fresh game</value>
+  </data>
+  <data name="VictoryTrophyEmoji" xml:space="preserve">
+    <value>🏆</value>
+  </data>
   <data name="CurrentScoreDescription" xml:space="preserve">
     <value>Current score</value>
   </data>
