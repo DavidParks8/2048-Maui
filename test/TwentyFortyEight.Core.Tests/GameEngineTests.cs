@@ -402,7 +402,7 @@ public class GameEngineTests
     }
 
     [TestMethod]
-    public void UndoAfterWin_DoesNotReFireVictoryEvent()
+    public void UndoAfterWin_AllowsVictoryEventToFireAgain()
     {
         // Arrange
         GameConfig config = new() { Size = 4, WinTile = 2048 };
@@ -420,11 +420,15 @@ public class GameEngineTests
 
         // Act
         engine.Move(Direction.Left); // win => fires
-        engine.Undo(); // back to not-won
-        engine.Move(Direction.Left); // would win again, but latch should suppress
+        engine.Undo(); // back to not-won, resets victory latch
+        engine.Move(Direction.Left); // win again => fires again
 
         // Assert
-        Assert.AreEqual(1, eventCount, "Victory event should not re-fire after Undo");
+        Assert.AreEqual(
+            2,
+            eventCount,
+            "Victory event should fire again after undoing to before win and winning again"
+        );
     }
 
     [TestMethod]
@@ -450,6 +454,45 @@ public class GameEngineTests
             eventCount,
             "Victory event should fire again after NewGame resets latch"
         );
+    }
+
+    [TestMethod]
+    public void VictoryEvent_ShouldFire_AfterUndoToBeforeWinAndReachingWinAgain()
+    {
+        // Arrange: Reproduce the bug scenario - user wins, undoes to before win, reaches win again
+        GameConfig config = new() { Size = 4, WinTile = 2048 };
+        IRandomSource random = new FixedRandomSource(next: 0, nextDouble: 0.0);
+
+        var board = new int[16];
+        board[0] = 1024;
+        board[1] = 1024;
+        var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
+
+        Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
+
+        int eventCount = 0;
+        engine.VictoryAchieved += (_, _) => eventCount++;
+
+        // Act
+        engine.Move(Direction.Left); // merge 1024+1024 => 2048, win! Event fires (count=1)
+        Assert.AreEqual(1, eventCount, "First win should fire event");
+        Assert.IsTrue(engine.CurrentState.IsWon, "Game should be won");
+
+        engine.Move(Direction.Right); // continue playing
+        engine.Undo(); // undo back to right after the win
+        engine.Undo(); // undo back to BEFORE the win
+
+        Assert.IsFalse(engine.CurrentState.IsWon, "After undoing to before win, should not be won");
+
+        engine.Move(Direction.Left); // merge 1024+1024 => 2048 again
+
+        // Assert
+        Assert.AreEqual(
+            2,
+            eventCount,
+            "Victory event should fire again when reaching 2048 after undoing to before first win"
+        );
+        Assert.IsTrue(engine.CurrentState.IsWon, "Game should be won again");
     }
 
     private sealed class FixedRandomSource(int next, double nextDouble) : IRandomSource

@@ -238,8 +238,17 @@ public class Game2048Engine
             return false;
         }
 
+        var wasWonBeforeUndo = _currentState.IsWon;
         _currentMoveIndex--;
         ReplayToCurrentIndex();
+
+        // Reset victory latch if we undid back to before winning.
+        // This allows the victory animation to play again if the player reaches the win tile again.
+        if (wasWonBeforeUndo && !_currentState.IsWon)
+        {
+            _victoryEventRaised = false;
+        }
+
         return true;
     }
 
