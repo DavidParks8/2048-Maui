@@ -67,10 +67,6 @@ public sealed class UserFeedbackService(
     public Task<bool> ShowGameOverAsync(int score, int bestScore)
     {
         string message = $"{localizationService.YourScore}\n{score}";
-        if (score >= bestScore && bestScore > 0)
-        {
-            message += $"\n\n{localizationService.BestFormat.Replace("{0}", bestScore.ToString())}";
-        }
 
         return alertService.ShowConfirmationAsync(
             localizationService.GameOver,
