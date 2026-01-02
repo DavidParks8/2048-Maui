@@ -1,14 +1,10 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using SkiaSharp;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Services;
-using TwentyFortyEight.Maui.Victory;
-using TwentyFortyEight.Maui.Victory.Phases;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
-using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui;
 
@@ -19,11 +15,8 @@ public partial class MainPage : ContentPage
     private readonly TileAnimationService _animationService;
     private readonly IInputCoordinationService _inputCoordinationService;
     private readonly IGestureRecognizerService _gestureRecognizerService;
-    private readonly VictoryAnimationService _victoryAnimationService;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
-    private readonly CinematicOverlayView _cinematicOverlay;
-    private readonly VictoryModalOverlay _victoryModal;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private CancellationTokenSource? _animationCts;
     private Task _activeTileAnimationTask = Task.CompletedTask;
@@ -39,11 +32,8 @@ public partial class MainPage : ContentPage
         TileAnimationService animationService,
         IInputCoordinationService inputCoordinationService,
         IGestureRecognizerService gestureRecognizerService,
-        IVictoryAnimationService victoryAnimationService,
         ILogger<MainPage> logger,
-        IToolbarIconService toolbarIconService,
-        CinematicOverlayView cinematicOverlay,
-        VictoryModalOverlay victoryModal
+        IToolbarIconService toolbarIconService
     )
     {
         InitializeComponent();
@@ -53,29 +43,9 @@ public partial class MainPage : ContentPage
         _animationService = animationService;
         _inputCoordinationService = inputCoordinationService;
         _gestureRecognizerService = gestureRecognizerService;
-        _victoryAnimationService = (VictoryAnimationService)victoryAnimationService;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
-        _cinematicOverlay = cinematicOverlay;
-        _victoryModal = victoryModal;
         BindingContext = _viewModel;
-
-        // Add overlays to view hierarchy
-        if (BoardContainer is Border { Content: Grid boardGrid })
-        {
-            _cinematicOverlay.HorizontalOptions = LayoutOptions.Fill;
-            _cinematicOverlay.VerticalOptions = LayoutOptions.Fill;
-            _victoryModal.HorizontalOptions = LayoutOptions.Fill;
-            _victoryModal.VerticalOptions = LayoutOptions.Fill;
-
-            boardGrid.Children.Add(_cinematicOverlay);
-            boardGrid.Children.Add(_victoryModal);
-        }
-
-        // Keep gameplay input blocking state in sync with overlay/modal lifecycle.
-        _cinematicOverlay.AnimationCompleted += OnCinematicAnimationCompleted;
-        _cinematicOverlay.PropertyChanged += OnVictoryOverlayPropertyChanged;
-        _victoryModal.PropertyChanged += OnVictoryOverlayPropertyChanged;
 
         // Wire up ViewModel victory event to VictoryViewModel
         _viewModel.VictoryAnimationRequested += OnVictoryAnimationRequested;
@@ -92,13 +62,6 @@ public partial class MainPage : ContentPage
         // Add tiles to the grid
         CreateTiles();
 
-        // Set up board references for victory animation service (after tiles are created)
-        _victoryAnimationService.SetBoardReferences(
-            GameBoard,
-            () => _viewModel.Tiles,
-            () => _tileBorders
-        );
-
         // Set up input coordination (keyboard, gamepad, scroll)
         _inputCoordinationService.RegisterBehaviors(this);
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
@@ -114,28 +77,6 @@ public partial class MainPage : ContentPage
     private void OnNewGameRequested(object? sender, EventArgs e)
     {
         _viewModel.NewGameCommand.Execute(null);
-    }
-
-    private void SyncInputBlockingState()
-    {
-        _inputCoordinationService.IsInputBlocked =
-            _cinematicOverlay.IsVisible || _victoryModal.IsVisible;
-    }
-
-    private void OnCinematicAnimationCompleted(object? sender, EventArgs e)
-    {
-        SyncInputBlockingState();
-    }
-
-    private void OnVictoryOverlayPropertyChanged(
-        object? sender,
-        System.ComponentModel.PropertyChangedEventArgs e
-    )
-    {
-        if (e.PropertyName == nameof(VisualElement.IsVisible))
-        {
-            SyncInputBlockingState();
-        }
     }
 
     private void OnDirectionInputReceived(object? sender, Direction direction)
@@ -163,9 +104,6 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
         _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
-
-        // Sync input blocking state with overlay visibility
-        SyncInputBlockingState();
     }
 
     protected override void OnDisappearing()
@@ -182,10 +120,6 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
         _gestureRecognizerService.SwipeDetected -= OnSwipeDetected;
-
-        _cinematicOverlay.AnimationCompleted -= OnCinematicAnimationCompleted;
-        _cinematicOverlay.PropertyChanged -= OnVictoryOverlayPropertyChanged;
-        _victoryModal.PropertyChanged -= OnVictoryOverlayPropertyChanged;
     }
 
     protected override void OnSizeAllocated(double width, double height)

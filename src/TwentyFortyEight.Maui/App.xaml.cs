@@ -5,12 +5,20 @@ namespace TwentyFortyEight.Maui;
 
 public partial class App : Application
 {
+    public IServiceProvider Services { get; }
+
     private readonly ISocialGamingService _socialGamingService;
     private readonly ILogger<App> _logger;
 
-    public App(ISocialGamingService socialGamingService, ILogger<App> logger)
+    public App(
+        IServiceProvider services,
+        ISocialGamingService socialGamingService,
+        ILogger<App> logger
+    )
     {
         InitializeComponent();
+
+        Services = services;
         _socialGamingService = socialGamingService;
         _logger = logger;
     }

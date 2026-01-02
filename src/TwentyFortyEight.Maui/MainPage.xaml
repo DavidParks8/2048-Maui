@@ -3,13 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
              xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
-             xmlns:controls="clr-namespace:TwentyFortyEight.Maui.Controls"
              xmlns:behaviors="clr-namespace:TwentyFortyEight.Maui.Behaviors"
              xmlns:converters="clr-namespace:TwentyFortyEight.Maui.Converters"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
-             xmlns:victory="clr-namespace:TwentyFortyEight.Maui.Victory"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
@@ -154,6 +152,7 @@
 
             <Border.Behaviors>
                 <behaviors:RippleBehavior />
+                <behaviors:VictoryOverlayBehavior />
             </Border.Behaviors>
 
             <Grid>
@@ -165,12 +164,11 @@
                     <!-- Tiles will be added programmatically in code-behind -->
                     <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
                 </Grid>
-
             </Grid>
         </Border>
 
         <!-- Controls -->
-        <controls:BottomBar x:Name="ControlsBottomBar"
+        <components:BottomBar x:Name="ControlsBottomBar"
                               Grid.Row="3"
                               Background="Transparent"
                               BarHeight="80"
@@ -187,6 +185,25 @@
                                        ButtonSize="70"
                                        HorizontalOptions="End" />
             </Grid>
-        </controls:BottomBar>
+        </components:BottomBar>
+
+        <!-- Victory modal overlay - sits above the board when visible -->
+        <components:VictoryModalOverlay
+            x:Name="VictoryModalOverlay"
+            Grid.Row="2"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            ZIndex="101" />
+        <!-- Victory warp overlay - spans entire root grid, behind other content when inactive -->
+        <components:LoopingLottieOverlay
+            x:Name="VictoryWarpOverlay"
+            Grid.RowSpan="4"
+            AssetName="victory_warp.json"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            IsVisible="False"
+            ZIndex="100"
+            Opacity="0"
+            InputTransparent="True" />
     </Grid>
 </ContentPage>

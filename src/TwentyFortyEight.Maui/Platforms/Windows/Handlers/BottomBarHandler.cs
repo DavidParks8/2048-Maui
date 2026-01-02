@@ -1,7 +1,7 @@
 #if WINDOWS
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
-using TwentyFortyEight.Maui.Controls;
+using TwentyFortyEight.Maui.Components;
 
 namespace TwentyFortyEight.Maui.Platforms.Windows.Handlers;
 

@@ -21,7 +21,7 @@ public sealed partial class BoardRippleService
         if (bounds.Width <= 0 || bounds.Height <= 0)
             return Task.FromResult<SKBitmap?>(null);
 
-        var renderer = new UIGraphicsImageRenderer(bounds.Size);
+        UIGraphicsImageRenderer renderer = new(bounds.Size);
         using var image = renderer.CreateImage(_ =>
         {
             // drawViewHierarchy gives best fidelity for composed UI
@@ -41,7 +41,7 @@ public sealed partial class BoardRippleService
         var bytes = new byte[bytesPerRow * height];
 
         using var colorSpace = CGColorSpace.CreateDeviceRGB();
-        using var ctx = new CGBitmapContext(
+        using CGBitmapContext ctx = new(
             bytes,
             width,
             height,
@@ -53,8 +53,8 @@ public sealed partial class BoardRippleService
 
         ctx.DrawImage(new CGRect(0, 0, width, height), cgImage);
 
-        var info = new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-        var skBitmap = new SKBitmap(info);
+        SKImageInfo info = new(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        SKBitmap skBitmap = new(info);
         Marshal.Copy(bytes, 0, skBitmap.GetPixels(), bytes.Length);
         return Task.FromResult<SKBitmap?>(skBitmap);
     }

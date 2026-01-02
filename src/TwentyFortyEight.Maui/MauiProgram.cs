@@ -2,10 +2,8 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Controls;
+using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
-using TwentyFortyEight.Maui.Victory;
-using TwentyFortyEight.Maui.Victory.Phases;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
 #if IOS
@@ -67,21 +65,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<IReduceMotionService, ReduceMotionService>();
 
         // Input and gesture services
-        builder.Services.AddSingleton<IScreenCaptureService, ScreenCaptureService>();
         builder.Services.AddSingleton<IInputCoordinationService, InputCoordinationService>();
         builder.Services.AddSingleton<IGestureRecognizerService, GestureRecognizerService>();
 
-        // Victory animation components
-        builder.Services.AddSingleton<WarpLineRenderer>();
-        builder.Services.AddTransient<ImpactPhaseDrawer>();
-        builder.Services.AddTransient<WarpTransitionPhaseDrawer>();
-        builder.Services.AddTransient<WarpSustainPhaseDrawer>();
-        builder.Services.AddTransient<CinematicOverlayView>();
-        builder.Services.AddTransient<VictoryModalOverlay>();
-
         // Victory ViewModel and animation service
         builder.Services.AddSingleton<VictoryViewModel>();
-        builder.Services.AddSingleton<IVictoryAnimationService, VictoryAnimationService>();
 
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();

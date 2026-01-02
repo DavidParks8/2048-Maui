@@ -15,6 +15,7 @@ public sealed class RippleBehavior : Behavior<View>
     private PointerGestureRecognizer? _pointerGesture;
     private CancellationTokenSource? _rippleCts;
     private BoardRippleService? _rippleService;
+    private IInputCoordinationService? _inputCoordinationService;
     private Task? _activeRippleTask;
     private readonly Lock _rippleLock = new();
     private readonly SemaphoreSlim _rippleGate = new(1, 1);
@@ -31,8 +32,11 @@ public sealed class RippleBehavior : Behavior<View>
 
         _attachedElement = bindable;
 
-        // Resolve the ripple service from DI via the handler's MauiContext
-        bindable.HandlerChanged += OnHandlerChanged;
+        // Resolve services without depending on Handler/MauiContext timing.
+        TryInitializeFromAppServices();
+
+        // Ensure overlay injection runs once the element is in the visual tree.
+        bindable.Loaded += OnLoaded;
 
         // Wire up double-tap detection
         _pointerGesture = new PointerGestureRecognizer();
@@ -42,6 +46,8 @@ public sealed class RippleBehavior : Behavior<View>
 
     protected override void OnDetachingFrom(View bindable)
     {
+        bindable.Loaded -= OnLoaded;
+
         // Best-effort cancel any in-progress ripple (without blocking UI thread)
         CancellationTokenSource? cts;
         lock (_rippleLock)
@@ -68,68 +74,71 @@ public sealed class RippleBehavior : Behavior<View>
         }
         _rippleOverlay = null;
 
-        bindable.HandlerChanged -= OnHandlerChanged;
         _attachedElement = null;
+        _inputCoordinationService = null;
+        _rippleService = null;
 
         base.OnDetachingFrom(bindable);
     }
 
-    private void OnHandlerChanged(object? sender, EventArgs e)
+    private void OnLoaded(object? sender, EventArgs e)
     {
-        if (_attachedElement?.Handler?.MauiContext is null)
+        TryInitializeFromAppServices();
+        EnsureOverlayInjected();
+    }
+
+    private void TryInitializeFromAppServices()
+    {
+        if (_attachedElement is null)
             return;
 
-        // Resolve service from DI
-        _rippleService =
-            _attachedElement.Handler.MauiContext.Services.GetService<BoardRippleService>();
+        if (Application.Current is not App app)
+            return;
 
-        // Inject overlay as sibling. The attached element should be inside a Grid/Layout.
-        EnsureOverlayInjected();
+        _rippleService ??= app.Services.GetService<BoardRippleService>();
+        _inputCoordinationService ??= app.Services.GetService<IInputCoordinationService>();
     }
 
     private void EnsureOverlayInjected()
     {
-        if (_rippleOverlay is not null)
+        if (_rippleOverlay is not null && _rippleOverlay.Parent is not null)
             return;
 
-        if (_attachedElement?.Parent is not Layout parentLayout)
-            return;
-
-        _rippleOverlay = new SKCanvasView
+        _rippleOverlay ??= new SKCanvasView
         {
             IsVisible = false,
             InputTransparent = true,
             ZIndex = 50,
         };
 
-        // If attached to a Border with a Grid content, inject into that Grid so it overlays the content.
+        // Prefer injecting into a Border's content grid if available.
         if (_attachedElement is Border border && border.Content is Grid innerGrid)
         {
-            // Find the GameBoard grid inside and match its size
-            var gameBoard = innerGrid.Children.OfType<Grid>().FirstOrDefault();
-            if (gameBoard is not null)
-            {
-                _rippleOverlay.WidthRequest = gameBoard.WidthRequest;
-                _rippleOverlay.HeightRequest = gameBoard.HeightRequest;
-            }
-            else
-            {
-                // Fallback: fill the grid
-                _rippleOverlay.HorizontalOptions = LayoutOptions.Fill;
-                _rippleOverlay.VerticalOptions = LayoutOptions.Fill;
-            }
+            // Always fill the container grid. Copying WidthRequest/HeightRequest is unreliable
+            // across platforms (often unset until layout), and can result in a 0x0 canvas on iOS.
+            _rippleOverlay.HorizontalOptions = LayoutOptions.Fill;
+            _rippleOverlay.VerticalOptions = LayoutOptions.Fill;
             innerGrid.Children.Add(_rippleOverlay);
+            return;
         }
         else
         {
+            if (_attachedElement?.Parent is not Layout parentLayout)
+                return;
+
             // Fall back to sibling injection
             parentLayout.Children.Add(_rippleOverlay);
+            return;
         }
     }
 
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
         if (_attachedElement is null)
+            return;
+
+        // Don't allow ripple while gameplay input is blocked (e.g., victory cinematic/modal).
+        if (_inputCoordinationService?.IsInputBlocked == true)
             return;
 
         var positionInElement = e.GetPosition(_attachedElement);
@@ -161,6 +170,10 @@ public sealed class RippleBehavior : Behavior<View>
     private async Task StartRippleAsync(Point originInElement)
     {
         if (_rippleService is null || _rippleOverlay is null || _attachedElement is null)
+            return;
+
+        // Re-check before starting in case state changed after pointer event.
+        if (_inputCoordinationService?.IsInputBlocked == true)
             return;
 
         // Non-blocking check: if a ripple is already playing, ignore this request entirely

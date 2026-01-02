@@ -5,7 +5,7 @@ using AndroidX.Core.View;
 using Google.Android.Material.Card;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
-using TwentyFortyEight.Maui.Controls;
+using TwentyFortyEight.Maui.Components;
 
 namespace TwentyFortyEight.Maui.Platforms.Android.Handlers;
 
