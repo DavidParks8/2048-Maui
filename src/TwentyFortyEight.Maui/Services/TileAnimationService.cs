@@ -104,7 +104,7 @@ public class TileAnimationService
         foreach (var tile in newTiles)
         {
             newTileValues[tile] = tile.Value;
-            tile.UpdateValue(0); // Show as empty cell during slide animation
+            tile.Value = 0; // Show as empty cell during slide animation
 
             if (tileBorders.TryGetValue(tile, out var border))
             {
@@ -130,7 +130,7 @@ public class TileAnimationService
             {
                 if (savedValues.TryAdd(tile, tile.Value))
                 {
-                    tile.UpdateValue(0); // Show as empty cell during slide animation
+                    tile.Value = 0; // Show as empty cell during slide animation
 
                     if (tileBorders.TryGetValue(tile, out var border))
                     {
@@ -147,7 +147,7 @@ public class TileAnimationService
     {
         foreach (var (tile, value) in savedValues)
         {
-            tile.UpdateValue(value);
+            tile.Value = value;
         }
     }
 
@@ -244,7 +244,7 @@ public class TileAnimationService
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    tile.UpdateValue(actualValue);
+                    tile.Value = actualValue;
                     border.Scale = 0;
                     border.Opacity = 1;
 

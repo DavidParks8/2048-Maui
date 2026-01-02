@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Controls;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
@@ -301,7 +300,7 @@ public partial class GameViewModel : ObservableObject
                     movedTiles.Add(tile);
                 }
 
-                tile.UpdateValue(newValue);
+                tile.Value = newValue;
             }
 
             // Create event args with frozen collections if there are changes
@@ -333,7 +332,7 @@ public partial class GameViewModel : ObservableObject
             // No previous board - just update values
             for (int i = 0; i < state.Board.Length; i++)
             {
-                Tiles[i].UpdateValue(state.Board[i]);
+                Tiles[i].Value = state.Board[i];
             }
         }
 
