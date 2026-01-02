@@ -168,14 +168,14 @@ public class GameViewModelTests
         var viewModel = CreateViewModel();
 
         int eventCount = 0;
-        VictoryEventArgs? forwardedArgs = null;
+        EventArgs? forwardedArgs = null;
         viewModel.VictoryAnimationRequested += (_, e) =>
         {
             eventCount++;
             forwardedArgs = e;
         };
 
-        var args = new VictoryEventArgs { WinningTileRow = 2, WinningTileColumn = 3 };
+        var args = new EventArgs();
 
         // Act: simulate the engine raising VictoryAchieved by invoking the private handler.
         InvokePrivateEngineVictoryHandler(viewModel, args);
@@ -183,8 +183,7 @@ public class GameViewModelTests
         // Assert
         Assert.AreEqual(1, eventCount);
         Assert.IsNotNull(forwardedArgs);
-        Assert.AreEqual(2, forwardedArgs!.WinningTileRow);
-        Assert.AreEqual(3, forwardedArgs!.WinningTileColumn);
+        Assert.AreSame(args, forwardedArgs);
     }
 
     [TestMethod]
@@ -200,19 +199,13 @@ public class GameViewModelTests
         viewModel.VictoryAnimationRequested += (_, _) => eventCount++;
 
         // Act
-        InvokePrivateEngineVictoryHandler(
-            viewModel,
-            new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 }
-        );
+        InvokePrivateEngineVictoryHandler(viewModel, EventArgs.Empty);
 
         // Assert
         Assert.AreEqual(0, eventCount);
     }
 
-    private static void InvokePrivateEngineVictoryHandler(
-        GameViewModel viewModel,
-        VictoryEventArgs args
-    )
+    private static void InvokePrivateEngineVictoryHandler(GameViewModel viewModel, EventArgs args)
     {
         var method = typeof(GameViewModel).GetMethod(
             "OnEngineVictoryAchieved",

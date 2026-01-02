@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using SkiaSharp.Skottie;
 using SkiaSharp.Views.Maui;
@@ -6,7 +8,7 @@ using SkiaSharp.Views.Maui.Controls;
 
 namespace TwentyFortyEight.Maui.Components;
 
-public sealed class LoopingLottieOverlay : SKCanvasView
+public sealed partial class LoopingLottieOverlay : SKCanvasView
 {
     public static readonly BindableProperty AssetNameProperty = BindableProperty.Create(
         nameof(AssetName),
@@ -44,15 +46,53 @@ public sealed class LoopingLottieOverlay : SKCanvasView
     private bool _isLoaded;
     private IDispatcherTimer? _timer;
     private readonly Stopwatch _clock = new();
+    private readonly ILogger? _logger;
 
     public LoopingLottieOverlay()
     {
         InputTransparent = true;
 
+        _logger = ResolveLogger();
+
         PaintSurface += OnPaintSurface;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
+
+    private static ILogger? ResolveLogger()
+    {
+        if (Application.Current is global::TwentyFortyEight.Maui.App app)
+        {
+            return app.Services.GetService<ILogger<LoopingLottieOverlay>>();
+        }
+
+        return null;
+    }
+
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Debug,
+        Message = "Failed to read Lottie animation data '{AssetName}'"
+    )]
+    private static partial void LogFailedToReadLottieData(ILogger logger, string assetName);
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Warning,
+        Message = "Failed to parse Lottie animation '{AssetName}': unsupported features or invalid format"
+    )]
+    private static partial void LogFailedToParseLottieAnimation(ILogger logger, string assetName);
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Error,
+        Message = "Failed to load Lottie animation '{AssetName}'"
+    )]
+    private static partial void LogFailedToLoadLottieAnimation(
+        ILogger logger,
+        string assetName,
+        Exception exception
+    );
 
     public LoopingLottieOverlay(string assetName)
         : this()
@@ -100,7 +140,10 @@ public sealed class LoopingLottieOverlay : SKCanvasView
             var data = SKData.Create(stream);
             if (data is null)
             {
-                Debug.WriteLine($"Failed to read Lottie animation data '{AssetName}'");
+                if (_logger is ILogger logger)
+                {
+                    LogFailedToReadLottieData(logger, AssetName);
+                }
                 return;
             }
 
@@ -108,9 +151,10 @@ public sealed class LoopingLottieOverlay : SKCanvasView
                 !SkiaSharp.Skottie.Animation.TryCreate(data, out var animation) || animation is null
             )
             {
-                Debug.WriteLine(
-                    $"Failed to parse Lottie animation '{AssetName}': unsupported features or invalid format"
-                );
+                if (_logger is ILogger logger)
+                {
+                    LogFailedToParseLottieAnimation(logger, AssetName);
+                }
                 return;
             }
 
@@ -120,7 +164,10 @@ public sealed class LoopingLottieOverlay : SKCanvasView
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to load Lottie animation '{AssetName}': {ex.Message}");
+            if (_logger is ILogger logger)
+            {
+                LogFailedToLoadLottieAnimation(logger, AssetName, ex);
+            }
         }
         finally
         {
@@ -178,7 +225,7 @@ public sealed class LoopingLottieOverlay : SKCanvasView
         double t = _clock.Elapsed.TotalSeconds % durationSeconds;
         _animation.SeekFrameTime(t);
 
-        var viewRect = new SKRect(0, 0, e.Info.Width, e.Info.Height);
+        SKRect viewRect = new(0, 0, e.Info.Width, e.Info.Height);
 
         var animSize = _animation.Size;
         if (animSize.Width <= 0 || animSize.Height <= 0)

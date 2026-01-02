@@ -54,7 +54,7 @@ public class Game2048Engine
     /// Event raised when the player achieves victory for the first time in this game.
     /// Only fires once per game, even if the player continues to reach higher tiles.
     /// </summary>
-    public event EventHandler<VictoryEventArgs>? VictoryAchieved;
+    public event EventHandler? VictoryAchieved;
 
     // Latch: ensures the event is raised once per game session even if the user undoes to
     // a pre-victory state and reaches the win tile again.
@@ -185,29 +185,7 @@ public class Game2048Engine
             {
                 _victoryEventRaised = true;
 
-                // Find the winning tile position.
-                // Because this block only runs the first time IsWon flips to true,
-                // scanning for >= WinTile is sufficient for selecting a candidate.
-                // (If WinTile is customized, this still selects a tile meeting the win condition.)
-                int winRow = -1,
-                    winCol = -1;
-                for (int i = 0; i < newBoard.Length; i++)
-                {
-                    if (newBoard[i] >= _config.WinTile)
-                    {
-                        winRow = i / _config.Size;
-                        winCol = i % _config.Size;
-                        break;
-                    }
-                }
-
-                if (winRow >= 0)
-                {
-                    VictoryAchieved?.Invoke(
-                        this,
-                        new VictoryEventArgs { WinningTileRow = winRow, WinningTileColumn = winCol }
-                    );
-                }
+                VictoryAchieved?.Invoke(this, EventArgs.Empty);
             }
         }
 

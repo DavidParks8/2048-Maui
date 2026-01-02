@@ -4,7 +4,7 @@ using TwentyFortyEight.ViewModels;
 namespace TwentyFortyEight.Maui.Components;
 
 /// <summary>
-/// Victory modal overlay that displays after the cinematic animation.
+/// Victory modal overlay that displays after the victory animation begins.
 /// Uses data binding to VictoryViewModel for MVVM compliance.
 /// </summary>
 public partial class VictoryModalOverlay : ContentView

@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Models;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -41,7 +40,7 @@ public sealed partial class VictoryViewModel(
     /// Event raised when the victory animation should start.
     /// The View layer listens to this to coordinate platform-specific rendering.
     /// </summary>
-    public event EventHandler<VictoryAnimationStartEventArgs>? AnimationStartRequested;
+    public event EventHandler? AnimationStartRequested;
 
     /// <summary>
     /// Event raised when the victory animation should stop immediately.
@@ -57,13 +56,10 @@ public sealed partial class VictoryViewModel(
     /// Triggers the victory celebration flow.
     /// Called when the game engine raises VictoryAchieved.
     /// </summary>
-    /// <param name="victoryArgs">Event args from the engine with winning tile info.</param>
     /// <param name="score">Current score at time of victory.</param>
     /// <param name="winningValue">The winning tile value (e.g., 2048).</param>
-    public void TriggerVictory(VictoryEventArgs victoryArgs, int score, int winningValue = 2048)
+    public void TriggerVictory(int score, int winningValue = 2048)
     {
-        State.WinningTileRow = victoryArgs.WinningTileRow;
-        State.WinningTileColumn = victoryArgs.WinningTileColumn;
         State.Score = score;
         State.WinningValue = winningValue;
         State.IsActive = true;
@@ -74,7 +70,6 @@ public sealed partial class VictoryViewModel(
         if (ShouldReduceMotion)
         {
             // Skip animation, go directly to modal
-            State.Phase = VictoryAnimationPhase.ModalVisible;
             State.IsModalVisible = true;
             userFeedbackService.PerformVictoryHaptic();
             userFeedbackService.AnnounceWin();
@@ -82,30 +77,8 @@ public sealed partial class VictoryViewModel(
         else
         {
             // Start animation sequence
-            State.Phase = VictoryAnimationPhase.Impact;
-            State.PhaseProgress = 0f;
-
-            AnimationStartRequested?.Invoke(
-                this,
-                new VictoryAnimationStartEventArgs
-                {
-                    WinningTileRow = victoryArgs.WinningTileRow,
-                    WinningTileColumn = victoryArgs.WinningTileColumn,
-                    Score = score,
-                }
-            );
+            AnimationStartRequested?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    /// <summary>
-    /// Called by the animation service to update animation progress.
-    /// </summary>
-    /// <param name="phase">Current animation phase.</param>
-    /// <param name="progress">Progress within the phase (0.0-1.0).</param>
-    public void UpdateAnimationProgress(VictoryAnimationPhase phase, float progress)
-    {
-        State.Phase = phase;
-        State.PhaseProgress = progress;
     }
 
     /// <summary>
@@ -113,7 +86,6 @@ public sealed partial class VictoryViewModel(
     /// </summary>
     public void ShowModal()
     {
-        State.Phase = VictoryAnimationPhase.ModalVisible;
         State.IsModalVisible = true;
         userFeedbackService.AnnounceWin();
     }

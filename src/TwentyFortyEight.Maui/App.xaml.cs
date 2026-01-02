@@ -10,6 +10,16 @@ public partial class App : Application
     private readonly ISocialGamingService _socialGamingService;
     private readonly ILogger<App> _logger;
 
+    [LoggerMessage(
+        EventId = 1001,
+        Level = LogLevel.Error,
+        Message = "Social gaming authentication failed"
+    )]
+    private static partial void SocialGamingAuthenticationFailed(
+        ILogger logger,
+        Exception exception
+    );
+
     public App(
         IServiceProvider services,
         ISocialGamingService socialGamingService,
@@ -40,7 +50,7 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Social gaming authentication failed");
+                SocialGamingAuthenticationFailed(_logger, ex);
             }
         });
 

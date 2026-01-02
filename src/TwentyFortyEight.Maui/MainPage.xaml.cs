@@ -263,15 +263,15 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async void OnVictoryAnimationRequested(object? sender, VictoryEventArgs e)
+    private async void OnVictoryAnimationRequested(object? sender, EventArgs e)
     {
         // Block input during victory animation
         _inputCoordinationService.IsInputBlocked = true;
 
         // The Core engine raises VictoryAchieved before the ViewModel raises TilesUpdated for
         // the move that produced the winning tile. Yield once so the TilesUpdated handler can
-        // start (and set _activeTileAnimationTask), then await that animation to finish so
-        // victory snapshots aren't captured mid-transition.
+        // start (and set _activeTileAnimationTask), then await that animation to finish so the
+        // victory UI starts after the winning move finishes animating.
         await Task.Yield();
 
         Task tileAnimationTask = _activeTileAnimationTask;
@@ -286,7 +286,7 @@ public partial class MainPage : ContentPage
         }
 
         // Trigger victory through the VictoryViewModel (MVVM pattern)
-        _victoryViewModel.TriggerVictory(e, _viewModel.Score);
+        _victoryViewModel.TriggerVictory(_viewModel.Score);
     }
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)

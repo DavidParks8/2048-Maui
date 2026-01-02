@@ -383,7 +383,7 @@ public class GameEngineTests
         Game2048Engine engine = new(state, config, random, NullStatisticsTracker.Instance);
 
         int eventCount = 0;
-        VictoryEventArgs? args = null;
+        EventArgs? args = null;
         engine.VictoryAchieved += (_, e) =>
         {
             eventCount++;
@@ -397,8 +397,6 @@ public class GameEngineTests
         // Assert
         Assert.AreEqual(1, eventCount, "Victory event should fire once per game");
         Assert.IsNotNull(args, "Victory event args should be provided");
-        Assert.AreEqual(0, args!.WinningTileRow);
-        Assert.AreEqual(0, args!.WinningTileColumn);
     }
 
     [TestMethod]

@@ -53,7 +53,7 @@ public partial class GameViewModel : ObservableObject
     /// Event raised when victory animation should play.
     /// Forwarded from the Core engine's VictoryAchieved event.
     /// </summary>
-    public event EventHandler<VictoryEventArgs>? VictoryAnimationRequested;
+    public event EventHandler? VictoryAnimationRequested;
 
     [ObservableProperty]
     private int _score;
@@ -389,7 +389,7 @@ public partial class GameViewModel : ObservableObject
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
 
-    private void OnEngineVictoryAchieved(object? sender, VictoryEventArgs e)
+    private void OnEngineVictoryAchieved(object? sender, EventArgs e)
     {
         // Only forward if initialization is complete (avoid early MAUI issues)
         if (!_isInitialized)

@@ -230,7 +230,7 @@ public sealed class VictoryOverlayBehavior : Behavior<Border>
         }
     }
 
-    private void OnVictoryAnimationStartRequested(object? sender, VictoryAnimationStartEventArgs e)
+    private void OnVictoryAnimationStartRequested(object? sender, EventArgs e)
     {
         CancelShowModalDelay();
         _showModalDelayCts = new CancellationTokenSource();

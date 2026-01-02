@@ -1,7 +1,5 @@
 using Moq;
-using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels;
-using TwentyFortyEight.ViewModels.Models;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels.Tests;
@@ -35,7 +33,6 @@ public class VictoryViewModelTests
     {
         Assert.IsFalse(_viewModel.State.IsActive);
         Assert.IsFalse(_viewModel.State.IsModalVisible);
-        Assert.AreEqual(VictoryAnimationPhase.None, _viewModel.State.Phase);
     }
 
     [TestMethod]
@@ -43,18 +40,14 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
-        var args = new VictoryEventArgs { WinningTileRow = 1, WinningTileColumn = 2 };
 
         // Act
-        _viewModel.TriggerVictory(args, score: 5000);
+        _viewModel.TriggerVictory(score: 5000);
 
         // Assert
         Assert.IsTrue(_viewModel.State.IsActive);
         Assert.IsTrue(_viewModel.State.IsModalVisible);
-        Assert.AreEqual(VictoryAnimationPhase.ModalVisible, _viewModel.State.Phase);
         Assert.AreEqual(5000, _viewModel.State.Score);
-        Assert.AreEqual(1, _viewModel.State.WinningTileRow);
-        Assert.AreEqual(2, _viewModel.State.WinningTileColumn);
 
         _userFeedbackMock.Verify(x => x.PerformVictoryHaptic(), Times.Once);
         _userFeedbackMock.Verify(x => x.AnnounceWin(), Times.Once);
@@ -65,39 +58,18 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
-        var args = new VictoryEventArgs { WinningTileRow = 3, WinningTileColumn = 0 };
-        VictoryAnimationStartEventArgs? receivedArgs = null;
-        _viewModel.AnimationStartRequested += (_, e) => receivedArgs = e;
+        bool animationStartRaised = false;
+        _viewModel.AnimationStartRequested += (_, _) => animationStartRaised = true;
 
         // Act
-        _viewModel.TriggerVictory(args, score: 8192);
+        _viewModel.TriggerVictory(score: 8192);
 
         // Assert
         Assert.IsTrue(_viewModel.State.IsActive);
         Assert.IsFalse(_viewModel.State.IsModalVisible);
-        Assert.AreEqual(VictoryAnimationPhase.Impact, _viewModel.State.Phase);
-        Assert.AreEqual(0f, _viewModel.State.PhaseProgress);
+        Assert.AreEqual(8192, _viewModel.State.Score);
 
-        Assert.IsNotNull(receivedArgs);
-        Assert.AreEqual(3, receivedArgs.WinningTileRow);
-        Assert.AreEqual(0, receivedArgs.WinningTileColumn);
-        Assert.AreEqual(8192, receivedArgs.Score);
-    }
-
-    [TestMethod]
-    public void UpdateAnimationProgress_UpdatesStateProperties()
-    {
-        // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
-        _viewModel.TriggerVictory(args, score: 2048);
-
-        // Act
-        _viewModel.UpdateAnimationProgress(VictoryAnimationPhase.WarpTransition, 0.5f);
-
-        // Assert
-        Assert.AreEqual(VictoryAnimationPhase.WarpTransition, _viewModel.State.Phase);
-        Assert.AreEqual(0.5f, _viewModel.State.PhaseProgress);
+        Assert.IsTrue(animationStartRaised);
     }
 
     [TestMethod]
@@ -105,15 +77,13 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
-        _viewModel.TriggerVictory(args, score: 2048);
+        _viewModel.TriggerVictory(score: 2048);
 
         // Act
         _viewModel.ShowModal();
 
         // Assert
         Assert.IsTrue(_viewModel.State.IsModalVisible);
-        Assert.AreEqual(VictoryAnimationPhase.ModalVisible, _viewModel.State.Phase);
         _userFeedbackMock.Verify(x => x.AnnounceWin(), Times.Once);
     }
 
@@ -122,8 +92,7 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
-        _viewModel.TriggerVictory(args, score: 2048);
+        _viewModel.TriggerVictory(score: 2048);
 
         bool keepPlayingRaised = false;
         bool animationStopRaised = false;
@@ -138,7 +107,6 @@ public class VictoryViewModelTests
         Assert.IsTrue(animationStopRaised);
         Assert.IsFalse(_viewModel.State.IsActive);
         Assert.IsFalse(_viewModel.State.IsModalVisible);
-        Assert.AreEqual(VictoryAnimationPhase.None, _viewModel.State.Phase);
     }
 
     [TestMethod]
@@ -146,8 +114,7 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
-        _viewModel.TriggerVictory(args, score: 2048);
+        _viewModel.TriggerVictory(score: 2048);
 
         bool newGameRaised = false;
         bool animationStopRaised = false;
@@ -185,10 +152,9 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
 
         // Act
-        _viewModel.TriggerVictory(args, score: 4096, winningValue: 4096);
+        _viewModel.TriggerVictory(score: 4096, winningValue: 4096);
 
         // Assert
         Assert.AreEqual(4096, _viewModel.State.WinningValue);
@@ -199,10 +165,9 @@ public class VictoryViewModelTests
     {
         // Arrange
         _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
-        var args = new VictoryEventArgs { WinningTileRow = 0, WinningTileColumn = 0 };
 
         // Act
-        _viewModel.TriggerVictory(args, score: 12345);
+        _viewModel.TriggerVictory(score: 12345);
 
         // Assert
         Assert.AreEqual("Score: 12345", _viewModel.ScoreDisplayText);
