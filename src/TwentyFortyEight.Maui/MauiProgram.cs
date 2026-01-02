@@ -33,6 +33,9 @@ public static class MauiProgram
         builder.ConfigureMauiHandlers(handlers =>
         {
             handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+#if IOS
+            handlers.AddHandler(typeof(VictoryModalOverlay), typeof(VictoryModalOverlayHandler));
+#endif
 #if ANDROID
             handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
