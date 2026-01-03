@@ -2,16 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": ".NET Meteor Debugger",
+      "type": "dotnet-meteor.debugger",
+      "request": "launch",
+      "preLaunchTask": "dotnet-meteor: Build"
+    },
+    {
       "name": ".NET MAUI Windows Debug",
       "type": "coreclr",
       "request": "launch",
+      "preLaunchTask": "build: TwentyFortyEight.Maui (windows)",
       "program": "dotnet",
       "args": [
         "run",
         "--project",
         "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "--framework",
-        "net10.0-windows10.0.19041.0"
+        "net10.0-windows10.0.19041.0",
+        "--no-build"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
@@ -21,23 +29,19 @@
       "name": ".NET MAUI MacCatalyst Debug",
       "type": "coreclr",
       "request": "launch",
+      "preLaunchTask": "build: TwentyFortyEight.Maui (maccatalyst)",
       "program": "dotnet",
       "args": [
         "run",
         "--project",
         "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "--framework",
-        "net10.0-maccatalyst"
+        "net10.0-maccatalyst",
+        "--no-build"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "stopAtEntry": false
-    },
-    {
-      "name": ".NET Attach (pick process)",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:pickProcess}"
     }
   ]
 }
