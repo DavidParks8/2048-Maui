@@ -15,8 +15,29 @@
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "stopAtEntry": false,
-      "preLaunchTask": "build: TwentyFortyEight.Maui (windows)"
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET MAUI MacCatalyst Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "--framework",
+        "net10.0-maccatalyst"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Attach (pick process)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
     }
   ]
 }
