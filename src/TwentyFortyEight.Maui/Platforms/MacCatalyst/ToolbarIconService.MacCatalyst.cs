@@ -1,4 +1,4 @@
-#if __IOS__
+#if __MACCATALYST__
 using System.IO;
 using Foundation;
 using Microsoft.Maui.Controls;
@@ -53,15 +53,12 @@ public partial class ToolbarIconService
 
     static UIColor ResolveToolbarTintColor()
     {
-        // If the app defines a dedicated tint resource, prefer it.
         if (
             Application.Current?.Resources.TryGetValue("ToolbarIconTintColor", out var tint) == true
             && tint is Color tintColor
         )
             return tintColor.ToPlatform();
 
-        // Use iOS dynamic system colors when available.
-        // (Some bindings don't expose UIColor.LabelColor directly.)
         var label = UIColor.FromName("labelColor");
         if (label is not null)
             return label;
@@ -70,7 +67,6 @@ public partial class ToolbarIconService
         if (secondaryLabel is not null)
             return secondaryLabel;
 
-        // Fallback to a theme-aware value.
         var isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
         return (isDark ? Colors.White : Colors.Black).ToPlatform();
     }

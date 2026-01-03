@@ -30,6 +30,12 @@
     <!-- iOS/Mac Catalyst specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">26.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">26.0</SupportedOSPlatformVersion>
+
+    <!--
+      dotnet run (and VS Code launch) expects the MacCatalyst app bundle name to match the project/assembly name.
+      Using emojis/spaces in ApplicationTitle causes the produced .app folder name to differ, which breaks launching.
+    -->
+    <ApplicationTitle Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">TwentyFortyEight.Maui</ApplicationTitle>
     
     <!-- Windows specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>

@@ -1,4 +1,4 @@
-#if ANDROID
+#if __ANDROID__
 using Android.Content;
 using Android.Views;
 using AndroidX.Core.View;

@@ -1,4 +1,4 @@
-#if __IOS__
+#if __MACCATALYST__
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using UIKit;
@@ -25,7 +25,6 @@ public class BottomBarHandler : ContentViewHandler
     {
         var root = base.CreatePlatformView();
 
-        // Make the ContentView background transparent so blur shows through
         root.BackgroundColor = UIColor.Clear;
 
         _blur = new UIVisualEffectView
@@ -39,10 +38,8 @@ public class BottomBarHandler : ContentViewHandler
             ),
         };
 
-        // Put material behind content.
         root.InsertSubview(_blur, 0);
 
-        // Optional: a subtle top separator line is very "native"
         var hairline = new UIView { BackgroundColor = UIColor.FromRGBA(200, 200, 200, 40) };
         hairline.TranslatesAutoresizingMaskIntoConstraints = false;
         root.AddSubview(hairline);
@@ -68,13 +65,11 @@ public class BottomBarHandler : ContentViewHandler
 
     static void MapBarHeight(BottomBarHandler handler, BottomBar view)
     {
-        // Height is usually controlled by MAUI layout; nothing required here for iOS.
-        // Keeping the mapper allows future platform-specific adjustments if needed.
+        // Height is controlled by MAUI layout.
     }
 
     static UIBlurEffectStyle ToBlurStyle(IosMaterialStyle style)
     {
-        // iOS 13+ materials
         if (UIDevice.CurrentDevice.CheckSystemVersion(13, 0))
         {
             return style switch
