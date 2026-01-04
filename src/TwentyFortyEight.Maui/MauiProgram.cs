@@ -6,7 +6,7 @@ using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
-#if IOS
+#if IOS || MACCATALYST
 using TwentyFortyEight.Maui.Platforms.iOS.Handlers;
 #endif
 #if ANDROID
