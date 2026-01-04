@@ -23,27 +23,27 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
-        builder.UseMauiApp<App>().UseMauiCommunityToolkit().UseSkiaSharp().ConfigureFonts(_ => { });
-
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
-
-        // Register custom handlers
-        builder.ConfigureMauiHandlers(handlers =>
-        {
-            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseSkiaSharp()
+            .ConfigureFonts(_ => { })
+            .ConfigureMauiHandlers(handlers =>
+            {
 #if IOS || MACCATALYST
-            handlers.AddHandler(typeof(VictoryModalOverlay), typeof(VictoryModalOverlayHandler));
+                handlers.AddHandler<LiquidGlassView, LiquidGlassViewHandler>();
 #endif
 #if ANDROID
-            handlers.AddHandler<Switch, CustomSwitchHandler>();
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
+                handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
-        });
-
-#if DEBUG
-        builder.Logging.AddDebug();
+#if WINDOWS
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
 #endif
+            });
 
         // Register services for dependency injection
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();

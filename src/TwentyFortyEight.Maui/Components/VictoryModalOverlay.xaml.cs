@@ -89,4 +89,26 @@ public partial class VictoryModalOverlay : ContentView
             ModalCard.ScaleToAsync(0.96, HideFadeDurationMs, Easing.CubicIn)
         );
     }
+
+    private void OnModalContentHostSizeChanged(object? sender, EventArgs e)
+    {
+        // Drive the background layers from the real, measured content size.
+        var width = ModalContentHost.Width;
+        var height = ModalContentHost.Height;
+
+        if (width <= 0 || height <= 0)
+            return;
+
+        if (ModalGlass != null)
+        {
+            ModalGlass.WidthRequest = width;
+            ModalGlass.HeightRequest = height;
+        }
+
+        if (ModalBackdrop != null)
+        {
+            ModalBackdrop.WidthRequest = width;
+            ModalBackdrop.HeightRequest = height;
+        }
+    }
 }
