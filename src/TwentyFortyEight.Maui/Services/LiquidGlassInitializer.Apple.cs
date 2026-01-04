@@ -1,4 +1,4 @@
-#if IOS || MACCATALYST
+#if IOS || __MACCATALYST__
 using Microsoft.Maui.Handlers;
 
 namespace TwentyFortyEight.Maui.Services;

@@ -115,4 +115,16 @@ public sealed partial class VictoryViewModel(
         AnimationStopRequested?.Invoke(this, EventArgs.Empty);
         State.Reset();
     }
+
+    /// <summary>
+    /// Hides the victory overlay if it's currently showing.
+    /// Called by GameViewModel when starting a new game from the title bar.
+    /// </summary>
+    public void HideVictoryOverlayIfShowing()
+    {
+        if (State.IsActive || State.IsModalVisible)
+        {
+            HideVictoryOverlay();
+        }
+    }
 }

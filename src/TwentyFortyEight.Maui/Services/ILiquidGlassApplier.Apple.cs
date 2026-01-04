@@ -1,4 +1,4 @@
-#if IOS || MACCATALYST
+#if IOS || __MACCATALYST__
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>

@@ -78,7 +78,7 @@ public static class MauiProgram
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
         builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
 
-#if IOS || MACCATALYST
+#if IOS || __MACCATALYST__
         // Visual features (handler mapper extensions)
         builder.Services.AddSingleton<ILiquidGlassApplier, LiquidGlassApplier>();
         builder.Services.AddSingleton<IMauiInitializeService, LiquidGlassInitializer>();

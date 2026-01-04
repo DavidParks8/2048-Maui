@@ -24,6 +24,7 @@ public class GameViewModelTests
     private Mock<IGameStateRepository> _repositoryMock = null!;
     private Mock<IGameSessionCoordinator> _sessionCoordinatorMock = null!;
     private Mock<IUserFeedbackService> _feedbackServiceMock = null!;
+    private VictoryViewModel _victoryViewModel = null!;
 
     [TestInitialize]
     public void Setup()
@@ -36,6 +37,19 @@ public class GameViewModelTests
         _repositoryMock = new Mock<IGameStateRepository>();
         _sessionCoordinatorMock = new Mock<IGameSessionCoordinator>();
         _feedbackServiceMock = new Mock<IUserFeedbackService>();
+
+        // Create real VictoryViewModel instance for testing
+        var reduceMotionMock = new Mock<IReduceMotionService>();
+        var victoryFeedbackMock = new Mock<IUserFeedbackService>();
+        var localizationMock = new Mock<ILocalizationService>();
+        localizationMock
+            .Setup(x => x.FormatScore(It.IsAny<int>()))
+            .Returns((int score) => $"{score}");
+        _victoryViewModel = new VictoryViewModel(
+            reduceMotionMock.Object,
+            victoryFeedbackMock.Object,
+            localizationMock.Object
+        );
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
@@ -58,7 +72,8 @@ public class GameViewModelTests
             _randomSourceMock.Object,
             _repositoryMock.Object,
             _sessionCoordinatorMock.Object,
-            _feedbackServiceMock.Object
+            _feedbackServiceMock.Object,
+            _victoryViewModel
         );
     }
 
@@ -203,6 +218,26 @@ public class GameViewModelTests
 
         // Assert
         Assert.AreEqual(0, eventCount);
+    }
+
+    [TestMethod]
+    public async Task NewGameAsync_WhenVictoryModalShowing_HidesVictoryOverlay()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+
+        // Simulate victory state - manually show modal
+        _victoryViewModel.TriggerVictory(score: 2048, winningValue: 2048);
+        _victoryViewModel.ShowModal(); // Show modal explicitly for testing
+        Assert.IsTrue(_victoryViewModel.State.IsActive, "Victory should be active");
+        Assert.IsTrue(_victoryViewModel.State.IsModalVisible, "Victory modal should be visible");
+
+        // Act - Start new game from title bar (not from modal button)
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+
+        // Assert - Victory overlay should be hidden
+        Assert.IsFalse(_victoryViewModel.State.IsActive, "Victory should no longer be active");
+        Assert.IsFalse(_victoryViewModel.State.IsModalVisible, "Victory modal should be hidden");
     }
 
     private static void InvokePrivateEngineVictoryHandler(GameViewModel viewModel, EventArgs args)

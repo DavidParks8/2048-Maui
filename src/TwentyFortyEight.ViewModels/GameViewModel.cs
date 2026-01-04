@@ -25,6 +25,7 @@ public partial class GameViewModel : ObservableObject
     private readonly IGameStateRepository _repository;
     private readonly IGameSessionCoordinator _sessionCoordinator;
     private readonly IUserFeedbackService _feedbackService;
+    private readonly VictoryViewModel _victoryViewModel;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -98,7 +99,8 @@ public partial class GameViewModel : ObservableObject
         IRandomSource randomSource,
         IGameStateRepository repository,
         IGameSessionCoordinator sessionCoordinator,
-        IUserFeedbackService feedbackService
+        IUserFeedbackService feedbackService,
+        VictoryViewModel victoryViewModel
     )
     {
         _logger = logger;
@@ -109,6 +111,7 @@ public partial class GameViewModel : ObservableObject
         _repository = repository;
         _sessionCoordinator = sessionCoordinator;
         _feedbackService = feedbackService;
+        _victoryViewModel = victoryViewModel;
         _config = new GameConfig();
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
@@ -158,6 +161,9 @@ public partial class GameViewModel : ObservableObject
                 return;
             }
         }
+
+        // Hide victory overlay if it's showing
+        _victoryViewModel.HideVictoryOverlayIfShowing();
 
         _engine.NewGame();
         UpdateUI();
