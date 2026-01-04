@@ -18,7 +18,7 @@
             </BoxView.GestureRecognizers>
         </BoxView>
 
-        <!-- Sheet container -->
+        <!-- Sheet container (TranslationY matches OffScreenTranslationY constant in code-behind) -->
         <Grid x:Name="SheetContainer"
               VerticalOptions="End"
               TranslationY="1000">

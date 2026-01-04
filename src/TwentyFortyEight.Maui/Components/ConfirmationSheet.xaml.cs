@@ -41,18 +41,8 @@ public partial class ConfirmationSheet : ContentView
         AcceptButton.Text = accept;
         CancelButton.Text = cancel;
 
-        // Show the sheet - handle exceptions to prevent unobserved task exceptions
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await AnimateShowAsync();
-            }
-            catch
-            {
-                // Animation errors are non-critical, silently ignore
-            }
-        });
+        // Show the sheet - fire and forget with ConfigureAwait
+        _ = AnimateShowAsync().ConfigureAwait(false);
 
         return _taskCompletionSource.Task;
     }
