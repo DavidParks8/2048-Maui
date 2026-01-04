@@ -1,4 +1,4 @@
-#if __ANDROID__
+#if ANDROID
 using Android.Content.Res;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Handlers;

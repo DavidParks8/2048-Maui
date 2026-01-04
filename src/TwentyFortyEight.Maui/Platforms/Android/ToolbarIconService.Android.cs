@@ -1,4 +1,4 @@
-#if __ANDROID__
+#if ANDROID
 using Android.Content;
 using Android.Graphics;
 using System.IO;
