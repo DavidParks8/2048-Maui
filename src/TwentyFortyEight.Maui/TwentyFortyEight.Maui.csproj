@@ -21,8 +21,8 @@
     <ApplicationId>com.dappermagna.twentyfortyeight</ApplicationId>
     
     <!-- Versions -->
-    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
-    <ApplicationVersion>3</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
+    <ApplicationVersion>4</ApplicationVersion>
     
     <!-- Android specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>
