@@ -53,6 +53,16 @@
     <PublishAot Condition="'$(TargetFramework)' != 'net10.0-android'">true</PublishAot>
     <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'">true</RunAOTCompilation>
   </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+    <MaciOSPrepareForBuildDependsOn>$(MaciOSPrepareForBuildDependsOn);ConfigureSimulatorSigning</MaciOSPrepareForBuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="ConfigureSimulatorSigning">
+    <PropertyGroup Condition="'$(SdkIsSimulator)' == 'true'">
+      <EnableCodeSigning>false</EnableCodeSigning>
+    </PropertyGroup>
+  </Target>
   
   <!-- Disable Fast Deployment for Android to fix manual APK installation crashes -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">

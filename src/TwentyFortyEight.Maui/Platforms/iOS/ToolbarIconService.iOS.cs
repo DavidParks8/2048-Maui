@@ -1,4 +1,4 @@
-#if __IOS__
+#if IOS
 using System.IO;
 using Foundation;
 using Microsoft.Maui.Controls;
@@ -12,7 +12,7 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
-    static ImageSource FromSystemImage(string symbolName)
+    private static ImageSource FromSystemImage(string symbolName)
     {
         UIImage? image = UIImage.GetSystemImage(symbolName);
         if (image is null)
@@ -34,7 +34,7 @@ public partial class ToolbarIconService
         return ImageSource.FromStream(() => new MemoryStream(bytes));
     }
 
-    static UIImage? RenderTinted(UIImage templateImage, UIColor tintColor)
+    private static UIImage? RenderTinted(UIImage templateImage, UIColor tintColor)
     {
         var size = templateImage.Size;
         if (size.Width <= 0 || size.Height <= 0)
@@ -51,7 +51,7 @@ public partial class ToolbarIconService
         });
     }
 
-    static UIColor ResolveToolbarTintColor()
+    private static UIColor ResolveToolbarTintColor()
     {
         // If the app defines a dedicated tint resource, prefer it.
         if (

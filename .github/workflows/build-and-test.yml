@@ -74,6 +74,16 @@ jobs:
     - name: Install .NET MAUI workload
       run: dotnet workload install maui
 
+    - name: Select iOS simulator RID
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "$(uname -m)" = "arm64" ]; then
+          echo "IOS_SIM_RID=iossimulator-arm64" >> "$GITHUB_ENV"
+        else
+          echo "IOS_SIM_RID=iossimulator-x64" >> "$GITHUB_ENV"
+        fi
+
     - name: Import iOS signing certificate (.p12)
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       uses: apple-actions/import-codesign-certs@v3
@@ -124,7 +134,7 @@ jobs:
         MAUI_TARGET_PLATFORM: ios
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:RuntimeIdentifier="$IOS_SIM_RID" -p:EnableCodeSigning=false
       env:
         MAUI_TARGET_PLATFORM: ios
 
