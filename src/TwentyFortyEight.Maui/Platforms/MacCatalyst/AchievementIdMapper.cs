@@ -1,4 +1,4 @@
-#if __MACCATALYST__
+#if MACCATALYST
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;

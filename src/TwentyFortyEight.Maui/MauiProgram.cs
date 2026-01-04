@@ -23,18 +23,21 @@ public static class MauiProgram
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
-
-        // Register custom handlers
-        builder.ConfigureMauiHandlers(handlers =>
-        {
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseSkiaSharp()
+            .ConfigureFonts(_ => { })
+            .ConfigureMauiHandlers(handlers =>
+            {
 #if ANDROID
-            handlers.AddHandler<BottomBar, BottomBarHandler>();
-            handlers.AddHandler<Switch, CustomSwitchHandler>();
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
+                handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
 #if WINDOWS
-            handlers.AddHandler<BottomBar, BottomBarHandler>();
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
 #endif
-        });
+            });
 
         // Register services for dependency injection
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
@@ -78,7 +81,7 @@ public static class MauiProgram
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
         builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
 
-#if IOS || __MACCATALYST__
+#if IOS || MACCATALYST
         // Visual features (handler mapper extensions)
         builder.Services.AddSingleton<ILiquidGlassApplier, LiquidGlassApplier>();
         builder.Services.AddSingleton<IMauiInitializeService, LiquidGlassInitializer>();

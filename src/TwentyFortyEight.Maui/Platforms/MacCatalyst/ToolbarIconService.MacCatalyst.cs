@@ -1,4 +1,4 @@
-#if __MACCATALYST__
+#if MACCATALYST
 using System.IO;
 using Foundation;
 using Microsoft.Maui.Controls;

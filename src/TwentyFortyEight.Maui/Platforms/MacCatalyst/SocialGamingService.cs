@@ -1,4 +1,4 @@
-#if __MACCATALYST__
+#if MACCATALYST
 using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
