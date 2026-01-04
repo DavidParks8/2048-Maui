@@ -1,4 +1,4 @@
-#if IOS
+#if IOS || MACCATALYST
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using UIKit;
@@ -33,7 +33,7 @@ public class BottomBarHandler : ContentViewHandler
             AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
             Frame = root.Bounds,
             Effect = UIBlurEffect.FromStyle(
-                ToBlurStyle(
+                IosMaterialHelper.ToBlurStyle(
                     (VirtualView as BottomBar)?.IosMaterial ?? IosMaterialStyle.SystemChromeMaterial
                 )
             ),
@@ -63,33 +63,13 @@ public class BottomBarHandler : ContentViewHandler
     {
         if (handler._blur == null)
             return;
-        handler._blur.Effect = UIBlurEffect.FromStyle(ToBlurStyle(view.IosMaterial));
+        handler._blur.Effect = UIBlurEffect.FromStyle(IosMaterialHelper.ToBlurStyle(view.IosMaterial));
     }
 
     static void MapBarHeight(BottomBarHandler handler, BottomBar view)
     {
         // Height is usually controlled by MAUI layout; nothing required here for iOS.
         // Keeping the mapper allows future platform-specific adjustments if needed.
-    }
-
-    static UIBlurEffectStyle ToBlurStyle(IosMaterialStyle style)
-    {
-        // iOS 13+ materials
-        if (UIDevice.CurrentDevice.CheckSystemVersion(13, 0))
-        {
-            return style switch
-            {
-                IosMaterialStyle.SystemUltraThinMaterial =>
-                    UIBlurEffectStyle.SystemUltraThinMaterial,
-                IosMaterialStyle.SystemThinMaterial => UIBlurEffectStyle.SystemThinMaterial,
-                IosMaterialStyle.SystemMaterial => UIBlurEffectStyle.SystemMaterial,
-                IosMaterialStyle.SystemThickMaterial => UIBlurEffectStyle.SystemThickMaterial,
-                IosMaterialStyle.SystemChromeMaterial => UIBlurEffectStyle.SystemChromeMaterial,
-                _ => UIBlurEffectStyle.SystemChromeMaterial,
-            };
-        }
-
-        return UIBlurEffectStyle.Light;
     }
 }
 #endif

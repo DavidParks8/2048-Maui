@@ -12,8 +12,6 @@
     <Grid>
         <!-- Modal card -->
         <Border x:Name="ModalCard"
-                Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 16"
                 HorizontalOptions="Center"
@@ -21,6 +19,16 @@
                 Padding="32"
                 Scale="0.96"
                 Opacity="0">
+            <Border.Background>
+                <OnPlatform x:TypeArguments="Brush">
+                    <On Platform="Android,WinUI" Value="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}" />
+                </OnPlatform>
+            </Border.Background>
+            <Border.Stroke>
+                <OnPlatform x:TypeArguments="Brush">
+                    <On Platform="Android,WinUI" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                </OnPlatform>
+            </Border.Stroke>
 
             <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
                 <!-- Trophy / celebration emoji -->

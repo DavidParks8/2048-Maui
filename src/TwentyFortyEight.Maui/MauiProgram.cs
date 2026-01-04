@@ -6,7 +6,7 @@ using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
-#if IOS
+#if IOS || MACCATALYST
 using TwentyFortyEight.Maui.Platforms.iOS.Handlers;
 #endif
 #if ANDROID
@@ -33,6 +33,9 @@ public static class MauiProgram
         builder.ConfigureMauiHandlers(handlers =>
         {
             handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+#if IOS || MACCATALYST
+            handlers.AddHandler(typeof(VictoryModalOverlay), typeof(VictoryModalOverlayHandler));
+#endif
 #if ANDROID
             handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
