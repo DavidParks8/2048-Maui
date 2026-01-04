@@ -1,9 +1,10 @@
+using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
-/// MAUI-specific implementation of IAlertService using MAUI Shell/Page alerts.
+/// MAUI-specific implementation of IAlertService using MAUI Sheet-style confirmations.
 /// </summary>
 public class MauiAlertService : IAlertService
 {
@@ -15,6 +16,13 @@ public class MauiAlertService : IAlertService
         string cancel
     )
     {
+        var confirmationSheet = FindConfirmationSheet();
+        if (confirmationSheet != null)
+        {
+            return await confirmationSheet.ShowAsync(title, message, accept, cancel);
+        }
+
+        // Fallback to standard alert if sheet is not found
         var page = GetCurrentPage();
         if (page == null)
         {
@@ -47,5 +55,47 @@ public class MauiAlertService : IAlertService
         // Fall back to first window's page
         var window = Application.Current?.Windows.FirstOrDefault();
         return window?.Page;
+    }
+
+    private static ConfirmationSheet? FindConfirmationSheet()
+    {
+        var page = GetCurrentPage();
+        if (page == null)
+        {
+            return null;
+        }
+
+        // Search for ConfirmationSheet in the visual tree
+        return FindConfirmationSheetRecursive(page);
+    }
+
+    private static ConfirmationSheet? FindConfirmationSheetRecursive(Element element)
+    {
+        if (element is ConfirmationSheet sheet)
+        {
+            return sheet;
+        }
+
+        if (element is ContentPage page && page.Content != null)
+        {
+            return FindConfirmationSheetRecursive(page.Content);
+        }
+
+        if (element is Layout layout)
+        {
+            foreach (var child in layout.Children)
+            {
+                if (child is Element childElement)
+                {
+                    var result = FindConfirmationSheetRecursive(childElement);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

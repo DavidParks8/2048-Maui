@@ -205,5 +205,12 @@
             ZIndex="100"
             Opacity="0"
             InputTransparent="True" />
+        <!-- Confirmation sheet - spans entire root grid for backdrop -->
+        <components:ConfirmationSheet
+            x:Name="ConfirmationSheet"
+            Grid.RowSpan="4"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill"
+            ZIndex="400" />
     </Grid>
 </ContentPage>

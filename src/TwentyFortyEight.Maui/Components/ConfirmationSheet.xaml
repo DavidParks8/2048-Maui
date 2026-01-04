@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components;assembly=TwentyFortyEight.Maui"
+             x:Class="TwentyFortyEight.Maui.Components.ConfirmationSheet"
+             IsVisible="False"
+             ZIndex="400"
+             InputTransparent="False">
+
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <BoxView x:Name="Backdrop"
+                 BackgroundColor="Black"
+                 Opacity="0"
+                 InputTransparent="False">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBackdropTapped" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <!-- Sheet container -->
+        <Grid x:Name="SheetContainer"
+              VerticalOptions="End"
+              TranslationY="1000">
+
+            <!-- Sheet content (glass on iOS/macOS, solid elsewhere) -->
+            <Border x:Name="SheetContentHost"
+                    StrokeThickness="0"
+                    Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                    Padding="24,32"
+                    VerticalOptions="End"
+                    components:LiquidGlass.EffectType="Regular"
+                    components:LiquidGlass.CornerRadius="24,24,0,0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24,24,0,0" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="16">
+                    <!-- Title -->
+                    <Label x:Name="TitleLabel"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                           HorizontalOptions="Start"
+                           SemanticProperties.HeadingLevel="Level1" />
+
+                    <!-- Message -->
+                    <Label x:Name="MessageLabel"
+                           FontSize="16"
+                           TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                           HorizontalOptions="Start" />
+
+                    <!-- Buttons -->
+                    <Grid ColumnDefinitions="*,*"
+                          ColumnSpacing="12"
+                          Margin="0,16,0,0">
+                        <!-- Cancel button -->
+                        <Button x:Name="CancelButton"
+                                Grid.Column="0"
+                                Background="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                Clicked="OnCancelButtonClicked" />
+
+                        <!-- Accept button -->
+                        <Button x:Name="AcceptButton"
+                                Grid.Column="1"
+                                Clicked="OnAcceptButtonClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentView>
