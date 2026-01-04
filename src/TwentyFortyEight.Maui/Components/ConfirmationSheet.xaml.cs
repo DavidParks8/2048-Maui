@@ -8,6 +8,7 @@ public partial class ConfirmationSheet : ContentView
     private const uint ShowAnimationDurationMs = 300;
     private const uint HideAnimationDurationMs = 200;
     private const double BackdropMaxOpacity = 0.5;
+    private const double OffScreenTranslationY = 1000;
 
     private TaskCompletionSource<bool>? _taskCompletionSource;
 
@@ -40,8 +41,18 @@ public partial class ConfirmationSheet : ContentView
         AcceptButton.Text = accept;
         CancelButton.Text = cancel;
 
-        // Show the sheet
-        _ = AnimateShowAsync();
+        // Show the sheet - handle exceptions to prevent unobserved task exceptions
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await AnimateShowAsync();
+            }
+            catch
+            {
+                // Animation errors are non-critical, silently ignore
+            }
+        });
 
         return _taskCompletionSource.Task;
     }
@@ -52,7 +63,7 @@ public partial class ConfirmationSheet : ContentView
 
         // Ensure consistent initial state
         Backdrop.Opacity = 0;
-        SheetContainer.TranslationY = 1000;
+        SheetContainer.TranslationY = OffScreenTranslationY;
 
         // Animate backdrop and sheet simultaneously
         await Task.WhenAll(
@@ -66,7 +77,7 @@ public partial class ConfirmationSheet : ContentView
         // Animate backdrop and sheet simultaneously
         await Task.WhenAll(
             Backdrop.FadeTo(0, HideAnimationDurationMs, Easing.CubicIn),
-            SheetContainer.TranslateTo(0, 1000, HideAnimationDurationMs, Easing.CubicIn)
+            SheetContainer.TranslateTo(0, OffScreenTranslationY, HideAnimationDurationMs, Easing.CubicIn)
         );
 
         IsVisible = false;

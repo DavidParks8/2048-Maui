@@ -8,6 +8,9 @@ namespace TwentyFortyEight.Maui.Services;
 /// </summary>
 public class MauiAlertService : IAlertService
 {
+    private const int MaxSearchDepth = 10; // Limit visual tree search depth
+    private WeakReference<ConfirmationSheet>? _cachedSheetRef;
+
     /// <inheritdoc />
     public async Task<bool> ShowConfirmationAsync(
         string title,
@@ -57,20 +60,38 @@ public class MauiAlertService : IAlertService
         return window?.Page;
     }
 
-    private static ConfirmationSheet? FindConfirmationSheet()
+    private ConfirmationSheet? FindConfirmationSheet()
     {
+        // Try cached reference first
+        if (_cachedSheetRef?.TryGetTarget(out var cachedSheet) == true)
+        {
+            return cachedSheet;
+        }
+
         var page = GetCurrentPage();
         if (page == null)
         {
             return null;
         }
 
-        // Search for ConfirmationSheet in the visual tree
-        return FindConfirmationSheetRecursive(page);
+        // Search for ConfirmationSheet in the visual tree with depth limit
+        var sheet = FindConfirmationSheetRecursive(page, 0);
+        if (sheet != null)
+        {
+            _cachedSheetRef = new WeakReference<ConfirmationSheet>(sheet);
+        }
+
+        return sheet;
     }
 
-    private static ConfirmationSheet? FindConfirmationSheetRecursive(Element element)
+    private static ConfirmationSheet? FindConfirmationSheetRecursive(Element element, int depth)
     {
+        // Limit search depth to prevent excessive recursion
+        if (depth > MaxSearchDepth)
+        {
+            return null;
+        }
+
         if (element is ConfirmationSheet sheet)
         {
             return sheet;
@@ -78,7 +99,7 @@ public class MauiAlertService : IAlertService
 
         if (element is ContentPage page && page.Content != null)
         {
-            return FindConfirmationSheetRecursive(page.Content);
+            return FindConfirmationSheetRecursive(page.Content, depth + 1);
         }
 
         if (element is Layout layout)
@@ -87,7 +108,7 @@ public class MauiAlertService : IAlertService
             {
                 if (child is Element childElement)
                 {
-                    var result = FindConfirmationSheetRecursive(childElement);
+                    var result = FindConfirmationSheetRecursive(childElement, depth + 1);
                     if (result != null)
                     {
                         return result;
