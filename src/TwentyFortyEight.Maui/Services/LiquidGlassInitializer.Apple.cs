@@ -1,12 +1,12 @@
+#if IOS || MACCATALYST
 using Microsoft.Maui.Handlers;
 
 namespace TwentyFortyEight.Maui.Services;
 
-public sealed class LiquidGlassFeature(ILiquidGlassApplier applier) : IMauiVisualFeature
+public sealed class LiquidGlassInitializer(ILiquidGlassApplier applier) : IMauiInitializeService
 {
-    public void Register()
+    public void Initialize(IServiceProvider services)
     {
-#if IOS || MACCATALYST
         BorderHandler.Mapper.AppendToMapping(
             Components.LiquidGlass.MappingName,
             (handler, view) => applier.Apply(handler, view)
@@ -15,6 +15,6 @@ public sealed class LiquidGlassFeature(ILiquidGlassApplier applier) : IMauiVisua
             Components.LiquidGlass.MappingName,
             (handler, view) => applier.Apply(handler, view)
         );
-#endif
     }
 }
+#endif

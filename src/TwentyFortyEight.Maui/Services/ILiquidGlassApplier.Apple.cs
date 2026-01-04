@@ -1,6 +1,4 @@
-using Microsoft.Maui;
-using Microsoft.Maui.Handlers;
-
+#if IOS || MACCATALYST
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
@@ -13,3 +11,4 @@ public interface ILiquidGlassApplier
     /// </summary>
     void Apply(IViewHandler handler, IView view);
 }
+#endif

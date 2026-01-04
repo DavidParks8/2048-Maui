@@ -1,10 +1,7 @@
 using CommunityToolkit.Maui;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Hosting;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
@@ -48,9 +45,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
 
-        // Run visual feature registration during app construction (Build)
-        builder.Services.AddSingleton<IMauiInitializeService, MauiVisualFeatureInitializer>();
-
         // Register consolidated services (from refactoring)
         builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
         builder.Services.AddSingleton<IGameStateRepository, GameStateRepository>();
@@ -89,7 +83,7 @@ public static class MauiProgram
 #if IOS || MACCATALYST
         // Visual features (handler mapper extensions)
         builder.Services.AddSingleton<ILiquidGlassApplier, LiquidGlassApplier>();
-        builder.Services.AddSingleton<IMauiVisualFeature, LiquidGlassFeature>();
+        builder.Services.AddSingleton<IMauiInitializeService, LiquidGlassInitializer>();
 #endif
 
         builder.Services.AddSingleton<GameViewModel>();
