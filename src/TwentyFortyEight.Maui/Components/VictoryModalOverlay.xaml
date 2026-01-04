@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components;assembly=TwentyFortyEight.Maui"
              xmlns:resx="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
              xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
              x:Class="TwentyFortyEight.Maui.Components.VictoryModalOverlay"
@@ -18,42 +18,17 @@
               Scale="0.96"
               Opacity="0">
 
-            <!-- iOS/macOS: native liquid glass (background layer) -->
-            <components:LiquidGlassView x:Name="ModalGlass"
-                                    CornerRadius="16"
-                                    EffectType="Regular"
-                                    HorizontalOptions="Center"
-                                    VerticalOptions="Center"
-                                    InputTransparent="True"
-                                    IsVisible="{OnPlatform iOS=true, MacCatalyst=true, Android=false, WinUI=false}">
-                <!-- Intentionally empty; size is driven from ModalContentHost. -->
-                <Grid />
-            </components:LiquidGlassView>
-
-            <!-- Android/WinUI: solid modal background (background layer) -->
-            <Border x:Name="ModalBackdrop"
+            <!-- Modal container (glass on iOS/macOS, solid elsewhere) -->
+            <Border x:Name="ModalContentHost"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 16"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    InputTransparent="True"
-                    IsVisible="{OnPlatform iOS=false, MacCatalyst=false, Android=true, WinUI=true}"
                     Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
-                <!-- Intentionally empty; size is driven from ModalContentHost. -->
-                <Grid />
-            </Border>
-
-            <!-- Foreground content (drives sizing for both background layers) -->
-            <Border x:Name="ModalContentHost"
-                    StrokeThickness="0"
-                    Stroke="Transparent"
-                    Background="Transparent"
-                    StrokeShape="RoundRectangle 16"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                     Padding="32"
                     HorizontalOptions="Center"
                     VerticalOptions="Center"
-                    SizeChanged="OnModalContentHostSizeChanged">
+                    components:LiquidGlass.EffectType="Regular"
+                    components:LiquidGlass.CornerRadius="16">
                 <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
                     <Label Text="{x:Static resx:AppStrings.VictoryTrophyEmoji}"
                            FontSize="64"

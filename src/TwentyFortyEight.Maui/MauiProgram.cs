@@ -1,14 +1,13 @@
 using CommunityToolkit.Maui;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Hosting;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
-#if IOS || MACCATALYST
-using TwentyFortyEight.Maui.Platforms.iOS.Handlers;
-#endif
 #if ANDROID
 using TwentyFortyEight.Maui.Platforms.Android.Handlers;
 #endif
@@ -33,9 +32,6 @@ public static class MauiProgram
             .ConfigureFonts(_ => { })
             .ConfigureMauiHandlers(handlers =>
             {
-#if IOS || MACCATALYST
-                handlers.AddHandler<LiquidGlassView, LiquidGlassViewHandler>();
-#endif
 #if ANDROID
                 handlers.AddHandler<BottomBar, BottomBarHandler>();
                 handlers.AddHandler<Switch, CustomSwitchHandler>();
@@ -51,6 +47,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
+
+        // Run visual feature registration during app construction (Build)
+        builder.Services.AddSingleton<IMauiInitializeService, MauiVisualFeatureInitializer>();
 
         // Register consolidated services (from refactoring)
         builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
@@ -86,6 +85,12 @@ public static class MauiProgram
         // Register social gaming service - uses partial class pattern
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
         builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
+
+#if IOS || MACCATALYST
+        // Visual features (handler mapper extensions)
+        builder.Services.AddSingleton<ILiquidGlassApplier, LiquidGlassApplier>();
+        builder.Services.AddSingleton<IMauiVisualFeature, LiquidGlassFeature>();
+#endif
 
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();

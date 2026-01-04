@@ -167,42 +167,24 @@
             </Grid>
         </Border>
 
-        <!-- Controls: circular Undo button -->
-        <!-- iOS/macOS: native liquid glass circle -->
-        <components:LiquidGlassView Grid.Row="3"
-                       WidthRequest="64"
-                       HeightRequest="64"
-                       CornerRadius="32"
-                       EffectType="Regular"
-                       Padding="0"
-                       HorizontalOptions="End"
-                       VerticalOptions="Center"
-                       IsVisible="{OnPlatform iOS=true, MacCatalyst=true, Android=false, WinUI=false}">
-            <components:IconButton x:Name="UndoButtonIos"
-                                   ButtonText=""
-                                   Command="{Binding UndoCommand}"
-                                   IsButtonEnabled="{Binding CanUndo}"
-                                   ButtonSize="64"
-                                   SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
-        </components:LiquidGlassView>
-
-        <!-- Android/WinUI: circular surface fallback -->
+        <!-- Controls: circular Undo button (glass on iOS/macOS, solid elsewhere) -->
         <Border Grid.Row="3"
-                WidthRequest="64"
-                HeightRequest="64"
-                StrokeThickness="1"
-                StrokeShape="RoundRectangle 32"
-                Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
-                HorizontalOptions="End"
-                VerticalOptions="Center"
-                IsVisible="{OnPlatform iOS=false, MacCatalyst=false, Android=true, WinUI=true}">
-            <components:IconButton x:Name="UndoButtonFallback"
-                                   ButtonText=""
-                                   Command="{Binding UndoCommand}"
-                                   IsButtonEnabled="{Binding CanUndo}"
-                                   ButtonSize="64"
-                                   SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
+            WidthRequest="64"
+            HeightRequest="64"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 32"
+            Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+            HorizontalOptions="End"
+            VerticalOptions="Center"
+            components:LiquidGlass.EffectType="Clear"
+            components:LiquidGlass.CornerRadius="32">
+            <components:IconButton x:Name="UndoButton"
+                       ButtonText=""
+                       Command="{Binding UndoCommand}"
+                       IsButtonEnabled="{Binding CanUndo}"
+                       ButtonSize="64"
+                       SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
         </Border>
 
         <!-- Victory modal overlay - sits above the board when visible -->

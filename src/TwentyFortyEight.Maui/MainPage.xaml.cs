@@ -54,8 +54,7 @@ public partial class MainPage : ContentPage
         _victoryViewModel.NewGameRequested += OnNewGameRequested;
 
         // Native/system icons (set in code-behind to keep XAML platform-agnostic)
-        UndoButtonIos.IconImageSource = _toolbarIconService.Undo;
-        UndoButtonFallback.IconImageSource = _toolbarIconService.Undo;
+        UndoButton.IconImageSource = _toolbarIconService.Undo;
 
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
