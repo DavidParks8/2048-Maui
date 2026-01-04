@@ -13,6 +13,21 @@
       ],
       "group": "build",
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build: TwentyFortyEight.Maui (maccatalyst)",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "build",
+        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "-f",
+        "net10.0-maccatalyst",
+        "-c",
+        "Debug"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
     }
   ]
 }
