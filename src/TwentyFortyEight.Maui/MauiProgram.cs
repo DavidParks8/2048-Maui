@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
