@@ -13,5 +13,5 @@ public class GameConfig
     /// <summary>
     /// Tile value required to win (default 2048).
     /// </summary>
-    public int WinTile { get; init; } = 2048;
+    public int WinTile { get; init; } = 8;
 }

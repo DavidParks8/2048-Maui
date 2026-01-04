@@ -167,25 +167,25 @@
             </Grid>
         </Border>
 
-        <!-- Controls -->
-        <components:BottomBar x:Name="ControlsBottomBar"
-                              Grid.Row="3"
-                              Background="Transparent"
-                              BarHeight="80"
-                              Elevation="10"
-                              IosMaterial="SystemChromeMaterial"
-                              UseWindowsMica="True"
-                              Padding="16,12">
-            <Grid ColumnDefinitions="*,Auto">
-                <components:IconButton Grid.Column="1"
-                                       x:Name="UndoButton"
-                                       ButtonText="{x:Static strings:AppStrings.Undo}"
-                                       Command="{Binding UndoCommand}"
-                                       IsButtonEnabled="{Binding CanUndo}"
-                                       ButtonSize="70"
-                                       HorizontalOptions="End" />
-            </Grid>
-        </components:BottomBar>
+        <!-- Controls: circular Undo button (glass on iOS/macOS, solid elsewhere) -->
+        <Border Grid.Row="3"
+            WidthRequest="64"
+            HeightRequest="64"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 32"
+            Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+            HorizontalOptions="End"
+            VerticalOptions="Center"
+            components:LiquidGlass.EffectType="Clear"
+            components:LiquidGlass.CornerRadius="32">
+            <components:IconButton x:Name="UndoButton"
+                       ButtonText=""
+                       Command="{Binding UndoCommand}"
+                       IsButtonEnabled="{Binding CanUndo}"
+                       ButtonSize="64"
+                       SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
+        </Border>
 
         <!-- Victory modal overlay - sits above the board when visible -->
         <components:VictoryModalOverlay
