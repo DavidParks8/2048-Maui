@@ -151,7 +151,7 @@ public class TileAnimationService
         }
     }
 
-    private async Task<List<Border>> AnimateSlideMovementsAsync(
+    private static async Task<List<Border>> AnimateSlideMovementsAsync(
         IReadOnlyList<Core.TileMovement> tileMovements,
         Grid gameBoard,
         double cellStepX,
@@ -195,7 +195,7 @@ public class TileAnimationService
         return overlayTiles;
     }
 
-    private async Task AnimateMergedTilesAsync(
+    private static async Task AnimateMergedTilesAsync(
         IReadOnlySet<TileViewModel> mergedTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
         CancellationToken cancellationToken
@@ -227,7 +227,7 @@ public class TileAnimationService
         await Task.WhenAll(mergedTileTasks);
     }
 
-    private async Task AnimateNewTilesAsync(
+    private static async Task AnimateNewTilesAsync(
         IReadOnlySet<TileViewModel> newTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
         Dictionary<TileViewModel, int> newTileValues,
