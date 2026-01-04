@@ -33,7 +33,7 @@ public static class MauiProgram
         builder.ConfigureMauiHandlers(handlers =>
         {
             handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
-#if IOS
+#if IOS || MACCATALYST
             handlers.AddHandler(typeof(VictoryModalOverlay), typeof(VictoryModalOverlayHandler));
 #endif
 #if ANDROID

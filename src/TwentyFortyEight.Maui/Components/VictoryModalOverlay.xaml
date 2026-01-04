@@ -21,13 +21,11 @@
                 Opacity="0">
             <Border.Background>
                 <OnPlatform x:TypeArguments="Brush">
-                    <On Platform="iOS" Value="Transparent" />
                     <On Platform="Android,WinUI" Value="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}" />
                 </OnPlatform>
             </Border.Background>
             <Border.Stroke>
                 <OnPlatform x:TypeArguments="Brush">
-                    <On Platform="iOS" Value="Transparent" />
                     <On Platform="Android,WinUI" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
                 </OnPlatform>
             </Border.Stroke>

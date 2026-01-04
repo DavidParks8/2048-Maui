@@ -1,4 +1,4 @@
-#if IOS
+#if IOS || MACCATALYST
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using UIKit;
@@ -32,7 +32,7 @@ public class VictoryModalOverlayHandler : ContentViewHandler
             AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
             Frame = root.Bounds,
             Effect = UIBlurEffect.FromStyle(
-                ToBlurStyle(
+                IosMaterialHelper.ToBlurStyle(
                     (VirtualView as VictoryModalOverlay)?.IosMaterial ?? IosMaterialStyle.SystemThickMaterial
                 )
             ),
@@ -48,27 +48,7 @@ public class VictoryModalOverlayHandler : ContentViewHandler
     {
         if (handler._blur == null)
             return;
-        handler._blur.Effect = UIBlurEffect.FromStyle(ToBlurStyle(view.IosMaterial));
-    }
-
-    static UIBlurEffectStyle ToBlurStyle(IosMaterialStyle style)
-    {
-        // iOS 13+ materials
-        if (UIDevice.CurrentDevice.CheckSystemVersion(13, 0))
-        {
-            return style switch
-            {
-                IosMaterialStyle.SystemUltraThinMaterial =>
-                    UIBlurEffectStyle.SystemUltraThinMaterial,
-                IosMaterialStyle.SystemThinMaterial => UIBlurEffectStyle.SystemThinMaterial,
-                IosMaterialStyle.SystemMaterial => UIBlurEffectStyle.SystemMaterial,
-                IosMaterialStyle.SystemThickMaterial => UIBlurEffectStyle.SystemThickMaterial,
-                IosMaterialStyle.SystemChromeMaterial => UIBlurEffectStyle.SystemChromeMaterial,
-                _ => UIBlurEffectStyle.SystemThickMaterial,
-            };
-        }
-
-        return UIBlurEffectStyle.Light;
+        handler._blur.Effect = UIBlurEffect.FromStyle(IosMaterialHelper.ToBlurStyle(view.IosMaterial));
     }
 }
 #endif
