@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+		Keep the bundle/folder name stable for dotnet run / VS Code launching,
+		while retaining the user-facing name with emoji.
+	-->
+	<key>CFBundleName</key>
+	<string>TwentyFortyEight.Maui</string>
+	<key>CFBundleDisplayName</key>
+	<string>2048 🎮</string>
+</dict>
+</plist>

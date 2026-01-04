@@ -1,4 +1,4 @@
-#if IOS
+#if MACCATALYST
 using System.IO;
 using Foundation;
 using Microsoft.Maui.Controls;
@@ -12,7 +12,7 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
-    private static ImageSource FromSystemImage(string symbolName)
+    static ImageSource FromSystemImage(string symbolName)
     {
         UIImage? image = UIImage.GetSystemImage(symbolName);
         if (image is null)
@@ -34,7 +34,7 @@ public partial class ToolbarIconService
         return ImageSource.FromStream(() => new MemoryStream(bytes));
     }
 
-    private static UIImage? RenderTinted(UIImage templateImage, UIColor tintColor)
+    static UIImage? RenderTinted(UIImage templateImage, UIColor tintColor)
     {
         var size = templateImage.Size;
         if (size.Width <= 0 || size.Height <= 0)
@@ -51,17 +51,14 @@ public partial class ToolbarIconService
         });
     }
 
-    private static UIColor ResolveToolbarTintColor()
+    static UIColor ResolveToolbarTintColor()
     {
-        // If the app defines a dedicated tint resource, prefer it.
         if (
             Application.Current?.Resources.TryGetValue("ToolbarIconTintColor", out var tint) == true
             && tint is Color tintColor
         )
             return tintColor.ToPlatform();
 
-        // Use iOS dynamic system colors when available.
-        // (Some bindings don't expose UIColor.LabelColor directly.)
         var label = UIColor.FromName("labelColor");
         if (label is not null)
             return label;
@@ -70,7 +67,6 @@ public partial class ToolbarIconService
         if (secondaryLabel is not null)
             return secondaryLabel;
 
-        // Fallback to a theme-aware value.
         var isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
         return (isDark ? Colors.White : Colors.Black).ToPlatform();
     }

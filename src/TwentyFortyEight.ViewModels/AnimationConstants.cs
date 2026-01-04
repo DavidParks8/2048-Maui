@@ -9,7 +9,7 @@ public static class AnimationConstants
     /// <summary>
     /// Base duration of the slide animation in milliseconds.
     /// </summary>
-    public const uint BaseSlideAnimationDuration = 220;
+    public const uint BaseSlideAnimationDuration = 150;
 
     /// <summary>
     /// Base duration of the scale-up animation for merged tiles in milliseconds.
