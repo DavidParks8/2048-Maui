@@ -32,7 +32,15 @@
                    IsVisible="{Binding HasIconText, Source={x:Reference Root}}" />
             <Label Text="{Binding ButtonText, Source={x:Reference Root}}"
                    FontSize="12"
-                   HorizontalOptions="Center" />
+                   HorizontalOptions="Center">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label"
+                                 Binding="{Binding ButtonText, Source={x:Reference Root}}"
+                                 Value="">
+                        <Setter Property="IsVisible" Value="False" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
         </VerticalStackLayout>
     </Border>
 </ContentView>

@@ -15,7 +15,6 @@
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" />
     <!-- Animation Dependencies -->
     <PackageVersion Include="CommunityToolkit.Maui" Version="13.0.0" />
-
     <!-- Skia (cross-platform shader-capable rendering) -->
     <PackageVersion Include="SkiaSharp" Version="2.88.9" />
     <PackageVersion Include="SkiaSharp.Skottie" Version="2.88.9" />

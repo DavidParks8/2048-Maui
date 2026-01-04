@@ -1,3 +1,4 @@
+using Maui.BindableProperty.Generator.Core;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
 
@@ -9,6 +10,15 @@ namespace TwentyFortyEight.Maui.Components;
 /// </summary>
 public partial class VictoryModalOverlay : ContentView
 {
+#pragma warning disable CS0169 // Field is never used - used by source generator
+
+    /// <summary>
+    /// iOS material style for the modal background blur effect.
+    /// </summary>
+    [AutoBindable(DefaultValue = "IosMaterialStyle.SystemThickMaterial")]
+    private readonly IosMaterialStyle _iosMaterial;
+
+#pragma warning restore CS0169
     private const uint ShowFadeDurationMs = 300;
     private const uint HideFadeDurationMs = 200;
 

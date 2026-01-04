@@ -6,9 +6,6 @@ using TwentyFortyEight.Maui.Components;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
-#if IOS
-using TwentyFortyEight.Maui.Platforms.iOS.Handlers;
-#endif
 #if ANDROID
 using TwentyFortyEight.Maui.Platforms.Android.Handlers;
 #endif
@@ -23,24 +20,24 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
-        builder.UseMauiApp<App>().UseMauiCommunityToolkit().UseSkiaSharp().ConfigureFonts(_ => { });
-
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
-
-        // Register custom handlers
-        builder.ConfigureMauiHandlers(handlers =>
-        {
-            handlers.AddHandler(typeof(BottomBar), typeof(BottomBarHandler));
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseSkiaSharp()
+            .ConfigureFonts(_ => { })
+            .ConfigureMauiHandlers(handlers =>
+            {
 #if ANDROID
-            handlers.AddHandler<Switch, CustomSwitchHandler>();
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
+                handlers.AddHandler<Switch, CustomSwitchHandler>();
 #endif
-        });
-
-#if DEBUG
-        builder.Logging.AddDebug();
+#if WINDOWS
+                handlers.AddHandler<BottomBar, BottomBarHandler>();
 #endif
+            });
 
         // Register services for dependency injection
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
@@ -83,6 +80,12 @@ public static class MauiProgram
         // Register social gaming service - uses partial class pattern
         // Platform-specific implementations are in Platforms/iOS, Platforms/Windows, etc.
         builder.Services.AddSingleton<ISocialGamingService, SocialGamingService>();
+
+#if IOS || MACCATALYST
+        // Visual features (handler mapper extensions)
+        builder.Services.AddSingleton<ILiquidGlassApplier, LiquidGlassApplier>();
+        builder.Services.AddSingleton<IMauiInitializeService, LiquidGlassInitializer>();
+#endif
 
         builder.Services.AddSingleton<GameViewModel>();
         builder.Services.AddTransient<StatsViewModel>();
