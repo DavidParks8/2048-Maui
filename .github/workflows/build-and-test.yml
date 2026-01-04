@@ -134,7 +134,7 @@ jobs:
         MAUI_TARGET_PLATFORM: ios
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:RuntimeIdentifier="$IOS_SIM_RID" -p:EnableCodeSigning=false
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
       env:
         MAUI_TARGET_PLATFORM: ios
 

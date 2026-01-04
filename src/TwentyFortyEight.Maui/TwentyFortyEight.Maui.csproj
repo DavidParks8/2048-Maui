@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Default targets for local development -->
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0;net10.0-ios;net10.0-android</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">net10.0-android</TargetFrameworks>
     
     <!-- CI builds: use MAUI_TARGET_PLATFORM environment variable to select target -->
@@ -53,20 +53,17 @@
     <PublishAot Condition="'$(TargetFramework)' != 'net10.0-android'">true</PublishAot>
     <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'">true</RunAOTCompilation>
   </PropertyGroup>
-
-  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
-    <MaciOSPrepareForBuildDependsOn>$(MaciOSPrepareForBuildDependsOn);ConfigureSimulatorSigning</MaciOSPrepareForBuildDependsOn>
-  </PropertyGroup>
-
-  <Target Name="ConfigureSimulatorSigning">
-    <PropertyGroup Condition="'$(SdkIsSimulator)' == 'true'">
-      <EnableCodeSigning>false</EnableCodeSigning>
-    </PropertyGroup>
-  </Target>
   
   <!-- Disable Fast Deployment for Android to fix manual APK installation crashes -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <!-- iOS: default to simulator RID when none specified, and disable signing for simulator builds -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">iossimulator-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">iossimulator-x64</RuntimeIdentifier>
+    <CodesignKey Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">-</CodesignKey>
   </PropertyGroup>
 
   <ItemGroup>
