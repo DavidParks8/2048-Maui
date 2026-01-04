@@ -41,8 +41,8 @@ public partial class ConfirmationSheet : ContentView
         AcceptButton.Text = accept;
         CancelButton.Text = cancel;
 
-        // Show the sheet - fire and forget with ConfigureAwait
-        _ = AnimateShowAsync().ConfigureAwait(false);
+        // Show the sheet - fire and forget
+        _ = AnimateShowAsync();
 
         return _taskCompletionSource.Task;
     }
@@ -80,8 +80,16 @@ public partial class ConfirmationSheet : ContentView
             return;
         }
 
-        await AnimateHideAsync();
-        _taskCompletionSource.TrySetResult(true);
+        try
+        {
+            await AnimateHideAsync();
+            _taskCompletionSource.TrySetResult(true);
+        }
+        catch
+        {
+            // If animation fails, still complete the task to avoid hanging
+            _taskCompletionSource.TrySetResult(true);
+        }
     }
 
     private async void OnCancelButtonClicked(object? sender, EventArgs e)
@@ -91,8 +99,16 @@ public partial class ConfirmationSheet : ContentView
             return;
         }
 
-        await AnimateHideAsync();
-        _taskCompletionSource.TrySetResult(false);
+        try
+        {
+            await AnimateHideAsync();
+            _taskCompletionSource.TrySetResult(false);
+        }
+        catch
+        {
+            // If animation fails, still complete the task to avoid hanging
+            _taskCompletionSource.TrySetResult(false);
+        }
     }
 
     private async void OnBackdropTapped(object? sender, EventArgs e)
@@ -103,7 +119,15 @@ public partial class ConfirmationSheet : ContentView
             return;
         }
 
-        await AnimateHideAsync();
-        _taskCompletionSource.TrySetResult(false);
+        try
+        {
+            await AnimateHideAsync();
+            _taskCompletionSource.TrySetResult(false);
+        }
+        catch
+        {
+            // If animation fails, still complete the task to avoid hanging
+            _taskCompletionSource.TrySetResult(false);
+        }
     }
 }
