@@ -174,6 +174,58 @@ public class GameViewModelTests
 
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+    }
+
+    [TestMethod]
+    public async Task NewGameAsync_WhenMovesGreaterThanZero_ShowsConfirmationSheet()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        // Act
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ConfirmNewGameCommand_WhenSheetVisible_StartsNewGameAndHidesSheet()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+
+        // Act
+        await viewModel.ConfirmNewGameCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task DismissNewGameConfirmationCommand_WhenSheetVisible_HidesSheetWithoutStartingNewGame()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+
+        // Act
+        viewModel.DismissNewGameConfirmationCommand.Execute(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Never);
     }
 
     [TestMethod]

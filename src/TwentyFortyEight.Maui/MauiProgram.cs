@@ -45,6 +45,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
+        builder.Services.AddSingleton<IWindowOverlayService, WindowOverlayService>();
 
         // Register consolidated services (from refactoring)
         builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();

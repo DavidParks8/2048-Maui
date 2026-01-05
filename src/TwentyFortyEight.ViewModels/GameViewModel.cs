@@ -91,6 +91,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSocialGamingAvailable;
 
+    [ObservableProperty]
+    private bool _isNewGameConfirmationVisible;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
@@ -151,17 +154,35 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task NewGameAsync()
+    private Task NewGameAsync()
     {
-        // Show confirmation if game is in progress (has moves and not game over)
+        // Show a sheet confirmation if a game is in progress (has moves and not game over)
         if (Moves > 0 && !_engine.CurrentState.IsGameOver)
         {
-            if (!await _feedbackService.ConfirmNewGameAsync())
-            {
-                return;
-            }
+            IsNewGameConfirmationVisible = true;
+            return Task.CompletedTask;
         }
 
+        StartNewGame();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private void DismissNewGameConfirmation()
+    {
+        IsNewGameConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    private Task ConfirmNewGameAsync()
+    {
+        IsNewGameConfirmationVisible = false;
+        StartNewGame();
+        return Task.CompletedTask;
+    }
+
+    private void StartNewGame()
+    {
         // Hide victory overlay if it's showing
         _victoryViewModel.HideVictoryOverlayIfShowing();
 
@@ -179,6 +200,11 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task MoveAsync(Direction direction)
     {
+        if (IsNewGameConfirmationVisible)
+        {
+            return;
+        }
+
         // Use non-blocking Wait(0) to check if we can acquire the lock immediately
         // If not, another move is in progress - skip this one
         if (!_moveLock.Wait(0))
@@ -239,6 +265,11 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
+        if (IsNewGameConfirmationVisible)
+        {
+            return;
+        }
+
         if (_engine.Undo())
         {
             UpdateUI();

@@ -12,7 +12,7 @@ public static class PlatformAchievementIds
     // iOS Game Center IDs
     public static class iOS
     {
-        public const string LeaderboardId = "com.dappermagna.twentyfortyeight.highscores";
+        public const string LeaderboardId = "com.dappermagna.twentyfortyeight.highscores.4x4";
         public const string Achievement_Tile128 = "com.dappermagna.twentyfortyeight.tile128";
         public const string Achievement_Tile256 = "com.dappermagna.twentyfortyeight.tile256";
         public const string Achievement_Tile512 = "com.dappermagna.twentyfortyeight.tile512";

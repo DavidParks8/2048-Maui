@@ -2,6 +2,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
+using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Models;
@@ -15,6 +16,7 @@ public partial class MainPage : ContentPage
     private readonly TileAnimationService _animationService;
     private readonly IInputCoordinationService _inputCoordinationService;
     private readonly IGestureRecognizerService _gestureRecognizerService;
+    private readonly IWindowOverlayService _windowOverlayService;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
@@ -32,6 +34,7 @@ public partial class MainPage : ContentPage
         TileAnimationService animationService,
         IInputCoordinationService inputCoordinationService,
         IGestureRecognizerService gestureRecognizerService,
+        IWindowOverlayService windowOverlayService,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService
     )
@@ -43,6 +46,7 @@ public partial class MainPage : ContentPage
         _animationService = animationService;
         _inputCoordinationService = inputCoordinationService;
         _gestureRecognizerService = gestureRecognizerService;
+        _windowOverlayService = windowOverlayService;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         BindingContext = _viewModel;
@@ -69,6 +73,9 @@ public partial class MainPage : ContentPage
         // Set up gesture recognizers for swipe detection
         _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
         _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
+
+        // Subscribe to bottom sheet dismissal to sync ViewModel state
+        _windowOverlayService.BottomSheetDismissed += OnBottomSheetDismissed;
 
         // Handle social gaming toolbar items visibility
         UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
@@ -261,6 +268,110 @@ public partial class MainPage : ContentPage
         {
             UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
         }
+        else if (e.PropertyName == nameof(GameViewModel.IsNewGameConfirmationVisible))
+        {
+            HandleNewGameConfirmationVisibilityChanged();
+        }
+    }
+
+    private void HandleNewGameConfirmationVisibilityChanged()
+    {
+        if (_viewModel.IsNewGameConfirmationVisible)
+        {
+            // Create the content for the sheet
+            VerticalStackLayout content = new()
+            {
+                Spacing = 16,
+                Padding = new Thickness(0, 4, 0, 0), // Add top padding to prevent clipping
+                Children =
+                {
+                    new Label
+                    {
+                        Text = AppStrings.RestartConfirmMessage,
+                        FontSize = 15,
+                        LineHeight = 1.3,
+                        TextColor = GetThemeColor(
+                            "NativeTextSecondaryLight",
+                            "NativeTextSecondaryDark"
+                        ),
+                    },
+                    new Grid
+                    {
+                        ColumnDefinitions =
+                        [
+                            new ColumnDefinition(GridLength.Star),
+                            new ColumnDefinition(GridLength.Star),
+                        ],
+                        ColumnSpacing = 12,
+                        Margin = new Thickness(0, 8, 0, 0),
+                        Children = { CreateCancelButton(), CreateStartNewButton() },
+                    },
+                },
+            };
+
+            _windowOverlayService.ShowBottomSheet(AppStrings.RestartConfirmTitle, content);
+        }
+        else
+        {
+            _windowOverlayService.HideBottomSheet();
+        }
+    }
+
+    private Button CreateCancelButton()
+    {
+        var button = new Button
+        {
+            Text = AppStrings.Cancel,
+            Command = _viewModel.DismissNewGameConfirmationCommand,
+            CornerRadius = 22, // iOS 26 liquid glass pill shape
+            HeightRequest = 50,
+            FontSize = 17,
+            FontAttributes = FontAttributes.Bold,
+        };
+        Grid.SetColumn(button, 0);
+        return button;
+    }
+
+    private Button CreateStartNewButton()
+    {
+        var button = new Button
+        {
+            Text = AppStrings.StartNew,
+            Command = _viewModel.ConfirmNewGameCommand,
+            CornerRadius = 22, // iOS 26 liquid glass pill shape
+            HeightRequest = 50,
+            FontSize = 17,
+            FontAttributes = FontAttributes.Bold,
+            // Keep primary purple background with white text for visibility
+        };
+        Grid.SetColumn(button, 1);
+        return button;
+    }
+
+    private void OnBottomSheetDismissed(object? sender, EventArgs e)
+    {
+        // Sync ViewModel state when sheet is dismissed by user interaction
+        if (_viewModel.IsNewGameConfirmationVisible)
+        {
+            _viewModel.DismissNewGameConfirmationCommand.Execute(null);
+        }
+    }
+
+    private static Color GetThemeColor(string lightKey, string darkKey)
+    {
+        var app = Application.Current;
+        if (app == null)
+        {
+            return Colors.Gray;
+        }
+
+        var key = app.RequestedTheme == AppTheme.Dark ? darkKey : lightKey;
+        if (app.Resources.TryGetValue(key, out var value) && value is Color color)
+        {
+            return color;
+        }
+
+        return Colors.Gray;
     }
 
     private async void OnVictoryAnimationRequested(object? sender, EventArgs e)
