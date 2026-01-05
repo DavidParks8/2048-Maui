@@ -1,10 +1,12 @@
 using System.Linq;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
 
 namespace TwentyFortyEight.Maui;
@@ -63,6 +65,14 @@ public partial class MainPage : ContentPage
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
 
+        WeakReferenceMessenger.Default.Register<BoardSizeChangedMessage>(
+            this,
+            static (object recipient, BoardSizeChangedMessage _) =>
+            {
+                MainThread.BeginInvokeOnMainThread(((MainPage)recipient).RebuildBoardGrid);
+            }
+        );
+
         // Add tiles to the grid
         CreateTiles();
 
@@ -79,6 +89,29 @@ public partial class MainPage : ContentPage
 
         // Handle social gaming toolbar items visibility
         UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
+    }
+
+    private void RebuildBoardGrid()
+    {
+        // Cancel any pending animations and reset tile states.
+        _animationCts?.Cancel();
+
+        try
+        {
+            TileAnimationService.ResetTileStates(GameBoard, _tileBorders);
+        }
+        catch
+        {
+            // Ignore if grid is in the middle of being rebuilt.
+        }
+
+        // Clear existing visuals.
+        GameBoard.Children.Clear();
+        GameBoard.RowDefinitions.Clear();
+        GameBoard.ColumnDefinitions.Clear();
+        _tileBorders.Clear();
+
+        CreateTiles();
     }
 
     private void OnNewGameRequested(object? sender, EventArgs e)
@@ -174,6 +207,10 @@ public partial class MainPage : ContentPage
     {
         var boardSize = _viewModel.BoardSize;
 
+        // Ensure we only subscribe once even if tiles are rebuilt.
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
         // Create row and column definitions dynamically based on board size
         for (int i = 0; i < boardSize; i++)
         {
@@ -231,8 +268,7 @@ public partial class MainPage : ContentPage
             GameBoard.Children.Add(border);
         }
 
-        // Subscribe once to BoardScaleFactor changes to update all label font size bindings
-        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        // PropertyChanged subscription handled at the start of this method.
     }
 
     private void BindScaledFontSize(Label label)

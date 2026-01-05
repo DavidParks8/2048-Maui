@@ -6,6 +6,11 @@ namespace TwentyFortyEight.Core;
 public class GameConfig
 {
     /// <summary>
+    /// Maximum reasonable board size. Larger sizes may cause performance issues.
+    /// </summary>
+    public const int MaxReasonableBoardSize = 64;
+
+    /// <summary>
     /// Size of the board (default 4x4).
     /// </summary>
     public int Size { get; init; } = 4;

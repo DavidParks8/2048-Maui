@@ -2,6 +2,7 @@
 using Foundation;
 using GameKit;
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Services;
 using UIKit;
 
@@ -106,11 +107,18 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         }
     }
 
-    public async Task SubmitScoreAsync(long score)
+    public async Task SubmitScoreAsync(long score, GameConfig config)
     {
         if (!IsAvailable)
         {
             LogServiceNotAvailable("score submission");
+            return;
+        }
+
+        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config.Size);
+        if (leaderboardId is null)
+        {
+            LogServiceNotAvailable($"score submission for unsupported size {config.Size}");
             return;
         }
 
@@ -122,7 +130,7 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
                     (nint)score,
                     0,
                     GKLocalPlayer.Local,
-                    [PlatformAchievementIds.iOS.LeaderboardId]
+                    [leaderboardId]
                 );
                 LogScoreSubmitted(score);
             });
@@ -173,11 +181,18 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
         }
     }
 
-    public async Task ShowLeaderboardAsync()
+    public async Task ShowLeaderboardAsync(GameConfig config)
     {
         if (!IsAvailable)
         {
             LogServiceNotAvailable("show leaderboard");
+            return;
+        }
+
+        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config.Size);
+        if (leaderboardId is null)
+        {
+            LogServiceNotAvailable($"show leaderboard for unsupported size {config.Size}");
             return;
         }
 

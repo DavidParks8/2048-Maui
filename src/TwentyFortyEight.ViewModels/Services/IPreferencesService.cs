@@ -44,4 +44,14 @@ public interface IPreferencesService
     /// Sets a double value in preferences.
     /// </summary>
     void SetDouble(string key, double value);
+
+    /// <summary>
+    /// Returns true if the preference key exists.
+    /// </summary>
+    bool ContainsKey(string key);
+
+    /// <summary>
+    /// Removes a preference key if it exists.
+    /// </summary>
+    void Remove(string key);
 }

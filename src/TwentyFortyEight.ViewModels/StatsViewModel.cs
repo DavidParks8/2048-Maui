@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels;
@@ -50,6 +52,15 @@ public partial class StatsViewModel : ObservableObject
         _statisticsTracker = statisticsTracker;
         _alertService = alertService;
         _localizationService = localizationService;
+
+        WeakReferenceMessenger.Default.Register<BoardSizeChangedMessage>(
+            this,
+            static (object recipient, BoardSizeChangedMessage _) =>
+            {
+                ((StatsViewModel)recipient).RefreshStatistics();
+            }
+        );
+
         RefreshStatistics();
     }
 

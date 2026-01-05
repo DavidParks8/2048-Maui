@@ -51,6 +51,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
         builder.Services.AddSingleton<IGameStateRepository, GameStateRepository>();
         builder.Services.AddSingleton<IGameSessionCoordinator, GameSessionCoordinator>();
+        builder.Services.AddSingleton<IBoardSizeChangeService, BoardSizeChangeService>();
 
         // Register low-level services (used by consolidated services internally)
         builder.Services.AddSingleton<IHapticService, MauiHapticService>();

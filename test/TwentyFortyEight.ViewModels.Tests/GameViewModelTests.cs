@@ -53,8 +53,8 @@ public class GameViewModelTests
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
-        _repositoryMock.Setup(r => r.GetBestScore()).Returns(0);
-        _repositoryMock.Setup(r => r.LoadGameState()).Returns((GameState?)null);
+        _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(0);
+        _repositoryMock.Setup(r => r.LoadGameState(It.IsAny<GameConfig>())).Returns((GameState?)null);
         _sessionCoordinatorMock.Setup(s => s.IsSocialGamingAvailable).Returns(false);
 
         // Setup random source for deterministic tile spawning
@@ -189,7 +189,10 @@ public class GameViewModelTests
 
         // Assert
         Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
-        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Never);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
+            Times.Never
+        );
     }
 
     [TestMethod]
@@ -207,7 +210,7 @@ public class GameViewModelTests
 
         // Assert
         Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
-        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Once);
+        _repositoryMock.Verify(r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()), Times.Once);
     }
 
     [TestMethod]
@@ -225,7 +228,10 @@ public class GameViewModelTests
 
         // Assert
         Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
-        _repositoryMock.Verify(r => r.SaveGameState(It.IsAny<GameState>()), Times.Never);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
+            Times.Never
+        );
     }
 
     [TestMethod]

@@ -15,7 +15,8 @@ public sealed partial class GameSessionCoordinator(
 {
     public bool IsSocialGamingAvailable => socialGamingService.IsAvailable;
 
-    public Task ShowLeaderboardAsync() => socialGamingService.ShowLeaderboardAsync();
+    public Task ShowLeaderboardAsync(GameConfig config) =>
+        socialGamingService.ShowLeaderboardAsync(config);
 
     public Task ShowAchievementsAsync() => socialGamingService.ShowAchievementsAsync();
 
@@ -31,7 +32,7 @@ public sealed partial class GameSessionCoordinator(
         }
     }
 
-    public async Task OnScoreChangedAsync(int newScore, bool isNewBestScore)
+    public async Task OnScoreChangedAsync(int newScore, bool isNewBestScore, GameConfig config)
     {
         if (!isNewBestScore)
         {
@@ -40,7 +41,7 @@ public sealed partial class GameSessionCoordinator(
 
         try
         {
-            await socialGamingService.SubmitScoreAsync(newScore);
+            await socialGamingService.SubmitScoreAsync(newScore, config);
         }
         catch (Exception ex)
         {

@@ -11,30 +11,35 @@ public interface IGameStateRepository
     /// <summary>
     /// Loads the saved game state, if one exists.
     /// </summary>
+    /// <param name="config">The game configuration.</param>
     /// <returns>The saved game state, or null if no save exists or loading failed.</returns>
-    GameState? LoadGameState();
+    GameState? LoadGameState(GameConfig config);
 
     /// <summary>
     /// Saves the current game state.
     /// </summary>
+    /// <param name="config">The game configuration.</param>
     /// <param name="state">The state to save.</param>
-    void SaveGameState(GameState state);
+    void SaveGameState(GameConfig config, GameState state);
 
     /// <summary>
     /// Gets the all-time best score.
     /// </summary>
-    int GetBestScore();
+    /// <param name="config">The game configuration.</param>
+    int GetBestScore(GameConfig config);
 
     /// <summary>
     /// Updates the best score if the new score is higher.
     /// Implements debouncing internally to avoid storage thrashing.
     /// </summary>
+    /// <param name="config">The game configuration.</param>
     /// <param name="score">The new score to potentially save.</param>
-    void UpdateBestScoreIfHigher(int score);
+    void UpdateBestScoreIfHigher(GameConfig config, int score);
 
     /// <summary>
     /// Waits for any pending save operations to complete.
     /// Useful for testing.
     /// </summary>
-    Task FlushAsync();
+    /// <param name="config">The game configuration.</param>
+    Task FlushAsync(GameConfig config);
 }

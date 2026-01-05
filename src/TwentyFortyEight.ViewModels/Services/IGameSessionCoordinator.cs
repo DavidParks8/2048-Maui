@@ -16,7 +16,7 @@ public interface IGameSessionCoordinator
     /// <summary>
     /// Shows the platform leaderboard UI.
     /// </summary>
-    Task ShowLeaderboardAsync();
+    Task ShowLeaderboardAsync(GameConfig config);
 
     /// <summary>
     /// Shows the platform achievements UI.
@@ -34,5 +34,6 @@ public interface IGameSessionCoordinator
     /// </summary>
     /// <param name="newScore">The new score.</param>
     /// <param name="isNewBestScore">Whether this is a new personal best.</param>
-    Task OnScoreChangedAsync(int newScore, bool isNewBestScore);
+    /// <param name="config">The current game configuration.</param>
+    Task OnScoreChangedAsync(int newScore, bool isNewBestScore, GameConfig config);
 }
