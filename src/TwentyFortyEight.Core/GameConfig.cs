@@ -6,8 +6,6 @@ namespace TwentyFortyEight.Core;
 public class GameConfig
 {
     private const string RulesetIdVersionPrefix = "v1";
-    private const string DefaultSpawnModeId = "default";
-    private const string DefaultUndoModeId = "on";
 
     /// <summary>
     /// Maximum reasonable board size. Larger sizes may cause performance issues.
@@ -28,5 +26,5 @@ public class GameConfig
     /// Stable identifier for persistence and scoping.
     /// </summary>
     public string RulesetId =>
-        $"{RulesetIdVersionPrefix}:size={Size};win={WinTile};spawn={DefaultSpawnModeId};undo={DefaultUndoModeId}";
+        $"{RulesetIdVersionPrefix}:size={Size};win={WinTile}";
 }
