@@ -11,7 +11,6 @@ namespace TwentyFortyEight.Maui.Services;
 public class MauiSettingsService : ISettingsService
 {
     private const string HapticsEnabledKey = "HapticsEnabled";
-    private const string LastActiveBoardSizeKey = "LastActiveBoardSize";
     private const string LastActiveGameConfigKey = "LastActiveGameConfig";
 
     /// <inheritdoc />
@@ -19,13 +18,6 @@ public class MauiSettingsService : ISettingsService
     {
         get => Preferences.Get(HapticsEnabledKey, true);
         set => Preferences.Set(HapticsEnabledKey, value);
-    }
-
-    /// <inheritdoc />
-    public int LastActiveBoardSize
-    {
-        get => Preferences.Get(LastActiveBoardSizeKey, 4);
-        set => Preferences.Set(LastActiveBoardSizeKey, value);
     }
 
     /// <inheritdoc />
@@ -44,6 +36,10 @@ public class MauiSettingsService : ISettingsService
                     );
                     if (config != null)
                     {
+                        if (config.Size <= 0 || config.Size > GameConfig.MaxReasonableBoardSize)
+                        {
+                            return new();
+                        }
                         return config;
                     }
                 }
@@ -53,23 +49,16 @@ public class MauiSettingsService : ISettingsService
                 }
             }
 
-            // Migration: if we have a legacy board-size-only setting, upgrade it.
-            var size = Preferences.Get(LastActiveBoardSizeKey, 4);
-            var migrated = new GameConfig { Size = size };
-            LastActiveGameConfig = migrated;
-            return migrated;
+            return new();
         }
         set
         {
-            var config = value ?? new GameConfig();
+            GameConfig config = value ?? new();
             var json = JsonSerializer.Serialize(
                 config,
                 GameSerializationContext.Default.GameConfig
             );
             Preferences.Set(LastActiveGameConfigKey, json);
-
-            // Keep legacy key in sync for smooth downgrades.
-            Preferences.Set(LastActiveBoardSizeKey, config.Size);
         }
     }
 }

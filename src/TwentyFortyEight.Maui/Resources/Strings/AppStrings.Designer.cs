@@ -501,15 +501,6 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Mode.
         /// </summary>
-        internal static string Mode {
-            get {
-                return ResourceManager.GetString("Mode", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Mode.
-        /// </summary>
         internal static string ModeTitle {
             get {
                 return ResourceManager.GetString("ModeTitle", resourceCulture);

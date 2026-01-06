@@ -396,26 +396,19 @@ public partial class MainPage : ContentPage
             _modeSheetOriginalBoardSize
         );
         modeSelectionView.PlayRequested += async (_, _) =>
-            await CommitModeSelectionAsync(startNew: false);
+            await CommitModeSelectionAsync();
 
         _windowOverlayService.ShowBottomSheet(AppStrings.ModeTitle, modeSelectionView);
     }
 
-    private async Task CommitModeSelectionAsync(bool startNew)
+    private async Task CommitModeSelectionAsync()
     {
         // Avoid reverting pending values when we dismiss programmatically after a commit.
         _revertModeSelectionOnDismiss = false;
 
         try
         {
-            if (startNew)
-            {
-                await _viewModel.StartNewSelectedModeCommand.ExecuteAsync(null);
-            }
-            else
-            {
-                await _viewModel.PlaySelectedModeCommand.ExecuteAsync(null);
-            }
+            await _viewModel.PlaySelectedModeCommand.ExecuteAsync(null);
         }
         finally
         {

@@ -12,23 +12,9 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
-    static ImageSource FromSystemImage(string symbolName, nfloat? pointSize = null)
+    static ImageSource FromSystemImage(string symbolName)
     {
-        UIImage? image;
-        if (pointSize is null)
-        {
-            image = UIImage.GetSystemImage(symbolName);
-        }
-        else
-        {
-            var configuration = UIImageSymbolConfiguration.Create(
-                pointSize.Value,
-                UIImageSymbolWeight.Regular,
-                UIImageSymbolScale.Medium
-            );
-
-            image = UIImage.GetSystemImage(symbolName, configuration);
-        }
+        UIImage? image = UIImage.GetSystemImage(symbolName);
 
         if (image is null)
             return ImageSource.FromStream(static () => Stream.Null);

@@ -7,12 +7,11 @@
              xmlns:converters="clr-namespace:TwentyFortyEight.Maui.Converters"
              xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
              xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
-             xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
              Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
-             ios:Page.UseSafeArea="False">
+             >
 
     <ContentPage.Resources>
         <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
@@ -30,7 +29,7 @@
         <ToolbarItem
             x:Name="ToolbarModeButton"
             AutomationId="ToolbarModeButton"
-            Text="{x:Static strings:AppStrings.Mode}"
+            Text="{x:Static strings:AppStrings.ModeTitle}"
             Clicked="OnModeClicked"
             Order="Primary"
             Priority="1" />

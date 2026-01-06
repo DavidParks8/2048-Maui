@@ -96,7 +96,7 @@ public partial class StatsViewModel : ObservableObject
 
     private void UpdateBoardSizeDisplayFromSettings()
     {
-        var config = _settingsService.LastActiveGameConfig ?? new GameConfig();
+        var config = _settingsService.LastActiveGameConfig;
         UpdateBoardSizeDisplay(config.Size);
     }
 

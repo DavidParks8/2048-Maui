@@ -25,6 +25,5 @@ public class GameConfig
     /// <summary>
     /// Stable identifier for persistence and scoping.
     /// </summary>
-    public string RulesetId =>
-        $"{RulesetIdVersionPrefix}:size={Size};win={WinTile}";
+    public string RulesetId => $"{RulesetIdVersionPrefix}:size={Size};win={WinTile}";
 }

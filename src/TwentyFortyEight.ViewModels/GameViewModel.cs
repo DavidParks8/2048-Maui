@@ -133,15 +133,6 @@ public partial class GameViewModel : ObservableObject
         );
 
         var lastConfig = _settingsService.LastActiveGameConfig;
-        if (lastConfig == null)
-        {
-            lastConfig = new GameConfig();
-        }
-
-        if (lastConfig.Size <= 0 || lastConfig.Size > GameConfig.MaxReasonableBoardSize)
-        {
-            lastConfig = new GameConfig { Size = DefaultBoardSize, WinTile = lastConfig.WinTile };
-        }
 
         _config = lastConfig;
         PendingBoardSize = _config.Size;

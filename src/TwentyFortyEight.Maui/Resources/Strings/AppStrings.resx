@@ -79,9 +79,6 @@
   <data name="NewGame" xml:space="preserve">
     <value>New Game</value>
   </data>
-  <data name="Mode" xml:space="preserve">
-    <value>Mode</value>
-  </data>
   <data name="ModeTitle" xml:space="preserve">
     <value>Mode</value>
   </data>
