@@ -13,11 +13,7 @@ namespace TwentyFortyEight.Maui.Services;
 /// </summary>
 public sealed partial class StatisticsService : StatisticsTracker
 {
-    private const int LegacyBoardSize = 4;
-    private const string LegacyStatisticsKey = "GameStatistics";
-    private const string StatisticsKeyPrefix = "GameStatistics.";
-    private const string MigrationKey = "Migration.SizeScopedStatsV1Complete";
-    private const string LegacyMigrationKey = "Migration.SizeScopedPersistenceV1Complete";
+    private const string StatisticsKeyPrefix = "GameStatistics";
 
     private readonly ILogger<StatisticsService> _logger;
     private readonly IPreferencesService _preferencesService;
@@ -25,8 +21,7 @@ public sealed partial class StatisticsService : StatisticsTracker
     private readonly Lock _sync = new();
 
     private string _rulesetId;
-    private int _boardSize = LegacyBoardSize;
-    private bool _migrationChecked;
+    private int _boardSize;
 
     public StatisticsService(
         ILogger<StatisticsService> logger,
@@ -57,10 +52,8 @@ public sealed partial class StatisticsService : StatisticsTracker
 
     public void SetRuleset(string rulesetId, int boardSize)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(rulesetId, nameof(rulesetId));
+        ArgumentNullException.ThrowIfNull(rulesetId, nameof(rulesetId));
         ArgumentOutOfRangeException.ThrowIfNegative(boardSize, nameof(boardSize));
-
-        EnsureMigrated();
 
         if (
             _boardSize == boardSize
@@ -75,85 +68,16 @@ public sealed partial class StatisticsService : StatisticsTracker
         Reload();
     }
 
-    private static string GetStatisticsKey(string rulesetId) => $"{StatisticsKeyPrefix}{rulesetId}";
-
-    private static string GetLegacySizeScopedStatisticsKey(int boardSize) =>
-        $"{StatisticsKeyPrefix}{boardSize}";
-
-    private void EnsureMigrated()
-    {
-        if (_migrationChecked)
-        {
-            return;
-        }
-
-        lock (_sync)
-        {
-            if (_migrationChecked)
-            {
-                return;
-            }
-
-            try
-            {
-                var sizeScopedMigrated =
-                    _preferencesService.GetBool(MigrationKey, false)
-                    || _preferencesService.GetBool(LegacyMigrationKey, false);
-
-                if (!sizeScopedMigrated)
-                {
-                    // Migrate legacy stats -> size 4 slot (only if new slot is empty)
-                    if (
-                        _preferencesService.ContainsKey(LegacyStatisticsKey)
-                        && !_preferencesService.ContainsKey(
-                            GetLegacySizeScopedStatisticsKey(LegacyBoardSize)
-                        )
-                    )
-                    {
-                        var legacyJson = _preferencesService.GetString(
-                            LegacyStatisticsKey,
-                            string.Empty
-                        );
-                        if (!string.IsNullOrEmpty(legacyJson))
-                        {
-                            _preferencesService.SetString(
-                                GetLegacySizeScopedStatisticsKey(LegacyBoardSize),
-                                legacyJson
-                            );
-                        }
-                    }
-
-                    // Delete legacy key after migration
-                    if (_preferencesService.ContainsKey(LegacyStatisticsKey))
-                    {
-                        _preferencesService.Remove(LegacyStatisticsKey);
-                    }
-
-                    _preferencesService.SetBool(MigrationKey, true);
-                    _preferencesService.SetBool(LegacyMigrationKey, true);
-                }
-
-                RulesetScopedStatisticsMigration.MigrateSizeScopedStatsToRulesetScoped(
-                    _preferencesService
-                );
-            }
-            catch (Exception ex)
-            {
-                LogMigrationError(_logger, ex);
-            }
-            finally
-            {
-                _migrationChecked = true;
-            }
-        }
-    }
+    private static string GetStatisticsKey(string rulesetId) =>
+        string.IsNullOrEmpty(rulesetId)
+            ? StatisticsKeyPrefix
+            : $"{StatisticsKeyPrefix}.{rulesetId}";
 
     /// <inheritdoc />
     protected override void Save(GameStatistics statistics)
     {
         try
         {
-            EnsureMigrated();
             var json = JsonSerializer.Serialize(
                 statistics,
                 StatisticsSerializationContext.Default.GameStatistics
@@ -171,7 +95,6 @@ public sealed partial class StatisticsService : StatisticsTracker
     {
         try
         {
-            EnsureMigrated();
             var json = _preferencesService.GetString(GetStatisticsKey(_rulesetId), string.Empty);
             if (!string.IsNullOrEmpty(json))
             {
@@ -194,10 +117,4 @@ public sealed partial class StatisticsService : StatisticsTracker
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to load game statistics")]
     private static partial void LogLoadError(ILogger logger, Exception ex);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Failed to migrate legacy game statistics key"
-    )]
-    private static partial void LogMigrationError(ILogger logger, Exception ex);
 }

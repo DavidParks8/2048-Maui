@@ -13,16 +13,11 @@ public sealed partial class GameStateRepository(
     ILogger<GameStateRepository> logger
 ) : IGameStateRepository
 {
-    private const int LegacyBoardSize = 4;
-
     private const string SavedGameKeyPrefix = "SavedGame.";
     private const string BestScoreKeyPrefix = "BestScore.";
 
     private const string LegacySavedGameKey = "SavedGame";
     private const string LegacyBestScoreKey = "BestScore";
-    private const string MigrationKey = "Migration.SizeScopedSaveStateV1Complete";
-    private const string LegacyMigrationKey = "Migration.SizeScopedPersistenceV1Complete";
-    private const string RulesetMigrationKey = "Migration.RulesetScopedPersistenceV1Complete";
 
     private readonly Lock _sync = new();
 
@@ -34,156 +29,14 @@ public sealed partial class GameStateRepository(
     private readonly Dictionary<string, Task> _bestScoreSaveTaskByRulesetId = [];
     private readonly Dictionary<string, int> _currentBestScoreByRulesetId = [];
 
-    private bool _migrationChecked;
+    private static string GetSavedGameKey(string rulesetId) =>
+        string.IsNullOrEmpty(rulesetId) ? LegacySavedGameKey : $"{SavedGameKeyPrefix}{rulesetId}";
 
-    private static string GetSavedGameKey(string rulesetId) => $"{SavedGameKeyPrefix}{rulesetId}";
-
-    private static string GetBestScoreKey(string rulesetId) => $"{BestScoreKeyPrefix}{rulesetId}";
-
-    private static string GetLegacySizeScopedSavedGameKey(int boardSize) =>
-        $"{SavedGameKeyPrefix}{boardSize}";
-
-    private static string GetLegacySizeScopedBestScoreKey(int boardSize) =>
-        $"{BestScoreKeyPrefix}{boardSize}";
-
-    private void EnsureMigrated()
-    {
-        if (_migrationChecked)
-        {
-            return;
-        }
-
-        lock (_sync)
-        {
-            if (_migrationChecked)
-            {
-                return;
-            }
-
-            try
-            {
-                var sizeScopedMigrated =
-                    preferencesService.GetBool(MigrationKey, false)
-                    || preferencesService.GetBool(LegacyMigrationKey, false);
-
-                if (!sizeScopedMigrated)
-                {
-                    // Migrate legacy saved game -> size 4 slot (only if new slot is empty)
-                    if (
-                        preferencesService.ContainsKey(LegacySavedGameKey)
-                        && !preferencesService.ContainsKey(
-                            GetLegacySizeScopedSavedGameKey(LegacyBoardSize)
-                        )
-                    )
-                    {
-                        var legacyJson = preferencesService.GetString(
-                            LegacySavedGameKey,
-                            string.Empty
-                        );
-                        if (!string.IsNullOrEmpty(legacyJson))
-                        {
-                            preferencesService.SetString(
-                                GetLegacySizeScopedSavedGameKey(LegacyBoardSize),
-                                legacyJson
-                            );
-                        }
-                    }
-
-                    // Migrate legacy best score -> size 4 slot (only if new slot is empty)
-                    if (
-                        preferencesService.ContainsKey(LegacyBestScoreKey)
-                        && !preferencesService.ContainsKey(
-                            GetLegacySizeScopedBestScoreKey(LegacyBoardSize)
-                        )
-                    )
-                    {
-                        var legacyBest = preferencesService.GetInt(LegacyBestScoreKey, 0);
-                        preferencesService.SetInt(
-                            GetLegacySizeScopedBestScoreKey(LegacyBoardSize),
-                            legacyBest
-                        );
-                    }
-
-                    // Delete legacy keys after migration
-                    if (preferencesService.ContainsKey(LegacySavedGameKey))
-                    {
-                        preferencesService.Remove(LegacySavedGameKey);
-                    }
-                    if (preferencesService.ContainsKey(LegacyBestScoreKey))
-                    {
-                        preferencesService.Remove(LegacyBestScoreKey);
-                    }
-
-                    preferencesService.SetBool(MigrationKey, true);
-                    // Keep the legacy sentinel in sync for smooth downgrades.
-                    preferencesService.SetBool(LegacyMigrationKey, true);
-                }
-
-                if (!preferencesService.GetBool(RulesetMigrationKey, false))
-                {
-                    for (int size = 1; size <= GameConfig.MaxReasonableBoardSize; size++)
-                    {
-                        var defaultRulesetId = new GameConfig
-                        {
-                            Size = size,
-                            WinTile = 2048,
-                        }.RulesetId;
-
-                        // Saved game
-                        var oldSavedKey = GetLegacySizeScopedSavedGameKey(size);
-                        var newSavedKey = GetSavedGameKey(defaultRulesetId);
-                        if (
-                            preferencesService.ContainsKey(oldSavedKey)
-                            && !preferencesService.ContainsKey(newSavedKey)
-                        )
-                        {
-                            var json = preferencesService.GetString(oldSavedKey, string.Empty);
-                            if (!string.IsNullOrEmpty(json))
-                            {
-                                preferencesService.SetString(newSavedKey, json);
-                            }
-                        }
-                        if (preferencesService.ContainsKey(oldSavedKey))
-                        {
-                            preferencesService.Remove(oldSavedKey);
-                        }
-
-                        // Best score
-                        var oldBestKey = GetLegacySizeScopedBestScoreKey(size);
-                        var newBestKey = GetBestScoreKey(defaultRulesetId);
-                        if (
-                            preferencesService.ContainsKey(oldBestKey)
-                            && !preferencesService.ContainsKey(newBestKey)
-                        )
-                        {
-                            var best = preferencesService.GetInt(oldBestKey, 0);
-                            preferencesService.SetInt(newBestKey, best);
-                        }
-                        if (preferencesService.ContainsKey(oldBestKey))
-                        {
-                            preferencesService.Remove(oldBestKey);
-                        }
-                    }
-
-                    preferencesService.SetBool(RulesetMigrationKey, true);
-                }
-            }
-            catch (Exception ex)
-            {
-                // If migration fails, keep going using best-effort keys.
-                LogMigrationFailed(logger, ex);
-            }
-            finally
-            {
-                _migrationChecked = true;
-            }
-        }
-    }
+    private static string GetBestScoreKey(string rulesetId) =>
+        string.IsNullOrEmpty(rulesetId) ? LegacyBestScoreKey : $"{BestScoreKeyPrefix}{rulesetId}";
 
     private int EnsureBestScoreLoaded(GameConfig config)
     {
-        EnsureMigrated();
-
         var boardSize = config.Size;
         if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
         {
@@ -207,8 +60,6 @@ public sealed partial class GameStateRepository(
 
     public GameState? LoadGameState(GameConfig config)
     {
-        EnsureMigrated();
-
         var boardSize = config.Size;
         try
         {
@@ -243,8 +94,6 @@ public sealed partial class GameStateRepository(
 
     public void SaveGameState(GameConfig config, GameState state)
     {
-        EnsureMigrated();
-
         var boardSize = config.Size;
         try
         {
@@ -267,8 +116,6 @@ public sealed partial class GameStateRepository(
 
     public void ClearSavedGame(GameConfig config)
     {
-        EnsureMigrated();
-
         try
         {
             preferencesService.Remove(GetSavedGameKey(config.RulesetId));
@@ -396,11 +243,4 @@ public sealed partial class GameStateRepository(
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to save game state")]
     private static partial void LogSaveGameStateFailed(ILogger logger, Exception ex);
-
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Warning,
-        Message = "Failed to migrate legacy save/best score keys"
-    )]
-    private static partial void LogMigrationFailed(ILogger logger, Exception ex);
 }

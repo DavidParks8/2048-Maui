@@ -19,9 +19,7 @@ public class RulesetIdTests
 
         // Assert
         Assert.AreEqual(idA, idB);
-        StringAssert.StartsWith(idA, "v1:");
-        StringAssert.Contains(idA, "size=4");
-        StringAssert.Contains(idA, "win=2048");
+        Assert.AreEqual(string.Empty, idA);
     }
 
     [TestMethod]
@@ -31,5 +29,18 @@ public class RulesetIdTests
         var b = new GameConfig { Size = 5, WinTile = 2048 };
 
         Assert.AreNotEqual(a.RulesetId, b.RulesetId);
+    }
+
+    [TestMethod]
+    public void RulesetId_DefaultValuesAreOmitted()
+    {
+        var nonDefaultSize = new GameConfig { Size = 5, WinTile = 2048 };
+        var nonDefaultWin = new GameConfig { Size = 4, WinTile = 4096 };
+
+        StringAssert.Contains(nonDefaultSize.RulesetId, "size=5");
+        Assert.IsFalse(nonDefaultSize.RulesetId.Contains("win=", StringComparison.Ordinal));
+
+        StringAssert.Contains(nonDefaultWin.RulesetId, "win=4096");
+        Assert.IsFalse(nonDefaultWin.RulesetId.Contains("size=", StringComparison.Ordinal));
     }
 }

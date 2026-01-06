@@ -395,8 +395,7 @@ public partial class MainPage : ContentPage
             _viewModel,
             _modeSheetOriginalBoardSize
         );
-        modeSelectionView.PlayRequested += async (_, _) =>
-            await CommitModeSelectionAsync();
+        modeSelectionView.PlayRequested += async (_, _) => await CommitModeSelectionAsync();
 
         _windowOverlayService.ShowBottomSheet(AppStrings.ModeTitle, modeSelectionView);
     }

@@ -5,25 +5,50 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class GameConfig
 {
-    private const string RulesetIdVersionPrefix = "v1";
-
     /// <summary>
     /// Maximum reasonable board size. Larger sizes may cause performance issues.
     /// </summary>
     public const int MaxReasonableBoardSize = 64;
 
+    private const int DefaultBoardSize = 4;
+
+    private const int DefaultWinTile = 2048;
+
     /// <summary>
     /// Size of the board (default 4x4).
     /// </summary>
-    public int Size { get; init; } = 4;
+    public int Size { get; init; } = DefaultBoardSize;
 
     /// <summary>
     /// Tile value required to win (default 2048).
     /// </summary>
-    public int WinTile { get; init; } = 2048;
+    public int WinTile { get; init; } = DefaultWinTile;
 
     /// <summary>
     /// Stable identifier for persistence and scoping.
     /// </summary>
-    public string RulesetId => $"{RulesetIdVersionPrefix}:size={Size};win={WinTile}";
+    public string RulesetId
+    {
+        get
+        {
+            List<string> parts = [];
+
+            if (Size != DefaultBoardSize)
+            {
+                parts.Add($"size={Size}");
+            }
+
+            if (WinTile != DefaultWinTile)
+            {
+                parts.Add($"win={WinTile}");
+            }
+
+            if (parts.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(';', parts);
+        }
+    }
 }
