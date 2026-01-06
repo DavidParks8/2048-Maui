@@ -7,7 +7,7 @@
 		while retaining the user-facing name with emoji.
 	-->
 	<key>CFBundleName</key>
-	<string>TwentyFortyEight.Maui</string>
+	<string>2048 🎮</string>
 	<key>CFBundleDisplayName</key>
 	<string>2048 🎮</string>
 	<key>XSAppIconAssets</key>
