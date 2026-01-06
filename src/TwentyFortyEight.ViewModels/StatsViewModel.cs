@@ -15,6 +15,10 @@ public partial class StatsViewModel : ObservableObject
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly IAlertService _alertService;
     private readonly ILocalizationService _localizationService;
+    private readonly ISettingsService _settingsService;
+
+    [ObservableProperty]
+    private string _boardSizeDisplay = string.Empty;
 
     [ObservableProperty]
     private int _gamesPlayed;
@@ -46,21 +50,26 @@ public partial class StatsViewModel : ObservableObject
     public StatsViewModel(
         IStatisticsTracker statisticsTracker,
         IAlertService alertService,
-        ILocalizationService localizationService
+        ILocalizationService localizationService,
+        ISettingsService settingsService
     )
     {
         _statisticsTracker = statisticsTracker;
         _alertService = alertService;
         _localizationService = localizationService;
+        _settingsService = settingsService;
 
         WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
             this,
-            static (object recipient, RulesetChangedMessage _) =>
+            static (object recipient, RulesetChangedMessage message) =>
             {
-                ((StatsViewModel)recipient).RefreshStatistics();
+                var vm = (StatsViewModel)recipient;
+                vm.UpdateBoardSizeDisplay(message.NewBoardSize);
+                vm.RefreshStatistics();
             }
         );
 
+        UpdateBoardSizeDisplayFromSettings();
         RefreshStatistics();
     }
 
@@ -80,6 +89,25 @@ public partial class StatsViewModel : ObservableObject
         TotalMoves = stats.TotalMoves;
         CurrentStreak = stats.CurrentStreak;
         BestStreak = stats.BestStreak;
+
+        // Keep scope label in sync even when the page is revisited.
+        UpdateBoardSizeDisplayFromSettings();
+    }
+
+    private void UpdateBoardSizeDisplayFromSettings()
+    {
+        var config = _settingsService.LastActiveGameConfig ?? new GameConfig();
+        UpdateBoardSizeDisplay(config.Size);
+    }
+
+    private void UpdateBoardSizeDisplay(int boardSize)
+    {
+        if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
+        {
+            boardSize = 4;
+        }
+
+        BoardSizeDisplay = $"{boardSize}×{boardSize}";
     }
 
     [RelayCommand]

@@ -85,6 +85,9 @@
   <data name="ModeTitle" xml:space="preserve">
     <value>Mode</value>
   </data>
+  <data name="ModeSection" xml:space="preserve">
+    <value>MODE</value>
+  </data>
   <data name="BoardSize" xml:space="preserve">
     <value>Board Size</value>
   </data>
@@ -206,7 +209,7 @@
     <value>Reset Statistics</value>
   </data>
   <data name="ResetStatisticsMessage" xml:space="preserve">
-    <value>Are you sure you want to reset all statistics? This action cannot be undone.</value>
+    <value>Are you sure you want to reset statistics for the current mode? This action cannot be undone.</value>
   </data>
   <data name="Reset" xml:space="preserve">
     <value>Reset</value>

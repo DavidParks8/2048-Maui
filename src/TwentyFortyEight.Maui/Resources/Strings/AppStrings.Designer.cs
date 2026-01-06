@@ -517,6 +517,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to MODE.
+        /// </summary>
+        internal static string ModeSection {
+            get {
+                return ResourceManager.GetString("ModeSection", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Board Size.
         /// </summary>
         internal static string BoardSize {

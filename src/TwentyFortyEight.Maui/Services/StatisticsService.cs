@@ -21,6 +21,7 @@ public sealed partial class StatisticsService : StatisticsTracker
 
     private readonly ILogger<StatisticsService> _logger;
     private readonly IPreferencesService _preferencesService;
+    private readonly ISettingsService _settingsService;
     private readonly Lock _sync = new();
 
     private string _rulesetId = new GameConfig { Size = LegacyBoardSize, WinTile = 2048 }.RulesetId;
@@ -29,11 +30,22 @@ public sealed partial class StatisticsService : StatisticsTracker
 
     public StatisticsService(
         ILogger<StatisticsService> logger,
-        IPreferencesService preferencesService
+        IPreferencesService preferencesService,
+        ISettingsService settingsService
     )
     {
         _logger = logger;
         _preferencesService = preferencesService;
+        _settingsService = settingsService;
+
+        var config = _settingsService.LastActiveGameConfig ?? new GameConfig();
+        if (config.Size <= 0 || config.Size > GameConfig.MaxReasonableBoardSize)
+        {
+            config = new GameConfig { Size = LegacyBoardSize, WinTile = config.WinTile };
+        }
+
+        _rulesetId = config.RulesetId;
+        _boardSize = config.Size;
 
         WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
             this,

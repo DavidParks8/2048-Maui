@@ -19,6 +19,28 @@
                 AlignContent="Start"
                 AlignItems="Start">
 
+                <!-- Mode Scope Section -->
+                <VerticalStackLayout Spacing="8"
+                    FlexLayout.Basis="320"
+                    FlexLayout.Grow="1"
+                    FlexLayout.Shrink="1"
+                    MaximumWidthRequest="400"
+                    Margin="6,0,6,12">
+                    <components:NativeListSection Header="{x:Static strings:AppStrings.ModeSection}">
+                        <components:NativeListSection.Items>
+                            <components:NativeListRow x:Name="BoardSizeRow"
+                                Label="{x:Static strings:AppStrings.BoardSize}"
+                                Value="{Binding BoardSizeDisplay}" />
+                        </components:NativeListSection.Items>
+                    </components:NativeListSection>
+
+                    <Label x:Name="ModeScopeHintLabel"
+                        Text="{x:Static strings:AppStrings.ModeHelperText}"
+                        FontSize="12"
+                        TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                        Margin="8,0,0,0" />
+                </VerticalStackLayout>
+
                 <!-- Games Section -->
                 <components:NativeListSection Header="{x:Static strings:AppStrings.GamesSection}"
                     FlexLayout.Basis="320"
