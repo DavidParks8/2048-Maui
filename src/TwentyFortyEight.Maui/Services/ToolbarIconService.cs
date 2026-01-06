@@ -4,6 +4,8 @@ namespace TwentyFortyEight.Maui.Services;
 
 public partial class ToolbarIconService : IToolbarIconService
 {
+    private const string ModeIconBaseName = "ic_fluent_options_24_filled";
+
     private readonly Lazy<ImageSource> _undo;
     private readonly Lazy<ImageSource> _mode;
 
@@ -18,5 +20,12 @@ public partial class ToolbarIconService : IToolbarIconService
 
     private static partial ImageSource CreateUndo();
 
-    private static partial ImageSource CreateMode();
+    private static ImageSource CreateMode() => TryLoadImage(ModeIconBaseName);
+
+    private static ImageSource TryLoadImage(string baseName)
+    {
+        // MAUI images are typically referenced by basename (without extension).
+        // Some platforms/builds also resolve the explicit filename.
+        return new FileImageSource { File = baseName };
+    }
 }

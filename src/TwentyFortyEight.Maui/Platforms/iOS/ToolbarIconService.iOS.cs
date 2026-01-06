@@ -12,9 +12,6 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
-    private static partial ImageSource CreateMode() =>
-        FromSystemImage("slider.horizontal.3", pointSize: 10);
-
     private static ImageSource FromSystemImage(string symbolName, nfloat? pointSize = null)
     {
         UIImage? image;
@@ -27,7 +24,7 @@ public partial class ToolbarIconService
             var configuration = UIImageSymbolConfiguration.Create(
                 pointSize.Value,
                 UIImageSymbolWeight.Regular,
-                UIImageSymbolScale.Small
+                UIImageSymbolScale.Medium
             );
 
             image = UIImage.GetSystemImage(symbolName, configuration);

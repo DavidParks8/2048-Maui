@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Maui.BindableProperty.Generator.Core;
+using Microsoft.Maui.Controls;
 
 namespace TwentyFortyEight.Maui.Components;
 
@@ -31,9 +32,11 @@ public partial class BottomSheetOverlay : ContentView
     private const double DismissThreshold = 0.25;
 
     private double _windowHeight;
-    private double _topInset; // Top inset where sheet should stop (bottom of nav bar)
+    private double _topInset = 0; // Top inset where sheet should stop (bottom of nav bar)
     private double _dragStartTranslation;
     private bool _isAnimating;
+    private bool _isDragging;
+    private bool _isInitialized;
 
     public BottomSheetOverlay()
     {
@@ -76,6 +79,7 @@ public partial class BottomSheetOverlay : ContentView
         switch (e.StatusType)
         {
             case GestureStatus.Started:
+                _isDragging = true;
                 _dragStartTranslation = SheetContainer.TranslationY;
                 break;
 
@@ -90,8 +94,20 @@ public partial class BottomSheetOverlay : ContentView
                 break;
 
             case GestureStatus.Completed:
+                try
+                {
+                    await SnapToNearestDetentAsync();
+                }
+                finally
+                {
+                    _isDragging = false;
+                }
+                break;
+
             case GestureStatus.Canceled:
-                await SnapToNearestDetentAsync();
+                // On Android (especially with mouse input in the emulator), Pan can be canceled
+                // when the pointer exits the gesture area. Snapping here causes mid-drag jumps.
+                _isDragging = false;
                 break;
         }
     }
@@ -153,21 +169,32 @@ public partial class BottomSheetOverlay : ContentView
 
         if (height > 0 && height != double.PositiveInfinity)
         {
-            // Always get the full window height including nav bar (may have changed on resize)
-            var windowHeight = GetFullWindowHeight();
             var previousWindowHeight = _windowHeight;
 
-            if (windowHeight > 0)
-            {
-                _windowHeight = windowHeight;
-            }
-            else
-            {
-                _windowHeight = height;
-            }
+#if IOS || MACCATALYST
+            // iOS/macCatalyst: use the actual window bounds and compute a nav-bar-aware top inset.
+            var windowHeight = GetFullWindowHeight();
+            _windowHeight = windowHeight > 0 ? windowHeight : height;
+#else
+            // Other platforms: the overlay is hosted inside the page visual tree, so the allocated
+            // height is the correct coordinate space for translation/detents.
+            _topInset = 0;
+            _windowHeight = height;
+#endif
 
             if (IsVisible)
             {
+                // Android can trigger additional layout passes while translating during gestures.
+                // Never re-initialize or adjust translation while dragging/animating.
+                if (_isDragging || _isAnimating)
+                {
+                    if (SheetContainer != null)
+                    {
+                        SheetContainer.HeightRequest = _windowHeight;
+                    }
+                    return;
+                }
+
                 // Check if this is a resize vs initial display
                 if (previousWindowHeight > 0 && Math.Abs(previousWindowHeight - _windowHeight) > 1)
                 {
@@ -176,7 +203,15 @@ public partial class BottomSheetOverlay : ContentView
                 }
                 else
                 {
-                    InitializeSheet();
+                    // Only initialize once per show; repeated layout passes should not reset translation.
+                    if (!_isInitialized)
+                    {
+                        InitializeSheet();
+                    }
+                    else if (SheetContainer != null)
+                    {
+                        SheetContainer.HeightRequest = _windowHeight;
+                    }
                 }
             }
         }
@@ -213,10 +248,12 @@ public partial class BottomSheetOverlay : ContentView
         {
             if (IsVisible)
             {
+                _isInitialized = false;
                 InitializeSheet();
             }
             else
             {
+                _isInitialized = false;
                 ResetSheet();
             }
         }
@@ -261,6 +298,8 @@ public partial class BottomSheetOverlay : ContentView
 
         // Show scrim
         Scrim.Opacity = 1;
+
+        _isInitialized = true;
     }
 
     private void ResetSheet()
@@ -297,17 +336,28 @@ public partial class BottomSheetOverlay : ContentView
             return window.Bounds.Height;
         }
 #endif
-        // Fallback: traverse up to find Page and use its height
+        // Non-iOS platforms: the overlay is hosted inside the current page's visual tree,
+        // so we should size to the actual allocated/visual height (not an estimated window height).
+        _topInset = 0;
+
+        // Prefer this view's size if available.
+        if (Height > 0 && Height != double.PositiveInfinity)
+        {
+            return Height;
+        }
+
+        // Fallback: traverse up to find a Page and use its height.
         Element? current = Parent;
         while (current != null)
         {
             if (current is Page page && page.Height > 0 && page.Height != double.PositiveInfinity)
             {
-                // Add estimated nav bar height
-                return page.Height + 100;
+                return page.Height;
             }
+
             current = current.Parent;
         }
+
         return 0;
     }
 }
