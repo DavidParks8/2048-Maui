@@ -10,5 +10,7 @@
 	<string>TwentyFortyEight.Maui</string>
 	<key>CFBundleDisplayName</key>
 	<string>2048 🎮</string>
+	<key>XSAppIconAssets</key>
+	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>
 </plist>
