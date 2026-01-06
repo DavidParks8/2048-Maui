@@ -15,6 +15,7 @@ public partial class ToolbarIconService
     static ImageSource FromSystemImage(string symbolName)
     {
         UIImage? image = UIImage.GetSystemImage(symbolName);
+
         if (image is null)
             return ImageSource.FromStream(static () => Stream.Null);
 

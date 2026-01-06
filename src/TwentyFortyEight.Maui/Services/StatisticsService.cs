@@ -1,16 +1,77 @@
 using System.Text.Json;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Serialization;
+using TwentyFortyEight.ViewModels.Messages;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
 /// <summary>
 /// MAUI-specific statistics tracker with Preferences-based persistence.
 /// </summary>
-public sealed partial class StatisticsService(ILogger<StatisticsService> logger) : StatisticsTracker
+public sealed partial class StatisticsService : StatisticsTracker
 {
-    private const string StatisticsKey = "GameStatistics";
+    private const string StatisticsKeyPrefix = "GameStatistics";
+
+    private readonly ILogger<StatisticsService> _logger;
+    private readonly IPreferencesService _preferencesService;
+    private readonly ISettingsService _settingsService;
+    private readonly Lock _sync = new();
+
+    private string _rulesetId;
+    private int _boardSize;
+
+    public StatisticsService(
+        ILogger<StatisticsService> logger,
+        IPreferencesService preferencesService,
+        ISettingsService settingsService
+    )
+    {
+        _logger = logger;
+        _preferencesService = preferencesService;
+        _settingsService = settingsService;
+
+        var config = _settingsService.LastActiveGameConfig;
+
+        _rulesetId = config.RulesetId;
+        _boardSize = config.Size;
+
+        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
+            this,
+            static (recipient, message) =>
+            {
+                if (recipient is StatisticsService service)
+                {
+                    service.SetRuleset(message.NewRulesetId, message.NewBoardSize);
+                }
+            }
+        );
+    }
+
+    public void SetRuleset(string rulesetId, int boardSize)
+    {
+        ArgumentNullException.ThrowIfNull(rulesetId, nameof(rulesetId));
+        ArgumentOutOfRangeException.ThrowIfNegative(boardSize, nameof(boardSize));
+
+        if (
+            _boardSize == boardSize
+            && string.Equals(_rulesetId, rulesetId, StringComparison.Ordinal)
+        )
+        {
+            return;
+        }
+
+        _rulesetId = rulesetId;
+        _boardSize = boardSize;
+        Reload();
+    }
+
+    private static string GetStatisticsKey(string rulesetId) =>
+        string.IsNullOrEmpty(rulesetId)
+            ? StatisticsKeyPrefix
+            : $"{StatisticsKeyPrefix}.{rulesetId}";
 
     /// <inheritdoc />
     protected override void Save(GameStatistics statistics)
@@ -21,11 +82,11 @@ public sealed partial class StatisticsService(ILogger<StatisticsService> logger)
                 statistics,
                 StatisticsSerializationContext.Default.GameStatistics
             );
-            Preferences.Set(StatisticsKey, json);
+            _preferencesService.SetString(GetStatisticsKey(_rulesetId), json);
         }
         catch (Exception ex)
         {
-            LogSaveError(logger, ex);
+            LogSaveError(_logger, ex);
         }
     }
 
@@ -34,7 +95,7 @@ public sealed partial class StatisticsService(ILogger<StatisticsService> logger)
     {
         try
         {
-            var json = Preferences.Get(StatisticsKey, string.Empty);
+            var json = _preferencesService.GetString(GetStatisticsKey(_rulesetId), string.Empty);
             if (!string.IsNullOrEmpty(json))
             {
                 return JsonSerializer.Deserialize(
@@ -45,7 +106,7 @@ public sealed partial class StatisticsService(ILogger<StatisticsService> logger)
         }
         catch (Exception ex)
         {
-            LogLoadError(logger, ex);
+            LogLoadError(_logger, ex);
         }
 
         return null;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:TwentyFortyEight.Maui.Components"
+             x:Class="TwentyFortyEight.Maui.Components.HeaderStatCard"
+             x:DataType="local:HeaderStatCard"
+             x:Name="this">
+
+    <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+            Stroke="Transparent"
+            StrokeThickness="0"
+            Padding="20,10"
+            HeightRequest="60"
+            StrokeShape="RoundRectangle 5">
+        <VerticalStackLayout Spacing="0">
+            <Label Text="{Binding Title, Source={x:Reference this}}"
+                   FontSize="12"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
+                   HorizontalOptions="Center" />
+            <Label Text="{Binding Value, Source={x:Reference this}}"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   SemanticProperties.Description="{Binding ValueDescription, Source={x:Reference this}}" />
+        </VerticalStackLayout>
+    </Border>
+</ContentView>

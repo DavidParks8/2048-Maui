@@ -53,17 +53,24 @@ public partial class TileViewModel : ObservableObject
 
         var digitCount = (int)Math.Floor(Math.Log10(value)) + 1;
 
-        return digitCount switch
+        if (digitCount <= 2)
+            return 32;
+
+        if (digitCount <= 6)
         {
-            1 => 32,
-            2 => 32,
-            3 => 28,
-            4 => 24,
-            5 => 20,
-            6 => 16,
-            7 => 14,
-            _ => 12,
-        };
+            return digitCount switch
+            {
+                3 => 28,
+                4 => 24,
+                5 => 20,
+                6 => 16,
+                _ => 32,
+            };
+        }
+
+        // For large digit counts, keep shrinking so the full value remains visible.
+        // (int max is 10 digits, but this also behaves reasonably for larger counts.)
+        return 96.0 / digitCount;
     }
 
     #endregion

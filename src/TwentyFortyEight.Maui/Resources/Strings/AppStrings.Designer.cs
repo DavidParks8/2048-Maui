@@ -194,6 +194,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("Best", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to SIZE.
+        /// </summary>
+        internal static string Size {
+            get {
+                return ResourceManager.GetString("Size", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Best: {0}.
@@ -246,6 +255,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string Cancel {
             get {
                 return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Close.
+        /// </summary>
+        internal static string Close {
+            get {
+                return ResourceManager.GetString("Close", resourceCulture);
             }
         }
         
@@ -477,6 +495,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string NewGame {
             get {
                 return ResourceManager.GetString("NewGame", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Mode.
+        /// </summary>
+        internal static string ModeTitle {
+            get {
+                return ResourceManager.GetString("ModeTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to MODE.
+        /// </summary>
+        internal static string ModeSection {
+            get {
+                return ResourceManager.GetString("ModeSection", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Board Size.
+        /// </summary>
+        internal static string BoardSize {
+            get {
+                return ResourceManager.GetString("BoardSize", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your progress is saved separately for each board..
+        /// </summary>
+        internal static string ModeHelperText {
+            get {
+                return ResourceManager.GetString("ModeHelperText", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Change mode.
+        /// </summary>
+        internal static string Play {
+            get {
+                return ResourceManager.GetString("Play", resourceCulture);
             }
         }
         

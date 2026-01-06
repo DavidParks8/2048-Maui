@@ -10,7 +10,8 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              x:Class="TwentyFortyEight.Maui.MainPage"
              x:DataType="local:GameViewModel"
-             Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
+             Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+             >
 
     <ContentPage.Resources>
         <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
@@ -25,6 +26,13 @@
             Command="{Binding NewGameCommand}"
             Order="Primary"
             Priority="0" />
+        <ToolbarItem
+            x:Name="ToolbarModeButton"
+            AutomationId="ToolbarModeButton"
+            Text="{x:Static strings:AppStrings.ModeTitle}"
+            Clicked="OnModeClicked"
+            Order="Primary"
+            Priority="1" />
         <ToolbarItem
             x:Name="ToolbarLeaderboardButton"
             AutomationId="ToolbarLeaderboardButton"
@@ -69,72 +77,40 @@
             Priority="5" />
     </ContentPage.ToolbarItems>
 
-    <Grid x:Name="RootLayout" Padding="16" RowSpacing="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid>
+        <Grid x:Name="RootLayout" Padding="16" RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
         <!-- Header with Title and Score -->
         <Grid x:Name="HeaderGrid" Grid.Row="0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Border x:Name="ScoreBorder"
-                    Grid.Column="1"
-                    Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                    Stroke="Transparent"
-                    StrokeThickness="0"
-                    Padding="20,10"
-                    Margin="10,0"
-                    HeightRequest="60"
-                    StrokeShape="RoundRectangle 5">
-                <VerticalStackLayout Spacing="0">
-                    <Label x:Name="ScoreLabelText"
-                           Text="{x:Static strings:AppStrings.Score}"
-                           FontSize="12"
-                           FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                           HorizontalOptions="Center" />
-                    <Label x:Name="ScoreValue"
-                           Text="{Binding Score}"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           HorizontalOptions="Center"
-                           SemanticProperties.Description="{x:Static strings:AppStrings.CurrentScoreDescription}" />
-                </VerticalStackLayout>
-            </Border>
+            <components:HeaderStatCard Grid.Column="0"
+                                      Margin="0,0,10,0"
+                                      Title="{x:Static strings:AppStrings.Size}"
+                                      Value="{Binding BoardSize, StringFormat='{}{0}x{0}'}"
+                                      ValueDescription="{x:Static strings:AppStrings.BoardSize}" />
 
-            <Border x:Name="BestScoreBorder"
-                    Grid.Column="2"
-                    Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                    Stroke="Transparent"
-                    StrokeThickness="0"
-                    Padding="20,10"
-                    HeightRequest="60"
-                    StrokeShape="RoundRectangle 5">
-                <VerticalStackLayout Spacing="0">
-                    <Label x:Name="BestScoreLabelText"
-                           Text="{x:Static strings:AppStrings.Best}"
-                           FontSize="12"
-                           FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-                           HorizontalOptions="Center" />
-                    <Label x:Name="BestScoreValue"
-                           Text="{Binding BestScore}"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           HorizontalOptions="Center"
-                           SemanticProperties.Description="{x:Static strings:AppStrings.BestScoreDescription}" />
-                </VerticalStackLayout>
-            </Border>
+            <components:HeaderStatCard Grid.Column="2"
+                                      Margin="10,0"
+                                      Title="{x:Static strings:AppStrings.Score}"
+                                      Value="{Binding Score}"
+                                      ValueDescription="{x:Static strings:AppStrings.CurrentScoreDescription}" />
+
+            <components:HeaderStatCard Grid.Column="3"
+                                      Title="{x:Static strings:AppStrings.Best}"
+                                      Value="{Binding BestScore}"
+                                      ValueDescription="{x:Static strings:AppStrings.BestScoreDescription}" />
         </Grid>
 
         <!-- Game Board -->
@@ -187,23 +163,24 @@
                        SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
         </Border>
 
-        <!-- Victory modal overlay - sits above the board when visible -->
-        <components:VictoryModalOverlay
-            x:Name="VictoryModalOverlay"
-            Grid.Row="2"
-            HorizontalOptions="Center"
-            VerticalOptions="Center"
-            ZIndex="101" />
-        <!-- Victory warp overlay - spans entire root grid, behind other content when inactive -->
+        </Grid>
+
+        <!-- Victory warp overlay - spans entire page, behind other content when inactive -->
         <components:LoopingLottieOverlay
             x:Name="VictoryWarpOverlay"
-            Grid.RowSpan="4"
             AssetName="victory_warp.json"
-            HorizontalOptions="Center"
-            VerticalOptions="Center"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill"
             IsVisible="False"
             ZIndex="100"
             Opacity="0"
             InputTransparent="True" />
+
+        <!-- Victory modal overlay - sits above the board when visible -->
+        <components:VictoryModalOverlay
+            x:Name="VictoryModalOverlay"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            ZIndex="101" />
     </Grid>
 </ContentPage>

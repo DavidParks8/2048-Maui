@@ -33,4 +33,10 @@ public class MauiPreferencesService : IPreferencesService
 
     /// <inheritdoc />
     public void SetDouble(string key, double value) => Preferences.Set(key, value);
+
+    /// <inheritdoc />
+    public bool ContainsKey(string key) => Preferences.ContainsKey(key);
+
+    /// <inheritdoc />
+    public void Remove(string key) => Preferences.Remove(key);
 }

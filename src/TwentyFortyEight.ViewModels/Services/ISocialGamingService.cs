@@ -1,3 +1,5 @@
+using TwentyFortyEight.Core;
+
 namespace TwentyFortyEight.ViewModels.Services;
 
 /// <summary>
@@ -24,7 +26,7 @@ public interface ISocialGamingService
     /// <summary>
     /// Submits a score to the high scores leaderboard.
     /// </summary>
-    Task SubmitScoreAsync(long score);
+    Task SubmitScoreAsync(long score, GameConfig config);
 
     /// <summary>
     /// Reports progress for an achievement.
@@ -34,7 +36,7 @@ public interface ISocialGamingService
     /// <summary>
     /// Shows the platform's leaderboard UI.
     /// </summary>
-    Task ShowLeaderboardAsync();
+    Task ShowLeaderboardAsync(GameConfig config);
 
     /// <summary>
     /// Shows the platform's achievements UI.

@@ -173,4 +173,17 @@ public abstract class StatisticsTracker : IStatisticsTracker
             Save(_resetStatistics);
         }
     }
+
+    /// <summary>
+    /// Reloads statistics from persistent storage and replaces the active statistics instance.
+    /// Useful for implementations that scope persistence (e.g., per board size) and need to
+    /// switch scopes at runtime.
+    /// </summary>
+    public void Reload()
+    {
+        lock (_lock)
+        {
+            _resetStatistics = Load() ?? new GameStatistics();
+        }
+    }
 }

@@ -53,8 +53,11 @@ public class GameViewModelTests
 
         // Setup default behavior
         _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
-        _repositoryMock.Setup(r => r.GetBestScore()).Returns(0);
-        _repositoryMock.Setup(r => r.LoadGameState()).Returns((GameState?)null);
+        _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(new GameConfig());
+        _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(0);
+        _repositoryMock
+            .Setup(r => r.LoadGameState(It.IsAny<GameConfig>()))
+            .Returns((GameState?)null);
         _sessionCoordinatorMock.Setup(s => s.IsSocialGamingAvailable).Returns(false);
 
         // Setup random source for deterministic tile spawning
@@ -106,6 +109,30 @@ public class GameViewModelTests
 
         // Assert
         Assert.AreEqual(4, viewModel.BoardSize);
+    }
+
+    [TestMethod]
+    public void Constructor_WhenLastActiveBoardSizeSet_RestoresMode()
+    {
+        // Arrange
+        _settingsServiceMock
+            .Setup(s => s.LastActiveGameConfig)
+            .Returns(new GameConfig { Size = 5 });
+
+        // Act
+        var viewModel = CreateViewModel();
+
+        // Assert
+        Assert.AreEqual(5, viewModel.BoardSize);
+        Assert.HasCount(25, viewModel.Tiles); // 5x5 board
+        _repositoryMock.Verify(
+            r => r.GetBestScore(It.Is<GameConfig>(c => c.Size == 5)),
+            Times.Once
+        );
+        _repositoryMock.Verify(
+            r => r.LoadGameState(It.Is<GameConfig>(c => c.Size == 5)),
+            Times.Once
+        );
     }
 
     [TestMethod]
@@ -174,6 +201,67 @@ public class GameViewModelTests
 
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+    }
+
+    [TestMethod]
+    public async Task NewGameAsync_WhenMovesGreaterThanZero_ShowsConfirmationSheet()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        // Act
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
+            Times.Never
+        );
+    }
+
+    [TestMethod]
+    public async Task ConfirmNewGameCommand_WhenSheetVisible_StartsNewGameAndHidesSheet()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+
+        // Act
+        await viewModel.ConfirmNewGameCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public async Task DismissNewGameConfirmationCommand_WhenSheetVisible_HidesSheetWithoutStartingNewGame()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
+
+        // Act
+        viewModel.DismissNewGameConfirmationCommand.Execute(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
+            Times.Never
+        );
     }
 
     [TestMethod]
@@ -199,6 +287,67 @@ public class GameViewModelTests
         Assert.AreEqual(1, eventCount);
         Assert.IsNotNull(forwardedArgs);
         Assert.AreSame(args, forwardedArgs);
+    }
+
+    [TestMethod]
+    public async Task PlaySelectedModeCommand_SavesOutgoingRunAndResumesSelectedRuleset()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        _repositoryMock
+            .Setup(r => r.FlushAsync(It.IsAny<GameConfig>()))
+            .Returns(Task.CompletedTask);
+
+        var oldRulesetId = new GameConfig { Size = 4, WinTile = 2048 }.RulesetId;
+        var newRulesetId = new GameConfig { Size = 5, WinTile = 2048 }.RulesetId;
+
+        viewModel.PendingBoardSize = 5;
+
+        // Act
+        await viewModel.PlaySelectedModeCommand.ExecuteAsync(null);
+
+        // Assert
+        _repositoryMock.Verify(
+            r =>
+                r.SaveGameState(
+                    It.Is<GameConfig>(c => c.RulesetId == oldRulesetId),
+                    It.IsAny<GameState>()
+                ),
+            Times.AtLeastOnce
+        );
+
+        _repositoryMock.Verify(
+            r =>
+                r.SaveGameState(
+                    It.Is<GameConfig>(c => c.RulesetId == newRulesetId),
+                    It.IsAny<GameState>()
+                ),
+            Times.AtLeastOnce
+        );
+
+        _repositoryMock.Verify(r => r.ClearSavedGame(It.IsAny<GameConfig>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task StartNewSelectedModeCommand_ClearsSavedRunForSelectedRuleset()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+        _repositoryMock
+            .Setup(r => r.FlushAsync(It.IsAny<GameConfig>()))
+            .Returns(Task.CompletedTask);
+
+        var newRulesetId = new GameConfig { Size = 5, WinTile = 2048 }.RulesetId;
+        viewModel.PendingBoardSize = 5;
+
+        // Act
+        await viewModel.StartNewSelectedModeCommand.ExecuteAsync(null);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.ClearSavedGame(It.Is<GameConfig>(c => c.RulesetId == newRulesetId)),
+            Times.Once
+        );
     }
 
     [TestMethod]

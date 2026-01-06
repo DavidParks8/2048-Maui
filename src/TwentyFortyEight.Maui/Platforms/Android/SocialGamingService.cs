@@ -1,3 +1,4 @@
+using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
@@ -11,7 +12,7 @@ public partial class SocialGamingService : ISocialGamingService
         return Task.CompletedTask;
     }
 
-    public Task SubmitScoreAsync(long score)
+    public Task SubmitScoreAsync(long score, GameConfig config)
     {
         return Task.CompletedTask;
     }
@@ -21,7 +22,7 @@ public partial class SocialGamingService : ISocialGamingService
         return Task.CompletedTask;
     }
 
-    public Task ShowLeaderboardAsync()
+    public Task ShowLeaderboardAsync(GameConfig config)
     {
         return Task.CompletedTask;
     }

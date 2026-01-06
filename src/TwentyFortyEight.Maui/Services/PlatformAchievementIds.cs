@@ -12,7 +12,25 @@ public static class PlatformAchievementIds
     // iOS Game Center IDs
     public static class iOS
     {
-        public const string LeaderboardId = "com.dappermagna.twentyfortyeight.highscores";
+        public const string Leaderboard_4x4 = "com.dappermagna.twentyfortyeight.highscores.4x4";
+        public const string Leaderboard_5x5 = "com.dappermagna.twentyfortyeight.highscores.5x5";
+        public const string Leaderboard_6x6 = "com.dappermagna.twentyfortyeight.highscores.6x6";
+        public const string Leaderboard_7x7 = "com.dappermagna.twentyfortyeight.highscores.7x7";
+        public const string Leaderboard_8x8 = "com.dappermagna.twentyfortyeight.highscores.8x8";
+
+        public static string? GetHighScoreLeaderboardId(int boardSize)
+        {
+            return boardSize switch
+            {
+                4 => Leaderboard_4x4,
+                5 => Leaderboard_5x5,
+                6 => Leaderboard_6x6,
+                7 => Leaderboard_7x7,
+                8 => Leaderboard_8x8,
+                _ => null,
+            };
+        }
+
         public const string Achievement_Tile128 = "com.dappermagna.twentyfortyeight.tile128";
         public const string Achievement_Tile256 = "com.dappermagna.twentyfortyeight.tile256";
         public const string Achievement_Tile512 = "com.dappermagna.twentyfortyeight.tile512";

@@ -8,36 +8,51 @@
       "preLaunchTask": "dotnet-meteor: Build"
     },
     {
-      "name": ".NET MAUI Windows Debug",
+      "name": ".NET MAUI Debug",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build: TwentyFortyEight.Maui (windows)",
       "program": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
-        "--framework",
-        "net10.0-windows10.0.19041.0",
-        "--no-build"
-      ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "stopAtEntry": false
+      "stopAtEntry": false,
+
+      "osx": {
+        "preLaunchTask": "build: TwentyFortyEight.Maui (maccatalyst)",
+        "args": [
+          "run",
+          "--project",
+          "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+          "--framework",
+          "net10.0-maccatalyst",
+          "--no-build"
+        ]
+      },
+      "windows": {
+        "preLaunchTask": "build: TwentyFortyEight.Maui (windows)",
+        "args": [
+          "run",
+          "--project",
+          "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+          "--framework",
+          "net10.0-windows10.0.19041.0",
+          "--no-build"
+        ]
+      }
     },
     {
-      "name": ".NET MAUI MacCatalyst Debug",
+      "name": ".NET MAUI Android Debug",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build: TwentyFortyEight.Maui (maccatalyst)",
       "program": "dotnet",
+      "env": {
+        "MAUI_TARGET_PLATFORM": "android"
+      },
       "args": [
         "run",
         "--project",
         "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "--framework",
-        "net10.0-maccatalyst",
-        "--no-build"
+        "net10.0-android"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",

@@ -14,6 +14,7 @@ public class StatsViewModelTests
     private Mock<IStatisticsTracker> _statisticsTrackerMock = null!;
     private Mock<IAlertService> _alertServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
+    private Mock<ISettingsService> _settingsServiceMock = null!;
 
     [TestInitialize]
     public void Setup()
@@ -21,9 +22,15 @@ public class StatsViewModelTests
         _statisticsTrackerMock = new Mock<IStatisticsTracker>();
         _alertServiceMock = new Mock<IAlertService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
+        _settingsServiceMock = new Mock<ISettingsService>();
 
         // Setup default statistics
         _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(new GameStatistics());
+
+        // Default mode/scope
+        _settingsServiceMock
+            .SetupGet(s => s.LastActiveGameConfig)
+            .Returns(new GameConfig { Size = 4, WinTile = 2048 });
     }
 
     private StatsViewModel CreateViewModel()
@@ -31,8 +38,21 @@ public class StatsViewModelTests
         return new StatsViewModel(
             _statisticsTrackerMock.Object,
             _alertServiceMock.Object,
-            _localizationServiceMock.Object
+            _localizationServiceMock.Object,
+            _settingsServiceMock.Object
         );
+    }
+
+    [TestMethod]
+    public void Constructor_SetsBoardSizeDisplay_FromSettings()
+    {
+        _settingsServiceMock
+            .SetupGet(s => s.LastActiveGameConfig)
+            .Returns(new GameConfig { Size = 5, WinTile = 2048 });
+
+        var viewModel = CreateViewModel();
+
+        Assert.AreEqual("5×5", viewModel.BoardSizeDisplay);
     }
 
     [TestMethod]

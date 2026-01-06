@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             x:Class="TwentyFortyEight.Maui.Components.BottomSheetOverlay"
+             x:Name="RootView"
+             ZIndex="250"
+             InputTransparent="False"
+             HorizontalOptions="Fill"
+             VerticalOptions="Fill"
+             SafeAreaEdges="None">
+
+    <Grid x:Name="OverlayGrid" SafeAreaEdges="None">
+        <!-- Scrim (tap to dismiss) -->
+        <Grid x:Name="Scrim"
+              Background="{StaticResource ModalOverlay}"
+              HorizontalOptions="Fill"
+              VerticalOptions="Fill"
+              Opacity="0"
+              SafeAreaEdges="None">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnScrimTapped" />
+            </Grid.GestureRecognizers>
+        </Grid>
+
+        <!-- Sheet container - positioned at bottom, uses TranslationY for movement -->
+        <Border x:Name="SheetContainer"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 20,20,0,0"
+                Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                Padding="0,12,0,16"
+                Margin="16,0,16,0"
+                MaximumWidthRequest="900"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill"
+                components:LiquidGlass.EffectType="Regular"
+                components:LiquidGlass.CornerRadius="20">
+
+            <Grid RowDefinitions="Auto,*" RowSpacing="12">
+                <!-- Header: drag indicator + centered title + close button -->
+                <Grid Grid.Row="0" RowDefinitions="Auto,Auto" Padding="16,0,16,0">
+                    <Grid.GestureRecognizers>
+                        <PanGestureRecognizer PanUpdated="OnSheetPanUpdated" />
+                    </Grid.GestureRecognizers>
+                    <!-- Drag indicator -->
+                    <BoxView HeightRequest="5"
+                            WidthRequest="44"
+                            CornerRadius="2"
+                            HorizontalOptions="Center"
+                            Background="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+
+                    <Grid Grid.Row="1" ColumnDefinitions="44,*,44" Margin="0,10,0,0" HeightRequest="44">
+                        <!-- Spacer to keep title centered -->
+                        <BoxView Grid.Column="0" Opacity="0" />
+
+                        <Label x:Name="TitleLabel"
+                               Grid.Column="1"
+                               FontSize="17"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center"
+                               VerticalTextAlignment="Center"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+                               SemanticProperties.HeadingLevel="Level2" />
+
+                        <Border Grid.Column="2"
+                                WidthRequest="44"
+                                HeightRequest="44"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 22"
+                                Background="Transparent"
+                                VerticalOptions="Center"
+                                components:LiquidGlass.EffectType="Clear"
+                                components:LiquidGlass.CornerRadius="22">
+                            <Button WidthRequest="44"
+                                    HeightRequest="44"
+                                    Padding="0"
+                                    CornerRadius="22"
+                                    Background="Transparent"
+                                    BorderWidth="0"
+                                    Clicked="OnCloseButtonClicked"
+                                    SemanticProperties.Description="{x:Static strings:AppStrings.Close}">
+                                <Button.ImageSource>
+                                    <FontImageSource Glyph="×"
+                                                     Size="22"
+                                                     Color="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+                                </Button.ImageSource>
+
+                            </Button>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Card content (liquid glass) -->
+                <Border x:Name="ContentCard"
+                        Grid.Row="1"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 20"
+                        Margin="16,0,16,16"
+                        Padding="20"
+                        MaximumWidthRequest="800"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Start"
+                        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        components:LiquidGlass.EffectType="Regular"
+                        components:LiquidGlass.EnableShadowEffect="True"
+                        components:LiquidGlass.CornerRadius="20" />
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

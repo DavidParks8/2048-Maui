@@ -3,6 +3,8 @@ using Android.Content;
 using Android.Graphics;
 using System.IO;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Platform;
+using MauiColor = Microsoft.Maui.Graphics.Color;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -14,14 +16,23 @@ public partial class ToolbarIconService
     static ImageSource FromSystemDrawable(int drawableId)
     {
         Context? context = global::Android.App.Application.Context;
-        var drawable = context.GetDrawable(drawableId);
+        var drawable = context.GetDrawable(drawableId)?.Mutate();
         if (drawable is null)
             return ImageSource.FromStream(static () => Stream.Null);
 
-        var width = drawable.IntrinsicWidth > 0 ? drawable.IntrinsicWidth : 96;
-        var height = drawable.IntrinsicHeight > 0 ? drawable.IntrinsicHeight : 96;
+        try
+        {
+            var tintColor = ResolveToolbarTintColor();
+            drawable.SetTint(tintColor.ToPlatform());
+        }
+        catch
+        {
+            // Best-effort tinting; some drawables may not support it.
+        }
 
-        using var bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888!);
+        const int sizePx = 96;
+
+        using var bitmap = Bitmap.CreateBitmap(sizePx, sizePx, Bitmap.Config.Argb8888!);
         using (var canvas = new Canvas(bitmap))
         {
             drawable.SetBounds(0, 0, canvas.Width, canvas.Height);
@@ -33,6 +44,18 @@ public partial class ToolbarIconService
 
         byte[] bytes = ms.ToArray();
         return ImageSource.FromStream(() => new MemoryStream(bytes));
+    }
+
+    static MauiColor ResolveToolbarTintColor()
+    {
+        if (
+            Application.Current?.Resources.TryGetValue("ToolbarIconTintColor", out var tint) == true
+            && tint is MauiColor tintColor
+        )
+            return tintColor;
+
+        var isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        return isDark ? MauiColor.FromArgb("#FFFFFFFF") : MauiColor.FromArgb("#FF000000");
     }
 }
 #endif

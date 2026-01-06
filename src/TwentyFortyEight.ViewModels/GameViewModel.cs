@@ -16,7 +16,9 @@ namespace TwentyFortyEight.ViewModels;
 /// </summary>
 public partial class GameViewModel : ObservableObject
 {
-    private readonly GameConfig _config;
+    private const int DefaultBoardSize = 4;
+
+    private GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
     private readonly ISettingsService _settingsService;
@@ -74,6 +76,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _bestScore;
 
+    [ObservableProperty]
+    private int _pendingBoardSize;
+
     /// <summary>
     /// Gets the board size for UI layout calculations.
     /// </summary>
@@ -90,6 +95,9 @@ public partial class GameViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSocialGamingAvailable;
+
+    [ObservableProperty]
+    private bool _isNewGameConfirmationVisible;
 
     public GameViewModel(
         ILogger<GameViewModel> logger,
@@ -112,7 +120,22 @@ public partial class GameViewModel : ObservableObject
         _sessionCoordinator = sessionCoordinator;
         _feedbackService = feedbackService;
         _victoryViewModel = victoryViewModel;
-        _config = new GameConfig();
+
+        WeakReferenceMessenger.Default.Register<BoardSizeChangeRequestedMessage>(
+            this,
+            static (object recipient, BoardSizeChangeRequestedMessage message) =>
+            {
+                if (recipient is GameViewModel vm)
+                {
+                    _ = vm.ApplyBoardSizeChangeRequestAsyncSafe(message.NewSize);
+                }
+            }
+        );
+
+        var lastConfig = _settingsService.LastActiveGameConfig;
+
+        _config = lastConfig;
+        PendingBoardSize = _config.Size;
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
@@ -151,23 +174,41 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task NewGameAsync()
+    private Task NewGameAsync()
     {
-        // Show confirmation if game is in progress (has moves and not game over)
+        // Show a sheet confirmation if a game is in progress (has moves and not game over)
         if (Moves > 0 && !_engine.CurrentState.IsGameOver)
         {
-            if (!await _feedbackService.ConfirmNewGameAsync())
-            {
-                return;
-            }
+            IsNewGameConfirmationVisible = true;
+            return Task.CompletedTask;
         }
 
+        StartNewGame();
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private void DismissNewGameConfirmation()
+    {
+        IsNewGameConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    private Task ConfirmNewGameAsync()
+    {
+        IsNewGameConfirmationVisible = false;
+        StartNewGame();
+        return Task.CompletedTask;
+    }
+
+    private void StartNewGame()
+    {
         // Hide victory overlay if it's showing
         _victoryViewModel.HideVictoryOverlayIfShowing();
 
         _engine.NewGame();
         UpdateUI();
-        _repository.SaveGameState(_engine.CurrentState);
+        _repository.SaveGameState(_config, _engine.CurrentState);
     }
 
     [RelayCommand]
@@ -179,6 +220,11 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task MoveAsync(Direction direction)
     {
+        if (IsNewGameConfirmationVisible)
+        {
+            return;
+        }
+
         // Use non-blocking Wait(0) to check if we can acquire the lock immediately
         // If not, another move is in progress - skip this one
         if (!_moveLock.Wait(0))
@@ -199,14 +245,14 @@ public partial class GameViewModel : ObservableObject
                 _feedbackService.PerformMoveHaptic();
 
                 UpdateUI(previousBoard, direction);
-                _repository.SaveGameState(_engine.CurrentState);
+                _repository.SaveGameState(_config, _engine.CurrentState);
 
                 // Update best score and submit to social gaming service
                 bool isNewBest = Score > BestScore;
                 if (isNewBest)
                 {
                     BestScore = Score;
-                    _repository.UpdateBestScoreIfHigher(Score);
+                    _repository.UpdateBestScoreIfHigher(_config, Score);
                 }
 
                 // Wait for the slide duration to block input, ensuring the game feels responsive
@@ -215,7 +261,7 @@ public partial class GameViewModel : ObservableObject
 
                 // Check and report achievements and scores
                 await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
-                await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest);
+                await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest, _config);
             }
         }
         finally
@@ -239,10 +285,15 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
+        if (IsNewGameConfirmationVisible)
+        {
+            return;
+        }
+
         if (_engine.Undo())
         {
             UpdateUI();
-            _repository.SaveGameState(_engine.CurrentState);
+            _repository.SaveGameState(_config, _engine.CurrentState);
         }
     }
 
@@ -368,10 +419,10 @@ public partial class GameViewModel : ObservableObject
         try
         {
             // Load best score from repository
-            BestScore = _repository.GetBestScore();
+            BestScore = _repository.GetBestScore(_config);
 
             // Try to load saved game
-            var state = _repository.LoadGameState();
+            var state = _repository.LoadGameState(_config);
             if (state != null)
             {
                 // IMPORTANT: Unsubscribe before replacing engine to prevent leaks/double firing.
@@ -391,8 +442,147 @@ public partial class GameViewModel : ObservableObject
         _engine.NewGame();
     }
 
+    private void RebuildTilesForCurrentBoardSize()
+    {
+        Tiles.Clear();
+
+        for (int row = 0; row < _config.Size; row++)
+        {
+            for (int col = 0; col < _config.Size; col++)
+            {
+                Tiles.Add(new TileViewModel { Row = row, Column = col });
+            }
+        }
+    }
+
+    [RelayCommand]
+    private Task PlaySelectedModeAsync()
+    {
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        return ApplyRulesetAsync(config, startNew: false);
+    }
+
+    [RelayCommand]
+    private Task StartNewSelectedModeAsync()
+    {
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        return ApplyRulesetAsync(config, startNew: true);
+    }
+
+    public async Task ApplyRulesetAsync(GameConfig newConfig, bool startNew)
+    {
+        if (newConfig.Size <= 0 || newConfig.Size > GameConfig.MaxReasonableBoardSize)
+        {
+            LogInvalidBoardSizeRequested(newConfig.Size);
+            return;
+        }
+
+        var oldConfig = _config;
+        var oldSize = oldConfig.Size;
+        var oldRulesetId = oldConfig.RulesetId;
+        var newRulesetId = newConfig.RulesetId;
+
+        if (!startNew && string.Equals(oldRulesetId, newRulesetId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await _moveLock.WaitAsync();
+        try
+        {
+            IsNewGameConfirmationVisible = false;
+
+            // Persist the outgoing run and finalize stats for the outgoing ruleset.
+            _repository.SaveGameState(oldConfig, _engine.CurrentState);
+
+            if (!_engine.CurrentState.IsGameOver)
+            {
+                _statisticsTracker.OnGameEnded(
+                    _engine.CurrentState.Score,
+                    _engine.CurrentState.IsWon
+                );
+            }
+
+            await _repository.FlushAsync(oldConfig);
+
+            _engine.VictoryAchieved -= OnEngineVictoryAchieved;
+            _config = newConfig;
+
+            // Persist last active mode so we restore the correct ruleset on reboot.
+            _settingsService.LastActiveGameConfig = _config;
+            PendingBoardSize = _config.Size;
+
+            // Rebuild tiles before any UpdateUI() calls.
+            RebuildTilesForCurrentBoardSize();
+
+            // Load ruleset-scoped best score.
+            BestScore = _repository.GetBestScore(_config);
+
+            if (startNew)
+            {
+                _repository.ClearSavedGame(_config);
+            }
+
+            // Load ruleset-scoped saved game if present.
+            var state = startNew ? null : _repository.LoadGameState(_config);
+            if (state != null)
+            {
+                _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
+            }
+            else
+            {
+                _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
+                _repository.SaveGameState(_config, _engine.CurrentState);
+            }
+
+            _engine.VictoryAchieved += OnEngineVictoryAchieved;
+
+            // Clear any victory overlay that might have been showing.
+            _victoryViewModel.HideVictoryOverlayIfShowing();
+
+            // Notify UI that BoardSize changed and refresh values.
+            OnPropertyChanged(nameof(BoardSize));
+            UpdateUI();
+
+            WeakReferenceMessenger.Default.Send(
+                new RulesetChangedMessage(oldRulesetId, _config.RulesetId, oldSize, _config.Size)
+            );
+        }
+        finally
+        {
+            _moveLock.Release();
+        }
+    }
+
+    private async Task ApplyBoardSizeChangeRequestAsyncSafe(int newSize)
+    {
+        try
+        {
+            var config = new GameConfig { Size = newSize, WinTile = _config.WinTile };
+            await ApplyRulesetAsync(config, startNew: false);
+        }
+        catch (Exception ex)
+        {
+            LogApplyBoardSizeFailed(ex);
+        }
+    }
+
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to load game state")]
     partial void LogLoadGameError(Exception ex);
+
+    [LoggerMessage(
+        EventId = 11,
+        Level = LogLevel.Warning,
+        Message = "Ignored invalid board size change request: {boardSize}"
+    )]
+    private partial void LogInvalidBoardSizeRequested(int boardSize);
+
+    [LoggerMessage(
+        EventId = 12,
+        Level = LogLevel.Error,
+        Message = "Failed to apply board size change"
+    )]
+    private partial void LogApplyBoardSizeFailed(Exception ex);
 
     private void OnEngineVictoryAchieved(object? sender, EventArgs e)
     {
@@ -420,7 +610,7 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private Task ShowLeaderboard() => _sessionCoordinator.ShowLeaderboardAsync();
+    private Task ShowLeaderboard() => _sessionCoordinator.ShowLeaderboardAsync(_config);
 
     [RelayCommand]
     private Task ShowAchievements() => _sessionCoordinator.ShowAchievementsAsync();
