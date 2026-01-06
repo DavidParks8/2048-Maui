@@ -25,11 +25,19 @@ public partial class BottomSheetOverlay : ContentView
     [AutoBindable]
     private readonly ICommand? _scrimTapCommand;
 
+    [AutoBindable]
+    private readonly bool _reduceMotionEnabled;
+
 #pragma warning restore CS0169
 
     // Ratios for sheet heights
     private const double HalfExpandedRatio = 0.45;
     private const double DismissThreshold = 0.25;
+
+    private const uint ShowDurationMs = 280;
+    private const uint HideDurationMs = 140;
+    private const uint ReduceMotionShowFadeDurationMs = 160;
+    private const uint ReduceMotionHideFadeDurationMs = 120;
 
     private double _windowHeight;
     private double _topInset = 0; // Top inset where sheet should stop (bottom of nav bar)
@@ -37,6 +45,7 @@ public partial class BottomSheetOverlay : ContentView
     private bool _isAnimating;
     private bool _isDragging;
     private bool _isInitialized;
+    private bool _showAnimationStarted;
 
     public BottomSheetOverlay()
     {
@@ -249,6 +258,7 @@ public partial class BottomSheetOverlay : ContentView
             if (IsVisible)
             {
                 _isInitialized = false;
+                _showAnimationStarted = false;
                 InitializeSheet();
             }
             else
@@ -290,16 +300,17 @@ public partial class BottomSheetOverlay : ContentView
         // Set sheet height to full window height
         SheetContainer.HeightRequest = _windowHeight;
 
-        // Position sheet at half-expanded (respecting nav bar position)
-        var halfExpandedTranslation = GetHalfExpandedTranslation();
-        // Ensure half-expanded is at least at nav bar level
-        halfExpandedTranslation = Math.Max(halfExpandedTranslation, _topInset);
-        SheetContainer.TranslationY = halfExpandedTranslation;
+        // Prepare initial state (offscreen, scrim hidden)
+        Scrim.Opacity = 0;
 
-        // Show scrim
-        Scrim.Opacity = 1;
+        // Ensure consistent opacity when reusing the view.
+        SheetContainer.Opacity = ReduceMotionEnabled ? 0 : 1;
+        SheetContainer.TranslationY = _windowHeight;
 
         _isInitialized = true;
+
+        // Animate the presentation once per show.
+        _ = AnimateShowIfNeededAsync();
     }
 
     private void ResetSheet()
@@ -311,7 +322,117 @@ public partial class BottomSheetOverlay : ContentView
 
         // Reset to hidden state
         SheetContainer.TranslationY = _windowHeight;
+        SheetContainer.Opacity = ReduceMotionEnabled ? 0 : 1;
         Scrim.Opacity = 0;
+    }
+
+    private async Task AnimateShowIfNeededAsync()
+    {
+        if (SheetContainer == null || Scrim == null || _windowHeight <= 0)
+        {
+            return;
+        }
+
+        if (_showAnimationStarted || _isAnimating)
+        {
+            return;
+        }
+
+        _showAnimationStarted = true;
+        _isAnimating = true;
+
+        try
+        {
+            // Position sheet at half-expanded (respecting nav bar position)
+            var targetTranslation = GetHalfExpandedTranslation();
+            targetTranslation = Math.Max(targetTranslation, _topInset);
+
+            if (ReduceMotionEnabled)
+            {
+                // Fade only (no movement)
+                SheetContainer.TranslationY = targetTranslation;
+                SheetContainer.Opacity = 0;
+                Scrim.Opacity = 0;
+
+                await Task.WhenAll(
+                    SheetContainer.FadeToAsync(1, ReduceMotionShowFadeDurationMs, Easing.CubicOut),
+                    Scrim.FadeToAsync(1, ReduceMotionShowFadeDurationMs, Easing.CubicOut)
+                );
+            }
+            else
+            {
+                // Slide from offscreen + scrim fade in
+                SheetContainer.Opacity = 1;
+                SheetContainer.TranslationY = _windowHeight;
+                Scrim.Opacity = 0;
+
+                await Task.WhenAll(
+                    SheetContainer.TranslateToAsync(
+                        0,
+                        targetTranslation,
+                        ShowDurationMs,
+                        Easing.CubicOut
+                    ),
+                    Scrim.FadeToAsync(1, ShowDurationMs, Easing.CubicOut)
+                );
+            }
+        }
+        finally
+        {
+            _isAnimating = false;
+        }
+    }
+
+    public async Task AnimateDismissAsync()
+    {
+        if (SheetContainer == null || Scrim == null)
+        {
+            return;
+        }
+
+        if (_isAnimating)
+        {
+            return;
+        }
+
+        // Ensure we have a valid coordinate space before dismissing.
+        if (_windowHeight <= 0)
+        {
+            _windowHeight = GetFullWindowHeight();
+            if (_windowHeight <= 0)
+            {
+                _windowHeight = Height > 0 ? Height : 800;
+            }
+        }
+
+        _isAnimating = true;
+
+        try
+        {
+            if (ReduceMotionEnabled)
+            {
+                await Task.WhenAll(
+                    SheetContainer.FadeToAsync(0, ReduceMotionHideFadeDurationMs, Easing.CubicIn),
+                    Scrim.FadeToAsync(0, ReduceMotionHideFadeDurationMs, Easing.CubicIn)
+                );
+            }
+            else
+            {
+                await Task.WhenAll(
+                    SheetContainer.TranslateToAsync(
+                        0,
+                        _windowHeight,
+                        HideDurationMs,
+                        Easing.CubicIn
+                    ),
+                    Scrim.FadeToAsync(0, HideDurationMs, Easing.CubicIn)
+                );
+            }
+        }
+        finally
+        {
+            _isAnimating = false;
+        }
     }
 
     private double GetFullWindowHeight()

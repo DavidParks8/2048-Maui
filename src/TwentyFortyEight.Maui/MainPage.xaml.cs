@@ -258,9 +258,16 @@ public partial class MainPage : ContentPage
                     Text = tile.DisplayValue,
                     FontSize = tile.FontSize,
                     FontAttributes = FontAttributes.Bold,
+                    // The game board has fixed-size tiles; letting OS Dynamic Type scale these
+                    // labels causes clipping/incorrect layout when accessibility text size is large.
+                    FontAutoScalingEnabled = false,
                     TextColor = tile.TextColor,
                     HorizontalOptions = LayoutOptions.Center,
                     VerticalOptions = LayoutOptions.Center,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    VerticalTextAlignment = TextAlignment.Center,
+                    LineBreakMode = LineBreakMode.NoWrap,
+                    MaxLines = 1,
                 },
                 StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
                 {

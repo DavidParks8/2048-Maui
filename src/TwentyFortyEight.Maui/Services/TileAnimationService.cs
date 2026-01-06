@@ -276,8 +276,14 @@ public class TileAnimationService
                 Content = new Label
                 {
                     FontAttributes = FontAttributes.Bold,
+                    // Keep tile numbers stable even when OS text size is increased.
+                    FontAutoScalingEnabled = false,
                     HorizontalOptions = LayoutOptions.Center,
                     VerticalOptions = LayoutOptions.Center,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    VerticalTextAlignment = TextAlignment.Center,
+                    LineBreakMode = LineBreakMode.NoWrap,
+                    MaxLines = 1,
                 },
                 StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
                 {

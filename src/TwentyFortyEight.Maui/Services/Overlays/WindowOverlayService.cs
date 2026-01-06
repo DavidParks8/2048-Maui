@@ -1,4 +1,5 @@
 using TwentyFortyEight.Maui.Components;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -8,20 +9,27 @@ public partial class WindowOverlayService : IWindowOverlayService
     private Layout? _hostLayout;
 
     private readonly IInputCoordinationService _inputCoordinationService;
+    private readonly IReduceMotionService _reduceMotionService;
     private bool? _previousInputBlocked;
+    private bool _isHiding;
 
     public bool IsBottomSheetVisible => _currentSheet?.IsVisible == true;
 
     public event EventHandler? BottomSheetDismissed;
 
-    public WindowOverlayService(IInputCoordinationService inputCoordinationService)
+    public WindowOverlayService(
+        IInputCoordinationService inputCoordinationService,
+        IReduceMotionService reduceMotionService
+    )
     {
         _inputCoordinationService = inputCoordinationService;
+        _reduceMotionService = reduceMotionService;
     }
 
     public void ShowBottomSheet(string title, View content)
     {
-        HideBottomSheet();
+        // If a sheet is already visible, remove it immediately to avoid overlapping overlays.
+        HideBottomSheetInternal(animate: false);
 
         bool previousInputBlocked = _inputCoordinationService.IsInputBlocked;
 
@@ -35,6 +43,7 @@ public partial class WindowOverlayService : IWindowOverlayService
                 SheetContent = content,
                 CloseCommand = dismissCommand,
                 ScrimTapCommand = dismissCommand,
+                ReduceMotionEnabled = _reduceMotionService.ShouldReduceMotion(),
                 IsVisible = true,
             };
 
@@ -159,12 +168,23 @@ public partial class WindowOverlayService : IWindowOverlayService
 
     public void HideBottomSheet()
     {
+        _ = HideBottomSheetInternalAsync(animate: true);
+    }
+
+    private void HideBottomSheetInternal(bool animate)
+    {
         if (_currentSheet == null)
         {
             return;
         }
 
-        RestorePreviousInputBlockedState();
+        if (animate)
+        {
+            _ = HideBottomSheetInternalAsync(animate: true);
+            return;
+        }
+
+        // Immediate removal (no animation)
         CleanupNativeOverlay();
 
         if (_hostLayout != null)
@@ -174,7 +194,58 @@ public partial class WindowOverlayService : IWindowOverlayService
         }
 
         _currentSheet = null;
+        RestorePreviousInputBlockedState();
 
         BottomSheetDismissed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async Task HideBottomSheetInternalAsync(bool animate)
+    {
+        if (_isHiding)
+        {
+            return;
+        }
+
+        if (_currentSheet == null)
+        {
+            return;
+        }
+
+        _isHiding = true;
+
+        var sheetToHide = _currentSheet;
+
+        try
+        {
+            if (animate)
+            {
+                await MainThread.InvokeOnMainThreadAsync(sheetToHide.AnimateDismissAsync);
+            }
+        }
+        catch
+        {
+            // If the animation fails for any reason, still dismiss the sheet.
+        }
+        finally
+        {
+            // Remove after the animation completes.
+            CleanupNativeOverlay();
+
+            if (_hostLayout != null)
+            {
+                _hostLayout.Children.Remove(sheetToHide);
+                _hostLayout = null;
+            }
+
+            if (ReferenceEquals(_currentSheet, sheetToHide))
+            {
+                _currentSheet = null;
+            }
+
+            RestorePreviousInputBlockedState();
+            _isHiding = false;
+
+            BottomSheetDismissed?.Invoke(this, EventArgs.Empty);
+        }
     }
 }
