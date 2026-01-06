@@ -67,11 +67,9 @@ public partial class ModeSelectionView : ContentView
 
         _sizePicker.SetBinding(
             Picker.SelectedIndexProperty,
-            new Binding(
-                nameof(GameViewModel.PendingBoardSize),
-                BindingMode.TwoWay,
-                BoardSizeToSelectedIndexConverter.Instance
-            )
+            static (GameViewModel vm) => vm.PendingBoardSize,
+            mode: BindingMode.TwoWay,
+            converter: BoardSizeToSelectedIndexConverter.Instance
         );
 
         // Ensure the picker reflects the current pending selection.
