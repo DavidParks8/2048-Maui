@@ -194,6 +194,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("Best", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to SIZE.
+        /// </summary>
+        internal static string Size {
+            get {
+                return ResourceManager.GetString("Size", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Best: {0}.

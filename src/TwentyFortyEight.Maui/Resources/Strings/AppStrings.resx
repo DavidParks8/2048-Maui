@@ -73,6 +73,9 @@
   <data name="Best" xml:space="preserve">
     <value>BEST</value>
   </data>
+  <data name="Size" xml:space="preserve">
+    <value>SIZE</value>
+  </data>
   <data name="NewGame" xml:space="preserve">
     <value>New Game</value>
   </data>

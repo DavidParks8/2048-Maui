@@ -5,7 +5,7 @@ using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Helpers;
-#if IOS
+#if IOS || MACCATALYST
 using UIKit;
 #endif
 
@@ -57,7 +57,10 @@ public partial class ModeSelectionView : ContentView
 
         View sizePickerView = _sizePicker;
 
-        if (DeviceInfo.Current.Platform == DevicePlatform.iOS)
+        if (
+            DeviceInfo.Current.Platform == DevicePlatform.iOS
+            || DeviceInfo.Current.Platform == DevicePlatform.MacCatalyst
+        )
         {
             sizePickerView = CreateiOSStyledPicker(_sizePicker);
         }
@@ -94,12 +97,13 @@ public partial class ModeSelectionView : ContentView
         }
 
         sizePicker.Background = Colors.Transparent;
+        sizePicker.FontSize = 17;
         sizePicker.HeightRequest = iOSFieldHeight;
         sizePicker.MinimumHeightRequest = iOSFieldHeight;
         sizePicker.HorizontalOptions = LayoutOptions.Fill;
         sizePicker.VerticalOptions = LayoutOptions.Center;
 
-#if IOS
+#if IOS || MACCATALYST
         EventHandler? handlerChanged = null;
         handlerChanged = (_, _) =>
         {
