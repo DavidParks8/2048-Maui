@@ -40,6 +40,9 @@ public class WindowOverlayService : IWindowOverlayService
     private BottomSheetOverlay? _currentSheet;
     private Layout? _hostLayout;
 
+    private readonly IInputCoordinationService _inputCoordinationService;
+    private bool? _previousInputBlocked;
+
 #if IOS || MACCATALYST
     private UIKit.UIView? _overlayView;
     private IDisposable? _boundsObserver;
@@ -50,32 +53,72 @@ public class WindowOverlayService : IWindowOverlayService
 
     public event EventHandler? BottomSheetDismissed;
 
+    public WindowOverlayService(IInputCoordinationService inputCoordinationService)
+    {
+        _inputCoordinationService = inputCoordinationService;
+    }
+
     public void ShowBottomSheet(string title, View content)
     {
         // Remove any existing sheet
         HideBottomSheet();
 
-        // Create command that closes the sheet
-        var dismissCommand = new Command(() => HideBottomSheet());
+        bool previousInputBlocked = _inputCoordinationService.IsInputBlocked;
 
-        // Create new sheet
-        _currentSheet = new BottomSheetOverlay
+        try
         {
-            Title = title,
-            SheetContent = content,
-            CloseCommand = dismissCommand,
-            ScrimTapCommand = dismissCommand,
-            IsVisible = true,
-        };
+            // Create command that closes the sheet
+            var dismissCommand = new Command(() => HideBottomSheet());
+
+            // Create new sheet
+            _currentSheet = new BottomSheetOverlay
+            {
+                Title = title,
+                SheetContent = content,
+                CloseCommand = dismissCommand,
+                ScrimTapCommand = dismissCommand,
+                IsVisible = true,
+            };
+
+            bool presented;
 
 #if IOS || MACCATALYST
-        if (!TryShowOverlayNative())
-        {
-            ShowOverlayInPage();
-        }
+            presented = TryShowOverlayNative() || ShowOverlayInPage();
 #else
-        ShowOverlayInPage();
+            presented = ShowOverlayInPage();
 #endif
+
+            if (!presented)
+            {
+                // If we couldn't present, make sure we don't leave state behind.
+                _currentSheet = null;
+                return;
+            }
+
+            // Block input while the sheet is visible (but remember previous state).
+            _previousInputBlocked = previousInputBlocked;
+            _inputCoordinationService.IsInputBlocked = true;
+        }
+        catch (Exception ex)
+        {
+            // Do not crash the app if the overlay fails to construct/present.
+            // Log to debug output for diagnostics.
+            System.Diagnostics.Debug.WriteLine($"Bottom sheet failed: {ex}");
+            _currentSheet = null;
+            _previousInputBlocked = null;
+            _inputCoordinationService.IsInputBlocked = previousInputBlocked;
+        }
+    }
+
+    private void RestorePreviousInputBlockedState()
+    {
+        if (_previousInputBlocked is null)
+        {
+            return;
+        }
+
+        _inputCoordinationService.IsInputBlocked = _previousInputBlocked.Value;
+        _previousInputBlocked = null;
     }
 
 #if IOS || MACCATALYST
@@ -169,11 +212,11 @@ public class WindowOverlayService : IWindowOverlayService
     /// Cross-platform fallback: adds the overlay to the current page's root layout.
     /// Works on all platforms but won't cover the navigation bar.
     /// </summary>
-    private void ShowOverlayInPage()
+    private bool ShowOverlayInPage()
     {
         if (_currentSheet == null)
         {
-            return;
+            return false;
         }
 
         // Find the current page and its root layout
@@ -193,7 +236,7 @@ public class WindowOverlayService : IWindowOverlayService
         _hostLayout = FindHostLayout(currentPage);
         if (_hostLayout == null)
         {
-            return;
+            return false;
         }
 
         // Add the overlay to fill the layout
@@ -215,6 +258,8 @@ public class WindowOverlayService : IWindowOverlayService
             _currentSheet.ZIndex = 1000;
             grid.Children.Add(_currentSheet);
         }
+
+        return true;
     }
 
     private static Layout? FindHostLayout(Page? page)
@@ -254,6 +299,8 @@ public class WindowOverlayService : IWindowOverlayService
         {
             return;
         }
+
+        RestorePreviousInputBlockedState();
 
 #if IOS || MACCATALYST
         _boundsObserver?.Dispose();

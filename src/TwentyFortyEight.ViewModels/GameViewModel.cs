@@ -16,6 +16,8 @@ namespace TwentyFortyEight.ViewModels;
 /// </summary>
 public partial class GameViewModel : ObservableObject
 {
+    private const int DefaultBoardSize = 4;
+
     private GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
@@ -74,6 +76,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _bestScore;
 
+    [ObservableProperty]
+    private int _pendingBoardSize;
+
     /// <summary>
     /// Gets the board size for UI layout calculations.
     /// </summary>
@@ -122,12 +127,24 @@ public partial class GameViewModel : ObservableObject
             {
                 if (recipient is GameViewModel vm)
                 {
-                    _ = vm.ApplyBoardSizeAsyncSafe(message.NewSize);
+                    _ = vm.ApplyBoardSizeChangeRequestAsyncSafe(message.NewSize);
                 }
             }
         );
 
-        _config = new GameConfig();
+        var lastConfig = _settingsService.LastActiveGameConfig;
+        if (lastConfig == null)
+        {
+            lastConfig = new GameConfig();
+        }
+
+        if (lastConfig.Size <= 0 || lastConfig.Size > GameConfig.MaxReasonableBoardSize)
+        {
+            lastConfig = new GameConfig { Size = DefaultBoardSize, WinTile = lastConfig.WinTile };
+        }
+
+        _config = lastConfig;
+        PendingBoardSize = _config.Size;
         _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
@@ -447,16 +464,34 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    public async Task ApplyBoardSizeAsync(int newSize)
+    [RelayCommand]
+    private Task PlaySelectedModeAsync()
     {
-        if (newSize <= 0 || newSize > GameConfig.MaxReasonableBoardSize)
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        return ApplyRulesetAsync(config, startNew: false);
+    }
+
+    [RelayCommand]
+    private Task StartNewSelectedModeAsync()
+    {
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        return ApplyRulesetAsync(config, startNew: true);
+    }
+
+    public async Task ApplyRulesetAsync(GameConfig newConfig, bool startNew)
+    {
+        if (newConfig.Size <= 0 || newConfig.Size > GameConfig.MaxReasonableBoardSize)
         {
-            LogInvalidBoardSizeRequested(newSize);
+            LogInvalidBoardSizeRequested(newConfig.Size);
             return;
         }
 
-        var oldSize = _config.Size;
-        if (newSize == oldSize)
+        var oldConfig = _config;
+        var oldSize = oldConfig.Size;
+        var oldRulesetId = oldConfig.RulesetId;
+        var newRulesetId = newConfig.RulesetId;
+
+        if (!startNew && string.Equals(oldRulesetId, newRulesetId, StringComparison.Ordinal))
         {
             return;
         }
@@ -466,9 +501,7 @@ public partial class GameViewModel : ObservableObject
         {
             IsNewGameConfirmationVisible = false;
 
-            var oldConfig = _config;
-
-            // Persist the current slot and finalize stats for the outgoing size.
+            // Persist the outgoing run and finalize stats for the outgoing ruleset.
             _repository.SaveGameState(oldConfig, _engine.CurrentState);
 
             if (!_engine.CurrentState.IsGameOver)
@@ -482,16 +515,25 @@ public partial class GameViewModel : ObservableObject
             await _repository.FlushAsync(oldConfig);
 
             _engine.VictoryAchieved -= OnEngineVictoryAchieved;
-            _config = new GameConfig { Size = newSize, WinTile = _config.WinTile };
+            _config = newConfig;
+
+            // Persist last active mode so we restore the correct ruleset on reboot.
+            _settingsService.LastActiveGameConfig = _config;
+            PendingBoardSize = _config.Size;
 
             // Rebuild tiles before any UpdateUI() calls.
             RebuildTilesForCurrentBoardSize();
 
-            // Load size-scoped best score.
+            // Load ruleset-scoped best score.
             BestScore = _repository.GetBestScore(_config);
 
-            // Load size-scoped saved game if present.
-            var state = _repository.LoadGameState(_config);
+            if (startNew)
+            {
+                _repository.ClearSavedGame(_config);
+            }
+
+            // Load ruleset-scoped saved game if present.
+            var state = startNew ? null : _repository.LoadGameState(_config);
             if (state != null)
             {
                 _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
@@ -511,7 +553,9 @@ public partial class GameViewModel : ObservableObject
             OnPropertyChanged(nameof(BoardSize));
             UpdateUI();
 
-            WeakReferenceMessenger.Default.Send(new BoardSizeChangedMessage(oldSize, newSize));
+            WeakReferenceMessenger.Default.Send(
+                new RulesetChangedMessage(oldRulesetId, _config.RulesetId, oldSize, _config.Size)
+            );
         }
         finally
         {
@@ -519,11 +563,12 @@ public partial class GameViewModel : ObservableObject
         }
     }
 
-    private async Task ApplyBoardSizeAsyncSafe(int newSize)
+    private async Task ApplyBoardSizeChangeRequestAsyncSafe(int newSize)
     {
         try
         {
-            await ApplyBoardSizeAsync(newSize);
+            var config = new GameConfig { Size = newSize, WinTile = _config.WinTile };
+            await ApplyRulesetAsync(config, startNew: false);
         }
         catch (Exception ex)
         {

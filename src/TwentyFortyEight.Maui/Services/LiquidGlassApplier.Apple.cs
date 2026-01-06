@@ -165,8 +165,8 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
         {
             var style =
                 effectType == LiquidGlassEffectType.Clear
-                    ? UIGlassEffectStyle.Clear
-                    : UIGlassEffectStyle.Regular;
+                    ? UIGlassEffectStyle.Regular
+                    : UIGlassEffectStyle.Clear;
 
             var glass = UIGlassEffect.Create(style);
             glass.TintColor = tint;

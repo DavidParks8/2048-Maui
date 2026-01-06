@@ -27,6 +27,8 @@ public class TileAnimationService
     /// </summary>
     private const int UiUpdateDelay = 10;
 
+    private readonly List<Border> _overlayPool = [];
+
     /// <summary>
     /// Animates tile updates with cancellation support.
     /// </summary>
@@ -52,11 +54,11 @@ public class TileAnimationService
         var cellStepX = CalculateCellStep(gameBoard.Width, boardSize);
         var cellStepY = CalculateCellStep(gameBoard.Height, boardSize);
 
-        // Store new tile values and hide them during slide animation
-        var newTileValues = PrepareNewTiles(args.NewTiles, tileBorders);
+        // Hide new tiles during slide animation (they will be scaled in after the move)
+        HideNewTiles(args.NewTiles, tileBorders);
 
-        // Prepare destination tiles (both merged and simple moves) to look empty
-        var savedDestinationValues = PrepareDestinationTiles(args.TileMovements, tileBorders);
+        // Hide destination tiles during slide animation to avoid showing the final state under the overlay
+        var destinationTiles = HideDestinationTiles(args.TileMovements, tileBorders);
 
         // Animate slide movements
         var overlayTiles = await AnimateSlideMovementsAsync(
@@ -68,14 +70,11 @@ public class TileAnimationService
             cancellationToken
         );
 
-        // Clean up overlay tiles
-        foreach (var overlay in overlayTiles)
-        {
-            gameBoard.Children.Remove(overlay);
-        }
+        // Clean up overlay tiles (return to pool)
+        ReturnOverlayTiles(gameBoard, overlayTiles);
 
-        // Restore destination tiles to their actual values
-        RestoreDestinationTiles(savedDestinationValues);
+        // Show destination tiles once the slide completes
+        ShowTiles(destinationTiles);
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -85,7 +84,7 @@ public class TileAnimationService
         cancellationToken.ThrowIfCancellationRequested();
 
         // Animate new tiles appearing
-        await AnimateNewTilesAsync(args.NewTiles, tileBorders, newTileValues, cancellationToken);
+        await AnimateNewTilesAsync(args.NewTiles, tileBorders, cancellationToken);
     }
 
     private static double CalculateCellStep(double dimension, int boardSize)
@@ -94,64 +93,59 @@ public class TileAnimationService
         return step > 0 ? step : (DefaultBoardDimension + TileSpacing) / boardSize;
     }
 
-    private static Dictionary<TileViewModel, int> PrepareNewTiles(
+    private static void HideNewTiles(
         IReadOnlySet<TileViewModel> newTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders
     )
     {
-        Dictionary<TileViewModel, int> newTileValues = [];
-
         foreach (var tile in newTiles)
         {
-            newTileValues[tile] = tile.Value;
-            tile.Value = 0; // Show as empty cell during slide animation
-
             if (tileBorders.TryGetValue(tile, out var border))
             {
                 border.Opacity = 0;
                 border.Scale = 0;
             }
         }
-
-        return newTileValues;
     }
 
-    private static Dictionary<TileViewModel, int> PrepareDestinationTiles(
+    private static List<Border> HideDestinationTiles(
         IReadOnlyList<Core.TileMovement> movements,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders
     )
     {
         var tileMap = tileBorders.Keys.ToDictionary(t => (t.Row, t.Column));
-        Dictionary<TileViewModel, int> savedValues = [];
+        HashSet<TileViewModel> destinationTiles = [];
+        List<Border> destinationBorders = [];
 
         foreach (var movement in movements)
         {
-            if (tileMap.TryGetValue((movement.To.Row, movement.To.Column), out var tile))
-            {
-                if (savedValues.TryAdd(tile, tile.Value))
-                {
-                    tile.Value = 0; // Show as empty cell during slide animation
+            if (!tileMap.TryGetValue((movement.To.Row, movement.To.Column), out var tile))
+                continue;
 
-                    if (tileBorders.TryGetValue(tile, out var border))
-                    {
-                        border.Opacity = 1;
-                        border.Scale = 1;
-                    }
-                }
+            if (!destinationTiles.Add(tile))
+                continue;
+
+            if (tileBorders.TryGetValue(tile, out var border))
+            {
+                border.Opacity = 0;
+                border.Scale = 1;
+                destinationBorders.Add(border);
             }
         }
-        return savedValues;
+
+        return destinationBorders;
     }
 
-    private static void RestoreDestinationTiles(Dictionary<TileViewModel, int> savedValues)
+    private static void ShowTiles(IReadOnlyList<Border> borders)
     {
-        foreach (var (tile, value) in savedValues)
+        foreach (var border in borders)
         {
-            tile.Value = value;
+            border.Opacity = 1;
+            border.Scale = 1;
         }
     }
 
-    private static async Task<List<Border>> AnimateSlideMovementsAsync(
+    private async Task<List<Border>> AnimateSlideMovementsAsync(
         IReadOnlyList<Core.TileMovement> tileMovements,
         Grid gameBoard,
         double cellStepX,
@@ -161,13 +155,13 @@ public class TileAnimationService
     )
     {
         List<Border> overlayTiles = [];
-        List<Task> slideAnimationTasks = [];
+        List<(Border border, double translateX, double translateY)> animations = [];
 
         foreach (var movement in tileMovements)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var overlayBorder = CreateOverlayTile(movement.Value, scaleFactor);
+            var overlayBorder = RentOverlayTile(movement.Value, scaleFactor);
             overlayTiles.Add(overlayBorder);
 
             Grid.SetRow(overlayBorder, movement.From.Row);
@@ -176,19 +170,26 @@ public class TileAnimationService
 
             var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
             var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
-
-            slideAnimationTasks.Add(
-                overlayBorder.TranslateToAsync(
-                    translateX,
-                    translateY,
-                    AnimationConstants.BaseSlideAnimationDuration,
-                    Easing.CubicOut
-                )
-            );
+            animations.Add((overlayBorder, translateX, translateY));
         }
 
-        if (slideAnimationTasks.Count > 0)
+        // Yield once so the UI can apply the added overlays before the first animation frame.
+        if (animations.Count > 0)
         {
+            await Task.Yield();
+
+            List<Task> slideAnimationTasks = animations
+                .Select(static animation =>
+                    (Task)
+                        animation.border.TranslateToAsync(
+                            animation.translateX,
+                            animation.translateY,
+                            AnimationConstants.BaseSlideAnimationDuration,
+                            Easing.CubicOut
+                        )
+                )
+                .ToList();
+
             await Task.WhenAll(slideAnimationTasks);
         }
 
@@ -230,21 +231,15 @@ public class TileAnimationService
     private static async Task AnimateNewTilesAsync(
         IReadOnlySet<TileViewModel> newTiles,
         IReadOnlyDictionary<TileViewModel, Border> tileBorders,
-        Dictionary<TileViewModel, int> newTileValues,
         CancellationToken cancellationToken
     )
     {
         List<Task> newTileTasks = newTiles
             .Select(async tile =>
             {
-                if (
-                    tileBorders.TryGetValue(tile, out var border)
-                    && newTileValues.TryGetValue(tile, out var actualValue)
-                )
+                if (tileBorders.TryGetValue(tile, out var border))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-
-                    tile.Value = actualValue;
                     border.Scale = 0;
                     border.Opacity = 1;
 
@@ -261,30 +256,63 @@ public class TileAnimationService
         await Task.WhenAll(newTileTasks);
     }
 
-    private static Border CreateOverlayTile(int value, double scaleFactor)
+    private Border RentOverlayTile(int value, double scaleFactor)
     {
+        Border border;
+        if (_overlayPool.Count > 0)
+        {
+            int lastIndex = _overlayPool.Count - 1;
+            border = _overlayPool[lastIndex];
+            _overlayPool.RemoveAt(lastIndex);
+        }
+        else
+        {
+            border = new Border
+            {
+                Stroke = Colors.Transparent,
+                StrokeThickness = 0,
+                Padding = 0,
+                ZIndex = 100,
+                Content = new Label
+                {
+                    FontAttributes = FontAttributes.Bold,
+                    HorizontalOptions = LayoutOptions.Center,
+                    VerticalOptions = LayoutOptions.Center,
+                },
+                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
+                {
+                    CornerRadius = 5,
+                },
+            };
+        }
+
         var backgroundColor = TileColorHelper.GetTileBackgroundColor(value);
         var textColor = TileColorHelper.GetTileTextColor(value);
         var baseFontSize = TileViewModel.GetTileFontSize(value);
 
-        return new Border
+        border.Background = new SolidColorBrush(backgroundColor);
+        border.Opacity = 1;
+        border.Scale = 1;
+        border.TranslationX = 0;
+        border.TranslationY = 0;
+
+        if (border.Content is Label label)
         {
-            Stroke = Colors.Transparent,
-            StrokeThickness = 0,
-            Padding = 0,
-            Background = new SolidColorBrush(backgroundColor),
-            ZIndex = 100,
-            Content = new Label
-            {
-                Text = value.ToString(),
-                FontSize = baseFontSize * scaleFactor,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = textColor,
-                HorizontalOptions = LayoutOptions.Center,
-                VerticalOptions = LayoutOptions.Center,
-            },
-            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 5 },
-        };
+            label.Text = value.ToString();
+            label.FontSize = baseFontSize * scaleFactor;
+            label.TextColor = textColor;
+        }
+
+        return border;
+    }
+
+    private void ReturnOverlayTiles(Grid gameBoard, IReadOnlyList<Border> overlays)
+    {
+        foreach (var overlay in overlays)
+        {
+            gameBoard.Children.Remove(overlay);
+            _overlayPool.Add(overlay);
+        }
     }
 
     /// <summary>

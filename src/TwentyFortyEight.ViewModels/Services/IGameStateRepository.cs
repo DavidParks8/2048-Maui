@@ -23,6 +23,12 @@ public interface IGameStateRepository
     void SaveGameState(GameConfig config, GameState state);
 
     /// <summary>
+    /// Clears the saved game state for the specified ruleset.
+    /// </summary>
+    /// <param name="config">The game configuration.</param>
+    void ClearSavedGame(GameConfig config);
+
+    /// <summary>
     /// Gets the all-time best score.
     /// </summary>
     /// <param name="config">The game configuration.</param>

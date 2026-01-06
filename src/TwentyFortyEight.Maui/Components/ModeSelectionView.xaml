@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             x:Class="TwentyFortyEight.Maui.Components.ModeSelectionView"
+             x:Name="RootView">
+    <VerticalStackLayout Spacing="16" Padding="0,4,0,0">
+        <!-- Board Size Picker Section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Text="{x:Static strings:AppStrings.BoardSize}"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+                   Margin="8,0,0,0" />
+            
+            <ContentView x:Name="SizePickerContainer" />
+        </VerticalStackLayout>
+
+        <!-- Helper Text -->
+        <Label x:Name="HelperTextLabel"
+               FontSize="15"
+               LineHeight="1.3"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
+
+        <!-- Action Button -->
+        <Button x:Name="PlayButton"
+                Text="{x:Static strings:AppStrings.Play}"
+                CornerRadius="22"
+                HeightRequest="50"
+                FontSize="17"
+                FontAttributes="Bold"
+                Clicked="OnPlayClicked"
+                Margin="0,8,0,0" />
+    </VerticalStackLayout>
+</ContentView>

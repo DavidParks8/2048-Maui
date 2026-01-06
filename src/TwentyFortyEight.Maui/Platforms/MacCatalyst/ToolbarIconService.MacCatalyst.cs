@@ -12,9 +12,27 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
-    static ImageSource FromSystemImage(string symbolName)
+    private static partial ImageSource CreateMode() =>
+        FromSystemImage("slider.horizontal.3", pointSize: 15);
+
+    static ImageSource FromSystemImage(string symbolName, nfloat? pointSize = null)
     {
-        UIImage? image = UIImage.GetSystemImage(symbolName);
+        UIImage? image;
+        if (pointSize is null)
+        {
+            image = UIImage.GetSystemImage(symbolName);
+        }
+        else
+        {
+            var configuration = UIImageSymbolConfiguration.Create(
+                pointSize.Value,
+                UIImageSymbolWeight.Regular,
+                UIImageSymbolScale.Small
+            );
+
+            image = UIImage.GetSystemImage(symbolName, configuration);
+        }
+
         if (image is null)
             return ImageSource.FromStream(static () => Stream.Null);
 

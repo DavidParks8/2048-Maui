@@ -198,7 +198,7 @@ public partial class BottomSheetOverlay : ContentView
         previousVisibleRatio = Math.Clamp(previousVisibleRatio, 0, 1);
 
         // Update sheet height
-        SheetContainer.HeightRequest = _windowHeight + 50;
+        SheetContainer.HeightRequest = _windowHeight;
 
         // Calculate new translation to maintain the same visible ratio
         var newTranslation = _topInset + (1 - previousVisibleRatio) * (_windowHeight - _topInset);
@@ -250,8 +250,8 @@ public partial class BottomSheetOverlay : ContentView
             ContentCard.Content = SheetContent;
         }
 
-        // Set sheet height to full window height + bottom extension (for overscroll area)
-        SheetContainer.HeightRequest = _windowHeight + 50;
+        // Set sheet height to full window height
+        SheetContainer.HeightRequest = _windowHeight;
 
         // Position sheet at half-expanded (respecting nav bar position)
         var halfExpandedTranslation = GetHalfExpandedTranslation();

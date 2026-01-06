@@ -11,6 +11,9 @@ public partial class ToolbarIconService
     private static partial ImageSource CreateUndo() =>
         FromSystemDrawable(global::Android.Resource.Drawable.IcMenuRevert);
 
+    private static partial ImageSource CreateMode() =>
+        FromSystemDrawable(global::Android.Resource.Drawable.IcMenuManage);
+
     static ImageSource FromSystemDrawable(int drawableId)
     {
         Context? context = global::Android.App.Application.Context;

@@ -1,13 +1,18 @@
 using System.Linq;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Controls.Shapes;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.Maui.Services;
 using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Helpers;
 using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
+#if IOS
+using UIKit;
+#endif
 
 namespace TwentyFortyEight.Maui;
 
@@ -24,6 +29,10 @@ public partial class MainPage : ContentPage
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private CancellationTokenSource? _animationCts;
     private Task _activeTileAnimationTask = Task.CompletedTask;
+
+    private bool _isModeSheetVisible;
+    private bool _revertModeSelectionOnDismiss;
+    private int _modeSheetOriginalBoardSize;
 
     // Responsive sizing
     private const double DefaultBoardSize = 400;
@@ -61,13 +70,14 @@ public partial class MainPage : ContentPage
 
         // Native/system icons (set in code-behind to keep XAML platform-agnostic)
         UndoButton.IconImageSource = _toolbarIconService.Undo;
+        ToolbarModeButton.IconImageSource = _toolbarIconService.Mode;
 
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
 
-        WeakReferenceMessenger.Default.Register<BoardSizeChangedMessage>(
+        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
             this,
-            static (object recipient, BoardSizeChangedMessage _) =>
+            static (object recipient, RulesetChangedMessage _) =>
             {
                 MainThread.BeginInvokeOnMainThread(((MainPage)recipient).RebuildBoardGrid);
             }
@@ -195,7 +205,9 @@ public partial class MainPage : ContentPage
         GameBoard.HeightRequest = boardSize;
 
         // Calculate and update scale factor for font sizes
-        _viewModel.BoardScaleFactor = boardSize / DefaultBoardSize;
+        const int defaultGridSize = 4;
+        _viewModel.BoardScaleFactor =
+            (boardSize / DefaultBoardSize) * (defaultGridSize / (double)_viewModel.BoardSize);
 
         // Scale tile spacing for very small boards
         double tileSpacing = Math.Max(5, boardSize / 40);
@@ -222,6 +234,19 @@ public partial class MainPage : ContentPage
         for (int i = 0; i < _viewModel.Tiles.Count; i++)
         {
             var tile = _viewModel.Tiles[i];
+
+            Border emptyCell = new()
+            {
+                Stroke = Colors.Transparent,
+                StrokeThickness = 0,
+                Padding = 0,
+                Background = new SolidColorBrush(TileColorHelper.GetTileBackgroundColor(0)),
+                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
+                {
+                    CornerRadius = 5,
+                },
+            };
+
             Border border = new()
             {
                 Stroke = Colors.Transparent,
@@ -259,12 +284,15 @@ public partial class MainPage : ContentPage
 
             border.BindingContext = tile;
 
+            Grid.SetRow(emptyCell, tile.Row);
+            Grid.SetColumn(emptyCell, tile.Column);
             Grid.SetRow(border, tile.Row);
             Grid.SetColumn(border, tile.Column);
 
             // Store the mapping
             _tileBorders[tile] = border;
 
+            GameBoard.Children.Add(emptyCell);
             GameBoard.Children.Add(border);
         }
 
@@ -300,6 +328,10 @@ public partial class MainPage : ContentPage
                 }
             }
         }
+        else if (e.PropertyName == nameof(GameViewModel.BoardSize))
+        {
+            UpdateBoardSize(Width, Height);
+        }
         else if (e.PropertyName == nameof(GameViewModel.IsSocialGamingAvailable))
         {
             UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
@@ -314,105 +346,87 @@ public partial class MainPage : ContentPage
     {
         if (_viewModel.IsNewGameConfirmationVisible)
         {
-            // Create the content for the sheet
-            VerticalStackLayout content = new()
+            // Use a platform-native alert instead of a bottom sheet.
+            Dispatcher.Dispatch(async () =>
             {
-                Spacing = 16,
-                Padding = new Thickness(0, 4, 0, 0), // Add top padding to prevent clipping
-                Children =
+                bool confirmed = await DisplayAlertAsync(
+                    AppStrings.RestartConfirmTitle,
+                    AppStrings.RestartConfirmMessage,
+                    AppStrings.StartNew,
+                    AppStrings.Cancel
+                );
+
+                if (confirmed)
                 {
-                    new Label
-                    {
-                        Text = AppStrings.RestartConfirmMessage,
-                        FontSize = 15,
-                        LineHeight = 1.3,
-                        TextColor = GetThemeColor(
-                            "NativeTextSecondaryLight",
-                            "NativeTextSecondaryDark"
-                        ),
-                    },
-                    new Grid
-                    {
-                        ColumnDefinitions =
-                        [
-                            new ColumnDefinition(GridLength.Star),
-                            new ColumnDefinition(GridLength.Star),
-                        ],
-                        ColumnSpacing = 12,
-                        Margin = new Thickness(0, 8, 0, 0),
-                        Children = { CreateCancelButton(), CreateStartNewButton() },
-                    },
-                },
-            };
-
-            _windowOverlayService.ShowBottomSheet(AppStrings.RestartConfirmTitle, content);
+                    _viewModel.ConfirmNewGameCommand.Execute(null);
+                }
+                else
+                {
+                    _viewModel.DismissNewGameConfirmationCommand.Execute(null);
+                }
+            });
         }
-        else
-        {
-            _windowOverlayService.HideBottomSheet();
-        }
-    }
-
-    private Button CreateCancelButton()
-    {
-        var button = new Button
-        {
-            Text = AppStrings.Cancel,
-            Command = _viewModel.DismissNewGameConfirmationCommand,
-            CornerRadius = 22, // iOS 26 liquid glass pill shape
-            HeightRequest = 50,
-            FontSize = 17,
-            FontAttributes = FontAttributes.Bold,
-        };
-        Grid.SetColumn(button, 0);
-        return button;
-    }
-
-    private Button CreateStartNewButton()
-    {
-        var button = new Button
-        {
-            Text = AppStrings.StartNew,
-            Command = _viewModel.ConfirmNewGameCommand,
-            CornerRadius = 22, // iOS 26 liquid glass pill shape
-            HeightRequest = 50,
-            FontSize = 17,
-            FontAttributes = FontAttributes.Bold,
-            // Keep primary purple background with white text for visibility
-        };
-        Grid.SetColumn(button, 1);
-        return button;
     }
 
     private void OnBottomSheetDismissed(object? sender, EventArgs e)
     {
         // Sync ViewModel state when sheet is dismissed by user interaction
-        if (_viewModel.IsNewGameConfirmationVisible)
+        if (_isModeSheetVisible)
         {
-            _viewModel.DismissNewGameConfirmationCommand.Execute(null);
+            if (_revertModeSelectionOnDismiss)
+            {
+                _viewModel.PendingBoardSize = _modeSheetOriginalBoardSize;
+            }
+
+            _isModeSheetVisible = false;
+            _revertModeSelectionOnDismiss = false;
         }
     }
 
-    private static Color GetThemeColor(string lightKey, string darkKey)
+    private void OnModeClicked(object? sender, EventArgs e)
     {
-        var app = Application.Current;
-        if (app == null)
-        {
-            return Colors.Gray;
-        }
+        // Seed pending values from the active ruleset.
+        _modeSheetOriginalBoardSize = _viewModel.BoardSize;
+        _viewModel.PendingBoardSize = _viewModel.BoardSize;
+        _isModeSheetVisible = true;
+        _revertModeSelectionOnDismiss = true;
 
-        var key = app.RequestedTheme == AppTheme.Dark ? darkKey : lightKey;
-        if (app.Resources.TryGetValue(key, out var value) && value is Color color)
-        {
-            return color;
-        }
+        var modeSelectionView = new Components.ModeSelectionView(
+            _viewModel,
+            _modeSheetOriginalBoardSize
+        );
+        modeSelectionView.PlayRequested += async (_, _) =>
+            await CommitModeSelectionAsync(startNew: false);
 
-        return Colors.Gray;
+        _windowOverlayService.ShowBottomSheet(AppStrings.ModeTitle, modeSelectionView);
+    }
+
+    private async Task CommitModeSelectionAsync(bool startNew)
+    {
+        // Avoid reverting pending values when we dismiss programmatically after a commit.
+        _revertModeSelectionOnDismiss = false;
+
+        try
+        {
+            if (startNew)
+            {
+                await _viewModel.StartNewSelectedModeCommand.ExecuteAsync(null);
+            }
+            else
+            {
+                await _viewModel.PlaySelectedModeCommand.ExecuteAsync(null);
+            }
+        }
+        finally
+        {
+            _windowOverlayService.HideBottomSheet();
+        }
     }
 
     private async void OnVictoryAnimationRequested(object? sender, EventArgs e)
     {
-        // Block input during victory animation
+        // Block input during victory animation (restore after)
+        bool previousInputBlocked = _inputCoordinationService.IsInputBlocked;
         _inputCoordinationService.IsInputBlocked = true;
 
         // The Core engine raises VictoryAchieved before the ViewModel raises TilesUpdated for
@@ -432,8 +446,15 @@ public partial class MainPage : ContentPage
             // Proceed with victory handling using the best available final state.
         }
 
-        // Trigger victory through the VictoryViewModel (MVVM pattern)
-        _victoryViewModel.TriggerVictory(_viewModel.Score);
+        try
+        {
+            // Trigger victory through the VictoryViewModel (MVVM pattern)
+            _victoryViewModel.TriggerVictory(_viewModel.Score);
+        }
+        finally
+        {
+            _inputCoordinationService.IsInputBlocked = previousInputBlocked;
+        }
     }
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)

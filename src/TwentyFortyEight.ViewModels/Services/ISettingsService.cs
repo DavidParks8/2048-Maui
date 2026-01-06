@@ -1,5 +1,7 @@
 namespace TwentyFortyEight.ViewModels.Services;
 
+using TwentyFortyEight.Core;
+
 /// <summary>
 /// Interface for managing application settings.
 /// </summary>
@@ -9,4 +11,14 @@ public interface ISettingsService
     /// Gets or sets whether haptic feedback is enabled.
     /// </summary>
     bool HapticsEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last active board size ("mode") that should be restored on startup.
+    /// </summary>
+    int LastActiveBoardSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last active game configuration that should be restored on startup.
+    /// </summary>
+    GameConfig LastActiveGameConfig { get; set; }
 }

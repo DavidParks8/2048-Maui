@@ -53,9 +53,9 @@ public partial class StatsViewModel : ObservableObject
         _alertService = alertService;
         _localizationService = localizationService;
 
-        WeakReferenceMessenger.Default.Register<BoardSizeChangedMessage>(
+        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
             this,
-            static (object recipient, BoardSizeChangedMessage _) =>
+            static (object recipient, RulesetChangedMessage _) =>
             {
                 ((StatsViewModel)recipient).RefreshStatistics();
             }

@@ -17,6 +17,7 @@ All user-facing text must be localized using resource strings:
 - Add strings to `Resources/Strings/AppStrings.resx`
 - Access strings via `Resources.Strings.AppStrings.YourStringName`
 - Never hardcode user-facing text directly in XAML or C# code
+- Designer.cs files are not auto generated, and must always be manually updated
 
 ### Theme Support
 

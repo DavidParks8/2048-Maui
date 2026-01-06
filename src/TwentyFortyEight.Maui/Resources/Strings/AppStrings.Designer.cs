@@ -488,6 +488,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("NewGame", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Mode.
+        /// </summary>
+        internal static string Mode {
+            get {
+                return ResourceManager.GetString("Mode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Mode.
+        /// </summary>
+        internal static string ModeTitle {
+            get {
+                return ResourceManager.GetString("ModeTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Board Size.
+        /// </summary>
+        internal static string BoardSize {
+            get {
+                return ResourceManager.GetString("BoardSize", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your progress is saved separately for each board..
+        /// </summary>
+        internal static string ModeHelperText {
+            get {
+                return ResourceManager.GetString("ModeHelperText", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Change mode.
+        /// </summary>
+        internal static string Play {
+            get {
+                return ResourceManager.GetString("Play", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Start a new game.

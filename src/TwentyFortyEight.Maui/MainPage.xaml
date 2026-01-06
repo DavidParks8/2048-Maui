@@ -28,6 +28,13 @@
             Order="Primary"
             Priority="0" />
         <ToolbarItem
+            x:Name="ToolbarModeButton"
+            AutomationId="ToolbarModeButton"
+            Text="{x:Static strings:AppStrings.Mode}"
+            Clicked="OnModeClicked"
+            Order="Primary"
+            Priority="1" />
+        <ToolbarItem
             x:Name="ToolbarLeaderboardButton"
             AutomationId="ToolbarLeaderboardButton"
             Text="{x:Static strings:AppStrings.LeaderboardToolbarText}"

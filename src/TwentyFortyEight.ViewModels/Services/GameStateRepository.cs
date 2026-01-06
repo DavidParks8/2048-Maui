@@ -22,19 +22,29 @@ public sealed partial class GameStateRepository(
     private const string LegacyBestScoreKey = "BestScore";
     private const string MigrationKey = "Migration.SizeScopedSaveStateV1Complete";
     private const string LegacyMigrationKey = "Migration.SizeScopedPersistenceV1Complete";
+    private const string RulesetMigrationKey = "Migration.RulesetScopedPersistenceV1Complete";
 
     private readonly Lock _sync = new();
 
-    // Per-size debouncing for best score saves
-    private readonly Dictionary<int, CancellationTokenSource> _bestScoreSaveDebounceBySize = [];
-    private readonly Dictionary<int, Task> _bestScoreSaveTaskBySize = [];
-    private readonly Dictionary<int, int> _currentBestScoreBySize = [];
+    // Per-ruleset debouncing for best score saves
+    private readonly Dictionary<
+        string,
+        CancellationTokenSource
+    > _bestScoreSaveDebounceByRulesetId = [];
+    private readonly Dictionary<string, Task> _bestScoreSaveTaskByRulesetId = [];
+    private readonly Dictionary<string, int> _currentBestScoreByRulesetId = [];
 
     private bool _migrationChecked;
 
-    private static string GetSavedGameKey(int boardSize) => $"{SavedGameKeyPrefix}{boardSize}";
+    private static string GetSavedGameKey(string rulesetId) => $"{SavedGameKeyPrefix}{rulesetId}";
 
-    private static string GetBestScoreKey(int boardSize) => $"{BestScoreKeyPrefix}{boardSize}";
+    private static string GetBestScoreKey(string rulesetId) => $"{BestScoreKeyPrefix}{rulesetId}";
+
+    private static string GetLegacySizeScopedSavedGameKey(int boardSize) =>
+        $"{SavedGameKeyPrefix}{boardSize}";
+
+    private static string GetLegacySizeScopedBestScoreKey(int boardSize) =>
+        $"{BestScoreKeyPrefix}{boardSize}";
 
     private void EnsureMigrated()
     {
@@ -52,56 +62,115 @@ public sealed partial class GameStateRepository(
 
             try
             {
-                // Honor previous combined sentinel if it exists to avoid re-running migrations.
-                if (
+                var sizeScopedMigrated =
                     preferencesService.GetBool(MigrationKey, false)
-                    || preferencesService.GetBool(LegacyMigrationKey, false)
-                )
-                {
-                    _migrationChecked = true;
-                    return;
-                }
+                    || preferencesService.GetBool(LegacyMigrationKey, false);
 
-                // Migrate legacy saved game -> size 4 slot (only if new slot is empty)
-                if (
-                    preferencesService.ContainsKey(LegacySavedGameKey)
-                    && !preferencesService.ContainsKey(GetSavedGameKey(LegacyBoardSize))
-                )
+                if (!sizeScopedMigrated)
                 {
-                    var legacyJson = preferencesService.GetString(LegacySavedGameKey, string.Empty);
-                    if (!string.IsNullOrEmpty(legacyJson))
+                    // Migrate legacy saved game -> size 4 slot (only if new slot is empty)
+                    if (
+                        preferencesService.ContainsKey(LegacySavedGameKey)
+                        && !preferencesService.ContainsKey(
+                            GetLegacySizeScopedSavedGameKey(LegacyBoardSize)
+                        )
+                    )
                     {
-                        preferencesService.SetString(GetSavedGameKey(LegacyBoardSize), legacyJson);
+                        var legacyJson = preferencesService.GetString(
+                            LegacySavedGameKey,
+                            string.Empty
+                        );
+                        if (!string.IsNullOrEmpty(legacyJson))
+                        {
+                            preferencesService.SetString(
+                                GetLegacySizeScopedSavedGameKey(LegacyBoardSize),
+                                legacyJson
+                            );
+                        }
                     }
+
+                    // Migrate legacy best score -> size 4 slot (only if new slot is empty)
+                    if (
+                        preferencesService.ContainsKey(LegacyBestScoreKey)
+                        && !preferencesService.ContainsKey(
+                            GetLegacySizeScopedBestScoreKey(LegacyBoardSize)
+                        )
+                    )
+                    {
+                        var legacyBest = preferencesService.GetInt(LegacyBestScoreKey, 0);
+                        preferencesService.SetInt(
+                            GetLegacySizeScopedBestScoreKey(LegacyBoardSize),
+                            legacyBest
+                        );
+                    }
+
+                    // Delete legacy keys after migration
+                    if (preferencesService.ContainsKey(LegacySavedGameKey))
+                    {
+                        preferencesService.Remove(LegacySavedGameKey);
+                    }
+                    if (preferencesService.ContainsKey(LegacyBestScoreKey))
+                    {
+                        preferencesService.Remove(LegacyBestScoreKey);
+                    }
+
+                    preferencesService.SetBool(MigrationKey, true);
+                    // Keep the legacy sentinel in sync for smooth downgrades.
+                    preferencesService.SetBool(LegacyMigrationKey, true);
                 }
 
-                // Migrate legacy best score -> size 4 slot (only if new slot is empty)
-                if (
-                    preferencesService.ContainsKey(LegacyBestScoreKey)
-                    && !preferencesService.ContainsKey(GetBestScoreKey(LegacyBoardSize))
-                )
+                if (!preferencesService.GetBool(RulesetMigrationKey, false))
                 {
-                    var legacyBest = preferencesService.GetInt(LegacyBestScoreKey, 0);
-                    preferencesService.SetInt(GetBestScoreKey(LegacyBoardSize), legacyBest);
-                }
+                    for (int size = 1; size <= GameConfig.MaxReasonableBoardSize; size++)
+                    {
+                        var defaultRulesetId = new GameConfig
+                        {
+                            Size = size,
+                            WinTile = 2048,
+                        }.RulesetId;
 
-                // Delete legacy keys after migration
-                if (preferencesService.ContainsKey(LegacySavedGameKey))
-                {
-                    preferencesService.Remove(LegacySavedGameKey);
-                }
-                if (preferencesService.ContainsKey(LegacyBestScoreKey))
-                {
-                    preferencesService.Remove(LegacyBestScoreKey);
-                }
+                        // Saved game
+                        var oldSavedKey = GetLegacySizeScopedSavedGameKey(size);
+                        var newSavedKey = GetSavedGameKey(defaultRulesetId);
+                        if (
+                            preferencesService.ContainsKey(oldSavedKey)
+                            && !preferencesService.ContainsKey(newSavedKey)
+                        )
+                        {
+                            var json = preferencesService.GetString(oldSavedKey, string.Empty);
+                            if (!string.IsNullOrEmpty(json))
+                            {
+                                preferencesService.SetString(newSavedKey, json);
+                            }
+                        }
+                        if (preferencesService.ContainsKey(oldSavedKey))
+                        {
+                            preferencesService.Remove(oldSavedKey);
+                        }
 
-                preferencesService.SetBool(MigrationKey, true);
-                // Keep the legacy sentinel in sync for smooth downgrades.
-                preferencesService.SetBool(LegacyMigrationKey, true);
+                        // Best score
+                        var oldBestKey = GetLegacySizeScopedBestScoreKey(size);
+                        var newBestKey = GetBestScoreKey(defaultRulesetId);
+                        if (
+                            preferencesService.ContainsKey(oldBestKey)
+                            && !preferencesService.ContainsKey(newBestKey)
+                        )
+                        {
+                            var best = preferencesService.GetInt(oldBestKey, 0);
+                            preferencesService.SetInt(newBestKey, best);
+                        }
+                        if (preferencesService.ContainsKey(oldBestKey))
+                        {
+                            preferencesService.Remove(oldBestKey);
+                        }
+                    }
+
+                    preferencesService.SetBool(RulesetMigrationKey, true);
+                }
             }
             catch (Exception ex)
             {
-                // If migration fails, keep going using size-scoped keys.
+                // If migration fails, keep going using best-effort keys.
                 LogMigrationFailed(logger, ex);
             }
             finally
@@ -111,24 +180,27 @@ public sealed partial class GameStateRepository(
         }
     }
 
-    private int EnsureBestScoreLoaded(int boardSize)
+    private int EnsureBestScoreLoaded(GameConfig config)
     {
         EnsureMigrated();
 
+        var boardSize = config.Size;
         if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
         {
             return 0;
         }
 
+        var rulesetId = config.RulesetId;
+
         lock (_sync)
         {
-            if (_currentBestScoreBySize.TryGetValue(boardSize, out var best))
+            if (_currentBestScoreByRulesetId.TryGetValue(rulesetId, out var best))
             {
                 return best;
             }
 
-            var loadedBest = preferencesService.GetInt(GetBestScoreKey(boardSize), 0);
-            _currentBestScoreBySize[boardSize] = loadedBest;
+            var loadedBest = preferencesService.GetInt(GetBestScoreKey(rulesetId), 0);
+            _currentBestScoreByRulesetId[rulesetId] = loadedBest;
             return loadedBest;
         }
     }
@@ -140,7 +212,10 @@ public sealed partial class GameStateRepository(
         var boardSize = config.Size;
         try
         {
-            var savedJson = preferencesService.GetString(GetSavedGameKey(boardSize), string.Empty);
+            var savedJson = preferencesService.GetString(
+                GetSavedGameKey(config.RulesetId),
+                string.Empty
+            );
             if (!string.IsNullOrEmpty(savedJson))
             {
                 var dto = JsonSerializer.Deserialize(
@@ -182,7 +257,7 @@ public sealed partial class GameStateRepository(
 
             var dto = GameStateDto.FromGameState(state);
             var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
-            preferencesService.SetString(GetSavedGameKey(boardSize), json);
+            preferencesService.SetString(GetSavedGameKey(config.RulesetId), json);
         }
         catch (Exception ex)
         {
@@ -190,7 +265,21 @@ public sealed partial class GameStateRepository(
         }
     }
 
-    public int GetBestScore(GameConfig config) => EnsureBestScoreLoaded(config.Size);
+    public void ClearSavedGame(GameConfig config)
+    {
+        EnsureMigrated();
+
+        try
+        {
+            preferencesService.Remove(GetSavedGameKey(config.RulesetId));
+        }
+        catch (Exception ex)
+        {
+            LogSaveGameStateFailed(logger, ex);
+        }
+    }
+
+    public int GetBestScore(GameConfig config) => EnsureBestScoreLoaded(config);
 
     public void UpdateBestScoreIfHigher(GameConfig config, int score)
     {
@@ -200,7 +289,9 @@ public sealed partial class GameStateRepository(
             return;
         }
 
-        var currentBest = EnsureBestScoreLoaded(boardSize);
+        var rulesetId = config.RulesetId;
+
+        var currentBest = EnsureBestScoreLoaded(config);
         if (score <= currentBest)
         {
             return;
@@ -211,30 +302,31 @@ public sealed partial class GameStateRepository(
 
         lock (_sync)
         {
-            _currentBestScoreBySize[boardSize] = score;
+            _currentBestScoreByRulesetId[rulesetId] = score;
 
             // Debounce saves to avoid hammering storage during rapid play
-            if (_bestScoreSaveDebounceBySize.TryGetValue(boardSize, out var existingCts))
+            if (_bestScoreSaveDebounceByRulesetId.TryGetValue(rulesetId, out var existingCts))
             {
                 existingCts.Cancel();
                 existingCts.Dispose();
             }
 
             cts = new CancellationTokenSource();
-            _bestScoreSaveDebounceBySize[boardSize] = cts;
+            _bestScoreSaveDebounceByRulesetId[rulesetId] = cts;
 
-            saveTask = DebouncedSaveBestScoreAsync(boardSize, score, cts.Token);
-            _bestScoreSaveTaskBySize[boardSize] = saveTask;
+            saveTask = DebouncedSaveBestScoreAsync(rulesetId, score, cts.Token);
+            _bestScoreSaveTaskByRulesetId[rulesetId] = saveTask;
         }
 
         // Clean up task/CTS tracking when the save finishes.
         _ = saveTask.ContinueWith(
             static (t, state) =>
             {
-                var tuple = (Tuple<GameStateRepository, int, Task, CancellationTokenSource>)state!;
+                var tuple =
+                    (Tuple<GameStateRepository, string, Task, CancellationTokenSource>)state!;
                 tuple.Item1.CleanupAfterBestScoreSave(tuple.Item2, tuple.Item3, tuple.Item4);
             },
-            Tuple.Create(this, boardSize, saveTask, cts),
+            Tuple.Create(this, rulesetId, saveTask, cts),
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default
@@ -243,10 +335,10 @@ public sealed partial class GameStateRepository(
 
     public Task FlushAsync(GameConfig config)
     {
-        var boardSize = config.Size;
+        var rulesetId = config.RulesetId;
         lock (_sync)
         {
-            if (_bestScoreSaveTaskBySize.TryGetValue(boardSize, out var task))
+            if (_bestScoreSaveTaskByRulesetId.TryGetValue(rulesetId, out var task))
             {
                 return task;
             }
@@ -256,7 +348,7 @@ public sealed partial class GameStateRepository(
     }
 
     private void CleanupAfterBestScoreSave(
-        int boardSize,
+        string rulesetId,
         Task completedTask,
         CancellationTokenSource cts
     )
@@ -264,26 +356,26 @@ public sealed partial class GameStateRepository(
         lock (_sync)
         {
             if (
-                _bestScoreSaveTaskBySize.TryGetValue(boardSize, out var currentTask)
+                _bestScoreSaveTaskByRulesetId.TryGetValue(rulesetId, out var currentTask)
                 && ReferenceEquals(currentTask, completedTask)
             )
             {
-                _bestScoreSaveTaskBySize.Remove(boardSize);
+                _bestScoreSaveTaskByRulesetId.Remove(rulesetId);
             }
 
             if (
-                _bestScoreSaveDebounceBySize.TryGetValue(boardSize, out var currentCts)
+                _bestScoreSaveDebounceByRulesetId.TryGetValue(rulesetId, out var currentCts)
                 && ReferenceEquals(currentCts, cts)
             )
             {
-                _bestScoreSaveDebounceBySize.Remove(boardSize);
+                _bestScoreSaveDebounceByRulesetId.Remove(rulesetId);
                 cts.Dispose();
             }
         }
     }
 
     private async Task DebouncedSaveBestScoreAsync(
-        int boardSize,
+        string rulesetId,
         int value,
         CancellationToken cancellationToken
     )
@@ -291,7 +383,7 @@ public sealed partial class GameStateRepository(
         try
         {
             await Task.Delay(500, cancellationToken);
-            preferencesService.SetInt(GetBestScoreKey(boardSize), value);
+            preferencesService.SetInt(GetBestScoreKey(rulesetId), value);
         }
         catch (OperationCanceledException)
         {
