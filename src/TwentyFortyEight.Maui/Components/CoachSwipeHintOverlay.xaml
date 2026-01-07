@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
+             xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+             xmlns:converters="clr-namespace:TwentyFortyEight.Maui.Converters"
+             xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+             x:Class="TwentyFortyEight.Maui.Components.CoachSwipeHintOverlay"
+             x:Name="Root"
+             x:DataType="components:CoachSwipeHintOverlay"
+             InputTransparent="True">
+
+    <ContentView.Resources>
+        <converters:MoveCoachReasonConverter x:Key="MoveCoachReasonConverter" />
+    </ContentView.Resources>
+
+    <Grid>
+        <VerticalStackLayout HorizontalOptions="Center"
+                             VerticalOptions="Center"
+                             Spacing="12">
+            <Border x:Name="ReasonContainer"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Padding="16,10"
+                Opacity="0"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 10"
+                Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                components:LiquidGlass.EffectType="Regular"
+                components:LiquidGlass.EnableShadowEffect="False"
+                components:LiquidGlass.CornerRadius="10"
+                SemanticProperties.Description="{Binding Reason, Source={x:Reference Root}, Converter={StaticResource MoveCoachReasonConverter}}"
+                SemanticProperties.Hint="{x:Static strings:AppStrings.EnableCoachHint}">
+            <Label x:Name="ReasonLabel"
+                   Text="{Binding Reason, Source={x:Reference Root}, Converter={StaticResource MoveCoachReasonConverter}}"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   FontSize="13"
+                   LineBreakMode="TailTruncation"
+                   MaxLines="1"
+                   TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
+            </Border>
+
+            <Label x:Name="Arrow"
+                   Text=""
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   FontSize="44"
+                   Opacity="0"
+                   TranslationX="0"
+                   TranslationY="0"
+                   TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                   AutomationProperties.IsInAccessibleTree="False" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

@@ -1,5 +1,9 @@
 # Agent Instructions
 
+When doing a quick build check, try not to build android unless specifically attempting to do so. The android build is very slow. Dotnet build will by default build a bunch of platforms, including android.
+
+The repo uses .net 10 Maui
+
 ## MAUI Development Guidelines
 
 ### Source Generators
@@ -117,6 +121,7 @@ Always prefer testable dependency injection instead of static classes.
 - **NEVER reference images as SVG** - always use PNG (SVG only for generation)
 - **NEVER mix Shell with NavigationPage/TabbedPage/FlyoutPage**
 - **NEVER use renderers** - use handlers instead
+- **NEVER use `SemanticScreenReader` directly** (except inside `MauiScreenReaderService`) - always announce via `IScreenReaderService`
 
 ## Control Reference
 

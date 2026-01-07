@@ -1,6 +1,7 @@
 using Maui.BindableProperty.Generator.Core;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
+using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Components;
 
@@ -22,13 +23,19 @@ public partial class VictoryModalOverlay : ContentView
     private const uint ShowFadeDurationMs = 300;
     private const uint HideFadeDurationMs = 200;
 
+    private readonly IScreenReaderService _screenReaderService;
+
     public VictoryModalOverlay()
-        : this(ResolveViewModel()) { }
+        : this(ResolveViewModel(), ResolveScreenReaderService()) { }
 
     public VictoryModalOverlay(VictoryViewModel viewModel)
+        : this(viewModel, ResolveScreenReaderService()) { }
+
+    public VictoryModalOverlay(VictoryViewModel viewModel, IScreenReaderService screenReaderService)
     {
         InitializeComponent();
         BindingContext = viewModel;
+        _screenReaderService = screenReaderService;
 
         // Subscribe to state changes for animations
         viewModel.State.PropertyChanged += OnStatePropertyChanged;
@@ -39,6 +46,18 @@ public partial class VictoryModalOverlay : ContentView
         if (Application.Current is App app)
         {
             return app.Services.GetRequiredService<VictoryViewModel>();
+        }
+
+        throw new InvalidOperationException(
+            "VictoryModalOverlay requires an App with a configured Services container."
+        );
+    }
+
+    private static IScreenReaderService ResolveScreenReaderService()
+    {
+        if (Application.Current is App app)
+        {
+            return app.Services.GetRequiredService<IScreenReaderService>();
         }
 
         throw new InvalidOperationException(
@@ -77,9 +96,7 @@ public partial class VictoryModalOverlay : ContentView
         );
 
         // Announce for screen readers.
-        MainThread.BeginInvokeOnMainThread(
-            () => SemanticScreenReader.Announce(AppStrings.VictoryAnnouncement)
-        );
+        _screenReaderService.Announce(AppStrings.VictoryAnnouncement);
     }
 
     private async Task AnimateHideAsync()

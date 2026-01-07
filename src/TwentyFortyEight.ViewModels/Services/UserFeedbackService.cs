@@ -46,6 +46,11 @@ public sealed class UserFeedbackService(
         }
     }
 
+    public void AnnounceCoachNudge()
+    {
+        AnnounceStatus(localizationService.CoachNudgeAnnouncement);
+    }
+
     public void PerformMoveHaptic()
     {
         if (settingsService.HapticsEnabled && hapticService.IsSupported)

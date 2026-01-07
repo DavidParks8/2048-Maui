@@ -18,12 +18,16 @@ public class GameViewModelTests
 {
     private Mock<ILogger<GameViewModel>> _loggerMock = null!;
     private Mock<IMoveAnalyzer> _moveAnalyzerMock = null!;
+    private Mock<IMoveAdvisor> _moveAdvisorMock = null!;
     private Mock<ISettingsService> _settingsServiceMock = null!;
     private Mock<IStatisticsTracker> _statisticsTrackerMock = null!;
     private Mock<IRandomSource> _randomSourceMock = null!;
+    private IGame2048EngineFactory _engineFactory = null!;
     private Mock<IGameStateRepository> _repositoryMock = null!;
     private Mock<IGameSessionCoordinator> _sessionCoordinatorMock = null!;
     private Mock<IUserFeedbackService> _feedbackServiceMock = null!;
+    private Mock<ICoachNudgeService> _coachNudgeServiceMock = null!;
+    private Mock<ICoachSuggestionService> _coachSuggestionServiceMock = null!;
     private VictoryViewModel _victoryViewModel = null!;
 
     [TestInitialize]
@@ -31,12 +35,15 @@ public class GameViewModelTests
     {
         _loggerMock = new Mock<ILogger<GameViewModel>>();
         _moveAnalyzerMock = new Mock<IMoveAnalyzer>();
+        _moveAdvisorMock = new Mock<IMoveAdvisor>();
         _settingsServiceMock = new Mock<ISettingsService>();
         _statisticsTrackerMock = new Mock<IStatisticsTracker>();
         _randomSourceMock = new Mock<IRandomSource>();
         _repositoryMock = new Mock<IGameStateRepository>();
         _sessionCoordinatorMock = new Mock<IGameSessionCoordinator>();
         _feedbackServiceMock = new Mock<IUserFeedbackService>();
+        _coachNudgeServiceMock = new Mock<ICoachNudgeService>();
+        _coachSuggestionServiceMock = new Mock<ICoachSuggestionService>();
 
         // Create real VictoryViewModel instance for testing
         var reduceMotionMock = new Mock<IReduceMotionService>();
@@ -52,7 +59,10 @@ public class GameViewModelTests
         );
 
         // Setup default behavior
-        _settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
+        _settingsServiceMock.SetupGet(s => s.HapticsEnabled).Returns(true);
+        _settingsServiceMock.SetupGet(s => s.CoachEnabled).Returns(false);
+        _settingsServiceMock.SetupGet(s => s.CoachNudgesEnabled).Returns(true);
+        _settingsServiceMock.SetupSet<bool>(s => s.CoachEnabled = It.IsAny<bool>());
         _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(new GameConfig());
         _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(0);
         _repositoryMock
@@ -63,6 +73,12 @@ public class GameViewModelTests
         // Setup random source for deterministic tile spawning
         _randomSourceMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         _randomSourceMock.Setup(r => r.NextDouble()).Returns(0.5);
+
+        _engineFactory = new Game2048EngineFactory(
+            _randomSourceMock.Object,
+            _statisticsTrackerMock.Object,
+            new BoardMoveSimulator()
+        );
     }
 
     private GameViewModel CreateViewModel()
@@ -72,11 +88,13 @@ public class GameViewModelTests
             _moveAnalyzerMock.Object,
             _settingsServiceMock.Object,
             _statisticsTrackerMock.Object,
-            _randomSourceMock.Object,
+            _engineFactory,
             _repositoryMock.Object,
             _sessionCoordinatorMock.Object,
             _feedbackServiceMock.Object,
-            _victoryViewModel
+            _victoryViewModel,
+            _coachNudgeServiceMock.Object,
+            _coachSuggestionServiceMock.Object
         );
     }
 
@@ -99,6 +117,81 @@ public class GameViewModelTests
 
         // Assert
         Assert.AreEqual(0, viewModel.Score);
+    }
+
+    [TestMethod]
+    public void ToggleCoachCommand_WhenAdvisorReturnsRecommendation_ShowsSuggestion()
+    {
+        // Arrange
+        _coachSuggestionServiceMock
+            .Setup(s =>
+                s.GetSuggestion(
+                    It.IsAny<Board>(),
+                    It.IsAny<GameConfig>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()
+                )
+            )
+            .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
+
+        var viewModel = CreateViewModel();
+
+        // Act
+        viewModel.ToggleCoachCommand.Execute(null);
+
+        // Assert
+        Assert.IsTrue(viewModel.IsCoachEnabled);
+        Assert.IsTrue(viewModel.IsCoachSuggestionVisible);
+        Assert.AreEqual(Direction.Left, viewModel.CoachSuggestedDirection);
+        Assert.AreEqual(MoveCoachReason.CreateSpace, viewModel.CoachPrimaryReason);
+    }
+
+    [TestMethod]
+    public void ToggleCoachCommand_WhenTurnedOff_ClearsSuggestion()
+    {
+        // Arrange
+        _coachSuggestionServiceMock
+            .Setup(s =>
+                s.GetSuggestion(
+                    It.IsAny<Board>(),
+                    It.IsAny<GameConfig>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()
+                )
+            )
+            .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
+
+        var viewModel = CreateViewModel();
+
+        // Turn on first
+        viewModel.ToggleCoachCommand.Execute(null);
+
+        // Act - turn off
+        viewModel.ToggleCoachCommand.Execute(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsCoachEnabled);
+        Assert.IsFalse(viewModel.IsCoachSuggestionVisible);
+        Assert.IsNull(viewModel.CoachSuggestedDirection);
+        Assert.IsNull(viewModel.CoachPrimaryReason);
+    }
+
+    [TestMethod]
+    public async Task DismissCoachNudgeCommand_WhenVisible_HidesNudgeAndDoesNotEnableCoach()
+    {
+        // Arrange
+        var viewModel = CreateViewModel();
+
+        // Simulate the nudge being shown
+        _coachNudgeServiceMock.Setup(s => s.IsNudgeVisible).Returns(true);
+
+        // Act
+        viewModel.DismissCoachNudgeCommand.Execute(null);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+        Assert.IsFalse(viewModel.IsCoachEnabled);
+        _coachNudgeServiceMock.Verify(s => s.Dismiss(), Times.Once);
     }
 
     [TestMethod]
@@ -201,42 +294,6 @@ public class GameViewModelTests
 
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
-        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
-    }
-
-    [TestMethod]
-    public async Task NewGameAsync_WhenMovesGreaterThanZero_ShowsConfirmationSheet()
-    {
-        // Arrange
-        var viewModel = CreateViewModel();
-        viewModel.Moves = 1;
-
-        // Act
-        await viewModel.NewGameCommand.ExecuteAsync(null);
-
-        // Assert
-        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
-        _repositoryMock.Verify(
-            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
-            Times.Never
-        );
-    }
-
-    [TestMethod]
-    public async Task ConfirmNewGameCommand_WhenSheetVisible_StartsNewGameAndHidesSheet()
-    {
-        // Arrange
-        var viewModel = CreateViewModel();
-        viewModel.Moves = 1;
-
-        await viewModel.NewGameCommand.ExecuteAsync(null);
-        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
-
-        // Act
-        await viewModel.ConfirmNewGameCommand.ExecuteAsync(null);
-
-        // Assert
-        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
         _repositoryMock.Verify(
             r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()),
             Times.Once
@@ -244,23 +301,40 @@ public class GameViewModelTests
     }
 
     [TestMethod]
-    public async Task DismissNewGameConfirmationCommand_WhenSheetVisible_HidesSheetWithoutStartingNewGame()
+    public async Task NewGameAsync_WhenMovesGreaterThanZeroAndUserCancels_DoesNotStartNewGame()
     {
         // Arrange
+        _feedbackServiceMock.Setup(f => f.ConfirmNewGameAsync()).ReturnsAsync(false);
         var viewModel = CreateViewModel();
         viewModel.Moves = 1;
 
-        await viewModel.NewGameCommand.ExecuteAsync(null);
-        Assert.IsTrue(viewModel.IsNewGameConfirmationVisible);
-
         // Act
-        viewModel.DismissNewGameConfirmationCommand.Execute(null);
+        await viewModel.NewGameCommand.ExecuteAsync(null);
 
         // Assert
-        Assert.IsFalse(viewModel.IsNewGameConfirmationVisible);
+        _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
         _repositoryMock.Verify(
             r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
             Times.Never
+        );
+    }
+
+    [TestMethod]
+    public async Task NewGameAsync_WhenMovesGreaterThanZeroAndUserConfirms_StartsNewGame()
+    {
+        // Arrange
+        _feedbackServiceMock.Setup(f => f.ConfirmNewGameAsync()).ReturnsAsync(true);
+        var viewModel = CreateViewModel();
+        viewModel.Moves = 1;
+
+        // Act
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+
+        // Assert
+        _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
+        _repositoryMock.Verify(
+            r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()),
+            Times.Once
         );
     }
 
@@ -387,6 +461,90 @@ public class GameViewModelTests
         // Assert - Victory overlay should be hidden
         Assert.IsFalse(_victoryViewModel.State.IsActive, "Victory should no longer be active");
         Assert.IsFalse(_victoryViewModel.State.IsModalVisible, "Victory modal should be hidden");
+    }
+
+    [TestMethod]
+    public async Task MoveCommand_WhenThreeConsecutiveInvalidMovesAndCoachDisabled_ShowsCoachNudge()
+    {
+        // Arrange
+        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(true);
+
+        var viewModel = CreateViewModel();
+        Assert.IsFalse(viewModel.IsCoachEnabled);
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+
+        // Act - simulate 3 invalid moves
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+
+        // Assert
+        _coachNudgeServiceMock.Verify(s => s.TrackInvalidMove(), Times.Exactly(3));
+        _coachNudgeServiceMock.Verify(s => s.ShouldShowNudge(), Times.Exactly(3));
+    }
+
+    [TestMethod]
+    public async Task MoveCommand_WhenCoachNudgesDisabled_DoesNotShowCoachNudge()
+    {
+        // Arrange
+        _settingsServiceMock.Setup(s => s.CoachNudgesEnabled).Returns(false);
+        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(false);
+
+        var viewModel = CreateViewModel();
+        Assert.IsFalse(viewModel.IsCoachEnabled);
+
+        // Act
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+        _feedbackServiceMock.Verify(f => f.AnnounceCoachNudge(), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task MoveCommand_WhenCoachEnabled_DoesNotShowCoachNudge()
+    {
+        // Arrange
+        _moveAdvisorMock
+            .Setup(a => a.Recommend(It.IsAny<Board>(), It.IsAny<GameConfig>()))
+            .Returns((MoveRecommendation?)null);
+        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(false);
+
+        var viewModel = CreateViewModel();
+
+        viewModel.ToggleCoachCommand.Execute(null);
+        Assert.IsTrue(viewModel.IsCoachEnabled);
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+
+        // Act
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+        await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
+
+        // Assert
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+    }
+
+    [TestMethod]
+    public async Task EnableCoachFromNudgeCommand_WhenVisible_EnablesCoachAndHidesNudge()
+    {
+        // Arrange
+        _moveAdvisorMock
+            .Setup(a => a.Recommend(It.IsAny<Board>(), It.IsAny<GameConfig>()))
+            .Returns((MoveRecommendation?)null);
+
+        var viewModel = CreateViewModel();
+
+        // Act
+        viewModel.EnableCoachFromNudgeCommand.Execute(null);
+
+        // Assert
+        Assert.IsTrue(viewModel.IsCoachEnabled);
+        Assert.IsFalse(viewModel.IsCoachNudgeVisible);
+        _settingsServiceMock.VerifySet(s => s.CoachEnabled = true, Times.AtLeastOnce);
+        _coachNudgeServiceMock.Verify(s => s.Dismiss(), Times.Once);
     }
 
     private static void InvokePrivateEngineVictoryHandler(GameViewModel viewModel, EventArgs args)

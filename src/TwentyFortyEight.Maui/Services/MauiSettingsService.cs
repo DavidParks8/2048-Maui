@@ -11,6 +11,8 @@ namespace TwentyFortyEight.Maui.Services;
 public class MauiSettingsService : ISettingsService
 {
     private const string HapticsEnabledKey = "HapticsEnabled";
+    private const string CoachEnabledKey = "CoachEnabled";
+    private const string CoachNudgesEnabledKey = "CoachNudgesEnabled";
     private const string LastActiveGameConfigKey = "LastActiveGameConfig";
 
     /// <inheritdoc />
@@ -18,6 +20,20 @@ public class MauiSettingsService : ISettingsService
     {
         get => Preferences.Get(HapticsEnabledKey, true);
         set => Preferences.Set(HapticsEnabledKey, value);
+    }
+
+    /// <inheritdoc />
+    public bool CoachEnabled
+    {
+        get => Preferences.Get(CoachEnabledKey, false);
+        set => Preferences.Set(CoachEnabledKey, value);
+    }
+
+    /// <inheritdoc />
+    public bool CoachNudgesEnabled
+    {
+        get => Preferences.Get(CoachNudgesEnabledKey, true);
+        set => Preferences.Set(CoachNudgesEnabledKey, value);
     }
 
     /// <inheritdoc />

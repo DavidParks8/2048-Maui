@@ -343,36 +343,29 @@ public partial class MainPage : ContentPage
         {
             UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
         }
-        else if (e.PropertyName == nameof(GameViewModel.IsNewGameConfirmationVisible))
+        else if (e.PropertyName == nameof(GameViewModel.IsCoachNudgeVisible))
         {
-            HandleNewGameConfirmationVisibilityChanged();
+            HandleCoachNudgeVisibilityChanged();
         }
     }
 
-    private void HandleNewGameConfirmationVisibilityChanged()
+    private void HandleCoachNudgeVisibilityChanged()
     {
-        if (_viewModel.IsNewGameConfirmationVisible)
+        if (!_viewModel.IsCoachNudgeVisible)
         {
-            // Use a platform-native alert instead of a bottom sheet.
-            Dispatcher.Dispatch(async () =>
-            {
-                bool confirmed = await DisplayAlertAsync(
-                    AppStrings.RestartConfirmTitle,
-                    AppStrings.RestartConfirmMessage,
-                    AppStrings.StartNew,
-                    AppStrings.Cancel
-                );
-
-                if (confirmed)
-                {
-                    _viewModel.ConfirmNewGameCommand.Execute(null);
-                }
-                else
-                {
-                    _viewModel.DismissNewGameConfirmationCommand.Execute(null);
-                }
-            });
+            return;
         }
+
+        // Move keyboard focus to the nudge action button so it is immediately reachable.
+        // (The announcement itself is handled via IUserFeedbackService in the ViewModel.)
+        Dispatcher.Dispatch(async () =>
+        {
+            await Task.Delay(100);
+            if (_viewModel.IsCoachNudgeVisible)
+            {
+                CoachNudgeContainer?.FocusEnableButton();
+            }
+        });
     }
 
     private void OnBottomSheetDismissed(object? sender, EventArgs e)

@@ -42,8 +42,11 @@ public static class MauiProgram
         // Register services for dependency injection
         builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
         builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
+        builder.Services.AddSingleton<IBoardSimulator, BoardMoveSimulator>();
+        builder.Services.AddSingleton<IMoveAdvisor, HeuristicMoveAdvisor>();
         builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
+        builder.Services.AddSingleton<IGame2048EngineFactory, Game2048EngineFactory>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
         builder.Services.AddSingleton<IWindowOverlayService, WindowOverlayService>();
 
@@ -52,6 +55,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IGameStateRepository, GameStateRepository>();
         builder.Services.AddSingleton<IGameSessionCoordinator, GameSessionCoordinator>();
         builder.Services.AddSingleton<IBoardSizeChangeService, BoardSizeChangeService>();
+        builder.Services.AddSingleton<ICoachNudgeService, CoachNudgeService>();
+        builder.Services.AddSingleton<ICoachSuggestionService, CoachSuggestionService>();
 
         // Register low-level services (used by consolidated services internally)
         builder.Services.AddSingleton<IHapticService, MauiHapticService>();
