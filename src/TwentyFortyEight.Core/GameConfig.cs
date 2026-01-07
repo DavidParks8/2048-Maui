@@ -1,6 +1,22 @@
 namespace TwentyFortyEight.Core;
 
 /// <summary>
+/// Represents the game mode.
+/// </summary>
+public enum GameMode
+{
+    /// <summary>
+    /// Classic 2048 mode with standard rules.
+    /// </summary>
+    Classic,
+
+    /// <summary>
+    /// Walltastrophy mode where walls are added between cells after successful moves.
+    /// </summary>
+    Walltastrophy,
+}
+
+/// <summary>
 /// Configuration for a 2048 game.
 /// </summary>
 public class GameConfig
@@ -14,6 +30,8 @@ public class GameConfig
 
     private const int DefaultWinTile = 2048;
 
+    private const GameMode DefaultGameMode = GameMode.Classic;
+
     /// <summary>
     /// Size of the board (default 4x4).
     /// </summary>
@@ -23,6 +41,11 @@ public class GameConfig
     /// Tile value required to win (default 2048).
     /// </summary>
     public int WinTile { get; init; } = DefaultWinTile;
+
+    /// <summary>
+    /// Game mode (default Classic).
+    /// </summary>
+    public GameMode Mode { get; init; } = DefaultGameMode;
 
     /// <summary>
     /// Stable identifier for persistence and scoping.
@@ -41,6 +64,11 @@ public class GameConfig
             if (WinTile != DefaultWinTile)
             {
                 parts.Add($"win={WinTile}");
+            }
+
+            if (Mode != DefaultGameMode)
+            {
+                parts.Add($"mode={Mode}");
             }
 
             if (parts.Count == 0)

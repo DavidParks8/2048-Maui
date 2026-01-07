@@ -189,7 +189,15 @@ public class Game2048Engine
 
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
-        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue);
+
+        // Add a wall for Walltastrophy mode
+        WallSegment? addedWall = null;
+        if (_config.Mode == GameMode.Walltastrophy)
+        {
+            addedWall = AddRandomWall();
+        }
+
+        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue, addedWall);
 
         _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
@@ -227,7 +235,8 @@ public class Game2048Engine
             _initialState.Score,
             _initialState.MoveCount,
             _initialState.IsWon,
-            _initialState.IsGameOver
+            _initialState.IsGameOver,
+            Walls: new HashSet<WallSegment>()
         );
 
         // Replay moves up to currentMoveIndex
@@ -251,7 +260,8 @@ public class Game2048Engine
                 newMoveCount,
                 isWon,
                 false,
-                newMaxTile
+                newMaxTile,
+                _currentState.Walls
             );
 
             // Restore the spawned tile
@@ -260,6 +270,16 @@ public class Game2048Engine
                 var row = move.SpawnedTileIndex / _currentState.Size;
                 var col = move.SpawnedTileIndex % _currentState.Size;
                 _currentState = _currentState.WithTile(row, col, move.SpawnedTileValue);
+            }
+
+            // Restore the added wall
+            if (move.AddedWall.HasValue)
+            {
+                var newWalls = new HashSet<WallSegment>(
+                    _currentState.Walls ?? new HashSet<WallSegment>()
+                );
+                newWalls.Add(move.AddedWall.Value);
+                _currentState = _currentState.WithUpdate(walls: newWalls);
             }
         }
 
@@ -309,5 +329,64 @@ public class Game2048Engine
 
         // Game is not over if there are empty cells or possible merges
         return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
+    }
+
+    /// <summary>
+    /// Adds a random wall segment to the board for Walltastrophy mode.
+    /// Walls are placed between cells and cannot touch the outer edges.
+    /// Returns the wall segment that was added, or null if no valid position exists.
+    /// </summary>
+    private WallSegment? AddRandomWall()
+    {
+        var size = _currentState.Size;
+        var existingWalls = _currentState.Walls ?? new HashSet<WallSegment>();
+
+        // Generate all possible wall positions
+        var possibleWalls = new List<WallSegment>();
+
+        // Horizontal walls (between rows, blocking vertical movement)
+        // Can be placed between rows 0-1, 1-2, ..., size-2 to size-1
+        // Columns: 0 to size-1 (but not at edges, so 1 to size-2 for inner walls)
+        for (int row = 0; row < size - 1; row++)
+        {
+            for (int col = 1; col < size - 1; col++)
+            {
+                var wall = new WallSegment(row, col, WallOrientation.Horizontal);
+                if (!existingWalls.Contains(wall))
+                {
+                    possibleWalls.Add(wall);
+                }
+            }
+        }
+
+        // Vertical walls (between columns, blocking horizontal movement)
+        // Can be placed between cols 0-1, 1-2, ..., size-2 to size-1
+        // Rows: 0 to size-1 (but not at edges, so 1 to size-2 for inner walls)
+        for (int row = 1; row < size - 1; row++)
+        {
+            for (int col = 0; col < size - 1; col++)
+            {
+                var wall = new WallSegment(row, col, WallOrientation.Vertical);
+                if (!existingWalls.Contains(wall))
+                {
+                    possibleWalls.Add(wall);
+                }
+            }
+        }
+
+        if (possibleWalls.Count == 0)
+        {
+            return null;
+        }
+
+        // Pick a random wall from the possible positions
+        var index = _random.Next(possibleWalls.Count);
+        var chosenWall = possibleWalls[index];
+
+        // Add it to the current state
+        var newWalls = new HashSet<WallSegment>(existingWalls) { chosenWall };
+        _currentState = _currentState.WithUpdate(walls: newWalls);
+
+        return chosenWall;
     }
 }

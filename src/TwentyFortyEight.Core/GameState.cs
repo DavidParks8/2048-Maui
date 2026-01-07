@@ -10,13 +10,15 @@ namespace TwentyFortyEight.Core;
 /// <param name="IsWon">Whether the game has been won (a tile reached WinTile).</param>
 /// <param name="IsGameOver">Whether the game is over (no valid moves remaining).</param>
 /// <param name="MaxTileValue">The highest tile value currently on the board (tracked for performance).</param>
+/// <param name="Walls">The set of wall segments on the board (for Walltastrophy mode).</param>
 public record GameState(
     Board Board,
     int Score,
     int MoveCount,
     bool IsWon,
     bool IsGameOver,
-    int MaxTileValue = 0
+    int MaxTileValue = 0,
+    IReadOnlySet<WallSegment>? Walls = null
 )
 {
     /// <summary>
@@ -62,7 +64,8 @@ public record GameState(
         int? moveCount = null,
         bool? isWon = null,
         bool? isGameOver = null,
-        int? maxTileValue = null
+        int? maxTileValue = null,
+        IReadOnlySet<WallSegment>? walls = null
     ) =>
         this with
         {
@@ -72,5 +75,6 @@ public record GameState(
             IsWon = isWon ?? IsWon,
             IsGameOver = isGameOver ?? IsGameOver,
             MaxTileValue = maxTileValue ?? MaxTileValue,
+            Walls = walls ?? Walls,
         };
 }

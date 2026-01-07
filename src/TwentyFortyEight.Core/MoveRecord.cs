@@ -6,4 +6,10 @@ namespace TwentyFortyEight.Core;
 /// <param name="Direction">The direction of the move.</param>
 /// <param name="SpawnedTileIndex">The flat index where a new tile was spawned, or -1 if none.</param>
 /// <param name="SpawnedTileValue">The value of the spawned tile (2 or 4).</param>
-public record MoveRecord(Direction Direction, int SpawnedTileIndex = -1, int SpawnedTileValue = 0);
+/// <param name="AddedWall">The wall segment that was added during this move, if any (for Walltastrophy mode).</param>
+public record MoveRecord(
+    Direction Direction,
+    int SpawnedTileIndex = -1,
+    int SpawnedTileValue = 0,
+    WallSegment? AddedWall = null
+);
