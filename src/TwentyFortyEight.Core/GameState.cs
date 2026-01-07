@@ -10,13 +10,15 @@ namespace TwentyFortyEight.Core;
 /// <param name="IsWon">Whether the game has been won (a tile reached WinTile).</param>
 /// <param name="IsGameOver">Whether the game is over (no valid moves remaining).</param>
 /// <param name="MaxTileValue">The highest tile value currently on the board (tracked for performance).</param>
+/// <param name="Wall">The current between-cell wall segment (Walltastrophy mode), or null.</param>
 public record GameState(
     Board Board,
     int Score,
     int MoveCount,
     bool IsWon,
     bool IsGameOver,
-    int MaxTileValue = 0
+    int MaxTileValue = 0,
+    WallSegment? Wall = null
 )
 {
     /// <summary>
@@ -62,7 +64,8 @@ public record GameState(
         int? moveCount = null,
         bool? isWon = null,
         bool? isGameOver = null,
-        int? maxTileValue = null
+        int? maxTileValue = null,
+        WallSegment? wall = null
     ) =>
         this with
         {
@@ -72,5 +75,22 @@ public record GameState(
             IsWon = isWon ?? IsWon,
             IsGameOver = isGameOver ?? IsGameOver,
             MaxTileValue = maxTileValue ?? MaxTileValue,
+            Wall = wall ?? Wall,
         };
+
+    /// <summary>
+    /// Creates a new GameState with the wall segment updated.
+    /// </summary>
+    public GameState WithWall(WallSegment? wall)
+    {
+        if (wall is not null && !wall.IsValidForSize(Size))
+        {
+            throw new ArgumentOutOfRangeException(nameof(wall));
+        }
+
+        return this with
+        {
+            Wall = wall,
+        };
+    }
 }

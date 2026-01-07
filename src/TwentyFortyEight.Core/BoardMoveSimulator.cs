@@ -12,24 +12,23 @@ public sealed class BoardMoveSimulator : IBoardSimulator
     );
 
     public (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) SimulateMove(
-        Board board,
-        Direction direction
+        BoardMoveRequest request
     )
     {
-        return direction switch
+        return request.Direction switch
         {
-            Direction.Up => ProcessMoveGeneric(board, isVertical: true, isReverse: false),
-            Direction.Down => ProcessMoveGeneric(board, isVertical: true, isReverse: true),
-            Direction.Left => ProcessMoveGeneric(board, isVertical: false, isReverse: false),
-            Direction.Right => ProcessMoveGeneric(board, isVertical: false, isReverse: true),
-            _ => (board, 0, false, 0),
+            Direction.Up => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
+            Direction.Down => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
+            Direction.Left => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
+            Direction.Right => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
+            _ => (request.Board, 0, false, 0),
         };
     }
 
     private (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) ProcessMoveGeneric(
         Board board,
-        bool isVertical,
-        bool isReverse
+        Direction direction,
+        WallSegment? wall
     )
     {
         var size = board.Size;
@@ -44,60 +43,60 @@ public sealed class BoardMoveSimulator : IBoardSimulator
 
         try
         {
+            Span<int> indices = stackalloc int[size];
+
             for (int outer = 0; outer < size; outer++)
             {
-                values.Clear();
+                FillLineIndices(indices, size, outer, direction);
+                var split = WallSegmentSplitHelper.TryGetSplitIndex(
+                    indices,
+                    size,
+                    outer,
+                    direction,
+                    wall
+                );
 
-                // Collect non-zero values from board
-                for (int inner = 0; inner < size; inner++)
+                if (split is null)
                 {
-                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
-                    var value = board[row, col];
-                    if (value != 0)
-                    {
-                        values.Add(value);
-                    }
+                    ProcessSegment(
+                        board,
+                        result,
+                        indices,
+                        0,
+                        size,
+                        values,
+                        newValues,
+                        ref moved,
+                        ref scoreIncrease,
+                        ref maxMergedValue
+                    );
                 }
-
-                // Merge tiles - using index tracking instead of HashSet
-                newValues.Clear();
-                int i = 0;
-                while (i < values.Count)
+                else
                 {
-                    if (i < values.Count - 1 && values[i] == values[i + 1])
-                    {
-                        var mergedValue = values[i] * 2;
-                        newValues.Add(mergedValue);
-                        scoreIncrease += mergedValue;
-                        if (mergedValue > maxMergedValue)
-                        {
-                            maxMergedValue = mergedValue;
-                        }
-
-                        i += 2; // Skip both merged tiles
-                    }
-                    else
-                    {
-                        newValues.Add(values[i]);
-                        i++;
-                    }
-                }
-
-                // Fill with zeros
-                while (newValues.Count < size)
-                {
-                    newValues.Add(0);
-                }
-
-                // Write to result and check if changed
-                for (int inner = 0; inner < size; inner++)
-                {
-                    var (row, col) = GetBoardPosition(size, outer, inner, isVertical, isReverse);
-                    result[row, col] = newValues[inner];
-                    if (board[row, col] != newValues[inner])
-                    {
-                        moved = true;
-                    }
+                    ProcessSegment(
+                        board,
+                        result,
+                        indices,
+                        0,
+                        split.Value,
+                        values,
+                        newValues,
+                        ref moved,
+                        ref scoreIncrease,
+                        ref maxMergedValue
+                    );
+                    ProcessSegment(
+                        board,
+                        result,
+                        indices,
+                        split.Value,
+                        size - split.Value,
+                        values,
+                        newValues,
+                        ref moved,
+                        ref scoreIncrease,
+                        ref maxMergedValue
+                    );
                 }
             }
         }
@@ -110,23 +109,88 @@ public sealed class BoardMoveSimulator : IBoardSimulator
         return (Board.FromMutableArray(result, size), scoreIncrease, moved, maxMergedValue);
     }
 
-    private static (int row, int col) GetBoardPosition(
-        int size,
-        int outer,
-        int inner,
-        bool isVertical,
-        bool isReverse
+    private static void FillLineIndices(Span<int> indices, int size, int line, Direction direction)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            indices[i] = direction switch
+            {
+                Direction.Left => line * size + i,
+                Direction.Right => line * size + (size - 1 - i),
+                Direction.Up => i * size + line,
+                Direction.Down => (size - 1 - i) * size + line,
+                _ => 0,
+            };
+        }
+    }
+
+    private static void ProcessSegment(
+        Board board,
+        int[,] result,
+        Span<int> indices,
+        int segmentStart,
+        int segmentLength,
+        List<int> values,
+        List<int> newValues,
+        ref bool moved,
+        ref int scoreIncrease,
+        ref int maxMergedValue
     )
     {
-        if (isVertical)
+        values.Clear();
+        for (int i = 0; i < segmentLength; i++)
         {
-            var row = isReverse ? size - 1 - inner : inner;
-            return (row, outer);
+            var idx = indices[segmentStart + i];
+            var value = board[idx];
+            if (value != 0)
+            {
+                values.Add(value);
+            }
         }
 
-        var col = isReverse ? size - 1 - inner : inner;
-        return (outer, col);
+        newValues.Clear();
+        int readIndex = 0;
+        while (readIndex < values.Count)
+        {
+            if (readIndex < values.Count - 1 && values[readIndex] == values[readIndex + 1])
+            {
+                var mergedValue = values[readIndex] * 2;
+                newValues.Add(mergedValue);
+                scoreIncrease += mergedValue;
+                if (mergedValue > maxMergedValue)
+                {
+                    maxMergedValue = mergedValue;
+                }
+
+                readIndex += 2;
+            }
+            else
+            {
+                newValues.Add(values[readIndex]);
+                readIndex++;
+            }
+        }
+
+        while (newValues.Count < segmentLength)
+        {
+            newValues.Add(0);
+        }
+
+        for (int i = 0; i < segmentLength; i++)
+        {
+            var idx = indices[segmentStart + i];
+            var row = idx / board.Size;
+            var col = idx % board.Size;
+            var newValue = newValues[i];
+            result[row, col] = newValue;
+            if (board[row, col] != newValue)
+            {
+                moved = true;
+            }
+        }
     }
+
+    // GetBoardPosition removed in favor of FillLineIndices for wall-aware segmentation.
 }
 
 /// <summary>

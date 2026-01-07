@@ -5,6 +5,8 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class Game2048Engine
 {
+    private const int MaxUndoMoves = 50;
+
     #region Spawn Configuration Constants
 
     /// <summary>
@@ -138,8 +140,7 @@ public class Game2048Engine
     public bool Move(Direction direction)
     {
         var (newBoard, scoreIncrease, boardChanged, maxMergedValue) = _boardSimulator.SimulateMove(
-            _currentState.Board,
-            direction
+            new BoardMoveRequest(_currentState.Board, direction, _currentState.Wall)
         );
 
         if (!boardChanged)
@@ -189,10 +190,20 @@ public class Game2048Engine
 
         // Spawn a new tile and record it
         var (spawnIndex, spawnValue) = SpawnTileWithInfo();
-        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue);
+
+        WallSegment? wallAfterMove = null;
+        if (_config.Mode == GameMode.Walltastrophy)
+        {
+            wallAfterMove = CreateRandomWallSegment(_currentState.Size);
+            _currentState = _currentState.WithWall(wallAfterMove);
+        }
+
+        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue, wallAfterMove);
 
         _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
+
+        TrimUndoHistoryIfNeeded();
 
         // Check if game is over
         if (IsGameOver())
@@ -227,7 +238,9 @@ public class Game2048Engine
             _initialState.Score,
             _initialState.MoveCount,
             _initialState.IsWon,
-            _initialState.IsGameOver
+            _initialState.IsGameOver,
+            _initialState.MaxTileValue,
+            _initialState.Wall
         );
 
         // Replay moves up to currentMoveIndex
@@ -235,32 +248,7 @@ public class Game2048Engine
         {
             var move = _moveHistory[i];
 
-            var (newBoard, scoreIncrease, _, maxMergedValue) = _boardSimulator.SimulateMove(
-                _currentState.Board,
-                move.Direction
-            );
-
-            var newScore = _currentState.Score + scoreIncrease;
-            var newMoveCount = _currentState.MoveCount + 1;
-            var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
-            var isWon = _currentState.IsWon || newMaxTile >= _config.WinTile;
-
-            _currentState = new GameState(
-                newBoard,
-                newScore,
-                newMoveCount,
-                isWon,
-                false,
-                newMaxTile
-            );
-
-            // Restore the spawned tile
-            if (move.SpawnedTileIndex >= 0)
-            {
-                var row = move.SpawnedTileIndex / _currentState.Size;
-                var col = move.SpawnedTileIndex % _currentState.Size;
-                _currentState = _currentState.WithTile(row, col, move.SpawnedTileValue);
-            }
+            _currentState = ApplyRecordedMove(_currentState, move);
         }
 
         // Check if game is over
@@ -268,6 +256,73 @@ public class Game2048Engine
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
         }
+    }
+
+    private void TrimUndoHistoryIfNeeded()
+    {
+        if (_moveHistory.Count <= MaxUndoMoves)
+        {
+            return;
+        }
+
+        var overflow = _moveHistory.Count - MaxUndoMoves;
+        if (overflow <= 0)
+        {
+            return;
+        }
+
+        // Advance the initial state by the moves we're about to drop.
+        var advancedInitial = new GameState(
+            _initialState.Board.Clone(),
+            _initialState.Score,
+            _initialState.MoveCount,
+            _initialState.IsWon,
+            _initialState.IsGameOver,
+            _initialState.MaxTileValue,
+            _initialState.Wall
+        );
+
+        for (int i = 0; i < overflow; i++)
+        {
+            advancedInitial = ApplyRecordedMove(advancedInitial, _moveHistory[i]);
+        }
+
+        _initialState = advancedInitial;
+        _moveHistory.RemoveRange(0, overflow);
+        _currentMoveIndex = Math.Max(0, _currentMoveIndex - overflow);
+    }
+
+    private GameState ApplyRecordedMove(GameState state, MoveRecord move)
+    {
+        var (newBoard, scoreIncrease, moved, maxMergedValue) = _boardSimulator.SimulateMove(
+            new BoardMoveRequest(state.Board, move.Direction, state.Wall)
+        );
+
+        if (!moved)
+        {
+            return state;
+        }
+
+        var newScore = state.Score + scoreIncrease;
+        var newMoveCount = state.MoveCount + 1;
+        var newMaxTile = Math.Max(state.MaxTileValue, maxMergedValue);
+        var isWon = state.IsWon || newMaxTile >= _config.WinTile;
+
+        var updated = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
+
+        if (move.SpawnedTileIndex >= 0)
+        {
+            var row = move.SpawnedTileIndex / updated.Size;
+            var col = move.SpawnedTileIndex % updated.Size;
+            updated = updated.WithTile(row, col, move.SpawnedTileValue);
+        }
+
+        if (_config.Mode == GameMode.Walltastrophy)
+        {
+            updated = updated.WithWall(move.WallAfterMove);
+        }
+
+        return updated;
     }
 
     private (int index, int value) SpawnTileWithInfo()
@@ -307,7 +362,41 @@ public class Game2048Engine
     {
         var board = _currentState.Board;
 
-        // Game is not over if there are empty cells or possible merges
+        if (_config.Mode == GameMode.Walltastrophy)
+        {
+            // Walls can eliminate moves even when empties exist, so probe all directions.
+            return !_boardSimulator
+                    .SimulateMove(new BoardMoveRequest(board, Direction.Up, _currentState.Wall))
+                    .moved
+                && !_boardSimulator
+                    .SimulateMove(new BoardMoveRequest(board, Direction.Down, _currentState.Wall))
+                    .moved
+                && !_boardSimulator
+                    .SimulateMove(new BoardMoveRequest(board, Direction.Left, _currentState.Wall))
+                    .moved
+                && !_boardSimulator
+                    .SimulateMove(new BoardMoveRequest(board, Direction.Right, _currentState.Wall))
+                    .moved;
+        }
+
+        // Classic: game is not over if there are empty cells or possible merges.
         return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
+    }
+
+    private WallSegment? CreateRandomWallSegment(int size)
+    {
+        if (size < 2)
+        {
+            return null;
+        }
+
+        var orientation = (WallOrientation)_random.Next(2);
+        int divider = _random.Next(size - 1);
+        int start = _random.Next(size);
+        int maxLength = size - start;
+        int length = 1 + _random.Next(maxLength);
+
+        var wall = new WallSegment(orientation, divider, start, length);
+        return wall.IsValidForSize(size) ? wall : null;
     }
 }

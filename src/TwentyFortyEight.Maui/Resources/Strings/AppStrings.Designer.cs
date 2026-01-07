@@ -697,6 +697,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Game Mode.
+        /// </summary>
+        internal static string GameMode {
+            get {
+                return ResourceManager.GetString("GameMode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Classic.
+        /// </summary>
+        internal static string ClassicMode {
+            get {
+                return ResourceManager.GetString("ClassicMode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Walltastrophy.
+        /// </summary>
+        internal static string WalltastrophyMode {
+            get {
+                return ResourceManager.GetString("WalltastrophyMode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The original 2048 rules. Slide and merge tiles to reach the winning number..
+        /// </summary>
+        internal static string ClassicModeDescription {
+            get {
+                return ResourceManager.GetString("ClassicModeDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Each successful move places a new wall between cells. The wall blocks movement and merges across it..
+        /// </summary>
+        internal static string WalltastrophyModeDescription {
+            get {
+                return ResourceManager.GetString("WalltastrophyModeDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to MODE.
         /// </summary>
         internal static string ModeSection {
@@ -715,7 +760,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to Your progress is saved separately for each board..
+        ///   Looks up a localized string similar to Your progress is saved separately for each board and game mode..
         /// </summary>
         internal static string ModeHelperText {
             get {

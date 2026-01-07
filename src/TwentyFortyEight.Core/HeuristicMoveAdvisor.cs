@@ -8,32 +8,62 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvisor
 {
-    public MoveRecommendation? Recommend(Board board, GameConfig config)
+    public MoveRecommendation? Recommend(MoveAdvisorRequest request)
     {
+        var board = request.Board;
+        var wall = request.Wall;
+
         if (board.Size <= 0 || board.Length == 0)
         {
             return null;
         }
 
-        // If there are no possible merges and no empty cells, there is no valid move.
-        if (board.CountEmptyCells() == 0 && !board.HasPossibleMerges())
+        if (wall is null)
         {
-            return null;
+            // If there are no possible merges and no empty cells, there is no valid move.
+            if (board.CountEmptyCells() == 0 && !board.HasPossibleMerges())
+            {
+                return null;
+            }
+        }
+        else
+        {
+            // With walls, "possible merges" and "empty cells" are not sufficient to determine
+            // whether any move exists because walls can prevent slides/merges.
+            var hasAnyMove = false;
+            foreach (var direction in s_directions)
+            {
+                var (_, _, moved, _) = simulator.SimulateMove(
+                    new BoardMoveRequest(board, direction, wall)
+                );
+                if (moved)
+                {
+                    hasAnyMove = true;
+                    break;
+                }
+            }
+
+            if (!hasAnyMove)
+            {
+                return null;
+            }
         }
 
-        var baseline = ComputeFeatures(board);
+        var baseline = ComputeFeatures(board, wall);
 
         MoveRecommendation? best = null;
 
         foreach (var direction in s_directions)
         {
-            var (previewBoard, scoreIncrease, moved, _) = simulator.SimulateMove(board, direction);
+            var (previewBoard, scoreIncrease, moved, _) = simulator.SimulateMove(
+                new BoardMoveRequest(board, direction, wall)
+            );
             if (!moved)
             {
                 continue;
             }
 
-            var features = ComputeFeatures(previewBoard);
+            var features = ComputeFeatures(previewBoard, wall);
             var score = ScoreMove(scoreIncrease, baseline, features);
             var reason = PickPrimaryReason(scoreIncrease, baseline, features);
 
@@ -115,7 +145,7 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
         return MoveCoachReason.AvoidDeadEnd;
     }
 
-    private static Features ComputeFeatures(Board board)
+    private static Features ComputeFeatures(Board board, WallSegment? wall)
     {
         var empty = 0;
         var max = 0;
@@ -134,9 +164,9 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
         }
 
         var maxInCorner = max != 0 && IsMaxInCorner(board, max);
-        var potentialMerges = CountPotentialMerges(board);
-        var smoothness = ComputeSmoothness(board);
-        var monotonicity = ComputeMonotonicity(board);
+        var potentialMerges = CountPotentialMerges(board, wall);
+        var smoothness = ComputeSmoothness(board, wall);
+        var monotonicity = ComputeMonotonicity(board, wall);
 
         return new Features(empty, potentialMerges, smoothness, monotonicity, maxInCorner);
     }
@@ -150,7 +180,7 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
             || board[size - 1, size - 1] == max;
     }
 
-    private static int CountPotentialMerges(Board board)
+    private static int CountPotentialMerges(Board board, WallSegment? wall)
     {
         var size = board.Size;
         int merges = 0;
@@ -167,12 +197,18 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
 
                 if (c + 1 < size && board[r, c + 1] == v)
                 {
-                    merges++;
+                    if (!IsBlockedBetween(boardRow: r, boardCol: c, wall))
+                    {
+                        merges++;
+                    }
                 }
 
                 if (r + 1 < size && board[r + 1, c] == v)
                 {
-                    merges++;
+                    if (!IsBlockedBetween(boardRow: r, boardCol: c, wall, isDown: true))
+                    {
+                        merges++;
+                    }
                 }
             }
         }
@@ -180,7 +216,7 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
         return merges;
     }
 
-    private static int ComputeSmoothness(Board board)
+    private static int ComputeSmoothness(Board board, WallSegment? wall)
     {
         var size = board.Size;
         int smoothness = 0;
@@ -202,7 +238,10 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
                     var right = board[r, c + 1];
                     if (right != 0)
                     {
-                        smoothness += Math.Abs(logV - FastLog2(right));
+                        if (!IsBlockedBetween(boardRow: r, boardCol: c, wall))
+                        {
+                            smoothness += Math.Abs(logV - FastLog2(right));
+                        }
                     }
                 }
 
@@ -211,7 +250,10 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
                     var down = board[r + 1, c];
                     if (down != 0)
                     {
-                        smoothness += Math.Abs(logV - FastLog2(down));
+                        if (!IsBlockedBetween(boardRow: r, boardCol: c, wall, isDown: true))
+                        {
+                            smoothness += Math.Abs(logV - FastLog2(down));
+                        }
                     }
                 }
             }
@@ -220,7 +262,7 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
         return smoothness;
     }
 
-    private static int ComputeMonotonicity(Board board)
+    private static int ComputeMonotonicity(Board board, WallSegment? wall)
     {
         // Higher means more consistently increasing/decreasing along rows/cols.
         // This is a simplified monotonicity heuristic that rewards ordered lines.
@@ -229,18 +271,24 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
 
         for (int r = 0; r < size; r++)
         {
-            score += LineMonotonicity(board, size, r, isRow: true);
+            score += LineMonotonicity(board, size, r, isRow: true, wall);
         }
 
         for (int c = 0; c < size; c++)
         {
-            score += LineMonotonicity(board, size, c, isRow: false);
+            score += LineMonotonicity(board, size, c, isRow: false, wall);
         }
 
         return score;
     }
 
-    private static int LineMonotonicity(Board board, int size, int index, bool isRow)
+    private static int LineMonotonicity(
+        Board board,
+        int size,
+        int index,
+        bool isRow,
+        WallSegment? wall
+    )
     {
         int inc = 0;
         int dec = 0;
@@ -250,6 +298,11 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
 
         for (int i = 0; i < size; i++)
         {
+            if (i > 0 && IsBlockedInLine(index, i - 1, isRow, wall))
+            {
+                hasPrev = false;
+            }
+
             var v = isRow ? board[index, i] : board[i, index];
             if (v == 0)
             {
@@ -277,6 +330,62 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
 
         // Reward whichever direction is more consistent.
         return -Math.Min(inc, dec);
+    }
+
+    private static bool IsBlockedInLine(
+        int lineIndex,
+        int boundaryIndex,
+        bool isRow,
+        WallSegment? wall
+    )
+    {
+        if (wall is null)
+        {
+            return false;
+        }
+
+        if (isRow)
+        {
+            // Boundary between (row=lineIndex, col=boundaryIndex) and (row=lineIndex, col=boundaryIndex+1)
+            return wall.Orientation == WallOrientation.Vertical
+                && wall.Divider == boundaryIndex
+                && lineIndex >= wall.Start
+                && lineIndex < wall.Start + wall.Length;
+        }
+
+        // Column: boundary between (row=boundaryIndex, col=lineIndex) and (row=boundaryIndex+1, col=lineIndex)
+        return wall.Orientation == WallOrientation.Horizontal
+            && wall.Divider == boundaryIndex
+            && lineIndex >= wall.Start
+            && lineIndex < wall.Start + wall.Length;
+    }
+
+    private static bool IsBlockedBetween(
+        int boardRow,
+        int boardCol,
+        WallSegment? wall,
+        bool isDown = false
+    )
+    {
+        if (wall is null)
+        {
+            return false;
+        }
+
+        if (!isDown)
+        {
+            // Between (boardRow, boardCol) and (boardRow, boardCol + 1)
+            return wall.Orientation == WallOrientation.Vertical
+                && wall.Divider == boardCol
+                && boardRow >= wall.Start
+                && boardRow < wall.Start + wall.Length;
+        }
+
+        // Between (boardRow, boardCol) and (boardRow + 1, boardCol)
+        return wall.Orientation == WallOrientation.Horizontal
+            && wall.Divider == boardRow
+            && boardCol >= wall.Start
+            && boardCol < wall.Start + wall.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -27,6 +27,22 @@ public class GameStateSerializationTests
     }
 
     [TestMethod]
+    public void GameStateDto_SerializesAndDeserializes_WithWall()
+    {
+        // Arrange
+        var board = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 0, 0, 0, 0, 0 };
+        var wall = new WallSegment(WallOrientation.Horizontal, divider: 2, start: 1, length: 2);
+        var state = TestHelpers.CreateGameState(board, 4, 5000, 42, true, false).WithWall(wall);
+
+        // Act
+        GameStateDto dto = GameStateDto.FromGameState(state);
+        GameState restored = dto.ToGameState();
+
+        // Assert
+        Assert.AreEqual(wall, restored.Wall);
+    }
+
+    [TestMethod]
     public void GameStateDto_BoardIsCloned()
     {
         // Arrange

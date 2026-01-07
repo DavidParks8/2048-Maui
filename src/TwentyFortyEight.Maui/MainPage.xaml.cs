@@ -2,6 +2,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Shapes;
+using Microsoft.Maui.Graphics;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
@@ -24,15 +25,19 @@ public partial class MainPage : ContentPage
     private readonly IInputCoordinationService _inputCoordinationService;
     private readonly IGestureRecognizerService _gestureRecognizerService;
     private readonly IWindowOverlayService _windowOverlayService;
+    private readonly IWallOverlayRenderer _wallOverlayRenderer;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
+    private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
+    private EventHandler<AppThemeChangedEventArgs>? _themeChangedHandler;
     private CancellationTokenSource? _animationCts;
     private Task _activeTileAnimationTask = Task.CompletedTask;
 
     private bool _isModeSheetVisible;
     private bool _revertModeSelectionOnDismiss;
     private int _modeSheetOriginalBoardSize;
+    private GameMode _modeSheetOriginalGameMode;
 
     // Responsive sizing
     private const double DefaultBoardSize = 400;
@@ -46,6 +51,7 @@ public partial class MainPage : ContentPage
         IInputCoordinationService inputCoordinationService,
         IGestureRecognizerService gestureRecognizerService,
         IWindowOverlayService windowOverlayService,
+        IWallOverlayRenderer wallOverlayRenderer,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService
     )
@@ -58,6 +64,7 @@ public partial class MainPage : ContentPage
         _inputCoordinationService = inputCoordinationService;
         _gestureRecognizerService = gestureRecognizerService;
         _windowOverlayService = windowOverlayService;
+        _wallOverlayRenderer = wallOverlayRenderer;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         BindingContext = _viewModel;
@@ -85,6 +92,17 @@ public partial class MainPage : ContentPage
 
         // Add tiles to the grid
         CreateTiles();
+        UpdateWallOverlay(_viewModel.Wall);
+
+        GameBoard.SizeChanged += OnGameBoardSizeChanged;
+
+        // Keep wall colors legible across theme changes.
+        var app = Application.Current;
+        if (app != null)
+        {
+            _themeChangedHandler = (_, _) => UpdateWallOverlay(_viewModel.Wall);
+            app.RequestedThemeChanged += _themeChangedHandler;
+        }
 
         // Set up input coordination (keyboard, gamepad, scroll)
         _inputCoordinationService.RegisterBehaviors(this);
@@ -106,6 +124,9 @@ public partial class MainPage : ContentPage
         // Cancel any pending animations and reset tile states.
         _animationCts?.Cancel();
 
+        // Stop any wall overlay animations and drop renderer state.
+        _wallOverlayRenderer.Reset(this);
+
         try
         {
             TileAnimationService.ResetTileStates(GameBoard, _tileBorders);
@@ -120,8 +141,11 @@ public partial class MainPage : ContentPage
         GameBoard.RowDefinitions.Clear();
         GameBoard.ColumnDefinitions.Clear();
         _tileBorders.Clear();
+        _tileLabels.Clear();
+        WallOverlayLayer.Children.Clear();
 
         CreateTiles();
+        UpdateWallOverlay(_viewModel.Wall);
     }
 
     private void OnNewGameRequested(object? sender, EventArgs e)
@@ -159,6 +183,17 @@ public partial class MainPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+
+        GameBoard.SizeChanged -= OnGameBoardSizeChanged;
+
+        if (_themeChangedHandler != null)
+        {
+            Application.Current!.RequestedThemeChanged -= _themeChangedHandler;
+            _themeChangedHandler = null;
+        }
+
+        // Stop any wall overlay animations.
+        _wallOverlayRenderer.Reset(this);
 
         // Cancel any pending animations
         _animationCts?.Cancel();
@@ -204,6 +239,10 @@ public partial class MainPage : ContentPage
         GameBoard.WidthRequest = boardSize;
         GameBoard.HeightRequest = boardSize;
 
+        // Keep overlay layer sized/centered with the board.
+        WallOverlayLayer.WidthRequest = boardSize;
+        WallOverlayLayer.HeightRequest = boardSize;
+
         // Calculate and update scale factor for font sizes
         const int defaultGridSize = 4;
         _viewModel.BoardScaleFactor =
@@ -213,6 +252,15 @@ public partial class MainPage : ContentPage
         double tileSpacing = Math.Max(5, boardSize / 40);
         GameBoard.ColumnSpacing = tileSpacing;
         GameBoard.RowSpacing = tileSpacing;
+
+        // Wall position depends on spacing and actual board size.
+        UpdateWallOverlay(_viewModel.Wall);
+    }
+
+    private void OnGameBoardSizeChanged(object? sender, EventArgs e)
+    {
+        // Wall position depends on the rendered size.
+        UpdateWallOverlay(_viewModel.Wall);
     }
 
     private void CreateTiles()
@@ -247,28 +295,33 @@ public partial class MainPage : ContentPage
                 },
             };
 
+            var label = new Label
+            {
+                Text = tile.DisplayValue,
+                FontSize = tile.FontSize,
+                FontAttributes = FontAttributes.Bold,
+                // The game board has fixed-size tiles; letting OS Dynamic Type scale these
+                // labels causes clipping/incorrect layout when accessibility text size is large.
+                FontAutoScalingEnabled = false,
+                TextColor = tile.TextColor,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalTextAlignment = TextAlignment.Center,
+                VerticalTextAlignment = TextAlignment.Center,
+                LineBreakMode = LineBreakMode.NoWrap,
+                MaxLines = 1,
+            };
+
+            var content = new Grid();
+            content.Children.Add(label);
+
             Border border = new()
             {
                 Stroke = Colors.Transparent,
                 StrokeThickness = 0,
                 Padding = 0,
                 Background = new SolidColorBrush(tile.BackgroundColor),
-                Content = new Label
-                {
-                    Text = tile.DisplayValue,
-                    FontSize = tile.FontSize,
-                    FontAttributes = FontAttributes.Bold,
-                    // The game board has fixed-size tiles; letting OS Dynamic Type scale these
-                    // labels causes clipping/incorrect layout when accessibility text size is large.
-                    FontAutoScalingEnabled = false,
-                    TextColor = tile.TextColor,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalTextAlignment = TextAlignment.Center,
-                    VerticalTextAlignment = TextAlignment.Center,
-                    LineBreakMode = LineBreakMode.NoWrap,
-                    MaxLines = 1,
-                },
+                Content = content,
                 StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
                 {
                     CornerRadius = 5,
@@ -282,7 +335,6 @@ public partial class MainPage : ContentPage
                 converter: ColorToBrushConverter.Instance
             );
 
-            Label label = (Label)border.Content;
             label.SetBinding(Label.TextProperty, static (TileViewModel vm) => vm.DisplayValue);
             label.SetBinding(Label.TextColorProperty, static (TileViewModel vm) => vm.TextColor);
 
@@ -298,6 +350,7 @@ public partial class MainPage : ContentPage
 
             // Store the mapping
             _tileBorders[tile] = border;
+            _tileLabels[tile] = label;
 
             GameBoard.Children.Add(emptyCell);
             GameBoard.Children.Add(border);
@@ -327,12 +380,9 @@ public partial class MainPage : ContentPage
         if (e.PropertyName == nameof(_viewModel.BoardScaleFactor))
         {
             // Update font size bindings for all tiles with new scale factor
-            foreach (var border in _tileBorders.Values)
+            foreach (var label in _tileLabels.Values)
             {
-                if (border.Content is Label label)
-                {
-                    BindScaledFontSize(label);
-                }
+                BindScaledFontSize(label);
             }
         }
         else if (e.PropertyName == nameof(GameViewModel.BoardSize))
@@ -343,10 +393,19 @@ public partial class MainPage : ContentPage
         {
             UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
         }
+        else if (e.PropertyName == nameof(GameViewModel.Wall))
+        {
+            UpdateWallOverlay(_viewModel.Wall);
+        }
         else if (e.PropertyName == nameof(GameViewModel.IsCoachNudgeVisible))
         {
             HandleCoachNudgeVisibilityChanged();
         }
+    }
+
+    private void UpdateWallOverlay(WallSegment? wall)
+    {
+        _wallOverlayRenderer.Update(GameBoard, WallOverlayLayer, _viewModel.BoardSize, wall, this);
     }
 
     private void HandleCoachNudgeVisibilityChanged()
@@ -376,6 +435,7 @@ public partial class MainPage : ContentPage
             if (_revertModeSelectionOnDismiss)
             {
                 _viewModel.PendingBoardSize = _modeSheetOriginalBoardSize;
+                _viewModel.PendingGameMode = _modeSheetOriginalGameMode;
             }
 
             _isModeSheetVisible = false;
@@ -387,13 +447,16 @@ public partial class MainPage : ContentPage
     {
         // Seed pending values from the active ruleset.
         _modeSheetOriginalBoardSize = _viewModel.BoardSize;
+        _modeSheetOriginalGameMode = _viewModel.GameMode;
         _viewModel.PendingBoardSize = _viewModel.BoardSize;
+        _viewModel.PendingGameMode = _viewModel.GameMode;
         _isModeSheetVisible = true;
         _revertModeSelectionOnDismiss = true;
 
         var modeSelectionView = new Components.ModeSelectionView(
             _viewModel,
-            _modeSheetOriginalBoardSize
+            _modeSheetOriginalBoardSize,
+            _modeSheetOriginalGameMode
         );
         modeSelectionView.PlayRequested += async (_, _) => await CommitModeSelectionAsync();
 
@@ -451,6 +514,8 @@ public partial class MainPage : ContentPage
 
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
+        UpdateWallOverlay(e.WallAfterMove);
+
         // Cancel any pending animations before starting new ones
         _animationCts?.Cancel();
         _animationCts?.Dispose();

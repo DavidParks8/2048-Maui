@@ -49,6 +49,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IGame2048EngineFactory, Game2048EngineFactory>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
         builder.Services.AddSingleton<IWindowOverlayService, WindowOverlayService>();
+        builder.Services.AddSingleton<IWallOverlayRenderer, WallOverlayRenderer>();
 
         // Register consolidated services (from refactoring)
         builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();

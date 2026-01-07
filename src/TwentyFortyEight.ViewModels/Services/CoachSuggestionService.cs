@@ -8,23 +8,20 @@ namespace TwentyFortyEight.ViewModels.Services;
 public sealed class CoachSuggestionService(IMoveAdvisor moveAdvisor) : ICoachSuggestionService
 {
     /// <inheritdoc />
-    public MoveRecommendation? GetSuggestion(
-        Board board,
-        GameConfig config,
-        bool isCoachEnabled,
-        bool isGameOver
-    )
+    public MoveRecommendation? GetSuggestion(CoachSuggestionRequest request)
     {
-        if (!isCoachEnabled)
+        if (!request.IsCoachEnabled)
         {
             return null;
         }
 
-        if (isGameOver)
+        if (request.IsGameOver)
         {
             return null;
         }
 
-        return moveAdvisor.Recommend(board, config);
+        return moveAdvisor.Recommend(
+            new MoveAdvisorRequest(request.Board, request.Config, request.Wall)
+        );
     }
 }
