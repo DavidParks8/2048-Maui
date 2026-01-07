@@ -18,6 +18,8 @@ public partial class GameViewModel : ObservableObject
 {
     private const int DefaultBoardSize = 4;
 
+    private bool _isNewGameConfirmationInProgress;
+
     private GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
@@ -97,9 +99,6 @@ public partial class GameViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSocialGamingAvailable;
-
-    [ObservableProperty]
-    private bool _isNewGameConfirmationVisible;
 
     [ObservableProperty]
     private bool _isCoachEnabled;
@@ -248,31 +247,27 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private Task NewGameAsync()
+    private async Task NewGameAsync()
     {
-        // Show a sheet confirmation if a game is in progress (has moves and not game over)
+        // Confirm if a game is in progress (has moves and not game over).
         if (Moves > 0 && !_engine.CurrentState.IsGameOver)
         {
-            IsNewGameConfirmationVisible = true;
-            return Task.CompletedTask;
+            _isNewGameConfirmationInProgress = true;
+            try
+            {
+                bool confirmed = await _feedbackService.ConfirmNewGameAsync();
+                if (!confirmed)
+                {
+                    return;
+                }
+            }
+            finally
+            {
+                _isNewGameConfirmationInProgress = false;
+            }
         }
 
         StartNewGame();
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private void DismissNewGameConfirmation()
-    {
-        IsNewGameConfirmationVisible = false;
-    }
-
-    [RelayCommand]
-    private Task ConfirmNewGameAsync()
-    {
-        IsNewGameConfirmationVisible = false;
-        StartNewGame();
-        return Task.CompletedTask;
     }
 
     private void StartNewGame()
@@ -297,7 +292,7 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private async Task MoveAsync(Direction direction)
     {
-        if (IsNewGameConfirmationVisible)
+        if (_isNewGameConfirmationInProgress)
         {
             return;
         }
@@ -377,7 +372,7 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
-        if (IsNewGameConfirmationVisible)
+        if (_isNewGameConfirmationInProgress)
         {
             return;
         }
@@ -611,7 +606,7 @@ public partial class GameViewModel : ObservableObject
         await _moveLock.WaitAsync();
         try
         {
-            IsNewGameConfirmationVisible = false;
+            _isNewGameConfirmationInProgress = false;
 
             // Persist the outgoing run and finalize stats for the outgoing ruleset.
             _repository.SaveGameState(oldConfig, _engine.CurrentState);

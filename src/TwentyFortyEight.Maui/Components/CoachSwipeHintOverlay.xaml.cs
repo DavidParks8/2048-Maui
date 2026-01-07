@@ -40,7 +40,7 @@ public partial class CoachSwipeHintOverlay : ContentView
         typeof(CoachSwipeHintOverlay),
         0,
         propertyChanged: static (bindable, oldValue, newValue) =>
-            ((CoachSwipeHintOverlay)bindable).OnMoveCounterChanged((int)oldValue, (int)newValue)
+            CoachSwipeHintOverlay.OnMoveCounterChanged((int)oldValue, (int)newValue)
     );
 
     public Direction? Direction
@@ -79,7 +79,9 @@ public partial class CoachSwipeHintOverlay : ContentView
 
         Loaded += (_, _) => OnHintChanged();
         Unloaded += (_, _) => StopAnimation();
-        _screenReaderService = ((App)Application.Current!).Services.GetRequiredService<IScreenReaderService>();
+        _screenReaderService = (
+            (App)Application.Current!
+        ).Services.GetRequiredService<IScreenReaderService>();
     }
 
     private void OnHintChanged()

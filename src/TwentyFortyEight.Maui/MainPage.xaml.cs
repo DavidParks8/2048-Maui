@@ -343,10 +343,6 @@ public partial class MainPage : ContentPage
         {
             UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
         }
-        else if (e.PropertyName == nameof(GameViewModel.IsNewGameConfirmationVisible))
-        {
-            HandleNewGameConfirmationVisibilityChanged();
-        }
         else if (e.PropertyName == nameof(GameViewModel.IsCoachNudgeVisible))
         {
             HandleCoachNudgeVisibilityChanged();
@@ -370,32 +366,6 @@ public partial class MainPage : ContentPage
                 CoachNudgeContainer?.FocusEnableButton();
             }
         });
-    }
-
-    private void HandleNewGameConfirmationVisibilityChanged()
-    {
-        if (_viewModel.IsNewGameConfirmationVisible)
-        {
-            // Use a platform-native alert instead of a bottom sheet.
-            Dispatcher.Dispatch(async () =>
-            {
-                bool confirmed = await DisplayAlertAsync(
-                    AppStrings.RestartConfirmTitle,
-                    AppStrings.RestartConfirmMessage,
-                    AppStrings.StartNew,
-                    AppStrings.Cancel
-                );
-
-                if (confirmed)
-                {
-                    _viewModel.ConfirmNewGameCommand.Execute(null);
-                }
-                else
-                {
-                    _viewModel.DismissNewGameConfirmationCommand.Execute(null);
-                }
-            });
-        }
     }
 
     private void OnBottomSheetDismissed(object? sender, EventArgs e)
