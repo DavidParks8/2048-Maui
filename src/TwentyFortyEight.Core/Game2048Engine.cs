@@ -5,8 +5,6 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class Game2048Engine
 {
-    private const int MaxUndoMoves = 50;
-
     #region Spawn Configuration Constants
 
     /// <summary>
