@@ -121,6 +121,7 @@ Always prefer testable dependency injection instead of static classes.
 - **NEVER reference images as SVG** - always use PNG (SVG only for generation)
 - **NEVER mix Shell with NavigationPage/TabbedPage/FlyoutPage**
 - **NEVER use renderers** - use handlers instead
+- **NEVER use `SemanticScreenReader` directly** (except inside `MauiScreenReaderService`) - always announce via `IScreenReaderService`
 
 ## Control Reference
 
