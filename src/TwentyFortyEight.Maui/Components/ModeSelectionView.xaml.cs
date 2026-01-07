@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
@@ -19,7 +20,9 @@ public partial class ModeSelectionView : ContentView
 {
     private readonly GameViewModel _viewModel;
     private readonly int _originalBoardSize;
+    private readonly GameMode _originalGameMode;
     private Picker? _sizePicker;
+    private Picker? _modePicker;
 
     public event EventHandler? PlayRequested;
 
@@ -28,14 +31,50 @@ public partial class ModeSelectionView : ContentView
         InitializeComponent();
         _viewModel = viewModel;
         _originalBoardSize = originalBoardSize;
+        _originalGameMode = viewModel.PendingGameMode;
         BindingContext = _viewModel;
 
+        CreateModePicker();
         CreateSizePicker();
         HelperTextLabel.Text = AppStrings.ModeHelperText;
         UpdatePlayButtonState();
 
         // Listen for picker changes to update button state
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void CreateModePicker()
+    {
+        var modes = new List<string> { AppStrings.Classic, AppStrings.Walltastrophy };
+
+        _modePicker = new Picker
+        {
+            ItemsSource = modes,
+            Title = AppStrings.GameMode,
+            BindingContext = _viewModel,
+        };
+
+        View modePickerView = _modePicker;
+
+        if (
+            DeviceInfo.Current.Platform == DevicePlatform.iOS
+            || DeviceInfo.Current.Platform == DevicePlatform.MacCatalyst
+        )
+        {
+            modePickerView = CreateiOSStyledPicker(_modePicker);
+        }
+
+        _modePicker.SetBinding(
+            Picker.SelectedIndexProperty,
+            static (GameViewModel vm) => vm.PendingGameMode,
+            mode: BindingMode.TwoWay,
+            converter: GameModeToSelectedIndexConverter.Instance
+        );
+
+        // Ensure the picker reflects the current pending selection.
+        _modePicker.SelectedIndex = (int)_viewModel.PendingGameMode;
+
+        ModePickerContainer.Content = modePickerView;
     }
 
     private void CreateSizePicker()
@@ -142,7 +181,8 @@ public partial class ModeSelectionView : ContentView
         System.ComponentModel.PropertyChangedEventArgs e
     )
     {
-        if (e.PropertyName == nameof(GameViewModel.PendingBoardSize))
+        if (e.PropertyName == nameof(GameViewModel.PendingBoardSize) 
+            || e.PropertyName == nameof(GameViewModel.PendingGameMode))
         {
             UpdatePlayButtonState();
         }
@@ -150,8 +190,9 @@ public partial class ModeSelectionView : ContentView
 
     private void UpdatePlayButtonState()
     {
-        // Only enable the button if the board size has changed
-        PlayButton.IsEnabled = _viewModel.PendingBoardSize != _originalBoardSize;
+        // Only enable the button if the board size or game mode has changed
+        PlayButton.IsEnabled = _viewModel.PendingBoardSize != _originalBoardSize
+            || _viewModel.PendingGameMode != _originalGameMode;
     }
 
     private void OnPlayClicked(object? sender, EventArgs e)

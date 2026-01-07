@@ -5,6 +5,16 @@
              x:Class="TwentyFortyEight.Maui.Components.ModeSelectionView"
              x:Name="RootView">
     <VerticalStackLayout Spacing="16" Padding="0,4,0,0">
+        <!-- Game Mode Picker Section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Text="{x:Static strings:AppStrings.GameMode}"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light={StaticResource NativeTextTertiaryLight}, Dark={StaticResource NativeTextTertiaryDark}}"
+                   Margin="8,0,0,0" />
+            
+            <ContentView x:Name="ModePickerContainer" />
+        </VerticalStackLayout>
+
         <!-- Board Size Picker Section -->
         <VerticalStackLayout Spacing="8">
             <Label Text="{x:Static strings:AppStrings.BoardSize}"

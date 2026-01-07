@@ -406,4 +406,13 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="OK" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="GameMode" xml:space="preserve">
+    <value>Game Mode</value>
+  </data>
+  <data name="Classic" xml:space="preserve">
+    <value>Classic</value>
+  </data>
+  <data name="Walltastrophy" xml:space="preserve">
+    <value>Walltastrophy</value>
+  </data>
 </root>

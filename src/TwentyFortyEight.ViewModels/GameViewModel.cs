@@ -83,6 +83,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _pendingBoardSize;
 
+    [ObservableProperty]
+    private GameMode _pendingGameMode;
+
     /// <summary>
     /// Gets the board size for UI layout calculations.
     /// </summary>
@@ -173,6 +176,7 @@ public partial class GameViewModel : ObservableObject
 
         _config = lastConfig;
         PendingBoardSize = _config.Size;
+        PendingGameMode = _config.Mode;
         _engine = _engineFactory.Create(_config);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
@@ -575,14 +579,14 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private Task PlaySelectedModeAsync()
     {
-        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile, Mode = PendingGameMode };
         return ApplyRulesetAsync(config, startNew: false);
     }
 
     [RelayCommand]
     private Task StartNewSelectedModeAsync()
     {
-        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile, Mode = PendingGameMode };
         return ApplyRulesetAsync(config, startNew: true);
     }
 
@@ -627,6 +631,7 @@ public partial class GameViewModel : ObservableObject
             // Persist last active mode so we restore the correct ruleset on reboot.
             _settingsService.LastActiveGameConfig = _config;
             PendingBoardSize = _config.Size;
+            PendingGameMode = _config.Mode;
 
             // Rebuild tiles before any UpdateUI() calls.
             RebuildTilesForCurrentBoardSize();
