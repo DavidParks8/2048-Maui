@@ -29,7 +29,6 @@
             Text="{x:Static strings:AppStrings.CoachNudgeText}"
             FontSize="13"
             VerticalOptions="Center"
-            AutomationProperties.IsInAccessibleTree="False"
             TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}" />
 
         <Button
@@ -49,7 +48,6 @@
             Grid.ColumnSpan="2"
             Text="{x:Static strings:AppStrings.CoachNudgeSettingsHint}"
             FontSize="12"
-            AutomationProperties.IsInAccessibleTree="False"
             TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
 
         <Button
