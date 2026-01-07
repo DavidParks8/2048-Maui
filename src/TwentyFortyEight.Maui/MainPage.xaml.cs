@@ -347,6 +347,29 @@ public partial class MainPage : ContentPage
         {
             HandleNewGameConfirmationVisibilityChanged();
         }
+        else if (e.PropertyName == nameof(GameViewModel.IsCoachNudgeVisible))
+        {
+            HandleCoachNudgeVisibilityChanged();
+        }
+    }
+
+    private void HandleCoachNudgeVisibilityChanged()
+    {
+        if (!_viewModel.IsCoachNudgeVisible)
+        {
+            return;
+        }
+
+        // Move keyboard focus to the nudge action button so it is immediately reachable.
+        // (The announcement itself is handled via IUserFeedbackService in the ViewModel.)
+        Dispatcher.Dispatch(async () =>
+        {
+            await Task.Delay(100);
+            if (_viewModel.IsCoachNudgeVisible)
+            {
+                CoachNudgeContainer?.FocusEnableButton();
+            }
+        });
     }
 
     private void HandleNewGameConfirmationVisibilityChanged()

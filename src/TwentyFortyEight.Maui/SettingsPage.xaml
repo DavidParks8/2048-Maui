@@ -13,6 +13,29 @@
    <ScrollView Padding="16">
       <VerticalStackLayout Spacing="28">
 
+         <!-- Gameplay Section -->
+         <components:NativeListSection Header="{x:Static strings:AppStrings.GameplaySection}">
+            <components:NativeListSection.Items>
+               <components:SettingToggleRow x:Name="CoachToggleRow"
+                  Label="{x:Static strings:AppStrings.EnableCoach}"
+                  IsToggled="{Binding CoachEnabled}"
+                  AutomationId="CoachEnabledSwitch"
+                  SemanticHint="{x:Static strings:AppStrings.EnableCoachHint}" />
+
+               <components:SettingToggleRow x:Name="CoachNudgesToggleRow"
+                  Label="{x:Static strings:AppStrings.EnableCoachNudges}"
+                  IsToggled="{Binding CoachNudgesEnabled}"
+                  AutomationId="CoachNudgesEnabledSwitch"
+                  SemanticHint="{x:Static strings:AppStrings.EnableCoachNudgesHint}" />
+            </components:NativeListSection.Items>
+         </components:NativeListSection>
+
+         <Label
+            Text="{x:Static strings:AppStrings.CoachSettingsDescription}"
+            FontSize="12"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+            Margin="8,0,0,0" />
+
          <!-- Haptics Section (conditionally visible) -->
          <components:NativeListSection Header="{x:Static strings:AppStrings.HapticsSection}" IsVisible="{Binding IsHapticsSupported}">
             <components:NativeListSection.Items>

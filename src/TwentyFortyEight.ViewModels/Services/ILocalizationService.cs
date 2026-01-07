@@ -100,4 +100,9 @@ public interface ILocalizationService
     /// <param name="score">The score value.</param>
     /// <returns>A formatted score string (e.g., "Score: 2048").</returns>
     string FormatScore(int score);
+
+    /// <summary>
+    /// Gets the localized screen reader announcement for the Coach nudge.
+    /// </summary>
+    string CoachNudgeAnnouncement { get; }
 }

@@ -23,11 +23,13 @@ public partial class GameViewModel : ObservableObject
     private readonly IMoveAnalyzer _moveAnalyzer;
     private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
-    private readonly IRandomSource _randomSource;
+    private readonly IGame2048EngineFactory _engineFactory;
     private readonly IGameStateRepository _repository;
     private readonly IGameSessionCoordinator _sessionCoordinator;
     private readonly IUserFeedbackService _feedbackService;
     private readonly VictoryViewModel _victoryViewModel;
+    private readonly ICoachNudgeService _coachNudgeService;
+    private readonly ICoachSuggestionService _coachSuggestionService;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -99,31 +101,55 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isNewGameConfirmationVisible;
 
+    [ObservableProperty]
+    private bool _isCoachEnabled;
+
+    [ObservableProperty]
+    private Direction? _coachSuggestedDirection;
+
+    [ObservableProperty]
+    private MoveCoachReason? _coachPrimaryReason;
+
+    [ObservableProperty]
+    private bool _isCoachSuggestionVisible;
+
+    [ObservableProperty]
+    private int _coachMoveCounter;
+
+    [ObservableProperty]
+    private bool _isCoachNudgeVisible;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
         ISettingsService settingsService,
         IStatisticsTracker statisticsTracker,
-        IRandomSource randomSource,
+        IGame2048EngineFactory engineFactory,
         IGameStateRepository repository,
         IGameSessionCoordinator sessionCoordinator,
         IUserFeedbackService feedbackService,
-        VictoryViewModel victoryViewModel
+        VictoryViewModel victoryViewModel,
+        ICoachNudgeService coachNudgeService,
+        ICoachSuggestionService coachSuggestionService
     )
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
         _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
-        _randomSource = randomSource;
+        _engineFactory = engineFactory;
         _repository = repository;
         _sessionCoordinator = sessionCoordinator;
         _feedbackService = feedbackService;
         _victoryViewModel = victoryViewModel;
+        _coachNudgeService = coachNudgeService;
+        _coachSuggestionService = coachSuggestionService;
+
+        IsCoachEnabled = _settingsService.CoachEnabled;
 
         WeakReferenceMessenger.Default.Register<BoardSizeChangeRequestedMessage>(
             this,
-            static (object recipient, BoardSizeChangeRequestedMessage message) =>
+            static (recipient, message) =>
             {
                 if (recipient is GameViewModel vm)
                 {
@@ -132,11 +158,23 @@ public partial class GameViewModel : ObservableObject
             }
         );
 
+        WeakReferenceMessenger.Default.Register<CoachEnabledChangedMessage>(
+            this,
+            static (recipient, message) =>
+            {
+                if (recipient is GameViewModel vm)
+                {
+                    vm.IsCoachEnabled = message.IsEnabled;
+                    vm.UpdateCoachSuggestion();
+                }
+            }
+        );
+
         var lastConfig = _settingsService.LastActiveGameConfig;
 
         _config = lastConfig;
         PendingBoardSize = _config.Size;
-        _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
+        _engine = _engineFactory.Create(_config);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
         // Initialize tiles collection (4x4 grid = 16 tiles)
@@ -161,6 +199,42 @@ public partial class GameViewModel : ObservableObject
 
         // Subscribe to theme changes to update tile colors
         Application.Current?.RequestedThemeChanged += OnAppThemeChanged;
+    }
+
+    [RelayCommand]
+    private void ToggleCoach()
+    {
+        IsCoachEnabled = !IsCoachEnabled;
+        _settingsService.CoachEnabled = IsCoachEnabled;
+
+        _coachNudgeService.Dismiss();
+        IsCoachNudgeVisible = false;
+
+        if (IsCoachEnabled)
+        {
+            UpdateCoachSuggestion();
+        }
+        else
+        {
+            ClearCoachSuggestion();
+        }
+    }
+
+    [RelayCommand]
+    private void DismissCoachNudge()
+    {
+        _coachNudgeService.Dismiss();
+        IsCoachNudgeVisible = false;
+    }
+
+    [RelayCommand]
+    private void EnableCoachFromNudge()
+    {
+        IsCoachEnabled = true;
+        _settingsService.CoachEnabled = true;
+        _coachNudgeService.Dismiss();
+        IsCoachNudgeVisible = false;
+        UpdateCoachSuggestion();
     }
 
     private void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
@@ -206,6 +280,9 @@ public partial class GameViewModel : ObservableObject
         // Hide victory overlay if it's showing
         _victoryViewModel.HideVictoryOverlayIfShowing();
 
+        _coachNudgeService.Reset();
+        IsCoachNudgeVisible = false;
+
         _engine.NewGame();
         UpdateUI();
         _repository.SaveGameState(_config, _engine.CurrentState);
@@ -241,6 +318,11 @@ public partial class GameViewModel : ObservableObject
             var moved = _engine.Move(direction);
             if (moved)
             {
+                _coachNudgeService.Reset();
+                IsCoachNudgeVisible = false;
+
+                CoachMoveCounter++;
+
                 // Trigger haptic feedback if enabled and supported
                 _feedbackService.PerformMoveHaptic();
 
@@ -262,6 +344,16 @@ public partial class GameViewModel : ObservableObject
                 // Check and report achievements and scores
                 await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
                 await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest, _config);
+            }
+            else
+            {
+                _coachNudgeService.TrackInvalidMove();
+
+                if (!_engine.CurrentState.IsGameOver && _coachNudgeService.ShouldShowNudge())
+                {
+                    IsCoachNudgeVisible = true;
+                    _feedbackService.AnnounceCoachNudge();
+                }
             }
         }
         finally
@@ -412,6 +504,36 @@ public partial class GameViewModel : ObservableObject
 
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
+
+        UpdateCoachSuggestion();
+    }
+
+    private void UpdateCoachSuggestion()
+    {
+        var state = _engine.CurrentState;
+        var recommendation = _coachSuggestionService.GetSuggestion(
+            state.Board,
+            _config,
+            IsCoachEnabled,
+            state.IsGameOver
+        );
+
+        if (recommendation is null)
+        {
+            ClearCoachSuggestion();
+            return;
+        }
+
+        CoachSuggestedDirection = recommendation.Value.Direction;
+        CoachPrimaryReason = recommendation.Value.PrimaryReason;
+        IsCoachSuggestionVisible = true;
+    }
+
+    private void ClearCoachSuggestion()
+    {
+        CoachSuggestedDirection = null;
+        CoachPrimaryReason = null;
+        IsCoachSuggestionVisible = false;
     }
 
     private void LoadGame()
@@ -428,7 +550,7 @@ public partial class GameViewModel : ObservableObject
                 // IMPORTANT: Unsubscribe before replacing engine to prevent leaks/double firing.
                 _engine.VictoryAchieved -= OnEngineVictoryAchieved;
 
-                _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
+                _engine = _engineFactory.Create(state, _config);
                 _engine.VictoryAchieved += OnEngineVictoryAchieved;
                 return;
             }
@@ -481,7 +603,6 @@ public partial class GameViewModel : ObservableObject
         var oldSize = oldConfig.Size;
         var oldRulesetId = oldConfig.RulesetId;
         var newRulesetId = newConfig.RulesetId;
-
         if (!startNew && string.Equals(oldRulesetId, newRulesetId, StringComparison.Ordinal))
         {
             return;
@@ -527,13 +648,16 @@ public partial class GameViewModel : ObservableObject
             var state = startNew ? null : _repository.LoadGameState(_config);
             if (state != null)
             {
-                _engine = new Game2048Engine(state, _config, _randomSource, _statisticsTracker);
+                _engine = _engineFactory.Create(state, _config);
             }
             else
             {
-                _engine = new Game2048Engine(_config, _randomSource, _statisticsTracker);
+                _engine = _engineFactory.Create(_config);
                 _repository.SaveGameState(_config, _engine.CurrentState);
             }
+
+            _coachNudgeService.Dismiss();
+            IsCoachNudgeVisible = false;
 
             _engine.VictoryAchieved += OnEngineVictoryAchieved;
 

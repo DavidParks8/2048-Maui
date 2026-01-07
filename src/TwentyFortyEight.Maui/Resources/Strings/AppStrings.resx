@@ -217,6 +217,51 @@
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="Coach" xml:space="preserve">
+    <value>Coach</value>
+  </data>
+  <data name="CoachSuggestionFormat" xml:space="preserve">
+    <value>Suggestion: {0}</value>
+  </data>
+  <data name="CoachNudgeText" xml:space="preserve">
+    <value>Need a hint?</value>
+  </data>
+  <data name="CoachNudgeAction" xml:space="preserve">
+    <value>Turn on Coach</value>
+  </data>
+  <data name="CoachNudgeSettingsHint" xml:space="preserve">
+    <value>You can always turn on Coach in Settings.</value>
+  </data>
+  <data name="CoachNudgeAnnouncement" xml:space="preserve">
+    <value>Need a hint? Turn on Coach to get move suggestions. You can always turn on Coach in Settings.</value>
+  </data>
+  <data name="DirectionUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="DirectionDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="CoachReasonCreateSpace" xml:space="preserve">
+    <value>Create space for new tiles</value>
+  </data>
+  <data name="CoachReasonMergeTiles" xml:space="preserve">
+    <value>Merge to build bigger tiles</value>
+  </data>
+  <data name="CoachReasonKeepLargestInCorner" xml:space="preserve">
+    <value>Keep your largest tile in a corner</value>
+  </data>
+  <data name="CoachReasonImproveOrder" xml:space="preserve">
+    <value>Keep tiles ordered and aligned</value>
+  </data>
+  <data name="CoachReasonAvoidDeadEnd" xml:space="preserve">
+    <value>Avoid getting stuck</value>
+  </data>
   <data name="Back" xml:space="preserve">
     <value>Back</value>
   </data>
@@ -274,12 +319,30 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="HapticsSection" xml:space="preserve">
     <value>HAPTICS</value>
   </data>
+    <data name="GameplaySection" xml:space="preserve">
+      <value>GAMEPLAY</value>
+    </data>
   <data name="EnableHaptics" xml:space="preserve">
     <value>Enable Haptic Feedback</value>
   </data>
+    <data name="EnableCoach" xml:space="preserve">
+      <value>Enable Coach</value>
+    </data>
   <data name="EnableHapticsHint" xml:space="preserve">
     <value>Toggle to enable or disable haptic feedback</value>
   </data>
+    <data name="EnableCoachHint" xml:space="preserve">
+      <value>Show move suggestions while you play</value>
+    </data>
+    <data name="EnableCoachNudges" xml:space="preserve">
+      <value>Coach Nudges</value>
+    </data>
+    <data name="EnableCoachNudgesHint" xml:space="preserve">
+      <value>Show Coach prompts when you seem stuck</value>
+    </data>
+    <data name="CoachSettingsDescription" xml:space="preserve">
+      <value>Coach suggests a swipe direction and explains why. Coach Nudges can offer to turn on Coach if you seem stuck.</value>
+    </data>
   <data name="ScreenReaderScoreAnnouncementFormat" xml:space="preserve">
     <value>Score: {0}</value>
   </data>

@@ -27,7 +27,12 @@ public class AnimationDetectionTests
             .Returns(0.5) // Second spawn value (2)
             .Returns(0.5); // Third spawn value (2) - new tile
 
-        Game2048Engine engine = new(config, randomMock.Object, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(
+            config,
+            randomMock.Object,
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
         var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
         // Act
@@ -63,7 +68,8 @@ public class AnimationDetectionTests
             initialState,
             config,
             randomMock.Object,
-            NullStatisticsTracker.Instance
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
         );
 
         // Setup random for the new tile spawn after merge
@@ -100,7 +106,8 @@ public class AnimationDetectionTests
             initialState,
             config,
             randomMock.Object,
-            NullStatisticsTracker.Instance
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
         );
 
         // Setup random for the new tile spawn after slide
@@ -126,7 +133,12 @@ public class AnimationDetectionTests
         randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         randomMock.Setup(r => r.NextDouble()).Returns(0.5);
 
-        Game2048Engine engine = new(config, randomMock.Object, NullStatisticsTracker.Instance);
+        Game2048Engine engine = new(
+            config,
+            randomMock.Object,
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
 
         // Act & Assert for each direction
         var directions = new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right };

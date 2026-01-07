@@ -45,6 +45,8 @@ public class MauiLocalizationService : ILocalizationService
     /// <inheritdoc />
     public string YouWin => AppStrings.YouWin;
 
+    public string CoachNudgeAnnouncement => AppStrings.CoachNudgeAnnouncement;
+
     /// <inheritdoc />
     public string ResetStatisticsTitle => AppStrings.ResetStatisticsTitle;
 

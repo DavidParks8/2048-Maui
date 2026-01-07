@@ -108,7 +108,8 @@ public class AdaptiveSpawnTests
             state,
             config,
             mockRandom.Object,
-            NullStatisticsTracker.Instance
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
         );
 
         // Act
@@ -152,7 +153,8 @@ public class AdaptiveSpawnTests
             state,
             config,
             mockRandom.Object,
-            NullStatisticsTracker.Instance
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
         );
 
         // Act

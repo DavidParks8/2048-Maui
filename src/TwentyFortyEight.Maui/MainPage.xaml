@@ -75,6 +75,13 @@
             Command="{Binding OpenAboutCommand}"
             Order="Secondary"
             Priority="5" />
+        <ToolbarItem
+            x:Name="ToolbarCoachButton"
+            AutomationId="ToolbarCoachButton"
+            Text="{x:Static strings:AppStrings.Coach}"
+            Command="{Binding ToggleCoachCommand}"
+            Order="Secondary"
+            Priority="6" />
     </ContentPage.ToolbarItems>
 
     <Grid>
@@ -140,6 +147,22 @@
                     <!-- Tiles will be added programmatically in code-behind -->
                     <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
                 </Grid>
+
+                <!-- Coach nudge (appears only when Coach is off and user is struggling) -->
+                <components:CoachNudgeBanner
+                    x:Name="CoachNudgeContainer"
+                    IsVisible="{Binding IsCoachNudgeVisible}"
+                    DismissCommand="{Binding DismissCoachNudgeCommand}"
+                    EnableCoachCommand="{Binding EnableCoachFromNudgeCommand}" />
+
+                <!-- Coach animated swipe hint -->
+                <components:CoachSwipeHintOverlay
+                    IsActive="{Binding IsCoachSuggestionVisible}"
+                    Direction="{Binding CoachSuggestedDirection}"
+                    Reason="{Binding CoachPrimaryReason}"
+                    MoveCounter="{Binding CoachMoveCounter}"
+                    InputTransparent="True"
+                    ZIndex="10" />
             </Grid>
         </Border>
 

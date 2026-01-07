@@ -13,6 +13,16 @@ public interface ISettingsService
     bool HapticsEnabled { get; set; }
 
     /// <summary>
+    /// Gets or sets whether Coach Mode is enabled.
+    /// </summary>
+    bool CoachEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether Coach nudges are enabled.
+    /// </summary>
+    bool CoachNudgesEnabled { get; set; }
+
+    /// <summary>
     /// Gets or sets the last active game configuration that should be restored on startup.
     /// </summary>
     GameConfig LastActiveGameConfig { get; set; }

@@ -32,6 +32,11 @@ public interface IUserFeedbackService
     void AnnounceStatus(string message);
 
     /// <summary>
+    /// Announces the Coach nudge to screen readers.
+    /// </summary>
+    void AnnounceCoachNudge();
+
+    /// <summary>
     /// Triggers haptic feedback for a successful move.
     /// Respects user's haptic settings internally.
     /// </summary>

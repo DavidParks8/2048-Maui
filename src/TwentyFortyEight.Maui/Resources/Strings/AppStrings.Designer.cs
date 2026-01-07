@@ -266,6 +266,141 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("Close", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Coach.
+        /// </summary>
+        internal static string Coach {
+            get {
+                return ResourceManager.GetString("Coach", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Suggestion: {0}.
+        /// </summary>
+        internal static string CoachSuggestionFormat {
+            get {
+                return ResourceManager.GetString("CoachSuggestionFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Coach nudge text.
+        /// </summary>
+        internal static string CoachNudgeText {
+            get {
+                return ResourceManager.GetString("CoachNudgeText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Coach nudge action.
+        /// </summary>
+        internal static string CoachNudgeAction {
+            get {
+                return ResourceManager.GetString("CoachNudgeAction", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You can always turn on Coach in Settings..
+        /// </summary>
+        internal static string CoachNudgeSettingsHint {
+            get {
+                return ResourceManager.GetString("CoachNudgeSettingsHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Need a hint? Turn on Coach to get move suggestions..
+        /// </summary>
+        internal static string CoachNudgeAnnouncement {
+            get {
+                return ResourceManager.GetString("CoachNudgeAnnouncement", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Create space for new tiles.
+        /// </summary>
+        internal static string CoachReasonCreateSpace {
+            get {
+                return ResourceManager.GetString("CoachReasonCreateSpace", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Merge to build bigger tiles.
+        /// </summary>
+        internal static string CoachReasonMergeTiles {
+            get {
+                return ResourceManager.GetString("CoachReasonMergeTiles", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Keep your largest tile in a corner.
+        /// </summary>
+        internal static string CoachReasonKeepLargestInCorner {
+            get {
+                return ResourceManager.GetString("CoachReasonKeepLargestInCorner", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Keep tiles ordered and aligned.
+        /// </summary>
+        internal static string CoachReasonImproveOrder {
+            get {
+                return ResourceManager.GetString("CoachReasonImproveOrder", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid getting stuck.
+        /// </summary>
+        internal static string CoachReasonAvoidDeadEnd {
+            get {
+                return ResourceManager.GetString("CoachReasonAvoidDeadEnd", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Up.
+        /// </summary>
+        internal static string DirectionUp {
+            get {
+                return ResourceManager.GetString("DirectionUp", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Down.
+        /// </summary>
+        internal static string DirectionDown {
+            get {
+                return ResourceManager.GetString("DirectionDown", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Left.
+        /// </summary>
+        internal static string DirectionLeft {
+            get {
+                return ResourceManager.GetString("DirectionLeft", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Right.
+        /// </summary>
+        internal static string DirectionRight {
+            get {
+                return ResourceManager.GetString("DirectionRight", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Current.
@@ -309,6 +444,51 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string EnableHapticsHint {
             get {
                 return ResourceManager.GetString("EnableHapticsHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Coach.
+        /// </summary>
+        internal static string EnableCoach {
+            get {
+                return ResourceManager.GetString("EnableCoach", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Show move suggestions while you play.
+        /// </summary>
+        internal static string EnableCoachHint {
+            get {
+                return ResourceManager.GetString("EnableCoachHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Coach Nudges.
+        /// </summary>
+        internal static string EnableCoachNudges {
+            get {
+                return ResourceManager.GetString("EnableCoachNudges", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Show Coach prompts when you seem stuck.
+        /// </summary>
+        internal static string EnableCoachNudgesHint {
+            get {
+                return ResourceManager.GetString("EnableCoachNudgesHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Coach suggests a swipe direction and explains why. Coach Nudges can offer to turn on Coach if you seem stuck.
+        /// </summary>
+        internal static string CoachSettingsDescription {
+            get {
+                return ResourceManager.GetString("CoachSettingsDescription", resourceCulture);
             }
         }
         
@@ -381,6 +561,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string GameTitle {
             get {
                 return ResourceManager.GetString("GameTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to GAMEPLAY.
+        /// </summary>
+        internal static string GameplaySection {
+            get {
+                return ResourceManager.GetString("GameplaySection", resourceCulture);
             }
         }
         

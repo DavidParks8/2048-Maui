@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Border xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+        xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+        xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+        x:Class="TwentyFortyEight.Maui.Components.CoachNudgeBanner"
+        x:Name="Root"
+        x:DataType="components:CoachNudgeBanner"
+        HorizontalOptions="Center"
+        VerticalOptions="Start"
+        Margin="0,8,0,0"
+        Padding="16,10"
+        StrokeThickness="1"
+        StrokeShape="RoundRectangle 10"
+        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+        components:LiquidGlass.EffectType="{OnPlatform Default=None, iOS=Regular, MacCatalyst=Regular}"
+        components:LiquidGlass.EnableShadowEffect="False"
+        components:LiquidGlass.CornerRadius="10"
+        ZIndex="11"
+        AutomationProperties.IsInAccessibleTree="True"
+        SemanticProperties.Description="{x:Static strings:AppStrings.CoachNudgeAnnouncement}"
+        SemanticProperties.Hint="{x:Static strings:AppStrings.CoachNudgeAction}">
+
+    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+        <Label
+            Grid.Row="0"
+            Grid.Column="0"
+            Text="{x:Static strings:AppStrings.CoachNudgeText}"
+            FontSize="13"
+            VerticalOptions="Center"
+            AutomationProperties.IsInAccessibleTree="False"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}" />
+
+        <Button
+            Grid.Row="0"
+            Grid.Column="1"
+            Text="×"
+            Command="{Binding DismissCommand, Source={x:Reference Root}}"
+            Background="Transparent"
+            Padding="8,4"
+            FontSize="16"
+            SemanticProperties.Description="{x:Static strings:AppStrings.Close}"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.Close}"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
+
+        <Label
+            Grid.Row="1"
+            Grid.ColumnSpan="2"
+            Text="{x:Static strings:AppStrings.CoachNudgeSettingsHint}"
+            FontSize="12"
+            AutomationProperties.IsInAccessibleTree="False"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
+
+        <Button
+            x:Name="EnableButton"
+            Grid.Row="2"
+            Grid.ColumnSpan="2"
+            Text="{x:Static strings:AppStrings.CoachNudgeAction}"
+            Command="{Binding EnableCoachCommand, Source={x:Reference Root}}"
+            Background="Transparent"
+            Padding="12,6"
+            FontSize="13"
+            FontAttributes="Bold"
+            HorizontalOptions="End"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.EnableCoachHint}"
+            TextColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}" />
+    </Grid>
+</Border>
