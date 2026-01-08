@@ -1,4 +1,6 @@
 using TwentyFortyEight.Core;
+// Alias to avoid conflict with Apple's GameKit.GameSave namespace on iOS/Mac Catalyst.
+using CoreGameSave = TwentyFortyEight.Core.GameSave;
 
 namespace TwentyFortyEight.ViewModels.Services;
 
@@ -9,18 +11,18 @@ namespace TwentyFortyEight.ViewModels.Services;
 public interface IGameStateRepository
 {
     /// <summary>
-    /// Loads the saved game state, if one exists.
+    /// Loads the saved game session, if one exists.
     /// </summary>
     /// <param name="config">The game configuration.</param>
-    /// <returns>The saved game state, or null if no save exists or loading failed.</returns>
-    GameState? LoadGameState(GameConfig config);
+    /// <returns>The saved game session, or null if no save exists or loading failed.</returns>
+    CoreGameSave? LoadGame(GameConfig config);
 
     /// <summary>
-    /// Saves the current game state.
+    /// Saves the current game session.
     /// </summary>
     /// <param name="config">The game configuration.</param>
-    /// <param name="state">The state to save.</param>
-    void SaveGameState(GameConfig config, GameState state);
+    /// <param name="save">The game session to save.</param>
+    void SaveGame(GameConfig config, CoreGameSave save);
 
     /// <summary>
     /// Clears the saved game state for the specified ruleset.

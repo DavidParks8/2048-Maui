@@ -13,7 +13,7 @@ public interface IGame2048EngineFactory
     Game2048Engine Create(GameConfig config);
 
     /// <summary>
-    /// Creates an engine from a previously saved state for the provided ruleset.
+    /// Creates an engine from a previously saved session (including undo history) for the provided ruleset.
     /// </summary>
-    Game2048Engine Create(GameState state, GameConfig config);
+    Game2048Engine Create(GameSave save, GameConfig config);
 }

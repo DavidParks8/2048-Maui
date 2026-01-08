@@ -61,7 +61,7 @@ public class GameStateRepositoryTests
     }
 
     [TestMethod]
-    public void LoadGameState_WhenDefaultRuleset_UsesLegacyKeys()
+    public void LoadGame_WhenDefaultRuleset_UsesLegacyKeys()
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
@@ -80,12 +80,13 @@ public class GameStateRepositoryTests
         Assert.AreEqual(string.Empty, config4.RulesetId);
 
         // Act
-        var loaded = repository.LoadGameState(config4);
+        var loaded = repository.LoadGame(config4);
         var best = repository.GetBestScore(config4);
 
         // Assert
         Assert.IsNotNull(loaded);
-        Assert.AreEqual(4, loaded!.Size);
+        Assert.IsNotNull(loaded!.InitialState);
+        Assert.AreEqual(4, loaded.InitialState!.Size);
         Assert.AreEqual(1234, best);
 
         Assert.IsTrue(preferences.ContainsKey("SavedGame"));
@@ -93,7 +94,7 @@ public class GameStateRepositoryTests
     }
 
     [TestMethod]
-    public void LoadGameState_WhenSlotContainsMismatchedSize_ReturnsNull()
+    public void LoadGame_WhenSlotContainsMismatchedSize_ReturnsNull()
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
@@ -111,7 +112,7 @@ public class GameStateRepositoryTests
         var repository = new GameStateRepository(preferences, logger.Object);
 
         // Act
-        var loaded = repository.LoadGameState(config5);
+        var loaded = repository.LoadGame(config5);
 
         // Assert
         Assert.IsNull(loaded);

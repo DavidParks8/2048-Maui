@@ -294,7 +294,7 @@ public partial class GameViewModel : ObservableObject
 
         _engine.NewGame();
         UpdateUI();
-        _repository.SaveGameState(_config, _engine.CurrentState);
+        _repository.SaveGame(_config, _engine.ToSaveDto());
     }
 
     [RelayCommand]
@@ -337,7 +337,7 @@ public partial class GameViewModel : ObservableObject
                 _feedbackService.PerformMoveHaptic();
 
                 UpdateUI(previousBoard, direction, previousWall);
-                _repository.SaveGameState(_config, _engine.CurrentState);
+                _repository.SaveGame(_config, _engine.ToSaveDto());
 
                 // Update best score and submit to social gaming service
                 bool isNewBest = Score > BestScore;
@@ -395,7 +395,7 @@ public partial class GameViewModel : ObservableObject
         if (_engine.Undo())
         {
             UpdateUI();
-            _repository.SaveGameState(_config, _engine.CurrentState);
+            _repository.SaveGame(_config, _engine.ToSaveDto());
         }
     }
 
@@ -567,13 +567,13 @@ public partial class GameViewModel : ObservableObject
             BestScore = _repository.GetBestScore(_config);
 
             // Try to load saved game
-            var state = _repository.LoadGameState(_config);
-            if (state != null)
+            var save = _repository.LoadGame(_config);
+            if (save != null)
             {
                 // IMPORTANT: Unsubscribe before replacing engine to prevent leaks/double firing.
                 _engine.VictoryAchieved -= OnEngineVictoryAchieved;
 
-                _engine = _engineFactory.Create(state, _config);
+                _engine = _engineFactory.Create(save, _config);
                 _engine.VictoryAchieved += OnEngineVictoryAchieved;
                 return;
             }
@@ -647,7 +647,7 @@ public partial class GameViewModel : ObservableObject
             _isNewGameConfirmationInProgress = false;
 
             // Persist the outgoing run and finalize stats for the outgoing ruleset.
-            _repository.SaveGameState(oldConfig, _engine.CurrentState);
+            _repository.SaveGame(oldConfig, _engine.ToSaveDto());
 
             if (!_engine.CurrentState.IsGameOver)
             {
@@ -679,15 +679,15 @@ public partial class GameViewModel : ObservableObject
             }
 
             // Load ruleset-scoped saved game if present.
-            var state = startNew ? null : _repository.LoadGameState(_config);
-            if (state != null)
+            var save = startNew ? null : _repository.LoadGame(_config);
+            if (save != null)
             {
-                _engine = _engineFactory.Create(state, _config);
+                _engine = _engineFactory.Create(save, _config);
             }
             else
             {
                 _engine = _engineFactory.Create(_config);
-                _repository.SaveGameState(_config, _engine.CurrentState);
+                _repository.SaveGame(_config, _engine.ToSaveDto());
             }
 
             _coachNudgeService.Dismiss();

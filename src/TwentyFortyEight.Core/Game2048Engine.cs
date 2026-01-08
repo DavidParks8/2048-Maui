@@ -7,8 +7,6 @@ public class Game2048Engine
 {
     #region Spawn Configuration Constants
 
-    private const int MaxUndoMoves = 50;
-
     /// <summary>
     /// Probability of spawning the common (lower) tile value vs the rare (higher) value.
     /// </summary>
@@ -60,6 +58,21 @@ public class Game2048Engine
 
     public bool CanUndo => _currentMoveIndex > 0;
 
+    /// <summary>
+    /// Returns a JSON-friendly snapshot of the current game session.
+    /// Includes full undo/redo history for the duration of the game.
+    /// </summary>
+    public GameSave ToSaveDto()
+    {
+        return new GameSave
+        {
+            InitialState = GameStateDto.FromGameState(_initialState),
+            MoveHistory = [.. _moveHistory],
+            CurrentMoveIndex = _currentMoveIndex,
+            VictoryEventRaised = _victoryEventRaised,
+        };
+    }
+
     public Game2048Engine(
         GameConfig config,
         IRandomSource random,
@@ -104,6 +117,35 @@ public class Game2048Engine
         _currentState = state;
         _initialState = state;
         _boardSimulator = boardSimulator;
+    }
+
+    /// <summary>
+    /// Creates a new game engine from a persisted save.
+    /// </summary>
+    public Game2048Engine(
+        GameSave save,
+        GameConfig config,
+        IRandomSource random,
+        IStatisticsTracker statisticsTracker,
+        IBoardSimulator boardSimulator
+    )
+    {
+        ArgumentNullException.ThrowIfNull(save);
+
+        _config = config;
+        _random = random;
+        _statisticsTracker = statisticsTracker;
+        _boardSimulator = boardSimulator;
+
+        _currentState = new GameState(_config.Size);
+
+        _moveHistory = save.MoveHistory?.ToList() ?? [];
+        _currentMoveIndex = Math.Clamp(save.CurrentMoveIndex, 0, _moveHistory.Count);
+
+        _initialState = save.InitialState?.ToGameState() ?? new GameState(_config.Size);
+        _victoryEventRaised = save.VictoryEventRaised;
+
+        ReplayToCurrentIndex();
     }
 
     /// <summary>
@@ -204,8 +246,6 @@ public class Game2048Engine
         _moveHistory.Add(moveRecord);
         _currentMoveIndex++;
 
-        TrimUndoHistoryIfNeeded();
-
         // Check if game is over
         if (IsGameOver())
         {
@@ -257,40 +297,6 @@ public class Game2048Engine
         {
             _currentState = _currentState.WithUpdate(isGameOver: true);
         }
-    }
-
-    private void TrimUndoHistoryIfNeeded()
-    {
-        if (_moveHistory.Count <= MaxUndoMoves)
-        {
-            return;
-        }
-
-        var overflow = _moveHistory.Count - MaxUndoMoves;
-        if (overflow <= 0)
-        {
-            return;
-        }
-
-        // Advance the initial state by the moves we're about to drop.
-        var advancedInitial = new GameState(
-            _initialState.Board.Clone(),
-            _initialState.Score,
-            _initialState.MoveCount,
-            _initialState.IsWon,
-            _initialState.IsGameOver,
-            _initialState.MaxTileValue,
-            _initialState.Wall
-        );
-
-        for (int i = 0; i < overflow; i++)
-        {
-            advancedInitial = ApplyRecordedMove(advancedInitial, _moveHistory[i]);
-        }
-
-        _initialState = advancedInitial;
-        _moveHistory.RemoveRange(0, overflow);
-        _currentMoveIndex = Math.Max(0, _currentMoveIndex - overflow);
     }
 
     private GameState ApplyRecordedMove(GameState state, MoveRecord move)

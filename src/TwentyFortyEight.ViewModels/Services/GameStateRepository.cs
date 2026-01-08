@@ -2,6 +2,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Serialization;
+// Alias to avoid conflict with Apple's GameKit.GameSave namespace on iOS/Mac Catalyst.
+using CoreGameSave = TwentyFortyEight.Core.GameSave;
 
 namespace TwentyFortyEight.ViewModels.Services;
 
@@ -58,7 +60,7 @@ public sealed partial class GameStateRepository(
         }
     }
 
-    public GameState? LoadGameState(GameConfig config)
+    public CoreGameSave? LoadGame(GameConfig config)
     {
         var boardSize = config.Size;
         try
@@ -67,22 +69,58 @@ public sealed partial class GameStateRepository(
                 GetSavedGameKey(config.RulesetId),
                 string.Empty
             );
-            if (!string.IsNullOrEmpty(savedJson))
-            {
-                var dto = JsonSerializer.Deserialize(
-                    savedJson,
-                    GameSerializationContext.Default.GameStateDto
-                );
 
-                var state = dto?.ToGameState();
-                if (state != null && state.Size != boardSize)
+            if (string.IsNullOrEmpty(savedJson))
+            {
+                return null;
+            }
+
+            // New format: full session save (undo history, initial state, cursor).
+            var save = JsonSerializer.Deserialize(
+                savedJson,
+                GameSerializationContext.Default.GameSave
+            );
+
+            if (save?.InitialState is not null)
+            {
+                var initial = save.InitialState.ToGameState();
+                if (initial.Size != boardSize)
                 {
                     // Size mismatch: treat as no save for this slot.
                     return null;
                 }
 
-                return state;
+                save.CurrentMoveIndex = Math.Clamp(
+                    save.CurrentMoveIndex,
+                    0,
+                    save.MoveHistory?.Length ?? 0
+                );
+
+                return save;
             }
+
+            // Legacy format: state-only save (no undo history).
+            var legacy = JsonSerializer.Deserialize(
+                savedJson,
+                GameSerializationContext.Default.GameStateDto
+            );
+
+            var state = legacy?.ToGameState();
+            if (state != null && state.Size != boardSize)
+            {
+                // Size mismatch: treat as no save for this slot.
+                return null;
+            }
+
+            return state is null
+                ? null
+                : new CoreGameSave
+                {
+                    InitialState = GameStateDto.FromGameState(state),
+                    MoveHistory = Array.Empty<MoveRecord>(),
+                    CurrentMoveIndex = 0,
+                    VictoryEventRaised = false,
+                };
         }
         catch (Exception ex)
         {
@@ -92,20 +130,33 @@ public sealed partial class GameStateRepository(
         return null;
     }
 
-    public void SaveGameState(GameConfig config, GameState state)
+    public void SaveGame(GameConfig config, CoreGameSave save)
     {
         var boardSize = config.Size;
         try
         {
-            if (state.Size != boardSize)
+            if (save.InitialState is null)
             {
                 throw new InvalidOperationException(
-                    $"Attempted to save a {state.Size}x{state.Size} state into the {boardSize}x{boardSize} slot."
+                    "Attempted to save a game without an InitialState."
                 );
             }
 
-            var dto = GameStateDto.FromGameState(state);
-            var json = JsonSerializer.Serialize(dto, GameSerializationContext.Default.GameStateDto);
+            var initial = save.InitialState.ToGameState();
+            if (initial.Size != boardSize)
+            {
+                throw new InvalidOperationException(
+                    $"Attempted to save a {initial.Size}x{initial.Size} game into the {boardSize}x{boardSize} slot."
+                );
+            }
+
+            save.CurrentMoveIndex = Math.Clamp(
+                save.CurrentMoveIndex,
+                0,
+                save.MoveHistory?.Length ?? 0
+            );
+
+            var json = JsonSerializer.Serialize(save, GameSerializationContext.Default.GameSave);
             preferencesService.SetString(GetSavedGameKey(config.RulesetId), json);
         }
         catch (Exception ex)
