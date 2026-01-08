@@ -6,16 +6,30 @@ namespace TwentyFortyEight.Core;
 internal sealed class Game2048EngineFactory(
     IRandomSource randomSource,
     IStatisticsTracker statisticsTracker,
-    IBoardSimulator boardSimulator
+    IBoardSimulator boardSimulator,
+    ISpawnStrategyFactory spawnStrategyFactory
 ) : IGame2048EngineFactory
 {
     public Game2048Engine Create(GameConfig config)
     {
-        return new Game2048Engine(config, randomSource, statisticsTracker, boardSimulator);
+        return new Game2048Engine(
+            config,
+            randomSource,
+            statisticsTracker,
+            boardSimulator,
+            spawnStrategyFactory
+        );
     }
 
     public Game2048Engine Create(GameSave save, GameConfig config)
     {
-        return new Game2048Engine(save, config, randomSource, statisticsTracker, boardSimulator);
+        return new Game2048Engine(
+            save,
+            config,
+            randomSource,
+            statisticsTracker,
+            boardSimulator,
+            spawnStrategyFactory
+        );
     }
 }

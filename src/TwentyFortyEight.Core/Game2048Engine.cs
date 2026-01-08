@@ -5,40 +5,12 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class Game2048Engine
 {
-    #region Spawn Configuration Constants
-
-    /// <summary>
-    /// Probability of spawning the common (lower) tile value vs the rare (higher) value.
-    /// </summary>
-    private const double CommonSpawnProbability = 0.9;
-
-    /// <summary>
-    /// Threshold for tier 5 spawning: when max tile >= 2^17 (131072), spawn 32/64.
-    /// </summary>
-    private const int SpawnTier5Threshold = 131072;
-
-    /// <summary>
-    /// Threshold for tier 4 spawning: when max tile >= 2^15 (32768), spawn 16/32.
-    /// </summary>
-    private const int SpawnTier4Threshold = 32768;
-
-    /// <summary>
-    /// Threshold for tier 3 spawning: when max tile >= 2^13 (8192), spawn 8/16.
-    /// </summary>
-    private const int SpawnTier3Threshold = 8192;
-
-    /// <summary>
-    /// Threshold for tier 2 spawning: when max tile >= 2^11 (2048), spawn 4/8.
-    /// </summary>
-    private const int SpawnTier2Threshold = 2048;
-
-    #endregion
-
     private readonly GameConfig _config;
     private readonly IRandomSource _random;
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly List<MoveRecord> _moveHistory;
     private readonly IBoardSimulator _boardSimulator;
+    private readonly ISpawnStrategy _spawnStrategy;
     private int _currentMoveIndex;
     private GameState _initialState;
 
@@ -86,7 +58,8 @@ public class Game2048Engine
         GameConfig config,
         IRandomSource random,
         IStatisticsTracker statisticsTracker,
-        IBoardSimulator boardSimulator
+        IBoardSimulator boardSimulator,
+        ISpawnStrategyFactory spawnStrategyFactory
     )
     {
         _config = config;
@@ -96,6 +69,7 @@ public class Game2048Engine
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
         _boardSimulator = boardSimulator;
+        _spawnStrategy = spawnStrategyFactory.Create(_config);
 
         // Start with two random tiles
         SpawnTileWithInfo();
@@ -115,7 +89,8 @@ public class Game2048Engine
         GameConfig config,
         IRandomSource random,
         IStatisticsTracker statisticsTracker,
-        IBoardSimulator boardSimulator
+        IBoardSimulator boardSimulator,
+        ISpawnStrategyFactory spawnStrategyFactory
     )
     {
         _config = config;
@@ -126,6 +101,7 @@ public class Game2048Engine
         _currentState = state;
         _initialState = state;
         _boardSimulator = boardSimulator;
+        _spawnStrategy = spawnStrategyFactory.Create(_config);
     }
 
     /// <summary>
@@ -136,7 +112,8 @@ public class Game2048Engine
         GameConfig config,
         IRandomSource random,
         IStatisticsTracker statisticsTracker,
-        IBoardSimulator boardSimulator
+        IBoardSimulator boardSimulator,
+        ISpawnStrategyFactory spawnStrategyFactory
     )
     {
         ArgumentNullException.ThrowIfNull(save);
@@ -145,6 +122,7 @@ public class Game2048Engine
         _random = random;
         _statisticsTracker = statisticsTracker;
         _boardSimulator = boardSimulator;
+        _spawnStrategy = spawnStrategyFactory.Create(_config);
 
         _currentState = new GameState(_config.Size);
 
@@ -354,29 +332,13 @@ public class Game2048Engine
             return (-1, 0);
         }
 
-        // Get adaptive spawn values based on tracked max tile
-        var (commonValue, rareValue) = GetSpawnValues(_currentState.MaxTileValue);
-        var value = _random.NextDouble() < CommonSpawnProbability ? commonValue : rareValue;
+        var value = _spawnStrategy.GetSpawnValue(_currentState, _config);
 
         _currentState = _currentState.WithTile(position.Value.Row, position.Value.Column, value);
 
         var index = _currentState.Board.GetIndex(position.Value.Row, position.Value.Column);
         return (index, value);
     }
-
-    /// <summary>
-    /// Gets the spawn values based on the current maximum tile on the board.
-    /// Spawn values scale up as the game progresses to keep the game playable at high scores.
-    /// </summary>
-    private static (int commonValue, int rareValue) GetSpawnValues(int maxTileOnBoard) =>
-        maxTileOnBoard switch
-        {
-            >= SpawnTier5Threshold => (32, 64), // 2^17: spawn 32 (90%) or 64 (10%)
-            >= SpawnTier4Threshold => (16, 32), // 2^15: spawn 16 (90%) or 32 (10%)
-            >= SpawnTier3Threshold => (8, 16), // 2^13: spawn 8 (90%) or 16 (10%)
-            >= SpawnTier2Threshold => (4, 8), // 2^11: spawn 4 (90%) or 8 (10%)
-            _ => (2, 4), // Default: spawn 2 (90%) or 4 (10%)
-        };
 
     private bool IsGameOver()
     {
@@ -400,7 +362,7 @@ public class Game2048Engine
                     .moved;
         }
 
-        // Classic: game is not over if there are empty cells or possible merges.
+        // Non-walltastrophy modes: game is not over if there are empty cells or possible merges.
         return board.CountEmptyCells() == 0 && !board.HasPossibleMerges();
     }
 

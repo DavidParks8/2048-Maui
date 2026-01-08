@@ -20,36 +20,57 @@
                     components:LiquidGlass.EffectType="Regular"
                     components:LiquidGlass.EnableShadowEffect="False"
                     components:LiquidGlass.CornerRadius="22">
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="0" Padding="2">
+                <FlexLayout Direction="Row"
+                        Wrap="Wrap"
+                        JustifyContent="SpaceEvenly"
+                        AlignContent="Start"
+                        AlignItems="Start"
+                        Padding="2">
+                    <Border x:Name="ModernTab"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 20"
+                            Padding="0"
+                        Margin="0,0,0,1">
+                        <Button x:Name="ModernTabButton"
+                                Text="{x:Static strings:AppStrings.ModernMode}"
+                                FontSize="15"
+                                FontAttributes="Bold"
+                                Padding="8,6"
+                                LineBreakMode="NoWrap"
+                                Background="Transparent"
+                                Clicked="OnModernModeClicked" />
+                    </Border>
+
                     <Border x:Name="ClassicTab"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 20"
-                            Padding="0">
+                            Padding="0"
+                        Margin="0,0,0,1">
                         <Button x:Name="ClassicTabButton"
                                 Text="{x:Static strings:AppStrings.ClassicMode}"
                                 FontSize="15"
                                 FontAttributes="Bold"
                                 Padding="8,6"
-                                LineBreakMode="CharacterWrap"
+                                LineBreakMode="NoWrap"
                                 Background="Transparent"
                                 Clicked="OnClassicModeClicked" />
                     </Border>
 
                     <Border x:Name="WalltastrophyTab"
-                            Grid.Column="1"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 20"
-                            Padding="0">
+                            Padding="0"
+                        Margin="0,0,0,1">
                         <Button x:Name="WalltastrophyTabButton"
                                 Text="{x:Static strings:AppStrings.WalltastrophyMode}"
                                 FontSize="15"
                                 FontAttributes="Bold"
                                 Padding="8,6"
-                                LineBreakMode="CharacterWrap"
+                                LineBreakMode="NoWrap"
                                 Background="Transparent"
                                 Clicked="OnWalltastrophyModeClicked" />
                     </Border>
-                </Grid>
+                </FlexLayout>
             </Border>
 
             <!-- Mode Description Text -->

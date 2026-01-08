@@ -29,13 +29,13 @@ public class GameSaveTests
         {
             Size = 4,
             WinTile = 2048,
-            Mode = GameMode.Classic,
+            Mode = GameMode.Modern,
         };
         var random = new SystemRandomSource(42);
         var stats = NullStatisticsTracker.Instance;
         var simulator = new BoardMoveSimulator();
 
-        var engine = new Game2048Engine(config, random, stats, simulator);
+        var engine = TestHelpers.CreateEngine(config, random, stats, simulator);
 
         // Make a couple moves.
         MakeAnyMove(engine);
@@ -48,7 +48,7 @@ public class GameSaveTests
         var save = engine.ToSaveDto();
 
         // Act
-        var restored = new Game2048Engine(save, config, random, stats, simulator);
+        var restored = TestHelpers.CreateEngine(save, config, random, stats, simulator);
 
         // Assert
         CollectionAssert.AreEqual(

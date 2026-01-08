@@ -87,13 +87,10 @@ internal class MoveAnalyzer : IMoveAnalyzer
                 {
                     result.AddMergedIndex(i);
                 }
-                // Case 2: New tile spawned (must be 2 or 4, and nothing moved here)
-                // Either: was empty and now has 2/4 (and nothing moved here)
-                // Or: a tile moved away and there's still a value here (new spawn in vacated spot)
-                else if (
-                    (newValue == 2 || newValue == 4)
-                    && ((oldValue == 0 && !isMovedHere) || (movedAwayFrom && !isMovedHere))
-                )
+                // Case 2: New tile spawned (nothing moved here)
+                // Either: was empty and now has a value (and nothing moved here)
+                // Or: a tile moved away and there's still a value here (spawn in a vacated spot)
+                else if (((oldValue == 0 && !isMovedHere) || (movedAwayFrom && !isMovedHere)))
                 {
                     result.AddSpawnedIndex(i);
                 }

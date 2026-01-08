@@ -13,7 +13,7 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 - 💾 Auto-save and resume game state
 - 🏆 Best score tracking
 - 🧩 Multiple board sizes (3x3 through 8x8)
-- 🧱 Multiple game modes (Classic + Walltastrophy)
+- 🧱 Multiple game modes (Modern + Classic + Walltastrophy)
 - 🧠 Optional Move Coach (recommended direction + reason)
 - 🛟 Coach Nudges when you're stuck (optional)
 - 👆 Swipe preview (slow-drag previews a move before committing)
@@ -107,6 +107,77 @@ dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-i
 dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
 ```
 
+## Game Center Setup (iOS / Mac Catalyst)
+
+The game includes Game Center integration on iOS and Mac Catalyst with leaderboards and achievements.
+
+### 1. Configure in App Store Connect
+
+1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/)
+2. Navigate to your app (Bundle ID: `com.dappermagna.twentyfortyeight`)
+3. Go to Features → Game Center
+
+### 2. Create Leaderboards
+
+Create the following leaderboards:
+
+#### Classic Mode Leaderboards
+
+| Leaderboard ID | Name | Score Format | Sort Order |
+| --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.4x4` | Classic 4×4 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.5x5` | Classic 5×5 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.6x6` | Classic 6×6 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.7x7` | Classic 7×7 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.8x8` | Classic 8×8 High Scores | Integer | High to Low |
+
+#### Modern Mode Leaderboards
+
+| Leaderboard ID | Name | Score Format | Sort Order |
+| --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.modern.4x4` | Modern 4×4 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.modern.5x5` | Modern 5×5 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.modern.6x6` | Modern 6×6 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.modern.7x7` | Modern 7×7 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.modern.8x8` | Modern 8×8 High Scores | Integer | High to Low |
+
+#### Walltastrophy Mode Leaderboards
+
+| Leaderboard ID | Name | Score Format | Sort Order |
+| --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.4x4` | Walltastrophy 4×4 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.5x5` | Walltastrophy 5×5 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.6x6` | Walltastrophy 6×6 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.7x7` | Walltastrophy 7×7 High Scores | Integer | High to Low |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.8x8` | Walltastrophy 8×8 High Scores | Integer | High to Low |
+
+**Note:** Only the default win tile (2048) is supported for leaderboard submissions. Custom win tiles do not submit scores to leaderboards.
+
+### 3. Create Achievements
+
+Create the following achievements (all should be 100% completion):
+
+| Achievement ID | Name | Description |
+| --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.tile128` | Tile 128 | Create a 128 tile |
+| `com.dappermagna.twentyfortyeight.tile256` | Tile 256 | Create a 256 tile |
+| `com.dappermagna.twentyfortyeight.tile512` | Tile 512 | Create a 512 tile |
+| `com.dappermagna.twentyfortyeight.tile1024` | Tile 1024 | Create a 1024 tile |
+| `com.dappermagna.twentyfortyeight.tile2048` | Tile 2048 | Create a 2048 tile |
+| `com.dappermagna.twentyfortyeight.tile4096` | Tile 4096 | Create a 4096 tile |
+| `com.dappermagna.twentyfortyeight.firstwin` | First Win | Reach 2048 for the first time |
+| `com.dappermagna.twentyfortyeight.score10000` | Score 10,000 | Reach a score of 10,000 |
+| `com.dappermagna.twentyfortyeight.score25000` | Score 25,000 | Reach a score of 25,000 |
+| `com.dappermagna.twentyfortyeight.score50000` | Score 50,000 | Reach a score of 50,000 |
+| `com.dappermagna.twentyfortyeight.score100000` | Score 100,000 | Reach a score of 100,000 |
+
+### 4. Testing Game Center
+
+- Game Center requires a real iOS device for testing (not the simulator)
+- Sign in to Game Center on your device
+- The app will automatically authenticate when launched
+- Leaderboard and Achievement buttons will appear when Game Center is available
+
 ## Architecture
 
 The project is organized into three main components:
@@ -118,7 +189,7 @@ A fully-testable, UI-independent game engine that implements the classic 2048 ru
 - Game2048Engine: move logic, merge rules, win/game-over detection
 - GameState: immutable state representation for undo/redo
 - GameConfig: configurable board size + win conditions
-- GameMode: ruleset variants (Classic, Walltastrophy)
+- GameMode: ruleset variants (Modern, Classic, Walltastrophy)
 - IRandomSource: abstraction for deterministic testing
 - GameStateDto: JSON-friendly serialization for persistence
 - MoveAnalyzer / HeuristicMoveAdvisor: platform-agnostic move analysis and coaching
@@ -168,7 +239,7 @@ Comprehensive test suite using MSTest covering:
 2. Movement: Swipe or use arrow keys to move all tiles in that direction
 3. Merging: Adjacent tiles with the same value merge into one (value doubles)
 4. Scoring: Score increases by the value of each merged tile
-5. New Tiles: After each move, a new tile (2 or 4) appears in a random empty spot
+5. New Tiles: After each move, a new tile appears in a random empty spot (value depends on game mode)
 6. Winning: Reach the 2048 tile (game can continue after winning)
 7. Game Over: No more valid moves available
 

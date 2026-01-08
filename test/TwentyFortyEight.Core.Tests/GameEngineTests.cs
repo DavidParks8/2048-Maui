@@ -10,12 +10,8 @@ public class GameEngineTests
     public void NewGame_CreatesEmptyBoardWithTwoTiles()
     {
         // Arrange & Act
-        Game2048Engine engine = new(
-            new GameConfig(),
-            new SystemRandomSource(),
-            NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
-        );
+        SystemRandomSource random = new();
+        Game2048Engine engine = TestHelpers.CreateEngine(new GameConfig(), random);
 
         // Assert
         var state = engine.CurrentState;
@@ -33,12 +29,7 @@ public class GameEngineTests
         // Arrange
         GameConfig config = new() { Size = 4 };
         SystemRandomSource random = new(42);
-        Game2048Engine engine = new(
-            config,
-            random,
-            NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
-        );
+        Game2048Engine engine = TestHelpers.CreateEngine(config, random);
 
         // Create a specific board state
         var board = new int[16];
@@ -47,13 +38,7 @@ public class GameEngineTests
         board[2] = 2;
         board[3] = 0; // [2,0,2,0] -> [4,0,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        engine = new Game2048Engine(
-            state,
-            config,
-            random,
-            NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
-        );
+        engine = TestHelpers.CreateEngine(state, config, random);
 
         // Act
         var moved = engine.Move(Direction.Left);
@@ -76,13 +61,7 @@ public class GameEngineTests
         board[2] = 2;
         board[3] = 2; // [2,2,2,2] -> [4,4,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        Game2048Engine engine = new(
-            state,
-            config,
-            random,
-            NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
-        );
+        Game2048Engine engine = TestHelpers.CreateEngine(state, config, random);
 
         // Act
         engine.Move(Direction.Left);
@@ -106,13 +85,7 @@ public class GameEngineTests
         board[2] = 2;
         board[3] = 0; // [2,2,2,0] -> [4,2,0,0]
         var state = TestHelpers.CreateGameState(board, 4, 0, 0, false, false);
-        Game2048Engine engine = new(
-            state,
-            config,
-            random,
-            NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
-        );
+        Game2048Engine engine = TestHelpers.CreateEngine(state, config, random);
 
         // Act
         engine.Move(Direction.Left);

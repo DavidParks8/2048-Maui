@@ -118,10 +118,12 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
             return;
         }
 
-        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config.Size);
+        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config);
         if (leaderboardId is null)
         {
-            LogServiceNotAvailable($"score submission for unsupported size {config.Size}");
+            LogServiceNotAvailable(
+                $"score submission for unsupported configuration {config.RulesetId}"
+            );
             return;
         }
 
@@ -194,10 +196,12 @@ public partial class SocialGamingService(ILogger<SocialGamingService> logger) : 
             return;
         }
 
-        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config.Size);
+        var leaderboardId = PlatformAchievementIds.iOS.GetHighScoreLeaderboardId(config);
         if (leaderboardId is null)
         {
-            LogServiceNotAvailable($"show leaderboard for unsupported size {config.Size}");
+            LogServiceNotAvailable(
+                $"show leaderboard for unsupported configuration {config.RulesetId}"
+            );
             return;
         }
 

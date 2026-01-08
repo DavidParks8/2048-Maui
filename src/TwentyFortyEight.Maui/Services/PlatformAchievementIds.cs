@@ -12,22 +12,74 @@ public static class PlatformAchievementIds
     // iOS Game Center IDs
     public static class iOS
     {
+        // Classic (default) mode leaderboards
         public const string Leaderboard_4x4 = "com.dappermagna.twentyfortyeight.highscores.4x4";
         public const string Leaderboard_5x5 = "com.dappermagna.twentyfortyeight.highscores.5x5";
         public const string Leaderboard_6x6 = "com.dappermagna.twentyfortyeight.highscores.6x6";
         public const string Leaderboard_7x7 = "com.dappermagna.twentyfortyeight.highscores.7x7";
         public const string Leaderboard_8x8 = "com.dappermagna.twentyfortyeight.highscores.8x8";
 
-        public static string? GetHighScoreLeaderboardId(int boardSize)
+        // Modern mode leaderboards
+        public const string Leaderboard_Modern_4x4 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.4x4";
+        public const string Leaderboard_Modern_5x5 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.5x5";
+        public const string Leaderboard_Modern_6x6 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.6x6";
+        public const string Leaderboard_Modern_7x7 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.7x7";
+        public const string Leaderboard_Modern_8x8 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.8x8";
+
+        // Walltastrophy mode leaderboards
+        public const string Leaderboard_Walltastrophy_4x4 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.4x4";
+        public const string Leaderboard_Walltastrophy_5x5 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.5x5";
+        public const string Leaderboard_Walltastrophy_6x6 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.6x6";
+        public const string Leaderboard_Walltastrophy_7x7 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.7x7";
+        public const string Leaderboard_Walltastrophy_8x8 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.8x8";
+
+        public static string? GetHighScoreLeaderboardId(TwentyFortyEight.Core.GameConfig config)
         {
-            return boardSize switch
+            // Only support default win tile configurations for leaderboards
+            if (config.WinTile != 2048)
             {
-                4 => Leaderboard_4x4,
-                5 => Leaderboard_5x5,
-                6 => Leaderboard_6x6,
-                7 => Leaderboard_7x7,
-                8 => Leaderboard_8x8,
-                _ => null,
+                return null;
+            }
+
+            return config.Mode switch
+            {
+                TwentyFortyEight.Core.GameMode.Modern => config.Size switch
+                {
+                    4 => Leaderboard_Modern_4x4,
+                    5 => Leaderboard_Modern_5x5,
+                    6 => Leaderboard_Modern_6x6,
+                    7 => Leaderboard_Modern_7x7,
+                    8 => Leaderboard_Modern_8x8,
+                    _ => null,
+                },
+                TwentyFortyEight.Core.GameMode.Walltastrophy => config.Size switch
+                {
+                    4 => Leaderboard_Walltastrophy_4x4,
+                    5 => Leaderboard_Walltastrophy_5x5,
+                    6 => Leaderboard_Walltastrophy_6x6,
+                    7 => Leaderboard_Walltastrophy_7x7,
+                    8 => Leaderboard_Walltastrophy_8x8,
+                    _ => null,
+                },
+                _ => config.Size switch
+                {
+                    4 => Leaderboard_4x4,
+                    5 => Leaderboard_5x5,
+                    6 => Leaderboard_6x6,
+                    7 => Leaderboard_7x7,
+                    8 => Leaderboard_8x8,
+                    _ => null,
+                },
             };
         }
 

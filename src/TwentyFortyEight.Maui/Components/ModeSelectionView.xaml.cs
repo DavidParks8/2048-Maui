@@ -183,6 +183,11 @@ public partial class ModeSelectionView : ContentView
             || _viewModel.PendingGameMode != _originalGameMode;
     }
 
+    private void OnModernModeClicked(object? sender, EventArgs e)
+    {
+        _viewModel.PendingGameMode = GameMode.Modern;
+    }
+
     private void OnClassicModeClicked(object? sender, EventArgs e)
     {
         _viewModel.PendingGameMode = GameMode.Classic;
@@ -197,14 +202,19 @@ public partial class ModeSelectionView : ContentView
     {
         ModeDescriptionLabel.Text = _viewModel.PendingGameMode switch
         {
+            GameMode.Modern => AppStrings.ModernModeDescription,
+            GameMode.Classic => AppStrings.ClassicModeDescription,
             GameMode.Walltastrophy => AppStrings.WalltastrophyModeDescription,
-            _ => AppStrings.ClassicModeDescription,
+            _ => AppStrings.ModernModeDescription,
         };
     }
 
     private void UpdateModeTabVisualState()
     {
-        bool isClassic = _viewModel.PendingGameMode == GameMode.Classic;
+        var selectedMode = _viewModel.PendingGameMode;
+        bool isModern = selectedMode == GameMode.Modern;
+        bool isClassic = selectedMode == GameMode.Classic;
+        bool isWalltastrophy = selectedMode == GameMode.Walltastrophy;
 
         var selectedBackground = GetThemeColor("Gray200", "Gray600");
         var selectedTextColor = GetThemeColor("NativeTextPrimaryLight", "NativeTextPrimaryDark");
@@ -213,11 +223,15 @@ public partial class ModeSelectionView : ContentView
             "NativeTextSecondaryDark"
         );
 
+        ModernTab.Background = isModern ? selectedBackground : Colors.Transparent;
         ClassicTab.Background = isClassic ? selectedBackground : Colors.Transparent;
-        WalltastrophyTab.Background = isClassic ? Colors.Transparent : selectedBackground;
+        WalltastrophyTab.Background = isWalltastrophy ? selectedBackground : Colors.Transparent;
 
+        ModernTabButton.TextColor = isModern ? selectedTextColor : unselectedTextColor;
         ClassicTabButton.TextColor = isClassic ? selectedTextColor : unselectedTextColor;
-        WalltastrophyTabButton.TextColor = isClassic ? unselectedTextColor : selectedTextColor;
+        WalltastrophyTabButton.TextColor = isWalltastrophy
+            ? selectedTextColor
+            : unselectedTextColor;
     }
 
     private void OnPlayClicked(object? sender, EventArgs e)

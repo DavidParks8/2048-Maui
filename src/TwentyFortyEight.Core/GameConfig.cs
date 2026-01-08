@@ -71,6 +71,8 @@ public class GameConfig
     private static string GetModeId(GameMode mode) =>
         mode switch
         {
+            GameMode.Modern => "modern",
+            GameMode.Classic => "classic",
             GameMode.Walltastrophy => "walltastrophy",
             _ => "classic",
         };

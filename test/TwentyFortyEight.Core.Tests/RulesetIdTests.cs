@@ -58,17 +58,30 @@ public class RulesetIdTests
     }
 
     [TestMethod]
-    public void RulesetId_Classic_OmitsModeToken()
+    public void RulesetId_Modern_IncludesModeToken()
     {
         var config = new GameConfig
         {
             Size = 5,
             WinTile = 2048,
-            Mode = GameMode.Classic,
+            Mode = GameMode.Modern,
         };
 
         StringAssert.Contains(config.RulesetId, "size=5");
-        Assert.IsFalse(config.RulesetId.Contains("mode=", StringComparison.Ordinal));
+        StringAssert.Contains(config.RulesetId, "mode=modern");
+    }
+
+    [TestMethod]
+    public void RulesetId_Classic_OmitsModeToken()
+    {
+        var config = new GameConfig
+        {
+            Size = 4,
+            WinTile = 2048,
+            Mode = GameMode.Classic,
+        };
+
+        Assert.AreEqual(string.Empty, config.RulesetId);
     }
 
     [TestMethod]

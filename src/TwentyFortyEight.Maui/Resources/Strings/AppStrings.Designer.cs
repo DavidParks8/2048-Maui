@@ -782,6 +782,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Modern.
+        /// </summary>
+        internal static string ModernMode {
+            get {
+                return ResourceManager.GetString("ModernMode", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Classic.
         /// </summary>
         internal static string ClassicMode {
@@ -800,7 +809,16 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to The original 2048 rules. Slide and merge tiles to reach the winning number..
+        ///   Looks up a localized string similar to Adaptive spawns that scale up tile values as you progress..
+        /// </summary>
+        internal static string ModernModeDescription {
+            get {
+                return ResourceManager.GetString("ModernModeDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The original 2048 rules. New tiles spawn as 2 (90%) or 4 (10%)..
         /// </summary>
         internal static string ClassicModeDescription {
             get {

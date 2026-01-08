@@ -85,14 +85,20 @@
   <data name="GameMode" xml:space="preserve">
     <value>Game Mode</value>
   </data>
+  <data name="ModernMode" xml:space="preserve">
+    <value>Modern</value>
+  </data>
   <data name="ClassicMode" xml:space="preserve">
     <value>Classic</value>
   </data>
   <data name="WalltastrophyMode" xml:space="preserve">
     <value>Walltastrophy</value>
   </data>
+  <data name="ModernModeDescription" xml:space="preserve">
+    <value>Adaptive spawns that scale up tile values as you progress.</value>
+  </data>
   <data name="ClassicModeDescription" xml:space="preserve">
-    <value>The original 2048 rules. Slide and merge tiles to reach the winning number.</value>
+    <value>The original 2048 rules. New tiles spawn as 2 (90%) or 4 (10%).</value>
   </data>
   <data name="WalltastrophyModeDescription" xml:space="preserve">
     <value>Each successful move places a new wall between cells. The wall blocks movement and merges across it.</value>
