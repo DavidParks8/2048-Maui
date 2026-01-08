@@ -21,7 +21,10 @@ public sealed class CoachSuggestionService(IMoveAdvisor moveAdvisor) : ICoachSug
         }
 
         return moveAdvisor.Recommend(
-            new MoveAdvisorRequest(request.Board, request.Config, request.Wall)
+            new MoveAdvisorRequest(
+                new PlayfieldSnapshot(request.Board, request.Wall),
+                request.Config
+            )
         );
     }
 }

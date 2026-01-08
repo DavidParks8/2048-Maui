@@ -27,7 +27,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -52,7 +52,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -78,7 +78,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -109,10 +109,9 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard), wall),
                 CreateBoard(newBoard),
-                Direction.Left,
-                wall
+                Direction.Left
             )
         );
 
@@ -140,12 +139,20 @@ public class MoveAnalyzerTests
 
         // Act
         var result1 = _analyzer.Analyze(
-            new MoveAnalysisRequest(empty, CreateBoard(boardA), Direction.Left)
+            new MoveAnalysisRequest(
+                new PlayfieldSnapshot(empty),
+                CreateBoard(boardA),
+                Direction.Left
+            )
         );
         var spawned1 = result1.SpawnedIndices.ToArray();
 
         var result2 = _analyzer.Analyze(
-            new MoveAnalysisRequest(empty, CreateBoard(boardB), Direction.Left)
+            new MoveAnalysisRequest(
+                new PlayfieldSnapshot(empty),
+                CreateBoard(boardB),
+                Direction.Left
+            )
         );
         var spawned2 = result2.SpawnedIndices.ToArray();
 
@@ -181,7 +188,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -210,7 +217,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -240,7 +247,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -265,7 +272,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -297,7 +304,7 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
                 CreateBoard(newBoard),
                 Direction.Left
             )
@@ -331,7 +338,11 @@ public class MoveAnalyzerTests
 
         // Act
         var result = _analyzer.Analyze(
-            new MoveAnalysisRequest(CreateBoard(previousBoard), CreateBoard(newBoard), Direction.Up)
+            new MoveAnalysisRequest(
+                new PlayfieldSnapshot(CreateBoard(previousBoard)),
+                CreateBoard(newBoard),
+                Direction.Up
+            )
         );
 
         // Assert
@@ -360,10 +371,9 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard), wall),
                 CreateBoard(newBoard),
-                Direction.Up,
-                wall
+                Direction.Up
             )
         );
 
@@ -395,10 +405,9 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard), wall),
                 CreateBoard(newBoard),
-                Direction.Down,
-                wall
+                Direction.Down
             )
         );
 
@@ -431,10 +440,9 @@ public class MoveAnalyzerTests
         // Act
         var result = _analyzer.Analyze(
             new MoveAnalysisRequest(
-                CreateBoard(previousBoard),
+                new PlayfieldSnapshot(CreateBoard(previousBoard), wall),
                 CreateBoard(newBoard),
-                Direction.Left,
-                wall
+                Direction.Left
             )
         );
 

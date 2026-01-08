@@ -34,7 +34,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNull(result);
@@ -51,10 +53,12 @@ public class HeuristicMoveAdvisorTests
         // Setup simulator to return no moves
         _simulatorMock
             .Setup(s => s.SimulateMove(It.IsAny<BoardMoveRequest>()))
-            .Returns((BoardMoveRequest r) => (r.Board, 0, false, 0));
+            .Returns((BoardMoveRequest r) => (r.Playfield.Board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNull(result);
@@ -88,7 +92,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((movedBoard, 0, true, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -146,7 +152,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -201,7 +209,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -243,7 +253,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -279,8 +291,12 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act: Call twice
-        var result1 = _advisor.Recommend(new MoveAdvisorRequest(board, config));
-        var result2 = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result1 = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
+        var result2 = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert: Should be identical
         Assert.IsNotNull(result1);
@@ -304,7 +320,7 @@ public class HeuristicMoveAdvisorTests
             .Setup(s =>
                 s.SimulateMove(
                     It.Is<BoardMoveRequest>(r =>
-                        r.Board == board3x3 && r.Direction == Direction.Left
+                        r.Playfield.Board == board3x3 && r.Direction == Direction.Left
                     )
                 )
             )
@@ -313,15 +329,8 @@ public class HeuristicMoveAdvisorTests
         _simulatorMock
             .Setup(s =>
                 s.SimulateMove(
-                    It.Is<BoardMoveRequest>(r => r.Board == board3x3 && r.Direction == Direction.Up)
-                )
-            )
-            .Returns((board3x3, 0, false, 0));
-        _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(
                     It.Is<BoardMoveRequest>(r =>
-                        r.Board == board3x3 && r.Direction == Direction.Right
+                        r.Playfield.Board == board3x3 && r.Direction == Direction.Up
                     )
                 )
             )
@@ -330,14 +339,25 @@ public class HeuristicMoveAdvisorTests
             .Setup(s =>
                 s.SimulateMove(
                     It.Is<BoardMoveRequest>(r =>
-                        r.Board == board3x3 && r.Direction == Direction.Down
+                        r.Playfield.Board == board3x3 && r.Direction == Direction.Right
+                    )
+                )
+            )
+            .Returns((board3x3, 0, false, 0));
+        _simulatorMock
+            .Setup(s =>
+                s.SimulateMove(
+                    It.Is<BoardMoveRequest>(r =>
+                        r.Playfield.Board == board3x3 && r.Direction == Direction.Down
                     )
                 )
             )
             .Returns((board3x3, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board3x3, config3x3));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board3x3), config3x3)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -358,7 +378,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNull(result);
@@ -391,7 +413,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert
         Assert.IsNotNull(result);
@@ -431,7 +455,9 @@ public class HeuristicMoveAdvisorTests
             .Returns((board, 0, false, 0));
 
         // Act
-        var result = _advisor.Recommend(new MoveAdvisorRequest(board, config));
+        var result = _advisor.Recommend(
+            new MoveAdvisorRequest(new PlayfieldSnapshot(board), config)
+        );
 
         // Assert: Should prefer left (more space)
         Assert.IsNotNull(result);

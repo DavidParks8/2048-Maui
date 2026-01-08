@@ -7,6 +7,8 @@ public class Game2048Engine
 {
     #region Spawn Configuration Constants
 
+    private const int MaxUndoMoves = 50;
+
     /// <summary>
     /// Probability of spawning the common (lower) tile value vs the rare (higher) value.
     /// </summary>
@@ -137,8 +139,9 @@ public class Game2048Engine
     /// </summary>
     public bool Move(Direction direction)
     {
+        var playfield = new PlayfieldSnapshot(_currentState.Board, _currentState.Wall);
         var (newBoard, scoreIncrease, boardChanged, maxMergedValue) = _boardSimulator.SimulateMove(
-            new BoardMoveRequest(_currentState.Board, direction, _currentState.Wall)
+            new BoardMoveRequest(playfield, direction)
         );
 
         if (!boardChanged)
@@ -292,8 +295,9 @@ public class Game2048Engine
 
     private GameState ApplyRecordedMove(GameState state, MoveRecord move)
     {
+        var playfield = new PlayfieldSnapshot(state.Board, state.Wall);
         var (newBoard, scoreIncrease, moved, maxMergedValue) = _boardSimulator.SimulateMove(
-            new BoardMoveRequest(state.Board, move.Direction, state.Wall)
+            new BoardMoveRequest(playfield, move.Direction)
         );
 
         if (!moved)
@@ -359,21 +363,22 @@ public class Game2048Engine
     private bool IsGameOver()
     {
         var board = _currentState.Board;
+        var playfield = new PlayfieldSnapshot(board, _currentState.Wall);
 
         if (_config.Mode == GameMode.Walltastrophy)
         {
             // Walls can eliminate moves even when empties exist, so probe all directions.
             return !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(board, Direction.Up, _currentState.Wall))
+                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Up))
                     .moved
                 && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(board, Direction.Down, _currentState.Wall))
+                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Down))
                     .moved
                 && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(board, Direction.Left, _currentState.Wall))
+                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Left))
                     .moved
                 && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(board, Direction.Right, _currentState.Wall))
+                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Right))
                     .moved;
         }
 

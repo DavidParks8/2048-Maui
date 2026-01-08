@@ -17,7 +17,7 @@ namespace TwentyFortyEight.Core;
 /// is <b>cleared and repopulated on each call</b>. Do not hold references to the result across
 /// multiple calls to <see cref="Analyze"/>. If you need to preserve data, copy it immediately:
 /// <code>
-/// var result = analyzer.Analyze(new MoveAnalysisRequest(prev, next, dir));
+/// var result = analyzer.Analyze(new MoveAnalysisRequest(new PlayfieldSnapshot(prev), next, dir));
 /// var movementsCopy = result.Movements.ToList(); // Copy before next Analyze call
 /// </code>
 /// </para>
@@ -44,11 +44,11 @@ public class MoveAnalyzer : IMoveAnalyzer
         // Clear the reusable result before populating
         result.Clear();
 
-        var previousBoard = request.PreviousBoard;
+        var previousBoard = request.Previous.Board;
         var newBoard = request.NewBoard;
 
         // Calculate movements directly into the result
-        CalculateTileMovements(previousBoard, request.Direction, request.Wall, result);
+        CalculateTileMovements(request.Previous, request.Direction, result);
 
         // Rent pooled HashSets for internal lookups only
         var movedFromPositions = s_positionSetPool.Get();
@@ -120,12 +120,13 @@ public class MoveAnalyzer : IMoveAnalyzer
     /// This tracks where each tile moves to, including merges.
     /// </summary>
     private static void CalculateTileMovements(
-        Board previousBoard,
+        PlayfieldSnapshot previous,
         Direction direction,
-        WallSegment? wall,
         MoveAnalysisResult result
     )
     {
+        var previousBoard = previous.Board;
+        var wall = previous.Wall;
         var size = previousBoard.Size;
 
         // Use SpanOwner for pooled array allocation

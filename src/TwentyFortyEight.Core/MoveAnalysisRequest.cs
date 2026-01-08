@@ -4,8 +4,7 @@ namespace TwentyFortyEight.Core;
 /// Request data for analyzing a move by comparing previous and next board states.
 /// </summary>
 public readonly record struct MoveAnalysisRequest(
-    Board PreviousBoard,
+    PlayfieldSnapshot Previous,
     Board NewBoard,
-    Direction Direction,
-    WallSegment? Wall = null
+    Direction Direction
 );

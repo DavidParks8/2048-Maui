@@ -10,8 +10,9 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
 {
     public MoveRecommendation? Recommend(MoveAdvisorRequest request)
     {
-        var board = request.Board;
-        var wall = request.Wall;
+        var playfield = request.Playfield;
+        var board = playfield.Board;
+        var wall = playfield.Wall;
 
         if (board.Size <= 0 || board.Length == 0)
         {
@@ -34,7 +35,7 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
             foreach (var direction in s_directions)
             {
                 var (_, _, moved, _) = simulator.SimulateMove(
-                    new BoardMoveRequest(board, direction, wall)
+                    new BoardMoveRequest(playfield, direction)
                 );
                 if (moved)
                 {
@@ -49,21 +50,21 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
             }
         }
 
-        var baseline = ComputeFeatures(board, wall);
+        var baseline = ComputeFeatures(playfield);
 
         MoveRecommendation? best = null;
 
         foreach (var direction in s_directions)
         {
             var (previewBoard, scoreIncrease, moved, _) = simulator.SimulateMove(
-                new BoardMoveRequest(board, direction, wall)
+                new BoardMoveRequest(playfield, direction)
             );
             if (!moved)
             {
                 continue;
             }
 
-            var features = ComputeFeatures(previewBoard, wall);
+            var features = ComputeFeatures(new PlayfieldSnapshot(previewBoard, wall));
             var score = ScoreMove(scoreIncrease, baseline, features);
             var reason = PickPrimaryReason(scoreIncrease, baseline, features);
 
@@ -145,8 +146,10 @@ public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvis
         return MoveCoachReason.AvoidDeadEnd;
     }
 
-    private static Features ComputeFeatures(Board board, WallSegment? wall)
+    private static Features ComputeFeatures(PlayfieldSnapshot playfield)
     {
+        var board = playfield.Board;
+        var wall = playfield.Wall;
         var empty = 0;
         var max = 0;
 

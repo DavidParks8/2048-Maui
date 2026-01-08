@@ -430,10 +430,9 @@ public partial class GameViewModel : ObservableObject
             // Use Core MoveAnalyzer for all movement and categorization logic
             var analysis = _moveAnalyzer.Analyze(
                 new MoveAnalysisRequest(
-                    previousBoard.Value,
+                    new PlayfieldSnapshot(previousBoard.Value, previousWall),
                     state.Board,
-                    moveDirection.Value,
-                    previousWall
+                    moveDirection.Value
                 )
             );
 

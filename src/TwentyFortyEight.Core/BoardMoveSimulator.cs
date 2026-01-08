@@ -15,22 +15,10 @@ public sealed class BoardMoveSimulator : IBoardSimulator
         BoardMoveRequest request
     )
     {
-        return request.Direction switch
-        {
-            Direction.Up => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
-            Direction.Down => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
-            Direction.Left => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
-            Direction.Right => ProcessMoveGeneric(request.Board, request.Direction, request.Wall),
-            _ => (request.Board, 0, false, 0),
-        };
-    }
-
-    private (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) ProcessMoveGeneric(
-        Board board,
-        Direction direction,
-        WallSegment? wall
-    )
-    {
+        var playfield = request.Playfield;
+        var direction = request.Direction;
+        var board = playfield.Board;
+        var wall = playfield.Wall;
         var size = board.Size;
         var result = new int[size, size];
         var moved = false;
