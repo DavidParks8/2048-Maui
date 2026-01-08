@@ -58,10 +58,12 @@ public sealed partial class VictoryViewModel(
     /// </summary>
     /// <param name="score">Current score at time of victory.</param>
     /// <param name="winningValue">The winning tile value (e.g., 2048).</param>
-    public void TriggerVictory(int score, int winningValue = 2048)
+    /// <param name="undoCount">The number of undos performed during the game.</param>
+    public void TriggerVictory(int score, int winningValue = 2048, int undoCount = 0)
     {
         State.Score = score;
         State.WinningValue = winningValue;
+        State.UndoCount = undoCount;
         State.IsActive = true;
 
         // Notify that the formatted score text has changed

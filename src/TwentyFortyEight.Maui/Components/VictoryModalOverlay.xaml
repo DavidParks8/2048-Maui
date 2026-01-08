@@ -52,6 +52,23 @@
                            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                            HorizontalOptions="Center" />
 
+                    <Label x:Name="UndoLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+                           HorizontalOptions="Center">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding State.UndoCount}" Value="0">
+                                <Setter Property="IsVisible" Value="False" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Undos used: " />
+                                <Span Text="{Binding State.UndoCount}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
                     <HorizontalStackLayout Spacing="16" HorizontalOptions="Center" Margin="0,16,0,0">
                         <Button x:Name="KeepPlayingButton"
                                 Text="{x:Static resx:AppStrings.KeepPlaying}"

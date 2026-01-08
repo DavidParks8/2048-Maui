@@ -34,6 +34,12 @@ public sealed partial class VictoryState : ObservableObject
     private int _score;
 
     /// <summary>
+    /// The number of undos performed during this game.
+    /// </summary>
+    [ObservableProperty]
+    private int _undoCount;
+
+    /// <summary>
     /// Resets the victory state to its initial values.
     /// </summary>
     public void Reset()
@@ -42,5 +48,6 @@ public sealed partial class VictoryState : ObservableObject
         IsModalVisible = false;
         WinningValue = 0;
         Score = 0;
+        UndoCount = 0;
     }
 }

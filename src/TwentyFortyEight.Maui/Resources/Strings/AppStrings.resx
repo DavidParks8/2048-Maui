@@ -160,6 +160,9 @@
   <data name="TryAgain" xml:space="preserve">
     <value>Try Again</value>
   </data>
+  <data name="UndosUsedFormat" xml:space="preserve">
+    <value>Undos used: {0}</value>
+  </data>
   <data name="Statistics" xml:space="preserve">
     <value>Statistics</value>
   </data>

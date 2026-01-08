@@ -59,8 +59,9 @@ public interface IUserFeedbackService
     /// </summary>
     /// <param name="score">The final score achieved.</param>
     /// <param name="bestScore">The best score.</param>
+    /// <param name="undoCount">The number of undos used in this game.</param>
     /// <returns>True if user wants to try again, false otherwise.</returns>
-    Task<bool> ShowGameOverAsync(int score, int bestScore);
+    Task<bool> ShowGameOverAsync(int score, int bestScore, int undoCount = 0);
 
     /// <summary>
     /// Shows the how to play instructions.
