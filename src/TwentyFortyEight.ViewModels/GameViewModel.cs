@@ -101,6 +101,11 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public WallSegment? Wall => _engine.CurrentState.Wall;
 
+    /// <summary>
+    /// Gets the total number of undos performed in the current game session.
+    /// </summary>
+    public int UndoCount => _engine.UndoCount;
+
     [ObservableProperty]
     private double _boardScaleFactor = 1.0;
 
@@ -509,6 +514,8 @@ public partial class GameViewModel : ObservableObject
 
         // Wall may change on moves/undo or initial load.
         OnPropertyChanged(nameof(Wall));
+        // UndoCount may change on undo.
+        OnPropertyChanged(nameof(UndoCount));
 
         // Handle game over state
         if (state.IsGameOver)
@@ -766,7 +773,7 @@ public partial class GameViewModel : ObservableObject
 
     private async Task ShowGameOverDialogAsync()
     {
-        var tryAgain = await _feedbackService.ShowGameOverAsync(Score, BestScore);
+        var tryAgain = await _feedbackService.ShowGameOverAsync(Score, BestScore, UndoCount);
         if (tryAgain)
         {
             await NewGameAsync();

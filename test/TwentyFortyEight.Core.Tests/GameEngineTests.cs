@@ -515,6 +515,100 @@ public class GameEngineTests
     }
 
     [TestMethod]
+    public void UndoCount_TracksNumberOfUndos()
+    {
+        // Arrange
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
+        Game2048Engine engine = new(
+            config,
+            random,
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
+
+        // Act - Make several moves and undo some
+        engine.Move(Direction.Left);
+        engine.Move(Direction.Right);
+        engine.Move(Direction.Up);
+
+        Assert.AreEqual(0, engine.UndoCount, "UndoCount should start at 0");
+
+        engine.Undo();
+        Assert.AreEqual(1, engine.UndoCount, "UndoCount should be 1 after first undo");
+
+        engine.Undo();
+        Assert.AreEqual(2, engine.UndoCount, "UndoCount should be 2 after second undo");
+
+        engine.Move(Direction.Down); // Make a new move
+        Assert.AreEqual(2, engine.UndoCount, "UndoCount should persist after new move");
+
+        engine.Undo();
+        Assert.AreEqual(3, engine.UndoCount, "UndoCount should increment to 3");
+    }
+
+    [TestMethod]
+    public void UndoCount_ResetsOnNewGame()
+    {
+        // Arrange
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
+        Game2048Engine engine = new(
+            config,
+            random,
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
+
+        // Act
+        engine.Move(Direction.Left);
+        engine.Undo();
+        Assert.AreEqual(1, engine.UndoCount, "UndoCount should be 1 after undo");
+
+        engine.NewGame();
+
+        // Assert
+        Assert.AreEqual(0, engine.UndoCount, "UndoCount should reset to 0 on new game");
+    }
+
+    [TestMethod]
+    public void UndoCount_PersistsInSave()
+    {
+        // Arrange
+        GameConfig config = new() { Size = 4 };
+        SystemRandomSource random = new(42);
+        Game2048Engine engine = new(
+            config,
+            random,
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
+
+        // Act - Make moves and undo
+        engine.Move(Direction.Left);
+        engine.Move(Direction.Right);
+        engine.Undo();
+        engine.Undo();
+
+        Assert.AreEqual(2, engine.UndoCount, "UndoCount should be 2");
+
+        // Save and restore
+        var save = engine.ToSaveDto();
+        Assert.AreEqual(2, save.UndoCount, "Save should contain undo count");
+
+        Game2048Engine restoredEngine = new(
+            save,
+            config,
+            new SystemRandomSource(42),
+            NullStatisticsTracker.Instance,
+            new BoardMoveSimulator()
+        );
+
+        // Assert
+        Assert.AreEqual(2, restoredEngine.UndoCount, "Restored engine should have same undo count");
+    }
+
+    [TestMethod]
     public void NewGame_ResetsVictoryLatch_AllowingVictoryToFireAgain()
     {
         // Arrange: small WinTile makes deterministic win feasible
