@@ -17,7 +17,7 @@ namespace TwentyFortyEight.Core;
 /// is <b>cleared and repopulated on each call</b>. Do not hold references to the result across
 /// multiple calls to <see cref="Analyze"/>. If you need to preserve data, copy it immediately:
 /// <code>
-/// var result = analyzer.Analyze(prev, next, dir);
+/// var result = analyzer.Analyze(new MoveAnalysisRequest(new PlayfieldSnapshot(prev), next, dir));
 /// var movementsCopy = result.Movements.ToList(); // Copy before next Analyze call
 /// </code>
 /// </para>
@@ -33,20 +33,22 @@ public class MoveAnalyzer : IMoveAnalyzer
     private static readonly ObjectPool<List<(int index, int value)>> s_tileListPool =
         ObjectPool.Create(new TileListPooledObjectPolicy());
 
-    // Thread-local reusable result instance - each thread gets its own to avoid contention
-    private static readonly ThreadLocal<MoveAnalysisResult> s_result = new(
-        () => new MoveAnalysisResult()
-    );
+    // Thread-static reusable result instance - each thread gets its own to avoid contention.
+    [ThreadStatic]
+    private static MoveAnalysisResult? s_result;
 
     /// <inheritdoc />
-    public MoveAnalysisResult Analyze(Board previousBoard, Board newBoard, Direction direction)
+    public MoveAnalysisResult Analyze(MoveAnalysisRequest request)
     {
-        var result = s_result.Value!;
+        var result = s_result ??= new MoveAnalysisResult();
         // Clear the reusable result before populating
         result.Clear();
 
+        var previousBoard = request.Previous.Board;
+        var newBoard = request.NewBoard;
+
         // Calculate movements directly into the result
-        CalculateTileMovements(previousBoard, direction, result);
+        CalculateTileMovements(request.Previous, request.Direction, result);
 
         // Rent pooled HashSets for internal lookups only
         var movedFromPositions = s_positionSetPool.Get();
@@ -118,86 +120,115 @@ public class MoveAnalyzer : IMoveAnalyzer
     /// This tracks where each tile moves to, including merges.
     /// </summary>
     private static void CalculateTileMovements(
-        Board previousBoard,
+        PlayfieldSnapshot previous,
         Direction direction,
         MoveAnalysisResult result
     )
     {
+        var previousBoard = previous.Board;
+        var wall = previous.Wall;
         var size = previousBoard.Size;
 
         // Use SpanOwner for pooled array allocation
         using SpanOwner<int> indicesOwner = SpanOwner<int>.Allocate(size);
         var indices = indicesOwner.Span;
 
-        // Rent tiles list from pool
-        var tiles = s_tileListPool.Get();
+        // Process each line (row or column) depending on direction
+        for (int line = 0; line < size; line++)
+        {
+            // Get indices for this line based on direction
+            FillLineIndices(indices, line, size, direction);
 
+            var split = WallSegmentSplitHelper.TryGetSplitIndex(
+                indices,
+                size,
+                line,
+                direction,
+                wall
+            );
+
+            if (split is null)
+            {
+                CalculateSegmentMovements(previousBoard, indices, 0, size, result);
+            }
+            else
+            {
+                CalculateSegmentMovements(previousBoard, indices, 0, split.Value, result);
+                CalculateSegmentMovements(
+                    previousBoard,
+                    indices,
+                    split.Value,
+                    size - split.Value,
+                    result
+                );
+            }
+        }
+    }
+
+    private static void CalculateSegmentMovements(
+        Board previousBoard,
+        Span<int> indices,
+        int segmentStart,
+        int segmentLength,
+        MoveAnalysisResult result
+    )
+    {
+        var tiles = s_tileListPool.Get();
         try
         {
-            // Process each line (row or column) depending on direction
-            for (int line = 0; line < size; line++)
+            tiles.Clear();
+            for (int i = 0; i < segmentLength; i++)
             {
-                // Get indices for this line based on direction
-                FillLineIndices(indices, line, size, direction);
-
-                // Collect non-zero tiles from previous board with their positions
-                tiles.Clear();
-                foreach (var idx in indices)
+                var idx = indices[segmentStart + i];
+                if (previousBoard[idx] != 0)
                 {
-                    if (previousBoard[idx] != 0)
+                    tiles.Add((idx, previousBoard[idx]));
+                }
+            }
+
+            if (tiles.Count == 0)
+            {
+                return;
+            }
+
+            int destPosition = segmentStart;
+            int iTile = 0;
+            while (iTile < tiles.Count)
+            {
+                var (sourceIdx, value) = tiles[iTile];
+                var (sourceRow, sourceCol) = previousBoard.GetPosition(sourceIdx);
+                Position source = new(sourceRow, sourceCol);
+
+                if (iTile + 1 < tiles.Count && tiles[iTile + 1].value == value)
+                {
+                    var destIdx = indices[destPosition];
+                    var (destRow, destCol) = previousBoard.GetPosition(destIdx);
+                    Position dest = new(destRow, destCol);
+
+                    result.AddMovement(new TileMovement(source, dest, value, true));
+
+                    var (source2Idx, _) = tiles[iTile + 1];
+                    var (source2Row, source2Col) = previousBoard.GetPosition(source2Idx);
+                    Position source2 = new(source2Row, source2Col);
+                    result.AddMovement(new TileMovement(source2, dest, value, true));
+
+                    iTile += 2;
+                }
+                else
+                {
+                    var destIdx = indices[destPosition];
+                    var (destRow, destCol) = previousBoard.GetPosition(destIdx);
+                    Position dest = new(destRow, destCol);
+
+                    if (source != dest)
                     {
-                        tiles.Add((idx, previousBoard[idx]));
+                        result.AddMovement(new TileMovement(source, dest, value, false));
                     }
+
+                    iTile++;
                 }
 
-                if (tiles.Count == 0)
-                    continue;
-
-                // Process tiles: merge and compact toward the direction
-                int destPosition = 0;
-                int i = 0;
-                while (i < tiles.Count)
-                {
-                    var (sourceIdx, value) = tiles[i];
-                    var (sourceRow, sourceCol) = previousBoard.GetPosition(sourceIdx);
-                    Position source = new(sourceRow, sourceCol);
-
-                    // Check if next tile can merge with this one
-                    if (i + 1 < tiles.Count && tiles[i + 1].value == value)
-                    {
-                        // Merge: both tiles move to the destination
-                        var destIdx = indices[destPosition];
-                        var (destRow, destCol) = previousBoard.GetPosition(destIdx);
-                        Position dest = new(destRow, destCol);
-
-                        // First tile moves and merges
-                        result.AddMovement(new TileMovement(source, dest, value, true));
-
-                        // Second tile also moves and merges
-                        var (source2Idx, _) = tiles[i + 1];
-                        var (source2Row, source2Col) = previousBoard.GetPosition(source2Idx);
-                        Position source2 = new(source2Row, source2Col);
-                        result.AddMovement(new TileMovement(source2, dest, value, true));
-
-                        i += 2;
-                    }
-                    else
-                    {
-                        // No merge: tile just moves (or stays)
-                        var destIdx = indices[destPosition];
-                        var (destRow, destCol) = previousBoard.GetPosition(destIdx);
-                        Position dest = new(destRow, destCol);
-
-                        // Only record if actually moving
-                        if (source != dest)
-                        {
-                            result.AddMovement(new TileMovement(source, dest, value, false));
-                        }
-
-                        i++;
-                    }
-                    destPosition++;
-                }
+                destPosition++;
             }
         }
         finally

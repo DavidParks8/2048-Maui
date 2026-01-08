@@ -30,7 +30,7 @@ public partial class BottomSheetOverlay : ContentView
 
 #pragma warning restore CS0169
 
-    // Ratios for sheet heights
+    // Fallback ratio when content measurement isn't available.
     private const double HalfExpandedRatio = 0.45;
     private const double DismissThreshold = 0.25;
 
@@ -39,8 +39,13 @@ public partial class BottomSheetOverlay : ContentView
     private const uint ReduceMotionShowFadeDurationMs = 160;
     private const uint ReduceMotionHideFadeDurationMs = 120;
 
+    private const double BaseBottomPadding = 16;
+    private const double DetentSnapTolerance = 24;
+
     private double _windowHeight;
+    private double _windowWidth;
     private double _topInset = 0; // Top inset where sheet should stop (bottom of nav bar)
+    private double _bottomInset = 0; // Bottom safe area inset (home indicator)
     private double _dragStartTranslation;
     private bool _isAnimating;
     private bool _isDragging;
@@ -62,10 +67,44 @@ public partial class BottomSheetOverlay : ContentView
 
     private void OnSheetContentChanged(View? oldValue, View? newValue)
     {
+        SetSheetContent(newValue);
+    }
+
+    private void SetSheetContent(View? content)
+    {
+        if (ContentScrollView != null)
+        {
+            ContentScrollView.Content = content;
+            return;
+        }
+
         if (ContentCard != null)
         {
-            ContentCard.Content = newValue;
+            ContentCard.Content = content;
         }
+    }
+
+    private void ApplySafeAreaPadding()
+    {
+        if (SheetContainer == null)
+        {
+            return;
+        }
+
+        var padding = SheetContainer.Padding;
+        var desiredBottomPadding = BaseBottomPadding + _bottomInset;
+
+        if (Math.Abs(padding.Bottom - desiredBottomPadding) < 0.5)
+        {
+            return;
+        }
+
+        SheetContainer.Padding = new Thickness(
+            padding.Left,
+            padding.Top,
+            padding.Right,
+            desiredBottomPadding
+        );
     }
 
     private void OnScrimTapped(object? sender, TappedEventArgs e)
@@ -137,6 +176,9 @@ public partial class BottomSheetOverlay : ContentView
             var fullExpandedTranslation = _topInset; // Stops at bottom of nav bar
             var dismissTranslation = _windowHeight * (1 - DismissThreshold);
 
+            var snapMidpoint =
+                fullExpandedTranslation + (halfExpandedTranslation - fullExpandedTranslation) / 2;
+
             // Determine which detent to snap to
             double targetTranslation;
 
@@ -146,7 +188,7 @@ public partial class BottomSheetOverlay : ContentView
                 CloseCommand?.Execute(null);
                 return;
             }
-            else if (currentTranslation <= halfExpandedTranslation / 2)
+            else if (currentTranslation <= snapMidpoint)
             {
                 // Closer to full expanded (use fullExpandedTranslation which respects safe area)
                 targetTranslation = fullExpandedTranslation;
@@ -168,13 +210,119 @@ public partial class BottomSheetOverlay : ContentView
 
     private double GetHalfExpandedTranslation()
     {
-        // For half expanded (45% visible), translation = 55% of window height
-        return _windowHeight * (1 - HalfExpandedRatio);
+        // Prefer a content-fit detent so large screens don't show excessive empty space.
+        if (TryGetContentBasedTranslation(out var contentTranslation))
+        {
+            return Math.Max(contentTranslation, _topInset);
+        }
+
+        // Fallback detent based on screen ratio.
+        return Math.Max(_windowHeight * (1 - HalfExpandedRatio), _topInset);
+    }
+
+    private bool TryGetContentBasedTranslation(out double translation)
+    {
+        return TryGetContentBasedTranslation(
+            _windowHeight,
+            _windowWidth,
+            _topInset,
+            _bottomInset,
+            out translation
+        );
+    }
+
+    private bool TryGetContentBasedTranslation(
+        double windowHeight,
+        double windowWidth,
+        double topInset,
+        double bottomInset,
+        out double translation
+    )
+    {
+        translation = 0;
+
+        if (
+            SheetContainer == null
+            || ContentCard == null
+            || SheetContent == null
+            || windowHeight <= 0
+            || windowWidth <= 0
+        )
+        {
+            return false;
+        }
+
+        // Approximate available widths based on margins and max width requests.
+        // This doesn't have to be pixel-perfect; it just needs a stable measurement.
+        var sheetAvailableWidth = Math.Max(
+            0,
+            windowWidth - SheetContainer.Margin.HorizontalThickness
+        );
+        var cardAvailableWidth = Math.Max(
+            0,
+            sheetAvailableWidth - ContentCard.Margin.HorizontalThickness
+        );
+
+        if (ContentCard.MaximumWidthRequest > 0)
+        {
+            cardAvailableWidth = Math.Min(cardAvailableWidth, ContentCard.MaximumWidthRequest);
+        }
+
+        var contentAvailableWidth = Math.Max(
+            0,
+            cardAvailableWidth - ContentCard.Padding.HorizontalThickness
+        );
+        if (contentAvailableWidth <= 0)
+        {
+            return false;
+        }
+
+        var headerHeight = 0.0;
+        if (HeaderContainer != null)
+        {
+            headerHeight =
+                HeaderContainer.Height > 0
+                    ? HeaderContainer.Height
+                    : HeaderContainer.Measure(sheetAvailableWidth, double.PositiveInfinity).Height;
+        }
+
+        var contentHeight = SheetContent
+            .Measure(contentAvailableWidth, double.PositiveInfinity)
+            .Height;
+
+        var rowSpacing = SheetGrid?.RowSpacing ?? 0;
+
+        // SheetContainer padding is adjusted to BaseBottomPadding + bottomInset; use the passed-in inset
+        // so we can compute both pre- and post-resize detents accurately.
+        var sheetPaddingVertical = SheetContainer.Padding.Top + (BaseBottomPadding + bottomInset);
+
+        var totalVisibleHeight =
+            sheetPaddingVertical
+            + headerHeight
+            + rowSpacing
+            + ContentCard.Margin.VerticalThickness
+            + ContentCard.Padding.VerticalThickness
+            + contentHeight;
+
+        // Translation = how far down the sheet starts from the top.
+        translation = windowHeight - totalVisibleHeight;
+        translation = Math.Clamp(translation, topInset, windowHeight);
+
+        return true;
     }
 
     protected override void OnSizeAllocated(double width, double height)
     {
         base.OnSizeAllocated(width, height);
+
+        var previousWindowWidth = _windowWidth;
+        var previousTopInset = _topInset;
+        var previousBottomInset = _bottomInset;
+
+        if (width > 0 && width != double.PositiveInfinity)
+        {
+            _windowWidth = width;
+        }
 
         if (height > 0 && height != double.PositiveInfinity)
         {
@@ -205,10 +353,21 @@ public partial class BottomSheetOverlay : ContentView
                 }
 
                 // Check if this is a resize vs initial display
-                if (previousWindowHeight > 0 && Math.Abs(previousWindowHeight - _windowHeight) > 1)
+                var heightChanged =
+                    previousWindowHeight > 0 && Math.Abs(previousWindowHeight - _windowHeight) > 1;
+                var widthChanged =
+                    previousWindowWidth > 0 && Math.Abs(previousWindowWidth - _windowWidth) > 1;
+
+                if (heightChanged || widthChanged)
                 {
-                    // Window resized - update sheet size while maintaining current visible ratio
-                    UpdateSheetForResize(previousWindowHeight);
+                    // Window resized - update safe-area padding and re-evaluate detent.
+                    ApplySafeAreaPadding();
+                    UpdateSheetForResize(
+                        previousWindowHeight,
+                        previousWindowWidth,
+                        previousTopInset,
+                        previousBottomInset
+                    );
                 }
                 else
                 {
@@ -226,23 +385,68 @@ public partial class BottomSheetOverlay : ContentView
         }
     }
 
-    private void UpdateSheetForResize(double previousWindowHeight)
+    private void UpdateSheetForResize(
+        double previousWindowHeight,
+        double previousWindowWidth,
+        double previousTopInset,
+        double previousBottomInset
+    )
     {
         if (SheetContainer == null)
         {
             return;
         }
 
-        // Calculate the current visible ratio based on previous window height
+        // If we're currently near a detent, snap to the recalculated detent after resize.
+        // Otherwise, preserve the visible ratio to avoid surprising jumps.
         var currentTranslation = SheetContainer.TranslationY;
-        var previousVisibleRatio =
-            1 - ((currentTranslation - _topInset) / (previousWindowHeight - _topInset));
 
-        // Clamp ratio to valid range
-        previousVisibleRatio = Math.Clamp(previousVisibleRatio, 0, 1);
+        var previousFullDetent = previousTopInset;
+        var previousPreferredDetent = Math.Max(
+            previousWindowHeight * (1 - HalfExpandedRatio),
+            previousTopInset
+        );
+
+        if (
+            TryGetContentBasedTranslation(
+                previousWindowHeight,
+                previousWindowWidth,
+                previousTopInset,
+                previousBottomInset,
+                out var previousContentDetent
+            )
+        )
+        {
+            previousPreferredDetent = Math.Max(previousContentDetent, previousTopInset);
+        }
+
+        var distToFull = Math.Abs(currentTranslation - previousFullDetent);
+        var distToPreferred = Math.Abs(currentTranslation - previousPreferredDetent);
+        var isNearDetent = Math.Min(distToFull, distToPreferred) <= DetentSnapTolerance;
 
         // Update sheet height
         SheetContainer.HeightRequest = _windowHeight;
+
+        if (isNearDetent)
+        {
+            var snapToFull = distToFull <= distToPreferred;
+            SheetContainer.TranslationY = snapToFull ? _topInset : GetHalfExpandedTranslation();
+            return;
+        }
+
+        // Calculate the current visible ratio based on previous window height
+        var previousDenominator = previousWindowHeight - previousTopInset;
+        if (previousDenominator <= 0)
+        {
+            SheetContainer.TranslationY = Math.Clamp(currentTranslation, _topInset, _windowHeight);
+            return;
+        }
+
+        var previousVisibleRatio =
+            1 - ((currentTranslation - previousTopInset) / previousDenominator);
+
+        // Clamp ratio to valid range
+        previousVisibleRatio = Math.Clamp(previousVisibleRatio, 0, 1);
 
         // Calculate new translation to maintain the same visible ratio
         var newTranslation = _topInset + (1 - previousVisibleRatio) * (_windowHeight - _topInset);
@@ -292,10 +496,10 @@ public partial class BottomSheetOverlay : ContentView
             TitleLabel.Text = Title;
         }
 
-        if (ContentCard != null && SheetContent != null)
-        {
-            ContentCard.Content = SheetContent;
-        }
+        SetSheetContent(SheetContent);
+
+        // Respect iOS home indicator safe area.
+        ApplySafeAreaPadding();
 
         // Set sheet height to full window height
         SheetContainer.HeightRequest = _windowHeight;
@@ -443,9 +647,13 @@ public partial class BottomSheetOverlay : ContentView
         var window = viewController?.View?.Window;
         if (window != null)
         {
+            _windowWidth = window.Bounds.Width;
+
             // Get the navigation bar bottom position
             // This is where the sheet should stop when fully expanded
-            var safeAreaTop = window.SafeAreaInsets.Top;
+            var safeAreaInsets = window.SafeAreaInsets;
+            var safeAreaTop = safeAreaInsets.Top;
+            _bottomInset = safeAreaInsets.Bottom;
 
             // Try to get the navigation bar height from the navigation controller
             var navController = viewController?.NavigationController;
@@ -460,6 +668,7 @@ public partial class BottomSheetOverlay : ContentView
         // Non-iOS platforms: the overlay is hosted inside the current page's visual tree,
         // so we should size to the actual allocated/visual height (not an estimated window height).
         _topInset = 0;
+        _bottomInset = 0;
 
         // Prefer this view's size if available.
         if (Height > 0 && Height != double.PositiveInfinity)

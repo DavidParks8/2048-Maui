@@ -5,6 +5,8 @@ namespace TwentyFortyEight.Core;
 /// </summary>
 public class GameConfig
 {
+    private string? _rulesetId;
+
     /// <summary>
     /// Maximum reasonable board size. Larger sizes may cause performance issues.
     /// </summary>
@@ -13,6 +15,8 @@ public class GameConfig
     private const int DefaultBoardSize = 4;
 
     private const int DefaultWinTile = 2048;
+
+    private const GameMode DefaultMode = GameMode.Classic;
 
     /// <summary>
     /// Size of the board (default 4x4).
@@ -25,30 +29,49 @@ public class GameConfig
     public int WinTile { get; init; } = DefaultWinTile;
 
     /// <summary>
+    /// Game mode (default Classic).
+    /// </summary>
+    public GameMode Mode { get; init; } = DefaultMode;
+
+    /// <summary>
     /// Stable identifier for persistence and scoping.
     /// </summary>
     public string RulesetId
     {
-        get
-        {
-            List<string> parts = [];
-
-            if (Size != DefaultBoardSize)
-            {
-                parts.Add($"size={Size}");
-            }
-
-            if (WinTile != DefaultWinTile)
-            {
-                parts.Add($"win={WinTile}");
-            }
-
-            if (parts.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            return string.Join(';', parts);
-        }
+        get => _rulesetId ??= BuildRulesetId();
     }
+
+    private string BuildRulesetId()
+    {
+        List<string> parts = [];
+
+        if (Size != DefaultBoardSize)
+        {
+            parts.Add($"size={Size}");
+        }
+
+        if (WinTile != DefaultWinTile)
+        {
+            parts.Add($"win={WinTile}");
+        }
+
+        if (Mode != DefaultMode)
+        {
+            parts.Add($"mode={GetModeId(Mode)}");
+        }
+
+        if (parts.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(';', parts);
+    }
+
+    private static string GetModeId(GameMode mode) =>
+        mode switch
+        {
+            GameMode.Walltastrophy => "walltastrophy",
+            _ => "classic",
+        };
 }

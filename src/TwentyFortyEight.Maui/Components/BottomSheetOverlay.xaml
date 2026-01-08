@@ -37,9 +37,9 @@
                 components:LiquidGlass.EffectType="Regular"
                 components:LiquidGlass.CornerRadius="20">
 
-            <Grid RowDefinitions="Auto,*" RowSpacing="12">
+            <Grid x:Name="SheetGrid" RowDefinitions="Auto,*" RowSpacing="12">
                 <!-- Header: drag indicator + centered title + close button -->
-                <Grid Grid.Row="0" RowDefinitions="Auto,Auto" Padding="16,0,16,0">
+                <Grid x:Name="HeaderContainer" Grid.Row="0" RowDefinitions="Auto,Auto" Padding="16,0,16,0">
                     <Grid.GestureRecognizers>
                         <PanGestureRecognizer PanUpdated="OnSheetPanUpdated" />
                     </Grid.GestureRecognizers>
@@ -106,7 +106,12 @@
                         Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                         components:LiquidGlass.EffectType="Regular"
                         components:LiquidGlass.EnableShadowEffect="True"
-                        components:LiquidGlass.CornerRadius="20" />
+                        components:LiquidGlass.CornerRadius="20">
+
+                    <ScrollView x:Name="ContentScrollView"
+                                VerticalScrollBarVisibility="Never"
+                                HorizontalScrollBarVisibility="Never" />
+                </Border>
             </Grid>
         </Border>
     </Grid>

@@ -82,6 +82,21 @@
   <data name="ModeTitle" xml:space="preserve">
     <value>Mode</value>
   </data>
+  <data name="GameMode" xml:space="preserve">
+    <value>Game Mode</value>
+  </data>
+  <data name="ClassicMode" xml:space="preserve">
+    <value>Classic</value>
+  </data>
+  <data name="WalltastrophyMode" xml:space="preserve">
+    <value>Walltastrophy</value>
+  </data>
+  <data name="ClassicModeDescription" xml:space="preserve">
+    <value>The original 2048 rules. Slide and merge tiles to reach the winning number.</value>
+  </data>
+  <data name="WalltastrophyModeDescription" xml:space="preserve">
+    <value>Each successful move places a new wall between cells. The wall blocks movement and merges across it.</value>
+  </data>
   <data name="ModeSection" xml:space="preserve">
     <value>MODE</value>
   </data>
@@ -89,7 +104,7 @@
     <value>Board Size</value>
   </data>
   <data name="ModeHelperText" xml:space="preserve">
-    <value>Your progress is saved separately for each board.</value>
+    <value>Your progress is saved separately for each board and game mode.</value>
   </data>
   <data name="Play" xml:space="preserve">
     <value>Change mode</value>

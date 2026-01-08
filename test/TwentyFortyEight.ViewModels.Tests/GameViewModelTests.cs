@@ -65,9 +65,7 @@ public class GameViewModelTests
         _settingsServiceMock.SetupSet<bool>(s => s.CoachEnabled = It.IsAny<bool>());
         _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(new GameConfig());
         _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(0);
-        _repositoryMock
-            .Setup(r => r.LoadGameState(It.IsAny<GameConfig>()))
-            .Returns((GameState?)null);
+        _repositoryMock.Setup(r => r.LoadGame(It.IsAny<GameConfig>())).Returns((GameSave?)null);
         _sessionCoordinatorMock.Setup(s => s.IsSocialGamingAvailable).Returns(false);
 
         // Setup random source for deterministic tile spawning
@@ -124,14 +122,7 @@ public class GameViewModelTests
     {
         // Arrange
         _coachSuggestionServiceMock
-            .Setup(s =>
-                s.GetSuggestion(
-                    It.IsAny<Board>(),
-                    It.IsAny<GameConfig>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<bool>()
-                )
-            )
+            .Setup(s => s.GetSuggestion(It.IsAny<CoachSuggestionRequest>()))
             .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
 
         var viewModel = CreateViewModel();
@@ -151,14 +142,7 @@ public class GameViewModelTests
     {
         // Arrange
         _coachSuggestionServiceMock
-            .Setup(s =>
-                s.GetSuggestion(
-                    It.IsAny<Board>(),
-                    It.IsAny<GameConfig>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<bool>()
-                )
-            )
+            .Setup(s => s.GetSuggestion(It.IsAny<CoachSuggestionRequest>()))
             .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
 
         var viewModel = CreateViewModel();
@@ -222,10 +206,7 @@ public class GameViewModelTests
             r => r.GetBestScore(It.Is<GameConfig>(c => c.Size == 5)),
             Times.Once
         );
-        _repositoryMock.Verify(
-            r => r.LoadGameState(It.Is<GameConfig>(c => c.Size == 5)),
-            Times.Once
-        );
+        _repositoryMock.Verify(r => r.LoadGame(It.Is<GameConfig>(c => c.Size == 5)), Times.Once);
     }
 
     [TestMethod]
@@ -295,7 +276,7 @@ public class GameViewModelTests
         // Assert - Should not show confirmation dialog
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
         _repositoryMock.Verify(
-            r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()),
+            r => r.SaveGame(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameSave>()),
             Times.Once
         );
     }
@@ -314,7 +295,7 @@ public class GameViewModelTests
         // Assert
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
         _repositoryMock.Verify(
-            r => r.SaveGameState(It.IsAny<GameConfig>(), It.IsAny<GameState>()),
+            r => r.SaveGame(It.IsAny<GameConfig>(), It.IsAny<GameSave>()),
             Times.Never
         );
     }
@@ -333,7 +314,7 @@ public class GameViewModelTests
         // Assert
         _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
         _repositoryMock.Verify(
-            r => r.SaveGameState(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameState>()),
+            r => r.SaveGame(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameSave>()),
             Times.Once
         );
     }
@@ -383,18 +364,18 @@ public class GameViewModelTests
         // Assert
         _repositoryMock.Verify(
             r =>
-                r.SaveGameState(
+                r.SaveGame(
                     It.Is<GameConfig>(c => c.RulesetId == oldRulesetId),
-                    It.IsAny<GameState>()
+                    It.IsAny<GameSave>()
                 ),
             Times.AtLeastOnce
         );
 
         _repositoryMock.Verify(
             r =>
-                r.SaveGameState(
+                r.SaveGame(
                     It.Is<GameConfig>(c => c.RulesetId == newRulesetId),
-                    It.IsAny<GameState>()
+                    It.IsAny<GameSave>()
                 ),
             Times.AtLeastOnce
         );
@@ -508,7 +489,7 @@ public class GameViewModelTests
     {
         // Arrange
         _moveAdvisorMock
-            .Setup(a => a.Recommend(It.IsAny<Board>(), It.IsAny<GameConfig>()))
+            .Setup(a => a.Recommend(It.IsAny<MoveAdvisorRequest>()))
             .Returns((MoveRecommendation?)null);
         _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(false);
 
@@ -532,7 +513,7 @@ public class GameViewModelTests
     {
         // Arrange
         _moveAdvisorMock
-            .Setup(a => a.Recommend(It.IsAny<Board>(), It.IsAny<GameConfig>()))
+            .Setup(a => a.Recommend(It.IsAny<MoveAdvisorRequest>()))
             .Returns((MoveRecommendation?)null);
 
         var viewModel = CreateViewModel();

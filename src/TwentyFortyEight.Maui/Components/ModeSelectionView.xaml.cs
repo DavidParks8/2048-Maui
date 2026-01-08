@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
+using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
@@ -19,23 +20,45 @@ public partial class ModeSelectionView : ContentView
 {
     private readonly GameViewModel _viewModel;
     private readonly int _originalBoardSize;
+    private readonly GameMode _originalGameMode;
     private Picker? _sizePicker;
+    private bool _isViewModelSubscribed;
 
     public event EventHandler? PlayRequested;
 
-    public ModeSelectionView(GameViewModel viewModel, int originalBoardSize)
+    public ModeSelectionView(
+        GameViewModel viewModel,
+        int originalBoardSize,
+        GameMode originalGameMode
+    )
     {
         InitializeComponent();
         _viewModel = viewModel;
         _originalBoardSize = originalBoardSize;
+        _originalGameMode = originalGameMode;
         BindingContext = _viewModel;
 
         CreateSizePicker();
-        HelperTextLabel.Text = AppStrings.ModeHelperText;
+        UpdateHelperText();
+        UpdateModeTabVisualState();
         UpdatePlayButtonState();
 
         // Listen for picker changes to update button state
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _isViewModelSubscribed = true;
+
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object? sender, EventArgs e)
+    {
+        if (_isViewModelSubscribed)
+        {
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _isViewModelSubscribed = false;
+        }
+
+        Unloaded -= OnUnloaded;
     }
 
     private void CreateSizePicker()
@@ -142,16 +165,59 @@ public partial class ModeSelectionView : ContentView
         System.ComponentModel.PropertyChangedEventArgs e
     )
     {
-        if (e.PropertyName == nameof(GameViewModel.PendingBoardSize))
+        if (
+            e.PropertyName == nameof(GameViewModel.PendingBoardSize)
+            || e.PropertyName == nameof(GameViewModel.PendingGameMode)
+        )
         {
+            UpdateHelperText();
+            UpdateModeTabVisualState();
             UpdatePlayButtonState();
         }
     }
 
     private void UpdatePlayButtonState()
     {
-        // Only enable the button if the board size has changed
-        PlayButton.IsEnabled = _viewModel.PendingBoardSize != _originalBoardSize;
+        PlayButton.IsEnabled =
+            _viewModel.PendingBoardSize != _originalBoardSize
+            || _viewModel.PendingGameMode != _originalGameMode;
+    }
+
+    private void OnClassicModeClicked(object? sender, EventArgs e)
+    {
+        _viewModel.PendingGameMode = GameMode.Classic;
+    }
+
+    private void OnWalltastrophyModeClicked(object? sender, EventArgs e)
+    {
+        _viewModel.PendingGameMode = GameMode.Walltastrophy;
+    }
+
+    private void UpdateHelperText()
+    {
+        ModeDescriptionLabel.Text = _viewModel.PendingGameMode switch
+        {
+            GameMode.Walltastrophy => AppStrings.WalltastrophyModeDescription,
+            _ => AppStrings.ClassicModeDescription,
+        };
+    }
+
+    private void UpdateModeTabVisualState()
+    {
+        bool isClassic = _viewModel.PendingGameMode == GameMode.Classic;
+
+        var selectedBackground = GetThemeColor("Gray200", "Gray600");
+        var selectedTextColor = GetThemeColor("NativeTextPrimaryLight", "NativeTextPrimaryDark");
+        var unselectedTextColor = GetThemeColor(
+            "NativeTextSecondaryLight",
+            "NativeTextSecondaryDark"
+        );
+
+        ClassicTab.Background = isClassic ? selectedBackground : Colors.Transparent;
+        WalltastrophyTab.Background = isClassic ? Colors.Transparent : selectedBackground;
+
+        ClassicTabButton.TextColor = isClassic ? selectedTextColor : unselectedTextColor;
+        WalltastrophyTabButton.TextColor = isClassic ? unselectedTextColor : selectedTextColor;
     }
 
     private void OnPlayClicked(object? sender, EventArgs e)

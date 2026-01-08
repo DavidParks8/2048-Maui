@@ -43,4 +43,47 @@ public class RulesetIdTests
         StringAssert.Contains(nonDefaultWin.RulesetId, "win=4096");
         Assert.IsFalse(nonDefaultWin.RulesetId.Contains("size=", StringComparison.Ordinal));
     }
+
+    [TestMethod]
+    public void RulesetId_Walltastrophy_IncludesModeToken()
+    {
+        var config = new GameConfig
+        {
+            Size = 4,
+            WinTile = 2048,
+            Mode = GameMode.Walltastrophy,
+        };
+
+        StringAssert.Contains(config.RulesetId, "mode=walltastrophy");
+    }
+
+    [TestMethod]
+    public void RulesetId_Classic_OmitsModeToken()
+    {
+        var config = new GameConfig
+        {
+            Size = 5,
+            WinTile = 2048,
+            Mode = GameMode.Classic,
+        };
+
+        StringAssert.Contains(config.RulesetId, "size=5");
+        Assert.IsFalse(config.RulesetId.Contains("mode=", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void RulesetId_RepeatedAccess_ReturnsSameInstance()
+    {
+        var config = new GameConfig
+        {
+            Size = 5,
+            WinTile = 4096,
+            Mode = GameMode.Walltastrophy,
+        };
+
+        var first = config.RulesetId;
+        var second = config.RulesetId;
+
+        Assert.AreSame(first, second);
+    }
 }

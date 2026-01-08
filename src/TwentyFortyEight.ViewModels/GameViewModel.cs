@@ -83,10 +83,23 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private int _pendingBoardSize;
 
+    [ObservableProperty]
+    private GameMode _pendingGameMode;
+
     /// <summary>
     /// Gets the board size for UI layout calculations.
     /// </summary>
     public int BoardSize => _config.Size;
+
+    /// <summary>
+    /// Gets the active game mode.
+    /// </summary>
+    public GameMode GameMode => _config.Mode;
+
+    /// <summary>
+    /// Gets the current between-cell wall segment (Walltastrophy), or null.
+    /// </summary>
+    public WallSegment? Wall => _engine.CurrentState.Wall;
 
     [ObservableProperty]
     private double _boardScaleFactor = 1.0;
@@ -173,6 +186,7 @@ public partial class GameViewModel : ObservableObject
 
         _config = lastConfig;
         PendingBoardSize = _config.Size;
+        PendingGameMode = _config.Mode;
         _engine = _engineFactory.Create(_config);
         _engine.VictoryAchieved += OnEngineVictoryAchieved;
 
@@ -280,7 +294,7 @@ public partial class GameViewModel : ObservableObject
 
         _engine.NewGame();
         UpdateUI();
-        _repository.SaveGameState(_config, _engine.CurrentState);
+        _repository.SaveGame(_config, _engine.ToSaveDto());
     }
 
     [RelayCommand]
@@ -308,6 +322,7 @@ public partial class GameViewModel : ObservableObject
         {
             // Capture previous state before the move
             var previousBoard = _engine.CurrentState.Board.Clone();
+            var previousWall = _engine.CurrentState.Wall;
             var previousScore = Score;
 
             var moved = _engine.Move(direction);
@@ -321,8 +336,8 @@ public partial class GameViewModel : ObservableObject
                 // Trigger haptic feedback if enabled and supported
                 _feedbackService.PerformMoveHaptic();
 
-                UpdateUI(previousBoard, direction);
-                _repository.SaveGameState(_config, _engine.CurrentState);
+                UpdateUI(previousBoard, direction, previousWall);
+                _repository.SaveGame(_config, _engine.ToSaveDto());
 
                 // Update best score and submit to social gaming service
                 bool isNewBest = Score > BestScore;
@@ -380,7 +395,7 @@ public partial class GameViewModel : ObservableObject
         if (_engine.Undo())
         {
             UpdateUI();
-            _repository.SaveGameState(_config, _engine.CurrentState);
+            _repository.SaveGame(_config, _engine.ToSaveDto());
         }
     }
 
@@ -402,7 +417,11 @@ public partial class GameViewModel : ObservableObject
         StrongReferenceMessenger.Default.Send(new NavigateToAboutMessage());
     }
 
-    private void UpdateUI(Board? previousBoard = null, Direction? moveDirection = null)
+    private void UpdateUI(
+        Board? previousBoard = null,
+        Direction? moveDirection = null,
+        WallSegment? previousWall = null
+    )
     {
         var state = _engine.CurrentState;
 
@@ -410,9 +429,11 @@ public partial class GameViewModel : ObservableObject
         {
             // Use Core MoveAnalyzer for all movement and categorization logic
             var analysis = _moveAnalyzer.Analyze(
-                previousBoard.Value,
-                state.Board,
-                moveDirection.Value
+                new MoveAnalysisRequest(
+                    new PlayfieldSnapshot(previousBoard.Value, previousWall),
+                    state.Board,
+                    moveDirection.Value
+                )
             );
 
             HashSet<TileViewModel> movedTiles = [];
@@ -466,6 +487,7 @@ public partial class GameViewModel : ObservableObject
                     MergedTiles = mergedTiles.ToFrozenSet(),
                     MoveDirection = moveDirection.Value,
                     TileMovements = movementsCopy,
+                    WallAfterMove = state.Wall,
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
@@ -484,6 +506,9 @@ public partial class GameViewModel : ObservableObject
         Score = state.Score;
         Moves = state.MoveCount;
         CanUndo = _engine.CanUndo;
+
+        // Wall may change on moves/undo or initial load.
+        OnPropertyChanged(nameof(Wall));
 
         // Handle game over state
         if (state.IsGameOver)
@@ -507,10 +532,13 @@ public partial class GameViewModel : ObservableObject
     {
         var state = _engine.CurrentState;
         var recommendation = _coachSuggestionService.GetSuggestion(
-            state.Board,
-            _config,
-            IsCoachEnabled,
-            state.IsGameOver
+            new CoachSuggestionRequest(
+                state.Board,
+                _config,
+                IsCoachEnabled,
+                state.IsGameOver,
+                state.Wall
+            )
         );
 
         if (recommendation is null)
@@ -539,13 +567,13 @@ public partial class GameViewModel : ObservableObject
             BestScore = _repository.GetBestScore(_config);
 
             // Try to load saved game
-            var state = _repository.LoadGameState(_config);
-            if (state != null)
+            var save = _repository.LoadGame(_config);
+            if (save != null)
             {
                 // IMPORTANT: Unsubscribe before replacing engine to prevent leaks/double firing.
                 _engine.VictoryAchieved -= OnEngineVictoryAchieved;
 
-                _engine = _engineFactory.Create(state, _config);
+                _engine = _engineFactory.Create(save, _config);
                 _engine.VictoryAchieved += OnEngineVictoryAchieved;
                 return;
             }
@@ -575,14 +603,24 @@ public partial class GameViewModel : ObservableObject
     [RelayCommand]
     private Task PlaySelectedModeAsync()
     {
-        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        var config = new GameConfig
+        {
+            Size = PendingBoardSize,
+            WinTile = _config.WinTile,
+            Mode = PendingGameMode,
+        };
         return ApplyRulesetAsync(config, startNew: false);
     }
 
     [RelayCommand]
     private Task StartNewSelectedModeAsync()
     {
-        var config = new GameConfig { Size = PendingBoardSize, WinTile = _config.WinTile };
+        var config = new GameConfig
+        {
+            Size = PendingBoardSize,
+            WinTile = _config.WinTile,
+            Mode = PendingGameMode,
+        };
         return ApplyRulesetAsync(config, startNew: true);
     }
 
@@ -609,7 +647,7 @@ public partial class GameViewModel : ObservableObject
             _isNewGameConfirmationInProgress = false;
 
             // Persist the outgoing run and finalize stats for the outgoing ruleset.
-            _repository.SaveGameState(oldConfig, _engine.CurrentState);
+            _repository.SaveGame(oldConfig, _engine.ToSaveDto());
 
             if (!_engine.CurrentState.IsGameOver)
             {
@@ -627,6 +665,7 @@ public partial class GameViewModel : ObservableObject
             // Persist last active mode so we restore the correct ruleset on reboot.
             _settingsService.LastActiveGameConfig = _config;
             PendingBoardSize = _config.Size;
+            PendingGameMode = _config.Mode;
 
             // Rebuild tiles before any UpdateUI() calls.
             RebuildTilesForCurrentBoardSize();
@@ -640,15 +679,15 @@ public partial class GameViewModel : ObservableObject
             }
 
             // Load ruleset-scoped saved game if present.
-            var state = startNew ? null : _repository.LoadGameState(_config);
-            if (state != null)
+            var save = startNew ? null : _repository.LoadGame(_config);
+            if (save != null)
             {
-                _engine = _engineFactory.Create(state, _config);
+                _engine = _engineFactory.Create(save, _config);
             }
             else
             {
                 _engine = _engineFactory.Create(_config);
-                _repository.SaveGameState(_config, _engine.CurrentState);
+                _repository.SaveGame(_config, _engine.ToSaveDto());
             }
 
             _coachNudgeService.Dismiss();
@@ -661,6 +700,7 @@ public partial class GameViewModel : ObservableObject
 
             // Notify UI that BoardSize changed and refresh values.
             OnPropertyChanged(nameof(BoardSize));
+            OnPropertyChanged(nameof(GameMode));
             UpdateUI();
 
             WeakReferenceMessenger.Default.Send(
@@ -677,7 +717,12 @@ public partial class GameViewModel : ObservableObject
     {
         try
         {
-            var config = new GameConfig { Size = newSize, WinTile = _config.WinTile };
+            var config = new GameConfig
+            {
+                Size = newSize,
+                WinTile = _config.WinTile,
+                Mode = _config.Mode,
+            };
             await ApplyRulesetAsync(config, startNew: false);
         }
         catch (Exception ex)

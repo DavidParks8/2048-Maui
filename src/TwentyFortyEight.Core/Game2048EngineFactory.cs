@@ -14,8 +14,8 @@ public sealed class Game2048EngineFactory(
         return new Game2048Engine(config, randomSource, statisticsTracker, boardSimulator);
     }
 
-    public Game2048Engine Create(GameState state, GameConfig config)
+    public Game2048Engine Create(GameSave save, GameConfig config)
     {
-        return new Game2048Engine(state, config, randomSource, statisticsTracker, boardSimulator);
+        return new Game2048Engine(save, config, randomSource, statisticsTracker, boardSimulator);
     }
 }

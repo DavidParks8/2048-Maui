@@ -13,11 +13,6 @@ namespace TwentyFortyEight.Maui.Services;
 public class TileAnimationService
 {
     /// <summary>
-    /// Spacing between tiles in the grid (matches XAML ColumnSpacing/RowSpacing).
-    /// </summary>
-    private const double TileSpacing = 10;
-
-    /// <summary>
     /// Default board dimension when actual size cannot be determined.
     /// </summary>
     private const double DefaultBoardDimension = 400;
@@ -51,8 +46,11 @@ public class TileAnimationService
 
         // Animations will automatically respect OS accessibility settings (reduced motion)
         // If the OS has animations disabled, MAUI will skip to the finished state
-        var cellStepX = CalculateCellStep(gameBoard.Width, boardSize);
-        var cellStepY = CalculateCellStep(gameBoard.Height, boardSize);
+        // Use the board's actual spacing so overlay translations match the real layout.
+        // If spacing is changed dynamically for small screens, using a fixed spacing can
+        // cause overlays to miss their destinations, making tiles appear to disappear.
+        var cellStepX = CalculateCellStep(gameBoard.Width, boardSize, gameBoard.ColumnSpacing);
+        var cellStepY = CalculateCellStep(gameBoard.Height, boardSize, gameBoard.RowSpacing);
 
         // Hide new tiles during slide animation (they will be scaled in after the move)
         HideNewTiles(args.NewTiles, tileBorders);
@@ -87,10 +85,10 @@ public class TileAnimationService
         await AnimateNewTilesAsync(args.NewTiles, tileBorders, cancellationToken);
     }
 
-    private static double CalculateCellStep(double dimension, int boardSize)
+    private static double CalculateCellStep(double dimension, int boardSize, double spacing)
     {
-        var step = (dimension + TileSpacing) / boardSize;
-        return step > 0 ? step : (DefaultBoardDimension + TileSpacing) / boardSize;
+        var step = (dimension + spacing) / boardSize;
+        return step > 0 ? step : (DefaultBoardDimension + spacing) / boardSize;
     }
 
     private static void HideNewTiles(

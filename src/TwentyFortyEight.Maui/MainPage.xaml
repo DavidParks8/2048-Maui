@@ -148,6 +148,11 @@
                     <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
                 </Grid>
 
+                                <!-- Walltastrophy wall overlay (fills the divider spacing between cells) -->
+                                <AbsoluteLayout x:Name="WallOverlayLayer"
+                                                                InputTransparent="True"
+                                                                ZIndex="5" />
+
                 <!-- Coach nudge (appears only when Coach is off and user is struggling) -->
                 <components:CoachNudgeBanner
                     x:Name="CoachNudgeContainer"

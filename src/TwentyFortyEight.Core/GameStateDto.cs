@@ -37,6 +37,11 @@ public class GameStateDto
     public bool IsGameOver { get; set; }
 
     /// <summary>
+    /// Current between-cell wall segment (Walltastrophy mode), or null.
+    /// </summary>
+    public WallSegment? Wall { get; set; }
+
+    /// <summary>
     /// Creates a DTO from a GameState.
     /// </summary>
     public static GameStateDto FromGameState(GameState state)
@@ -49,6 +54,7 @@ public class GameStateDto
             MoveCount = state.MoveCount,
             IsWon = state.IsWon,
             IsGameOver = state.IsGameOver,
+            Wall = state.Wall,
         };
     }
 
@@ -59,6 +65,7 @@ public class GameStateDto
     {
         Board board = new(Board, Size);
         var maxTileValue = Board.Length > 0 ? Board.Max() : 0;
-        return new GameState(board, Score, MoveCount, IsWon, IsGameOver, maxTileValue);
+        var wall = Wall is not null && Wall.IsValidForSize(Size) ? Wall : null;
+        return new GameState(board, Score, MoveCount, IsWon, IsGameOver, maxTileValue, wall);
     }
 }

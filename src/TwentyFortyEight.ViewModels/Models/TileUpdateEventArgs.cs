@@ -34,4 +34,9 @@ public class TileUpdateEventArgs : EventArgs
     /// Uses the Core TileMovement type for platform-agnostic movement data.
     /// </summary>
     public required IReadOnlyList<TileMovement> TileMovements { get; init; }
+
+    /// <summary>
+    /// Wall segment after the move (Walltastrophy), or null.
+    /// </summary>
+    public WallSegment? WallAfterMove { get; init; }
 }

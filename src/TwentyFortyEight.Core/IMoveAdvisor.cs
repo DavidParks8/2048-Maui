@@ -10,5 +10,5 @@ public interface IMoveAdvisor
     /// Returns the recommended move for the current board state, or <see langword="null"/>
     /// if no valid move exists.
     /// </summary>
-    MoveRecommendation? Recommend(Board board, GameConfig config);
+    MoveRecommendation? Recommend(MoveAdvisorRequest request);
 }
