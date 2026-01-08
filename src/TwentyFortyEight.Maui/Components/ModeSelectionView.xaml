@@ -28,6 +28,8 @@
                                 Text="{x:Static strings:AppStrings.ClassicMode}"
                                 FontSize="15"
                                 FontAttributes="Bold"
+                                Padding="8,6"
+                                LineBreakMode="CharacterWrap"
                                 Background="Transparent"
                                 Clicked="OnClassicModeClicked" />
                     </Border>
@@ -41,6 +43,8 @@
                                 Text="{x:Static strings:AppStrings.WalltastrophyMode}"
                                 FontSize="15"
                                 FontAttributes="Bold"
+                                Padding="8,6"
+                                LineBreakMode="CharacterWrap"
                                 Background="Transparent"
                                 Clicked="OnWalltastrophyModeClicked" />
                     </Border>
