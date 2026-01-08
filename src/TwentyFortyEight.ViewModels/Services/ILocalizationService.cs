@@ -102,6 +102,13 @@ public interface ILocalizationService
     string FormatScore(int score);
 
     /// <summary>
+    /// Gets the localized undo count display string.
+    /// </summary>
+    /// <param name="undoCount">The number of undos used.</param>
+    /// <returns>A formatted undo count string (e.g., "Undos used: 5").</returns>
+    string FormatUndoCount(int undoCount);
+
+    /// <summary>
     /// Gets the localized screen reader announcement for the Coach nudge.
     /// </summary>
     string CoachNudgeAnnouncement { get; }

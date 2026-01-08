@@ -27,6 +27,11 @@ public sealed partial class VictoryViewModel(
     public string ScoreDisplayText => localizationService.FormatScore(State.Score);
 
     /// <summary>
+    /// Gets the localized undo count display text.
+    /// </summary>
+    public string UndoCountDisplayText => localizationService.FormatUndoCount(State.UndoCount);
+
+    /// <summary>
     /// Event raised when the user chooses to keep playing after victory.
     /// </summary>
     public event EventHandler? KeepPlayingRequested;
@@ -66,8 +71,9 @@ public sealed partial class VictoryViewModel(
         State.UndoCount = undoCount;
         State.IsActive = true;
 
-        // Notify that the formatted score text has changed
+        // Notify that the formatted text properties have changed
         OnPropertyChanged(nameof(ScoreDisplayText));
+        OnPropertyChanged(nameof(UndoCountDisplayText));
 
         if (ShouldReduceMotion)
         {

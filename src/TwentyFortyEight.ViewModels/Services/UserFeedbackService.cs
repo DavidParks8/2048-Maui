@@ -88,7 +88,7 @@ public sealed class UserFeedbackService(
         }
         if (undoCount > 0)
         {
-            message += $"\n\nUndos used: {undoCount}";
+            message += $"\n\n{localizationService.FormatUndoCount(undoCount)}";
         }
 
         return alertService.ShowConfirmationAsync(

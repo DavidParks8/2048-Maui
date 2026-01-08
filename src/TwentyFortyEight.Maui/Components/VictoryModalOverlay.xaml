@@ -53,6 +53,7 @@
                            HorizontalOptions="Center" />
 
                     <Label x:Name="UndoLabel"
+                           Text="{Binding UndoCountDisplayText}"
                            FontSize="14"
                            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                            HorizontalOptions="Center">
@@ -61,12 +62,6 @@
                                 <Setter Property="IsVisible" Value="False" />
                             </DataTrigger>
                         </Label.Triggers>
-                        <Label.FormattedText>
-                            <FormattedString>
-                                <Span Text="Undos used: " />
-                                <Span Text="{Binding State.UndoCount}" />
-                            </FormattedString>
-                        </Label.FormattedText>
                     </Label>
 
                     <HorizontalStackLayout Spacing="16" HorizontalOptions="Center" Margin="0,16,0,0">

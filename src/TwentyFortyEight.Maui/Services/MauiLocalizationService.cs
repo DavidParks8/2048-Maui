@@ -75,4 +75,8 @@ public class MauiLocalizationService : ILocalizationService
     /// <inheritdoc />
     public string FormatScore(int score) =>
         string.Format(CultureInfo.CurrentCulture, AppStrings.ScoreFormat, score);
+
+    /// <inheritdoc />
+    public string FormatUndoCount(int undoCount) =>
+        string.Format(CultureInfo.CurrentCulture, AppStrings.UndosUsedFormat, undoCount);
 }
