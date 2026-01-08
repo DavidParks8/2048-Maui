@@ -48,7 +48,7 @@
             </Border>
 
             <!-- Mode Description Text -->
-            <Label x:Name="HelperTextLabel"
+            <Label x:Name="ModeDescriptionLabel"
                    FontSize="15"
                    LineHeight="1.3"
                    TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
@@ -63,6 +63,13 @@
             
             <ContentView x:Name="SizePickerContainer" />
         </VerticalStackLayout>
+
+        <!-- Helper Text -->
+        <Label x:Name="HelperTextLabel"
+               Text="{x:Static strings:AppStrings.ModeHelperText}"
+               FontSize="15"
+               LineHeight="1.3"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
 
         <!-- Action Button -->
         <Button x:Name="PlayButton"
