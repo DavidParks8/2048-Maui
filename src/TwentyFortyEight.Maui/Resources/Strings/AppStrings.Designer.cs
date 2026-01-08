@@ -931,6 +931,24 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show Undo Button.
+        /// </summary>
+        internal static string ShowUndoButton {
+            get {
+                return ResourceManager.GetString("ShowUndoButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toggle to show or hide the Undo button.
+        /// </summary>
+        internal static string ShowUndoButtonHint {
+            get {
+                return ResourceManager.GetString("ShowUndoButtonHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Start New.
         /// </summary>
         internal static string StartNew {
@@ -1035,6 +1053,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string UndoDescription {
             get {
                 return ResourceManager.GetString("UndoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undos used: {0}.
+        /// </summary>
+        internal static string UndosUsedFormat {
+            get {
+                return ResourceManager.GetString("UndosUsedFormat", resourceCulture);
             }
         }
         
