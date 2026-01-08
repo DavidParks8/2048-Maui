@@ -31,7 +31,8 @@ public class AnimationDetectionTests
             config,
             randomMock.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
         );
         var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
@@ -69,7 +70,8 @@ public class AnimationDetectionTests
             config,
             randomMock.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
         );
 
         // Setup random for the new tile spawn after merge
@@ -107,7 +109,8 @@ public class AnimationDetectionTests
             config,
             randomMock.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
         );
 
         // Setup random for the new tile spawn after slide
@@ -137,7 +140,8 @@ public class AnimationDetectionTests
             config,
             randomMock.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
         );
 
         // Act & Assert for each direction

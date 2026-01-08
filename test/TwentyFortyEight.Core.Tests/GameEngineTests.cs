@@ -115,7 +115,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -147,7 +148,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -179,7 +181,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -211,7 +214,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -250,7 +254,8 @@ public class GameEngineTests
                 config,
                 random,
                 NullStatisticsTracker.Instance,
-                new BoardMoveSimulator()
+                new BoardMoveSimulator(),
+                TestHelpers.CreateSpawnStrategyFactory(random)
             );
 
             // Get initial tiles count
@@ -296,7 +301,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -319,7 +325,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // The current state should already be game over since the board is full
@@ -346,7 +353,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
         var initialBoard = engine.CurrentState.Board.ToArray();
         var initialScore = engine.CurrentState.Score;
@@ -390,7 +398,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act - Make more than 50 moves
@@ -435,7 +444,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         int eventCount = 0;
@@ -472,7 +482,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         int eventCount = 0;
@@ -497,7 +508,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act - Make several moves and undo some
@@ -530,7 +542,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -554,7 +567,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act - Make moves and undo
@@ -574,7 +588,8 @@ public class GameEngineTests
             config,
             new SystemRandomSource(42),
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(new SystemRandomSource(42))
         );
 
         // Assert
@@ -592,7 +607,8 @@ public class GameEngineTests
             config,
             random,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         int eventCount = 0;

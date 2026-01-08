@@ -109,7 +109,8 @@ public class AdaptiveSpawnTests
             config,
             mockRandom.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
         );
 
         // Act
@@ -154,7 +155,8 @@ public class AdaptiveSpawnTests
             config,
             mockRandom.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
         );
 
         // Act
