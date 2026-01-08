@@ -10,7 +10,7 @@ namespace TwentyFortyEight.ViewModels;
 /// Manages victory state, animations, and user interactions.
 /// </summary>
 public sealed partial class VictoryViewModel(
-    IReduceMotionService reduceMotionService,
+    IAccessibilitySettingsService accessibilitySettingsService,
     IUserFeedbackService userFeedbackService,
     ILocalizationService localizationService
 ) : ObservableObject
@@ -55,7 +55,7 @@ public sealed partial class VictoryViewModel(
     /// <summary>
     /// Whether animations should be skipped due to accessibility preferences.
     /// </summary>
-    public bool ShouldReduceMotion => reduceMotionService.ShouldReduceMotion();
+    public bool ShouldReduceMotion => accessibilitySettingsService.ShouldReduceMotion();
 
     /// <summary>
     /// Triggers the victory celebration flow.

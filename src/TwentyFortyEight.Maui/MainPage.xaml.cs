@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Shapes;
@@ -29,10 +30,12 @@ public partial class MainPage : ContentPage
     private readonly ISwipePreviewInteractionService _swipePreviewInteractionService;
     private readonly IWindowOverlayService _windowOverlayService;
     private readonly IWallOverlayRenderer _wallOverlayRenderer;
+    private readonly IAccessibilitySettingsService _accessibilitySettingsService;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
+    private readonly StringBuilder _boardAccessibilityBuilder = new(capacity: 256);
     private EventHandler<AppThemeChangedEventArgs>? _themeChangedHandler;
     private CancellationTokenSource? _animationCts;
     private Task _activeTileAnimationTask = Task.CompletedTask;
@@ -57,6 +60,7 @@ public partial class MainPage : ContentPage
         ISwipePreviewInteractionService swipePreviewInteractionService,
         IWindowOverlayService windowOverlayService,
         IWallOverlayRenderer wallOverlayRenderer,
+        IAccessibilitySettingsService accessibilitySettingsService,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService
     )
@@ -72,6 +76,7 @@ public partial class MainPage : ContentPage
         _swipePreviewInteractionService = swipePreviewInteractionService;
         _windowOverlayService = windowOverlayService;
         _wallOverlayRenderer = wallOverlayRenderer;
+        _accessibilitySettingsService = accessibilitySettingsService;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         BindingContext = _viewModel;
@@ -100,6 +105,10 @@ public partial class MainPage : ContentPage
         // Add tiles to the grid
         CreateTiles();
         UpdateWallOverlay(_viewModel.Wall);
+        UpdateBoardAccessibilityDescription();
+
+        // Show deterministic direction targets only when OS Voice Control is enabled.
+        UpdateVoiceControlMoveButtonsVisibility();
 
         GameBoard.SizeChanged += OnGameBoardSizeChanged;
 
@@ -124,6 +133,29 @@ public partial class MainPage : ContentPage
 
         // Handle social gaming toolbar items visibility
         UpdateToolbarItems(_viewModel.IsSocialGamingAvailable);
+    }
+
+    private void OnAccessibilitySettingsChanged(object? sender, EventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateVoiceControlMoveButtonsVisibility);
+    }
+
+    private void UpdateVoiceControlMoveButtonsVisibility()
+    {
+        bool showDirectionButtons;
+        try
+        {
+            showDirectionButtons = _accessibilitySettingsService.IsVoiceControlEnabled();
+        }
+        catch
+        {
+            showDirectionButtons = false;
+        }
+
+        MoveLeftContainer.IsVisible = showDirectionButtons;
+        MoveUpContainer.IsVisible = showDirectionButtons;
+        MoveDownContainer.IsVisible = showDirectionButtons;
+        MoveRightContainer.IsVisible = showDirectionButtons;
     }
 
     private void RebuildBoardGrid()
@@ -156,6 +188,7 @@ public partial class MainPage : ContentPage
 
         CreateTiles();
         UpdateWallOverlay(_viewModel.Wall);
+        UpdateBoardAccessibilityDescription();
     }
 
     private void OnNewGameRequested(object? sender, EventArgs e)
@@ -183,11 +216,23 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
         _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
+
+        // Keep Voice Control visibility in sync with OS state.
+        // Re-subscribe to changes and immediately check current state to handle edge cases
+        // where VoiceOver was toggled via Accessibility Shortcut (triple-click) while in-app.
+        _accessibilitySettingsService.AccessibilitySettingsChanged -=
+            OnAccessibilitySettingsChanged;
+        _accessibilitySettingsService.AccessibilitySettingsChanged +=
+            OnAccessibilitySettingsChanged;
+        UpdateVoiceControlMoveButtonsVisibility();
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+
+        _accessibilitySettingsService.AccessibilitySettingsChanged -=
+            OnAccessibilitySettingsChanged;
 
         GameBoard.SizeChanged -= OnGameBoardSizeChanged;
 
@@ -244,6 +289,19 @@ public partial class MainPage : ContentPage
             return;
 
         UpdateBoardSize(width, height);
+        UpdateMoveButtonsAlignment(width);
+    }
+
+    private void UpdateMoveButtonsAlignment(double pageWidth)
+    {
+        // On narrow screens, align movement buttons to start to avoid overlapping with undo button
+        const double narrowScreenThreshold = 450;
+
+        if (MoveButtonsContainer != null)
+        {
+            MoveButtonsContainer.HorizontalOptions =
+                pageWidth < narrowScreenThreshold ? LayoutOptions.Start : LayoutOptions.Center;
+        }
     }
 
     private void UpdateBoardSize(double pageWidth, double pageHeight)
@@ -324,6 +382,11 @@ public partial class MainPage : ContentPage
                 },
             };
 
+            // Tiles/cells are not actionable; keep them out of the accessibility tree to avoid
+            // Voice Control clutter and misleading tap targets. The board container exposes the
+            // full board state via SemanticProperties.Description.
+            AutomationProperties.SetIsInAccessibleTree(emptyCell, false);
+
             var label = new Label
             {
                 Text = tile.DisplayValue,
@@ -341,8 +404,12 @@ public partial class MainPage : ContentPage
                 MaxLines = 1,
             };
 
-            var content = new Grid();
+            AutomationProperties.SetIsInAccessibleTree(label, false);
+
+            Grid content = new();
             content.Children.Add(label);
+
+            AutomationProperties.SetIsInAccessibleTree(content, false);
 
             Border border = new()
             {
@@ -356,6 +423,8 @@ public partial class MainPage : ContentPage
                     CornerRadius = 5,
                 },
             };
+
+            AutomationProperties.SetIsInAccessibleTree(border, false);
 
             // Prevent a brief flash of newly spawned tiles before the spawn animation hides them.
             // The ViewModel sets IsNewTile=true before updating Value, so this trigger keeps the
@@ -402,6 +471,59 @@ public partial class MainPage : ContentPage
         }
 
         // PropertyChanged subscription handled at the start of this method.
+    }
+
+    private void UpdateBoardAccessibilityDescription()
+    {
+        try
+        {
+            var board = _viewModel.CurrentBoard;
+            var boardSize = board.Size;
+            if (boardSize <= 0)
+            {
+                return;
+            }
+
+            var builder = _boardAccessibilityBuilder;
+            builder.Clear();
+            builder.Append(AppStrings.GameBoardDescription);
+
+            for (int row = 0; row < boardSize; row++)
+            {
+                builder.Append(' ');
+                builder.AppendFormat(AppStrings.BoardRowFormat, row + 1, string.Empty);
+
+                // Replace the trailing ": ." introduced by the empty placeholder above.
+                // This avoids allocating a per-row joined string.
+                builder.Length -= 2;
+
+                for (int col = 0; col < boardSize; col++)
+                {
+                    if (col > 0)
+                    {
+                        builder.Append(", ");
+                    }
+
+                    int value = board[row, col];
+                    if (value == 0)
+                    {
+                        builder.Append(AppStrings.BoardEmptyCell);
+                    }
+                    else
+                    {
+                        builder.Append(value);
+                    }
+                }
+
+                builder.Append('.');
+            }
+
+            SemanticProperties.SetDescription(BoardContainer, builder.ToString());
+        }
+        catch
+        {
+            // Accessibility description should never crash the game.
+        }
     }
 
     private void BindScaledFontSize(Label label)
@@ -560,6 +682,7 @@ public partial class MainPage : ContentPage
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
         UpdateWallOverlay(e.WallAfterMove);
+        UpdateBoardAccessibilityDescription();
 
         await _swipePreviewInteractionService.HandleTilesUpdatedAsync(
             e,

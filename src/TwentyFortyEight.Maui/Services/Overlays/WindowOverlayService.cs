@@ -9,7 +9,7 @@ public partial class WindowOverlayService : IWindowOverlayService
     private Layout? _hostLayout;
 
     private readonly IInputCoordinationService _inputCoordinationService;
-    private readonly IReduceMotionService _reduceMotionService;
+    private readonly IAccessibilitySettingsService _accessibilitySettingsService;
     private bool? _previousInputBlocked;
     private bool _isHiding;
 
@@ -19,11 +19,11 @@ public partial class WindowOverlayService : IWindowOverlayService
 
     public WindowOverlayService(
         IInputCoordinationService inputCoordinationService,
-        IReduceMotionService reduceMotionService
+        IAccessibilitySettingsService accessibilitySettingsService
     )
     {
         _inputCoordinationService = inputCoordinationService;
-        _reduceMotionService = reduceMotionService;
+        _accessibilitySettingsService = accessibilitySettingsService;
     }
 
     public void ShowBottomSheet(string title, View content)
@@ -43,7 +43,7 @@ public partial class WindowOverlayService : IWindowOverlayService
                 SheetContent = content,
                 CloseCommand = dismissCommand,
                 ScrimTapCommand = dismissCommand,
-                ReduceMotionEnabled = _reduceMotionService.ShouldReduceMotion(),
+                ReduceMotionEnabled = _accessibilitySettingsService.ShouldReduceMotion(),
                 IsVisible = true,
             };
 

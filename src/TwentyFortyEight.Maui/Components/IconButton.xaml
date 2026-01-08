@@ -6,6 +6,7 @@
              x:Name="Root"
              x:DataType="local:IconButton">
     <Border
+            x:Name="TappableBorder"
             Stroke="Transparent"
             StrokeThickness="0"
             WidthRequest="{Binding ButtonSize, Source={x:Reference Root}}"
@@ -15,7 +16,8 @@
             Opacity="{Binding IsButtonEnabled, Source={x:Reference Root}, Converter={StaticResource BoolToOpacityConverter}}"
             IsEnabled="{Binding IsButtonEnabled, Source={x:Reference Root}}">
         <Border.GestureRecognizers>
-            <TapGestureRecognizer Command="{Binding Command, Source={x:Reference Root}}" />
+            <TapGestureRecognizer Command="{Binding Command, Source={x:Reference Root}}"
+                                  CommandParameter="{Binding CommandParameter, Source={x:Reference Root}}" />
         </Border.GestureRecognizers>
         <VerticalStackLayout Spacing="4"
                              VerticalOptions="Center"

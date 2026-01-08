@@ -143,7 +143,7 @@
     <value>Best score</value>
   </data>
   <data name="GameBoardDescription" xml:space="preserve">
-    <value>Game board with tiles</value>
+    <value>Game board.</value>
   </data>
   <data name="NewGameDescription" xml:space="preserve">
     <value>Start a new game</value>
@@ -264,6 +264,24 @@
   </data>
   <data name="DirectionRight" xml:space="preserve">
     <value>Right</value>
+  </data>
+  <data name="MoveUpDescription" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="MoveDownDescription" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="MoveLeftDescription" xml:space="preserve">
+    <value>Move left</value>
+  </data>
+  <data name="MoveRightDescription" xml:space="preserve">
+    <value>Move right</value>
+  </data>
+  <data name="BoardEmptyCell" xml:space="preserve">
+    <value>empty</value>
+  </data>
+  <data name="BoardRowFormat" xml:space="preserve">
+    <value>Row {0}: {1}.</value>
   </data>
   <data name="CoachReasonCreateSpace" xml:space="preserve">
     <value>Create space for new tiles</value>

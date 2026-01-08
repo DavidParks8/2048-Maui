@@ -31,6 +31,12 @@ public partial class IconButton : ContentView
     private readonly ICommand? _command;
 
     /// <summary>
+    /// Gets or sets the parameter to pass to the command.
+    /// </summary>
+    [AutoBindable]
+    private readonly object? _commandParameter;
+
+    /// <summary>
     /// Gets or sets whether the button is enabled.
     /// </summary>
     [AutoBindable(DefaultValue = "true")]
@@ -84,5 +90,22 @@ public partial class IconButton : ContentView
     public IconButton()
     {
         InitializeComponent();
+
+        // Forward SemanticProperties from the ContentView to the tappable Border
+        // so Voice Control sees the Border as the actionable element with a name.
+        Loaded += (_, _) =>
+        {
+            var description = SemanticProperties.GetDescription(this);
+            if (!string.IsNullOrEmpty(description))
+            {
+                SemanticProperties.SetDescription(TappableBorder, description);
+            }
+
+            var hint = SemanticProperties.GetHint(this);
+            if (!string.IsNullOrEmpty(hint))
+            {
+                SemanticProperties.SetHint(TappableBorder, hint);
+            }
+        };
     }
 }
