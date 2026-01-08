@@ -225,18 +225,16 @@ public class TileAnimationService
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var remaining = Math.Clamp(1 - _preview.Progress, 0, 1);
+        var duration = SwipePreviewAnimationTiming.GetCompletionDuration(
+            AnimationConstants.BaseSlideAnimationDuration,
+            _preview.Progress
+        );
 
-        // If the user lifts after partially scrubbing, the remaining slide should still be
-        // perceptible and smooth. Linear scaling can make the remainder complete in ~60ms,
-        // which reads like a snap. Use a non-linear curve and a higher minimum duration.
-        var minDuration = remaining >= 0.25 ? 180u : 120u;
-        var duration = (uint)
-            Math.Clamp(
-                (int)(AnimationConstants.BaseSlideAnimationDuration * Math.Sqrt(remaining)),
-                (int)minDuration,
-                AnimationConstants.BaseSlideAnimationDuration
-            );
+        if (duration == 0)
+        {
+            _preview.Progress = 1;
+            return;
+        }
 
         var tasks = _preview
             .Animations.Select(animation =>
