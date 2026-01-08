@@ -73,13 +73,38 @@ public class GameViewModelTests
         _randomSourceMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
         _randomSourceMock.Setup(r => r.NextDouble()).Returns(0.5);
 
+        var spawnStrategyFactory = CreateSpawnStrategyFactory(_randomSourceMock.Object);
+
         _engineFactory = new Game2048EngineFactory(
             _randomSourceMock.Object,
             _statisticsTrackerMock.Object,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            spawnStrategyFactory
         );
 
         _boardSimulator = new BoardMoveSimulator();
+    }
+
+    private static ISpawnStrategyFactory CreateSpawnStrategyFactory(IRandomSource random)
+    {
+        var classic = new ClassicSpawnStrategy(random);
+        var modern = new ModernSpawnStrategy(random);
+        return new TestSpawnStrategyFactory(classic, modern);
+    }
+
+    private sealed class TestSpawnStrategyFactory(
+        ClassicSpawnStrategy classic,
+        ModernSpawnStrategy modern
+    ) : ISpawnStrategyFactory
+    {
+        public ISpawnStrategy Create(GameConfig config)
+        {
+            return config.Mode switch
+            {
+                GameMode.Classic => classic,
+                _ => modern,
+            };
+        }
     }
 
     private GameViewModel CreateViewModel()
