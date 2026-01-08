@@ -13,6 +13,7 @@ public class MauiSettingsService : ISettingsService
     private const string HapticsEnabledKey = "HapticsEnabled";
     private const string CoachEnabledKey = "CoachEnabled";
     private const string CoachNudgesEnabledKey = "CoachNudgesEnabled";
+    private const string UndoButtonVisibleKey = "UndoButtonVisible";
     private const string LastActiveGameConfigKey = "LastActiveGameConfig";
 
     /// <inheritdoc />
@@ -34,6 +35,13 @@ public class MauiSettingsService : ISettingsService
     {
         get => Preferences.Get(CoachNudgesEnabledKey, true);
         set => Preferences.Set(CoachNudgesEnabledKey, value);
+    }
+
+    /// <inheritdoc />
+    public bool UndoButtonVisible
+    {
+        get => Preferences.Get(UndoButtonVisibleKey, true);
+        set => Preferences.Set(UndoButtonVisibleKey, value);
     }
 
     /// <inheritdoc />

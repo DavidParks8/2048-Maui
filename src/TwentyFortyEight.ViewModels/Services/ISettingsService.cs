@@ -23,6 +23,11 @@ public interface ISettingsService
     bool CoachNudgesEnabled { get; set; }
 
     /// <summary>
+    /// Gets or sets whether the Undo button is visible.
+    /// </summary>
+    bool UndoButtonVisible { get; set; }
+
+    /// <summary>
     /// Gets or sets the last active game configuration that should be restored on startup.
     /// </summary>
     GameConfig LastActiveGameConfig { get; set; }

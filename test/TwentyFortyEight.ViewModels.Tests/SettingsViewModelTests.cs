@@ -112,4 +112,53 @@ public class SettingsViewModelTests
 
         WeakReferenceMessenger.Default.UnregisterAll(recipient);
     }
+
+    [TestMethod]
+    public void Constructor_LoadsUndoButtonVisibleFromService()
+    {
+        // Arrange
+        Mock<ISettingsService> settingsServiceMock = new();
+        Mock<IHapticService> hapticServiceMock = new();
+        settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
+        settingsServiceMock.Setup(s => s.CoachEnabled).Returns(false);
+        settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(false);
+        hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
+
+        // Act
+        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+
+        // Assert
+        Assert.IsFalse(viewModel.UndoButtonVisible);
+    }
+
+    [TestMethod]
+    public void UndoButtonVisible_WhenChanged_SendsMessageAndUpdatesService()
+    {
+        // Arrange
+        Mock<ISettingsService> settingsServiceMock = new();
+        Mock<IHapticService> hapticServiceMock = new();
+        settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
+        settingsServiceMock.Setup(s => s.CoachEnabled).Returns(false);
+        settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(true);
+        hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
+
+        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+
+        bool? receivedValue = null;
+        object recipient = new();
+        WeakReferenceMessenger.Default.Register<UndoButtonVisibilityChangedMessage>(
+            recipient,
+            (_, message) => receivedValue = message.IsVisible
+        );
+
+        // Act
+        viewModel.UndoButtonVisible = false;
+
+        // Assert
+        settingsServiceMock.VerifySet(s => s.UndoButtonVisible = false, Times.Once);
+        Assert.IsNotNull(receivedValue);
+        Assert.IsFalse(receivedValue.Value);
+
+        WeakReferenceMessenger.Default.UnregisterAll(recipient);
+    }
 }
