@@ -136,6 +136,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCoachNudgeVisible;
 
+    [ObservableProperty]
+    private bool _isUndoButtonVisible;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
@@ -163,6 +166,7 @@ public partial class GameViewModel : ObservableObject
         _coachSuggestionService = coachSuggestionService;
 
         IsCoachEnabled = _settingsService.CoachEnabled;
+        IsUndoButtonVisible = _settingsService.UndoButtonVisible;
 
         WeakReferenceMessenger.Default.Register<BoardSizeChangeRequestedMessage>(
             this,
@@ -183,6 +187,17 @@ public partial class GameViewModel : ObservableObject
                 {
                     vm.IsCoachEnabled = message.IsEnabled;
                     vm.UpdateCoachSuggestion();
+                }
+            }
+        );
+
+        WeakReferenceMessenger.Default.Register<UndoButtonVisibilityChangedMessage>(
+            this,
+            static (recipient, message) =>
+            {
+                if (recipient is GameViewModel vm)
+                {
+                    vm.IsUndoButtonVisible = message.IsVisible;
                 }
             }
         );

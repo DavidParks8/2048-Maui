@@ -27,6 +27,12 @@
                   IsToggled="{Binding CoachNudgesEnabled}"
                   AutomationId="CoachNudgesEnabledSwitch"
                   SemanticHint="{x:Static strings:AppStrings.EnableCoachNudgesHint}" />
+
+               <components:SettingToggleRow x:Name="UndoButtonToggleRow"
+                  Label="{x:Static strings:AppStrings.ShowUndoButton}"
+                  IsToggled="{Binding UndoButtonVisible}"
+                  AutomationId="UndoButtonVisibleSwitch"
+                  SemanticHint="{x:Static strings:AppStrings.ShowUndoButtonHint}" />
             </components:NativeListSection.Items>
          </components:NativeListSection>
 
