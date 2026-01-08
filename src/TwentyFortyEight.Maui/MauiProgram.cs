@@ -73,6 +73,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<IInputCoordinationService, InputCoordinationService>();
         builder.Services.AddSingleton<IGestureRecognizerService, GestureRecognizerService>();
 
+        // Swipe preview interaction orchestration (page-level)
+        builder.Services.AddTransient<
+            ISwipePreviewInteractionService,
+            SwipePreviewInteractionService
+        >();
+
         // Victory ViewModel and animation service
         builder.Services.AddSingleton<VictoryViewModel>();
 

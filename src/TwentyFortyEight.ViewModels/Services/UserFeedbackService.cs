@@ -60,6 +60,15 @@ public sealed class UserFeedbackService(
         }
     }
 
+    public void PerformSwipePreviewHaptic()
+    {
+        if (settingsService.HapticsEnabled && hapticService.IsSupported)
+        {
+            // Keep preview feedback subtle and consistent.
+            hapticService.PerformHaptic(HapticPattern.Move);
+        }
+    }
+
     public void PerformVictoryHaptic()
     {
         if (settingsService.HapticsEnabled && hapticService.IsSupported)

@@ -23,6 +23,7 @@ public partial class GameViewModel : ObservableObject
     private GameConfig _config;
     private readonly ILogger<GameViewModel> _logger;
     private readonly IMoveAnalyzer _moveAnalyzer;
+    private readonly IBoardSimulator _boardSimulator;
     private readonly ISettingsService _settingsService;
     private readonly IStatisticsTracker _statisticsTracker;
     private readonly IGame2048EngineFactory _engineFactory;
@@ -142,6 +143,7 @@ public partial class GameViewModel : ObservableObject
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
+        IBoardSimulator boardSimulator,
         ISettingsService settingsService,
         IStatisticsTracker statisticsTracker,
         IGame2048EngineFactory engineFactory,
@@ -155,6 +157,7 @@ public partial class GameViewModel : ObservableObject
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
+        _boardSimulator = boardSimulator;
         _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
         _engineFactory = engineFactory;
@@ -324,7 +327,57 @@ public partial class GameViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task MoveAsync(Direction direction)
+    private Task MoveAsync(Direction direction)
+    {
+        return PerformMoveAsync(direction, skipSlideAnimation: false);
+    }
+
+    /// <summary>
+    /// Commits a move that was already visually scrubbed via swipe preview.
+    /// The UI can skip the slide and only run post-move effects.
+    /// </summary>
+    public Task CommitSwipePreviewMoveAsync(Direction direction)
+    {
+        return PerformMoveAsync(direction, skipSlideAnimation: true);
+    }
+
+    /// <summary>
+    /// Creates a non-committing move preview used to drive scrubbable swipe animations.
+    /// Returns false when the move would not change the board.
+    /// </summary>
+    public bool TryCreateMovePreview(Direction direction, out MovePreview preview)
+    {
+        var state = _engine.CurrentState;
+        PlayfieldSnapshot playfield = new(state.Board, state.Wall);
+
+        var (newBoard, _, moved, _) = _boardSimulator.SimulateMove(
+            new BoardMoveRequest(playfield, direction)
+        );
+
+        if (!moved)
+        {
+            preview = null!;
+            return false;
+        }
+
+        var analysis = _moveAnalyzer.Analyze(
+            new MoveAnalysisRequest(playfield, newBoard, direction)
+        );
+
+        // IMPORTANT: Copy the movements list because analysis.Movements is a pooled
+        // reference that gets cleared on the next Analyze() call.
+        List<TileMovement> movementsCopy = [.. analysis.Movements];
+        if (movementsCopy.Count == 0)
+        {
+            preview = null!;
+            return false;
+        }
+
+        preview = new MovePreview { Direction = direction, TileMovements = movementsCopy };
+        return true;
+    }
+
+    private async Task PerformMoveAsync(Direction direction, bool skipSlideAnimation)
     {
         if (_isNewGameConfirmationInProgress)
         {
@@ -356,7 +409,7 @@ public partial class GameViewModel : ObservableObject
                 // Trigger haptic feedback if enabled and supported
                 _feedbackService.PerformMoveHaptic();
 
-                UpdateUI(previousBoard, direction, previousWall);
+                UpdateUI(previousBoard, direction, previousWall, skipSlideAnimation);
                 _repository.SaveGame(_config, _engine.ToSaveDto());
 
                 // Update best score and submit to social gaming service
@@ -440,7 +493,8 @@ public partial class GameViewModel : ObservableObject
     private void UpdateUI(
         Board? previousBoard = null,
         Direction? moveDirection = null,
-        WallSegment? previousWall = null
+        WallSegment? previousWall = null,
+        bool skipSlideAnimation = false
     )
     {
         var state = _engine.CurrentState;
@@ -507,6 +561,7 @@ public partial class GameViewModel : ObservableObject
                     MergedTiles = mergedTiles.ToFrozenSet(),
                     MoveDirection = moveDirection.Value,
                     TileMovements = movementsCopy,
+                    SkipSlideAnimation = skipSlideAnimation,
                     WallAfterMove = state.Wall,
                 };
 

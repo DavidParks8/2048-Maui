@@ -14,6 +14,12 @@ public interface IGestureRecognizerService
     event EventHandler<Direction>? SwipeDetected;
 
     /// <summary>
+    /// Raised continuously while the user is panning/dragging, and on completion/cancel.
+    /// This enables scrubbable swipe previews.
+    /// </summary>
+    event EventHandler<SwipePanEventArgs>? SwipePanUpdated;
+
+    /// <summary>
     /// Attaches swipe gesture recognizers to a view.
     /// </summary>
     /// <param name="view">The view to attach recognizers to.</param>

@@ -43,6 +43,12 @@ public interface IUserFeedbackService
     void PerformMoveHaptic();
 
     /// <summary>
+    /// Triggers a light haptic feedback when entering swipe preview mode.
+    /// Respects user's haptic settings internally.
+    /// </summary>
+    void PerformSwipePreviewHaptic();
+
+    /// <summary>
     /// Triggers a distinct haptic feedback for a victory.
     /// Respects user's haptic settings internally.
     /// </summary>
