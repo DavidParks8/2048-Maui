@@ -7,7 +7,7 @@ namespace TwentyFortyEight.ViewModels.Tests;
 [TestClass]
 public class VictoryViewModelTests
 {
-    private Mock<IReduceMotionService> _reduceMotionMock = null!;
+    private Mock<IAccessibilitySettingsService> _accessibilitySettingsMock = null!;
     private Mock<IUserFeedbackService> _userFeedbackMock = null!;
     private Mock<ILocalizationService> _localizationMock = null!;
     private VictoryViewModel _viewModel = null!;
@@ -15,14 +15,14 @@ public class VictoryViewModelTests
     [TestInitialize]
     public void Setup()
     {
-        _reduceMotionMock = new Mock<IReduceMotionService>();
+        _accessibilitySettingsMock = new Mock<IAccessibilitySettingsService>();
         _userFeedbackMock = new Mock<IUserFeedbackService>();
         _localizationMock = new Mock<ILocalizationService>();
         _localizationMock
             .Setup(x => x.FormatScore(It.IsAny<int>()))
             .Returns((int score) => $"Score: {score}");
         _viewModel = new VictoryViewModel(
-            _reduceMotionMock.Object,
+            _accessibilitySettingsMock.Object,
             _userFeedbackMock.Object,
             _localizationMock.Object
         );
@@ -39,7 +39,7 @@ public class VictoryViewModelTests
     public void TriggerVictory_WithReduceMotion_SkipsAnimationAndShowsModal()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
 
         // Act
         _viewModel.TriggerVictory(score: 5000);
@@ -57,7 +57,7 @@ public class VictoryViewModelTests
     public void TriggerVictory_WithoutReduceMotion_StartsAnimationSequence()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
         bool animationStartRaised = false;
         _viewModel.AnimationStartRequested += (_, _) => animationStartRaised = true;
 
@@ -76,7 +76,7 @@ public class VictoryViewModelTests
     public void ShowModal_SetsModalVisibleAndAnnouncesWin()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
         _viewModel.TriggerVictory(score: 2048);
 
         // Act
@@ -91,7 +91,7 @@ public class VictoryViewModelTests
     public void KeepPlayingCommand_ResetsStateAndRaisesEvent()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
         _viewModel.TriggerVictory(score: 2048);
 
         bool keepPlayingRaised = false;
@@ -113,7 +113,7 @@ public class VictoryViewModelTests
     public void NewGameCommand_ResetsStateAndRaisesEvent()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
         _viewModel.TriggerVictory(score: 2048);
 
         bool newGameRaised = false;
@@ -135,13 +135,13 @@ public class VictoryViewModelTests
     public void ShouldReduceMotion_DelegatesToService()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
 
         // Assert
         Assert.IsTrue(_viewModel.ShouldReduceMotion);
 
         // Change mock behavior
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(false);
 
         // Assert
         Assert.IsFalse(_viewModel.ShouldReduceMotion);
@@ -151,7 +151,7 @@ public class VictoryViewModelTests
     public void TriggerVictory_SetsWinningValue()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
 
         // Act
         _viewModel.TriggerVictory(score: 4096, winningValue: 4096);
@@ -164,7 +164,7 @@ public class VictoryViewModelTests
     public void ScoreDisplayText_ReturnsLocalizedScore()
     {
         // Arrange
-        _reduceMotionMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
+        _accessibilitySettingsMock.Setup(x => x.ShouldReduceMotion()).Returns(true);
 
         // Act
         _viewModel.TriggerVictory(score: 12345);

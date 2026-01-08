@@ -23,7 +23,7 @@ namespace TwentyFortyEight.Maui.Services;
 /// - Corner radius is applied immediately to all layers, including sublayers
 /// - Animations respect Reduce Motion accessibility setting
 /// </remarks>
-internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionService)
+internal sealed class LiquidGlassApplier(IAccessibilitySettingsService accessibilitySettingsService)
     : ILiquidGlassApplier
 {
     /// <summary>
@@ -84,7 +84,7 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
             border.BackgroundColor = Colors.Transparent;
         }
 
-        var reduceMotionEnabled = reduceMotionService.ShouldReduceMotion();
+        var reduceMotionEnabled = accessibilitySettingsService.ShouldReduceMotion();
 
         var effectView = EnsureEffect(root, view, effectType);
         UpdateCornerRadius(root, view, effectView, reduceMotionEnabled, enableShadow);

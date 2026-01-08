@@ -9,14 +9,14 @@ public sealed class WallOverlayRenderer : IWallOverlayRenderer
 {
     private const string WallGlowAnimationKey = "WallGlowAnimation";
 
-    private readonly IReduceMotionService _reduceMotionService;
+    private readonly IAccessibilitySettingsService _accessibilitySettingsService;
 
     private GraphicsView? _wallDivider;
     private StripedWallDrawable? _wallDividerDrawable;
 
-    public WallOverlayRenderer(IReduceMotionService reduceMotionService)
+    public WallOverlayRenderer(IAccessibilitySettingsService accessibilitySettingsService)
     {
-        _reduceMotionService = reduceMotionService;
+        _accessibilitySettingsService = accessibilitySettingsService;
     }
 
     public void Reset(VisualElement animationHost)
@@ -231,7 +231,7 @@ public sealed class WallOverlayRenderer : IWallOverlayRenderer
         }
 
         // Respect accessibility setting: keep a static glow without motion.
-        if (_reduceMotionService.ShouldReduceMotion())
+        if (_accessibilitySettingsService.ShouldReduceMotion())
         {
             _wallDividerDrawable.GlowPhase = 0.55f;
             _wallDivider.Invalidate();

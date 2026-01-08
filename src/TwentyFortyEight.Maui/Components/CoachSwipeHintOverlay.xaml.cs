@@ -68,7 +68,7 @@ public partial class CoachSwipeHintOverlay : ContentView
     }
 
     private readonly IScreenReaderService _screenReaderService;
-    private readonly IReduceMotionService _reduceMotionService;
+    private readonly IAccessibilitySettingsService _accessibilitySettingsService;
     private CancellationTokenSource? _animationCts;
     private CancellationTokenSource? _announceCts;
     private (Direction direction, MoveCoachReason reason)? _lastAnnouncedSuggestion;
@@ -82,7 +82,8 @@ public partial class CoachSwipeHintOverlay : ContentView
         Unloaded += (_, _) => StopAnimation();
         var services = ((App)Application.Current!).Services;
         _screenReaderService = services.GetRequiredService<IScreenReaderService>();
-        _reduceMotionService = services.GetRequiredService<IReduceMotionService>();
+        _accessibilitySettingsService =
+            services.GetRequiredService<IAccessibilitySettingsService>();
     }
 
     private void OnHintChanged()
@@ -236,7 +237,7 @@ public partial class CoachSwipeHintOverlay : ContentView
     {
         StopAnimation();
 
-        if (_reduceMotionService.ShouldReduceMotion())
+        if (_accessibilitySettingsService.ShouldReduceMotion())
         {
             Arrow.TranslationX = 0;
             Arrow.TranslationY = 0;
@@ -279,7 +280,7 @@ public partial class CoachSwipeHintOverlay : ContentView
         const uint slideMs = 420;
         const uint fadeOutMs = 180;
 
-        if (_reduceMotionService.ShouldReduceMotion())
+        if (_accessibilitySettingsService.ShouldReduceMotion())
         {
             Arrow.TranslationX = 0;
             Arrow.TranslationY = 0;

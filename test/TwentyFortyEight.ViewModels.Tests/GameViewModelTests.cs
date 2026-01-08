@@ -47,14 +47,14 @@ public class GameViewModelTests
         _coachSuggestionServiceMock = new Mock<ICoachSuggestionService>();
 
         // Create real VictoryViewModel instance for testing
-        var reduceMotionMock = new Mock<IReduceMotionService>();
+        var accessibilitySettingsMock = new Mock<IAccessibilitySettingsService>();
         var victoryFeedbackMock = new Mock<IUserFeedbackService>();
         var localizationMock = new Mock<ILocalizationService>();
         localizationMock
             .Setup(x => x.FormatScore(It.IsAny<int>()))
             .Returns((int score) => $"{score}");
         _victoryViewModel = new VictoryViewModel(
-            reduceMotionMock.Object,
+            accessibilitySettingsMock.Object,
             victoryFeedbackMock.Object,
             localizationMock.Object
         );

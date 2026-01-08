@@ -401,6 +401,60 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("DirectionRight", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Move up.
+        /// </summary>
+        internal static string MoveUpDescription {
+            get {
+                return ResourceManager.GetString("MoveUpDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Move down.
+        /// </summary>
+        internal static string MoveDownDescription {
+            get {
+                return ResourceManager.GetString("MoveDownDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Move left.
+        /// </summary>
+        internal static string MoveLeftDescription {
+            get {
+                return ResourceManager.GetString("MoveLeftDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Move right.
+        /// </summary>
+        internal static string MoveRightDescription {
+            get {
+                return ResourceManager.GetString("MoveRightDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to empty.
+        /// </summary>
+        internal static string BoardEmptyCell {
+            get {
+                return ResourceManager.GetString("BoardEmptyCell", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Row {0}: {1}..
+        /// </summary>
+        internal static string BoardRowFormat {
+            get {
+                return ResourceManager.GetString("BoardRowFormat", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Current.

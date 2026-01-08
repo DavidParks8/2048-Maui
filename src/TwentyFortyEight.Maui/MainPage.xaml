@@ -131,7 +131,9 @@
                 HorizontalOptions="Center"
                 MaximumWidthRequest="520"
                 MaximumHeightRequest="520"
-                StrokeShape="RoundRectangle 10">
+                StrokeShape="RoundRectangle 10"
+                AutomationProperties.IsInAccessibleTree="True"
+                SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
 
             <Border.Behaviors>
                 <behaviors:RippleBehavior />
@@ -171,26 +173,112 @@
             </Grid>
         </Border>
 
-        <!-- Controls: circular Undo button (glass on iOS/macOS, solid elsewhere) -->
-        <Border Grid.Row="3"
-            WidthRequest="64"
-            HeightRequest="64"
-            StrokeThickness="1"
-            StrokeShape="RoundRectangle 32"
-            Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
-            HorizontalOptions="End"
-            VerticalOptions="Center"
-            IsVisible="{Binding IsUndoButtonVisible}"
-            components:LiquidGlass.EffectType="Clear"
-            components:LiquidGlass.CornerRadius="32">
-            <components:IconButton x:Name="UndoButton"
-                       ButtonText=""
-                       Command="{Binding UndoCommand}"
-                       IsButtonEnabled="{Binding CanUndo}"
-                       ButtonSize="64"
-                       SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
-        </Border>
+        <!-- Controls: voice-friendly directional buttons (for iOS Voice Control) + Undo -->
+        <Grid Grid.Row="3">
+            <!-- Movement buttons (centered with board) -->
+            <HorizontalStackLayout x:Name="MoveButtonsContainer"
+                           Spacing="8"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           MaximumWidthRequest="520">
+                <!-- Left -->
+                <Border x:Name="MoveLeftContainer"
+                    WidthRequest="56"
+                        HeightRequest="56"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 28"
+                        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        components:LiquidGlass.EffectType="Clear"
+                        components:LiquidGlass.CornerRadius="28">
+                    <components:IconButton AutomationId="MoveLeftButton"
+                                           Icon="←"
+                                           ButtonText=""
+                                           Command="{Binding MoveCommand}"
+                                           CommandParameter="{x:Static core:Direction.Left}"
+                                           ButtonSize="56"
+                                           SemanticProperties.Description="{x:Static strings:AppStrings.MoveLeftDescription}" />
+                </Border>
+
+                <!-- Up -->
+                <Border x:Name="MoveUpContainer"
+                        WidthRequest="56"
+                        HeightRequest="56"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 28"
+                        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        components:LiquidGlass.EffectType="Clear"
+                        components:LiquidGlass.CornerRadius="28">
+                    <components:IconButton AutomationId="MoveUpButton"
+                                           Icon="↑"
+                                           ButtonText=""
+                                           Command="{Binding MoveCommand}"
+                                           CommandParameter="{x:Static core:Direction.Up}"
+                                           ButtonSize="56"
+                                           SemanticProperties.Description="{x:Static strings:AppStrings.MoveUpDescription}" />
+                </Border>
+
+                <!-- Down -->
+                <Border x:Name="MoveDownContainer"
+                        WidthRequest="56"
+                        HeightRequest="56"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 28"
+                        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        components:LiquidGlass.EffectType="Clear"
+                        components:LiquidGlass.CornerRadius="28">
+                    <components:IconButton AutomationId="MoveDownButton"
+                                           Icon="↓"
+                                           ButtonText=""
+                                           Command="{Binding MoveCommand}"
+                                           CommandParameter="{x:Static core:Direction.Down}"
+                                           ButtonSize="56"
+                                           SemanticProperties.Description="{x:Static strings:AppStrings.MoveDownDescription}" />
+                </Border>
+
+                <!-- Right -->
+                <Border x:Name="MoveRightContainer"
+                        WidthRequest="56"
+                        HeightRequest="56"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 28"
+                        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        components:LiquidGlass.EffectType="Clear"
+                        components:LiquidGlass.CornerRadius="28">
+                    <components:IconButton AutomationId="MoveRightButton"
+                                           Icon="→"
+                                           ButtonText=""
+                                           Command="{Binding MoveCommand}"
+                                           CommandParameter="{x:Static core:Direction.Right}"
+                                           ButtonSize="56"
+                                           SemanticProperties.Description="{x:Static strings:AppStrings.MoveRightDescription}" />
+                </Border>
+            </HorizontalStackLayout>
+
+            <!-- Undo (at right edge of screen) -->
+            <Border WidthRequest="56"
+                    HeightRequest="56"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 28"
+                    Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                    IsVisible="{Binding IsUndoButtonVisible}"
+                    HorizontalOptions="End"
+                    VerticalOptions="Center"
+                    components:LiquidGlass.EffectType="Clear"
+                    components:LiquidGlass.CornerRadius="28">
+                <components:IconButton x:Name="UndoButton"
+                                       Icon="↩"
+                                       ButtonText=""
+                                       Command="{Binding UndoCommand}"
+                                       IsButtonEnabled="{Binding CanUndo}"
+                                       ButtonSize="56"
+                                       SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}" />
+            </Border>
+        </Grid>
 
         </Grid>
 

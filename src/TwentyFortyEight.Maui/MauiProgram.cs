@@ -60,7 +60,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IScreenReaderService, MauiScreenReaderService>();
 
         // Accessibility and feedback services
-        builder.Services.AddSingleton<IReduceMotionService, ReduceMotionService>();
+        builder.Services.AddSingleton<
+            IAccessibilitySettingsService,
+            AccessibilitySettingsService
+        >();
 
         // Input and gesture services
         builder.Services.AddSingleton<IInputCoordinationService, InputCoordinationService>();

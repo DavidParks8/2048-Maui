@@ -103,6 +103,13 @@ public partial class GameViewModel : ObservableObject
     public WallSegment? Wall => _engine.CurrentState.Wall;
 
     /// <summary>
+    /// Gets the current board snapshot.
+    /// Intended for UI/readout scenarios where iterating the board directly is more efficient
+    /// than reconstructing from the tile collection.
+    /// </summary>
+    public Board CurrentBoard => _engine.CurrentState.Board;
+
+    /// <summary>
     /// Gets the total number of undos performed in the current game session.
     /// </summary>
     public int UndoCount => _engine.UndoCount;
