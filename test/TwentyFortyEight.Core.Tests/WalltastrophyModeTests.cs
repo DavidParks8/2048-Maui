@@ -40,7 +40,8 @@ public class WalltastrophyModeTests
             config,
             random.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random.Object)
         );
 
         var moved = engine.Move(Direction.Left);
@@ -98,7 +99,8 @@ public class WalltastrophyModeTests
             config,
             random.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(random.Object)
         );
 
         Assert.IsTrue(engine.Move(Direction.Right));

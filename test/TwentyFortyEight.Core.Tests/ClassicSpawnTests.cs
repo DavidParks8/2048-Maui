@@ -29,7 +29,8 @@ public class ClassicSpawnTests
             config,
             mockRandom.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
         );
 
         // Act
@@ -63,7 +64,8 @@ public class ClassicSpawnTests
             config,
             mockRandom.Object,
             NullStatisticsTracker.Instance,
-            new BoardMoveSimulator()
+            new BoardMoveSimulator(),
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
         );
 
         // Act
