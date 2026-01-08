@@ -11,6 +11,7 @@ using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Helpers;
 using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Models;
+using TwentyFortyEight.ViewModels.Services;
 #if IOS
 using UIKit;
 #endif
@@ -24,6 +25,8 @@ public partial class MainPage : ContentPage
     private readonly TileAnimationService _animationService;
     private readonly IInputCoordinationService _inputCoordinationService;
     private readonly IGestureRecognizerService _gestureRecognizerService;
+    private readonly IUserFeedbackService _userFeedbackService;
+    private readonly ISwipePreviewInteractionService _swipePreviewInteractionService;
     private readonly IWindowOverlayService _windowOverlayService;
     private readonly IWallOverlayRenderer _wallOverlayRenderer;
     private readonly ILogger<MainPage> _logger;
@@ -50,6 +53,8 @@ public partial class MainPage : ContentPage
         TileAnimationService animationService,
         IInputCoordinationService inputCoordinationService,
         IGestureRecognizerService gestureRecognizerService,
+        IUserFeedbackService userFeedbackService,
+        ISwipePreviewInteractionService swipePreviewInteractionService,
         IWindowOverlayService windowOverlayService,
         IWallOverlayRenderer wallOverlayRenderer,
         ILogger<MainPage> logger,
@@ -63,6 +68,8 @@ public partial class MainPage : ContentPage
         _animationService = animationService;
         _inputCoordinationService = inputCoordinationService;
         _gestureRecognizerService = gestureRecognizerService;
+        _userFeedbackService = userFeedbackService;
+        _swipePreviewInteractionService = swipePreviewInteractionService;
         _windowOverlayService = windowOverlayService;
         _wallOverlayRenderer = wallOverlayRenderer;
         _logger = logger;
@@ -110,7 +117,7 @@ public partial class MainPage : ContentPage
 
         // Set up gesture recognizers for swipe detection
         _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
-        _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
+        _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
 
         // Subscribe to bottom sheet dismissal to sync ViewModel state
         _windowOverlayService.BottomSheetDismissed += OnBottomSheetDismissed;
@@ -123,6 +130,9 @@ public partial class MainPage : ContentPage
     {
         // Cancel any pending animations and reset tile states.
         _animationCts?.Cancel();
+
+        // Cancel any active swipe preview.
+        _swipePreviewInteractionService.Reset();
 
         // Stop any wall overlay animations and drop renderer state.
         _wallOverlayRenderer.Reset(this);
@@ -158,11 +168,6 @@ public partial class MainPage : ContentPage
         _viewModel.MoveCommand.Execute(direction);
     }
 
-    private void OnSwipeDetected(object? sender, Direction direction)
-    {
-        _viewModel.MoveCommand.Execute(direction);
-    }
-
     protected override void OnAppearing()
     {
         base.OnAppearing();
@@ -172,12 +177,12 @@ public partial class MainPage : ContentPage
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
-        _gestureRecognizerService.SwipeDetected -= OnSwipeDetected;
+        _gestureRecognizerService.SwipePanUpdated -= OnSwipePanUpdated;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
-        _gestureRecognizerService.SwipeDetected += OnSwipeDetected;
+        _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
     }
 
     protected override void OnDisappearing()
@@ -200,11 +205,35 @@ public partial class MainPage : ContentPage
         _animationCts?.Dispose();
         _animationCts = null;
 
+        // Cancel any swipe preview overlays.
+        _swipePreviewInteractionService.Reset();
+
         // Unsubscribe from ViewModel events to prevent memory leaks
         _viewModel.TilesUpdated -= OnTilesUpdated;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
-        _gestureRecognizerService.SwipeDetected -= OnSwipeDetected;
+        _gestureRecognizerService.SwipePanUpdated -= OnSwipePanUpdated;
+    }
+
+    private async void OnSwipePanUpdated(object? sender, SwipePanEventArgs e)
+    {
+        await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
+            e,
+            BuildSwipePreviewContext()
+        );
+    }
+
+    private SwipePreviewUiContext BuildSwipePreviewContext()
+    {
+        return new SwipePreviewUiContext(
+            GameBoard,
+            _viewModel.BoardSize,
+            _tileBorders,
+            _viewModel.BoardScaleFactor,
+            _inputCoordinationService.IsInputBlocked,
+            _isModeSheetVisible,
+            IsTileAnimationRunning: !_activeTileAnimationTask.IsCompleted
+        );
     }
 
     protected override void OnSizeAllocated(double width, double height)
@@ -327,6 +356,22 @@ public partial class MainPage : ContentPage
                     CornerRadius = 5,
                 },
             };
+
+            // Prevent a brief flash of newly spawned tiles before the spawn animation hides them.
+            // The ViewModel sets IsNewTile=true before updating Value, so this trigger keeps the
+            // tile invisible until the animation service takes over.
+            DataTrigger newTileTrigger = new(typeof(Border))
+            {
+                Binding = new Binding(nameof(TileViewModel.IsNewTile)),
+                Value = true,
+            };
+            newTileTrigger.Setters.Add(
+                new Setter { Property = VisualElement.OpacityProperty, Value = 0d }
+            );
+            newTileTrigger.Setters.Add(
+                new Setter { Property = VisualElement.ScaleProperty, Value = 0d }
+            );
+            border.Triggers.Add(newTileTrigger);
 
             // Set up bindings
             border.SetBinding(
@@ -515,6 +560,11 @@ public partial class MainPage : ContentPage
     private async void OnTilesUpdated(object? sender, TileUpdateEventArgs e)
     {
         UpdateWallOverlay(e.WallAfterMove);
+
+        await _swipePreviewInteractionService.HandleTilesUpdatedAsync(
+            e,
+            BuildSwipePreviewContext()
+        );
 
         // Cancel any pending animations before starting new ones
         _animationCts?.Cancel();

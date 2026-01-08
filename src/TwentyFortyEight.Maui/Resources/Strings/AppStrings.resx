@@ -306,6 +306,10 @@
 
 Keep combining tiles to reach the 2048 tile and win the game!
 
+🫳 Swipe Preview: Drag slowly to preview a move. Keep your finger down and scrub forward/back to see the result.
+✅ Commit: Lift your finger after moving more than halfway.
+↩️ Cancel: Drag back toward the start (or lift before halfway).
+
 🎯 Goal: Reach 2048
 ⌨️ Controls: Arrow keys, WASD, or swipe
 ✨ Strategy: Keep your highest tile in a corner</value>

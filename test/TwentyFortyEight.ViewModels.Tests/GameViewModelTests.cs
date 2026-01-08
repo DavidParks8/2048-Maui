@@ -26,6 +26,7 @@ public class GameViewModelTests
     private Mock<IGameStateRepository> _repositoryMock = null!;
     private Mock<IGameSessionCoordinator> _sessionCoordinatorMock = null!;
     private Mock<IUserFeedbackService> _feedbackServiceMock = null!;
+    private IBoardSimulator _boardSimulator = null!;
     private Mock<ICoachNudgeService> _coachNudgeServiceMock = null!;
     private Mock<ICoachSuggestionService> _coachSuggestionServiceMock = null!;
     private VictoryViewModel _victoryViewModel = null!;
@@ -77,6 +78,8 @@ public class GameViewModelTests
             _statisticsTrackerMock.Object,
             new BoardMoveSimulator()
         );
+
+        _boardSimulator = new BoardMoveSimulator();
     }
 
     private GameViewModel CreateViewModel()
@@ -84,6 +87,7 @@ public class GameViewModelTests
         return new GameViewModel(
             _loggerMock.Object,
             _moveAnalyzerMock.Object,
+            _boardSimulator,
             _settingsServiceMock.Object,
             _statisticsTrackerMock.Object,
             _engineFactory,

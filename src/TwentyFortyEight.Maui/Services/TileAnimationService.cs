@@ -22,7 +22,24 @@ public class TileAnimationService
     /// </summary>
     private const int UiUpdateDelay = 10;
 
+    private sealed class SwipePreviewSession
+    {
+        public required Grid GameBoard { get; init; }
+        public required List<Border> OverlayTiles { get; init; }
+        public required List<(
+            Border Border,
+            double FullTranslateX,
+            double FullTranslateY
+        )> Animations { get; init; }
+        public required List<Border> HiddenSourceBorders { get; init; }
+        public required List<Border> HiddenDestinationBorders { get; init; }
+        public required double CellStepX { get; init; }
+        public required double CellStepY { get; init; }
+        public double Progress { get; set; }
+    }
+
     private readonly List<Border> _overlayPool = [];
+    private SwipePreviewSession? _preview;
 
     /// <summary>
     /// Animates tile updates with cancellation support.
@@ -44,6 +61,9 @@ public class TileAnimationService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        // If a swipe preview is active, it should be cleaned up by the caller before
+        // running the normal animation pipeline.
+
         // Animations will automatically respect OS accessibility settings (reduced motion)
         // If the OS has animations disabled, MAUI will skip to the finished state
         // Use the board's actual spacing so overlay translations match the real layout.
@@ -55,24 +75,27 @@ public class TileAnimationService
         // Hide new tiles during slide animation (they will be scaled in after the move)
         HideNewTiles(args.NewTiles, tileBorders);
 
-        // Hide destination tiles during slide animation to avoid showing the final state under the overlay
-        var destinationTiles = HideDestinationTiles(args.TileMovements, tileBorders);
+        if (!args.SkipSlideAnimation)
+        {
+            // Hide destination tiles during slide animation to avoid showing the final state under the overlay
+            var destinationTiles = HideDestinationTiles(args.TileMovements, tileBorders);
 
-        // Animate slide movements
-        var overlayTiles = await AnimateSlideMovementsAsync(
-            args.TileMovements,
-            gameBoard,
-            cellStepX,
-            cellStepY,
-            scaleFactor,
-            cancellationToken
-        );
+            // Animate slide movements
+            var overlayTiles = await AnimateSlideMovementsAsync(
+                args.TileMovements,
+                gameBoard,
+                cellStepX,
+                cellStepY,
+                scaleFactor,
+                cancellationToken
+            );
 
-        // Clean up overlay tiles (return to pool)
-        ReturnOverlayTiles(gameBoard, overlayTiles);
+            // Clean up overlay tiles (return to pool)
+            ReturnOverlayTiles(gameBoard, overlayTiles);
 
-        // Show destination tiles once the slide completes
-        ShowTiles(destinationTiles);
+            // Show destination tiles once the slide completes
+            ShowTiles(destinationTiles);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -85,10 +108,218 @@ public class TileAnimationService
         await AnimateNewTilesAsync(args.NewTiles, tileBorders, cancellationToken);
     }
 
+    /// <summary>
+    /// Begins a scrubbable swipe preview by creating overlay tiles and hiding destinations.
+    /// Caller should follow up with <see cref="UpdateSwipePreviewProgress"/> and either
+    /// <see cref="CancelSwipePreviewAsync"/> or <see cref="CompleteSwipePreviewAsync"/>.
+    /// </summary>
+    public async Task BeginSwipePreviewAsync(
+        IReadOnlyList<Core.TileMovement> tileMovements,
+        Grid gameBoard,
+        int boardSize,
+        IReadOnlyDictionary<TileViewModel, Border> tileBorders,
+        double scaleFactor,
+        CancellationToken cancellationToken
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        EndSwipePreviewImmediate();
+
+        var cellStepX = CalculateCellStep(gameBoard.Width, boardSize, gameBoard.ColumnSpacing);
+        var cellStepY = CalculateCellStep(gameBoard.Height, boardSize, gameBoard.RowSpacing);
+
+        // For previews, the underlying board is still in the "before" state.
+        // Hide sources so tiles don't appear to duplicate while the overlay moves.
+        var hiddenSourceTiles = HideSourceTiles(tileMovements, tileBorders);
+
+        List<Border> overlayTiles = [];
+        List<(Border border, double translateX, double translateY)> animations = [];
+
+        foreach (var movement in tileMovements)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var overlayBorder = RentOverlayTile(movement.Value, scaleFactor);
+            overlayTiles.Add(overlayBorder);
+
+            Grid.SetRow(overlayBorder, movement.From.Row);
+            Grid.SetColumn(overlayBorder, movement.From.Column);
+            gameBoard.Children.Add(overlayBorder);
+
+            var translateX = (movement.To.Column - movement.From.Column) * cellStepX;
+            var translateY = (movement.To.Row - movement.From.Row) * cellStepY;
+            animations.Add((overlayBorder, translateX, translateY));
+        }
+
+        _preview = new SwipePreviewSession
+        {
+            GameBoard = gameBoard,
+            OverlayTiles = overlayTiles,
+            Animations = animations.Select(a => (a.border, a.translateX, a.translateY)).ToList(),
+            HiddenSourceBorders = hiddenSourceTiles,
+            HiddenDestinationBorders = new List<Border>(),
+            CellStepX = cellStepX,
+            CellStepY = cellStepY,
+            Progress = 0,
+        };
+
+        if (overlayTiles.Count > 0)
+        {
+            await Task.Yield();
+        }
+    }
+
+    /// <summary>
+    /// Updates the swipe preview translation linearly with the provided progress.
+    /// </summary>
+    /// <param name="progress">Normalized progress from 0 to 1.</param>
+    public void UpdateSwipePreviewProgress(double progress)
+    {
+        if (_preview is null)
+            return;
+
+        var clamped = Math.Clamp(progress, 0, 1);
+        _preview.Progress = clamped;
+
+        foreach (var animation in _preview.Animations)
+        {
+            animation.Border.TranslationX = animation.FullTranslateX * clamped;
+            animation.Border.TranslationY = animation.FullTranslateY * clamped;
+        }
+    }
+
+    /// <summary>
+    /// Animates the preview back to 0 and cleans up overlays.
+    /// </summary>
+    public async Task CancelSwipePreviewAsync(CancellationToken cancellationToken)
+    {
+        if (_preview is null)
+            return;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Animate back to start.
+        var tasks = _preview
+            .Animations.Select(static animation =>
+                (Task)animation.Border.TranslateToAsync(0, 0, 90, Easing.Linear)
+            )
+            .ToList();
+
+        if (tasks.Count > 0)
+        {
+            await Task.WhenAll(tasks);
+        }
+
+        EndSwipePreviewImmediate();
+    }
+
+    /// <summary>
+    /// Animates the preview to completion (progress 1) and keeps overlays until cleaned up.
+    /// Call <see cref="EndSwipePreviewImmediate"/> after the underlying tiles are updated.
+    /// </summary>
+    public async Task CompleteSwipePreviewAsync(CancellationToken cancellationToken)
+    {
+        if (_preview is null)
+            return;
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var remaining = Math.Clamp(1 - _preview.Progress, 0, 1);
+
+        // If the user lifts after partially scrubbing, the remaining slide should still be
+        // perceptible and smooth. Linear scaling can make the remainder complete in ~60ms,
+        // which reads like a snap. Use a non-linear curve and a higher minimum duration.
+        var minDuration = remaining >= 0.25 ? 180u : 120u;
+        var duration = (uint)
+            Math.Clamp(
+                (int)(AnimationConstants.BaseSlideAnimationDuration * Math.Sqrt(remaining)),
+                (int)minDuration,
+                AnimationConstants.BaseSlideAnimationDuration
+            );
+
+        var tasks = _preview
+            .Animations.Select(animation =>
+                (Task)
+                    animation.Border.TranslateToAsync(
+                        animation.FullTranslateX,
+                        animation.FullTranslateY,
+                        duration,
+                        Easing.CubicOut
+                    )
+            )
+            .ToList();
+
+        if (tasks.Count > 0)
+        {
+            await Task.WhenAll(tasks);
+        }
+
+        _preview.Progress = 1;
+    }
+
+    /// <summary>
+    /// Immediately removes any preview overlays and restores hidden source tiles.
+    /// </summary>
+    public void EndSwipePreviewImmediate()
+    {
+        if (_preview is null)
+            return;
+
+        try
+        {
+            ReturnOverlayTiles(_preview.GameBoard, _preview.OverlayTiles);
+        }
+        catch
+        {
+            // Defensive: grid may be rebuilding.
+        }
+
+        try
+        {
+            ShowTiles(_preview.HiddenSourceBorders);
+        }
+        catch
+        {
+            // Defensive.
+        }
+
+        try
+        {
+            ShowTiles(_preview.HiddenDestinationBorders);
+        }
+        catch
+        {
+            // Defensive.
+        }
+
+        _preview = null;
+    }
+
     private static double CalculateCellStep(double dimension, int boardSize, double spacing)
     {
         var step = (dimension + spacing) / boardSize;
         return step > 0 ? step : (DefaultBoardDimension + spacing) / boardSize;
+    }
+
+    /// <summary>
+    /// After the underlying tiles have been updated (move committed), hide destination tiles so the
+    /// final state doesn't appear underneath the preview overlays while they finish sliding.
+    /// </summary>
+    public void HideSwipePreviewDestinationsForCommit(
+        IReadOnlyList<Core.TileMovement> tileMovements,
+        IReadOnlyDictionary<TileViewModel, Border> tileBorders
+    )
+    {
+        if (_preview is null)
+            return;
+
+        if (_preview.HiddenDestinationBorders.Count > 0)
+            return;
+
+        _preview.HiddenDestinationBorders.AddRange(
+            HideDestinationTiles(tileMovements, tileBorders)
+        );
     }
 
     private static void HideNewTiles(
@@ -103,6 +334,10 @@ public class TileAnimationService
                 border.Opacity = 0;
                 border.Scale = 0;
             }
+
+            // Release any XAML trigger-based hiding once we've applied the initial hidden state.
+            // This prevents the trigger from overriding the subsequent spawn animation.
+            tile.IsNewTile = false;
         }
     }
 
@@ -132,6 +367,34 @@ public class TileAnimationService
         }
 
         return destinationBorders;
+    }
+
+    private static List<Border> HideSourceTiles(
+        IReadOnlyList<Core.TileMovement> movements,
+        IReadOnlyDictionary<TileViewModel, Border> tileBorders
+    )
+    {
+        var tileMap = tileBorders.Keys.ToDictionary(t => (t.Row, t.Column));
+        HashSet<TileViewModel> sourceTiles = [];
+        List<Border> sourceBorders = [];
+
+        foreach (var movement in movements)
+        {
+            if (!tileMap.TryGetValue((movement.From.Row, movement.From.Column), out var tile))
+                continue;
+
+            if (!sourceTiles.Add(tile))
+                continue;
+
+            if (tileBorders.TryGetValue(tile, out var border))
+            {
+                border.Opacity = 0;
+                border.Scale = 1;
+                sourceBorders.Add(border);
+            }
+        }
+
+        return sourceBorders;
     }
 
     private static void ShowTiles(IReadOnlyList<Border> borders)

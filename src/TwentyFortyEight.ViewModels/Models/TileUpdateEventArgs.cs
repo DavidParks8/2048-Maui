@@ -36,6 +36,12 @@ public class TileUpdateEventArgs : EventArgs
     public required IReadOnlyList<TileMovement> TileMovements { get; init; }
 
     /// <summary>
+    /// When true, the UI should skip the slide animation and only run post-move effects
+    /// (merge pulse + new tile spawn).
+    /// </summary>
+    public bool SkipSlideAnimation { get; init; }
+
+    /// <summary>
     /// Wall segment after the move (Walltastrophy), or null.
     /// </summary>
     public WallSegment? WallAfterMove { get; init; }
