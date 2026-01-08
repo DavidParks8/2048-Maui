@@ -65,7 +65,12 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
         root.Opaque = false;
         root.BackgroundColor = UIColor.Clear;
         root.Layer.BackgroundColor = UIColor.Clear.CGColor;
-        root.ClipsToBounds = true;
+
+        // IMPORTANT: A single UIView cannot both clip its children to rounded corners
+        // and also render an outer shadow. When shadow is enabled, we avoid clipping on
+        // the host view and instead rely on rounded/masked sublayers.
+        bool enableShadow = LiquidGlass.GetEnableShadowEffect(bindable);
+        root.ClipsToBounds = !enableShadow;
 
         // Prevent MAUI from repainting opaque backgrounds over glass
         if (view is VisualElement ve && ve.Background is not null)
@@ -82,7 +87,7 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
         var reduceMotionEnabled = reduceMotionService.ShouldReduceMotion();
 
         var effectView = EnsureEffect(root, view, effectType);
-        UpdateCornerRadius(root, view, effectView, reduceMotionEnabled);
+        UpdateCornerRadius(root, view, effectView, reduceMotionEnabled, enableShadow);
         UpdateShadow(root, view);
 
         // Visual parity: suppress Border stroke/fill that exists as cross-platform fallback
@@ -221,7 +226,8 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
         UIView root,
         IView view,
         UIVisualEffectView effectView,
-        bool reduceMotionEnabled
+        bool reduceMotionEnabled,
+        bool enableShadow
     )
     {
         var radius = ResolveCornerRadius(view);
@@ -245,7 +251,10 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
             {
                 effectView.Layer.CornerRadius = r;
                 root.Layer.CornerRadius = r;
-                root.Layer.MasksToBounds = true;
+
+                // When shadows are enabled we must not mask the host layer.
+                // Masking is handled by sublayers (including the effect overlay).
+                root.Layer.MasksToBounds = !enableShadow;
 
                 // Also apply to all sublayers to catch any MAUI-added backing layers
                 foreach (var sublayer in root.Layer.Sublayers ?? [])
@@ -301,14 +310,30 @@ internal sealed class LiquidGlassApplier(IReduceMotionService reduceMotionServic
         if (!LiquidGlass.GetEnableShadowEffect(bindable))
         {
             root.Layer.ShadowOpacity = 0;
+            root.Layer.ShadowPath = null;
             return;
         }
 
+        root.ClipsToBounds = false;
         root.Layer.MasksToBounds = false;
         root.Layer.ShadowColor = UIColor.Black.CGColor;
         root.Layer.ShadowOpacity = 0.08f;
-        root.Layer.ShadowRadius = (nfloat)LiquidGlass.GetCornerRadius(bindable);
-        root.Layer.ShadowOffset = new(5, 5);
+
+        // Keep the shadow subtle/tight so it doesn't get clipped by common parents
+        // like ScrollView content containers.
+        root.Layer.ShadowRadius = 10;
+        root.Layer.ShadowOffset = new(0, 4);
+
+        // Provide a rounded shadow path when bounds are known for better performance and shape.
+        var cornerRadius = (nfloat)ResolveCornerRadius(view);
+        if (root.Bounds.Width > 0 && root.Bounds.Height > 0 && cornerRadius > 0)
+        {
+            root.Layer.ShadowPath = UIBezierPath.FromRoundedRect(root.Bounds, cornerRadius).CGPath;
+        }
+        else
+        {
+            root.Layer.ShadowPath = null;
+        }
     }
 
     /// <summary>

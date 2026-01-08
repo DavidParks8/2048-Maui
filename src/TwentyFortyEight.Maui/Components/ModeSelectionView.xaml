@@ -18,6 +18,7 @@
                     Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
                     Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                     components:LiquidGlass.EffectType="Regular"
+                    components:LiquidGlass.EnableShadowEffect="False"
                     components:LiquidGlass.CornerRadius="22">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="0" Padding="2">
                     <Border x:Name="ClassicTab"
