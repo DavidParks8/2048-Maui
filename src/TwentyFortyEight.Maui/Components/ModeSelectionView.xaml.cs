@@ -195,11 +195,10 @@ public partial class ModeSelectionView : ContentView
 
     private void UpdateHelperText()
     {
-        HelperTextLabel.Text = _viewModel.PendingGameMode switch
+        ModeDescriptionLabel.Text = _viewModel.PendingGameMode switch
         {
-            GameMode.Walltastrophy =>
-                $"{AppStrings.WalltastrophyModeDescription}\n\n{AppStrings.ModeHelperText}",
-            _ => $"{AppStrings.ClassicModeDescription}\n\n{AppStrings.ModeHelperText}",
+            GameMode.Walltastrophy => AppStrings.WalltastrophyModeDescription,
+            _ => AppStrings.ClassicModeDescription,
         };
     }
 
