@@ -362,7 +362,7 @@ public partial class MainPage : ContentPage
             // tile invisible until the animation service takes over.
             DataTrigger newTileTrigger = new(typeof(Border))
             {
-                Binding = new Binding(nameof(TileViewModel.IsNewTile)),
+                Binding = BindingBase.Create(static (TileViewModel vm) => vm.IsNewTile),
                 Value = true,
             };
             newTileTrigger.Setters.Add(
