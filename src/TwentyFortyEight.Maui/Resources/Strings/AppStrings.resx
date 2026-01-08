@@ -160,6 +160,9 @@
   <data name="TryAgain" xml:space="preserve">
     <value>Try Again</value>
   </data>
+  <data name="UndosUsedFormat" xml:space="preserve">
+    <value>Undos used: {0}</value>
+  </data>
   <data name="Statistics" xml:space="preserve">
     <value>Statistics</value>
   </data>
@@ -358,6 +361,12 @@ Keep combining tiles to reach the 2048 tile and win the game!
     </data>
     <data name="EnableCoachNudgesHint" xml:space="preserve">
       <value>Show Coach prompts when you seem stuck</value>
+    </data>
+    <data name="ShowUndoButton" xml:space="preserve">
+      <value>Show Undo Button</value>
+    </data>
+    <data name="ShowUndoButtonHint" xml:space="preserve">
+      <value>Toggle to show or hide the Undo button</value>
     </data>
     <data name="CoachSettingsDescription" xml:space="preserve">
       <value>Coach suggests a swipe direction and explains why. Coach Nudges can offer to turn on Coach if you seem stuck.</value>

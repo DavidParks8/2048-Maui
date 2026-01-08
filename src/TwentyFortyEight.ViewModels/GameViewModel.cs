@@ -102,6 +102,11 @@ public partial class GameViewModel : ObservableObject
     /// </summary>
     public WallSegment? Wall => _engine.CurrentState.Wall;
 
+    /// <summary>
+    /// Gets the total number of undos performed in the current game session.
+    /// </summary>
+    public int UndoCount => _engine.UndoCount;
+
     [ObservableProperty]
     private double _boardScaleFactor = 1.0;
 
@@ -132,6 +137,9 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCoachNudgeVisible;
 
+    [ObservableProperty]
+    private bool _isUndoButtonVisible;
+
     public GameViewModel(
         ILogger<GameViewModel> logger,
         IMoveAnalyzer moveAnalyzer,
@@ -161,6 +169,7 @@ public partial class GameViewModel : ObservableObject
         _coachSuggestionService = coachSuggestionService;
 
         IsCoachEnabled = _settingsService.CoachEnabled;
+        IsUndoButtonVisible = _settingsService.UndoButtonVisible;
 
         WeakReferenceMessenger.Default.Register<BoardSizeChangeRequestedMessage>(
             this,
@@ -181,6 +190,17 @@ public partial class GameViewModel : ObservableObject
                 {
                     vm.IsCoachEnabled = message.IsEnabled;
                     vm.UpdateCoachSuggestion();
+                }
+            }
+        );
+
+        WeakReferenceMessenger.Default.Register<UndoButtonVisibilityChangedMessage>(
+            this,
+            static (recipient, message) =>
+            {
+                if (recipient is GameViewModel vm)
+                {
+                    vm.IsUndoButtonVisible = message.IsVisible;
                 }
             }
         );
@@ -564,6 +584,8 @@ public partial class GameViewModel : ObservableObject
 
         // Wall may change on moves/undo or initial load.
         OnPropertyChanged(nameof(Wall));
+        // UndoCount may change on undo.
+        OnPropertyChanged(nameof(UndoCount));
 
         // Handle game over state
         if (state.IsGameOver)
@@ -821,7 +843,7 @@ public partial class GameViewModel : ObservableObject
 
     private async Task ShowGameOverDialogAsync()
     {
-        var tryAgain = await _feedbackService.ShowGameOverAsync(Score, BestScore);
+        var tryAgain = await _feedbackService.ShowGameOverAsync(Score, BestScore, UndoCount);
         if (tryAgain)
         {
             await NewGameAsync();

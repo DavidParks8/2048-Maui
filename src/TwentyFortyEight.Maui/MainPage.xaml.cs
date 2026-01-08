@@ -549,7 +549,7 @@ public partial class MainPage : ContentPage
         try
         {
             // Trigger victory through the VictoryViewModel (MVVM pattern)
-            _victoryViewModel.TriggerVictory(_viewModel.Score);
+            _victoryViewModel.TriggerVictory(_viewModel.Score, undoCount: _viewModel.UndoCount);
         }
         finally
         {

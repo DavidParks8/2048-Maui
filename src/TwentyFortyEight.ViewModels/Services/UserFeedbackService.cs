@@ -88,12 +88,16 @@ public sealed class UserFeedbackService(
         );
     }
 
-    public Task<bool> ShowGameOverAsync(int score, int bestScore)
+    public Task<bool> ShowGameOverAsync(int score, int bestScore, int undoCount = 0)
     {
         string message = $"{localizationService.YourScore}\n{score}";
         if (score >= bestScore && bestScore > 0)
         {
             message += $"\n\n{localizationService.BestFormat.Replace("{0}", bestScore.ToString())}";
+        }
+        if (undoCount > 0)
+        {
+            message += $"\n\n{localizationService.FormatUndoCount(undoCount)}";
         }
 
         return alertService.ShowConfirmationAsync(

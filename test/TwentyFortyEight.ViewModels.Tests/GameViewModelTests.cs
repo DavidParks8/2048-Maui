@@ -543,6 +543,32 @@ public class GameViewModelTests
         method!.Invoke(viewModel, [null, args]);
     }
 
+    [TestMethod]
+    public void UndoButtonVisible_DefaultsToTrue()
+    {
+        // Arrange
+        _settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(true);
+
+        // Act
+        var viewModel = CreateViewModel();
+
+        // Assert
+        Assert.IsTrue(viewModel.IsUndoButtonVisible);
+    }
+
+    [TestMethod]
+    public void UndoButtonVisible_UpdatesFromSettingsService()
+    {
+        // Arrange
+        _settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(false);
+
+        // Act
+        var viewModel = CreateViewModel();
+
+        // Assert
+        Assert.IsFalse(viewModel.IsUndoButtonVisible);
+    }
+
     private static void SetPrivateField<T>(GameViewModel viewModel, string fieldName, T value)
     {
         var field = typeof(GameViewModel).GetField(

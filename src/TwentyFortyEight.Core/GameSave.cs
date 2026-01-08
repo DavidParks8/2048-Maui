@@ -26,4 +26,9 @@ public sealed class GameSave
     /// Latch for victory event emission; persists across app restarts.
     /// </summary>
     public bool VictoryEventRaised { get; set; }
+
+    /// <summary>
+    /// Total number of undos performed in the current game session.
+    /// </summary>
+    public int UndoCount { get; set; }
 }

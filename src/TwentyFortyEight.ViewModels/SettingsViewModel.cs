@@ -22,6 +22,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _coachNudgesEnabled;
 
+    [ObservableProperty]
+    private bool _undoButtonVisible;
+
     /// <summary>
     /// Gets a value indicating whether haptic feedback is supported on this device.
     /// </summary>
@@ -36,6 +39,7 @@ public partial class SettingsViewModel : ObservableObject
         _hapticsEnabled = _settingsService.HapticsEnabled;
         _coachEnabled = _settingsService.CoachEnabled;
         _coachNudgesEnabled = _settingsService.CoachNudgesEnabled;
+        _undoButtonVisible = _settingsService.UndoButtonVisible;
     }
 
     partial void OnHapticsEnabledChanged(bool value)
@@ -53,5 +57,11 @@ public partial class SettingsViewModel : ObservableObject
     {
         _settingsService.CoachNudgesEnabled = value;
         WeakReferenceMessenger.Default.Send(new CoachNudgesEnabledChangedMessage(value));
+    }
+
+    partial void OnUndoButtonVisibleChanged(bool value)
+    {
+        _settingsService.UndoButtonVisible = value;
+        WeakReferenceMessenger.Default.Send(new UndoButtonVisibilityChangedMessage(value));
     }
 }

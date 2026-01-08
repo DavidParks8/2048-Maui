@@ -181,6 +181,7 @@
             Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
             HorizontalOptions="End"
             VerticalOptions="Center"
+            IsVisible="{Binding IsUndoButtonVisible}"
             components:LiquidGlass.EffectType="Clear"
             components:LiquidGlass.CornerRadius="32">
             <components:IconButton x:Name="UndoButton"

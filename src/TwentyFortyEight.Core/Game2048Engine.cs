@@ -54,9 +54,17 @@ public class Game2048Engine
     // a pre-victory state and reaches the win tile again.
     private bool _victoryEventRaised;
 
+    // Tracks the total number of undos performed in the current game session.
+    private int _undoCount;
+
     public GameState CurrentState => _currentState;
 
     public bool CanUndo => _currentMoveIndex > 0;
+
+    /// <summary>
+    /// Gets the total number of undos performed in the current game session.
+    /// </summary>
+    public int UndoCount => _undoCount;
 
     /// <summary>
     /// Returns a JSON-friendly snapshot of the current game session.
@@ -70,6 +78,7 @@ public class Game2048Engine
             MoveHistory = [.. _moveHistory],
             CurrentMoveIndex = _currentMoveIndex,
             VictoryEventRaised = _victoryEventRaised,
+            UndoCount = _undoCount,
         };
     }
 
@@ -144,6 +153,7 @@ public class Game2048Engine
 
         _initialState = save.InitialState?.ToGameState() ?? new GameState(_config.Size);
         _victoryEventRaised = save.VictoryEventRaised;
+        _undoCount = save.UndoCount;
 
         ReplayToCurrentIndex();
     }
@@ -160,6 +170,7 @@ public class Game2048Engine
         }
 
         _victoryEventRaised = false;
+        _undoCount = 0;
 
         _moveHistory.Clear();
         _currentMoveIndex = 0;
@@ -267,6 +278,7 @@ public class Game2048Engine
         }
 
         _currentMoveIndex--;
+        _undoCount++;
         ReplayToCurrentIndex();
         return true;
     }

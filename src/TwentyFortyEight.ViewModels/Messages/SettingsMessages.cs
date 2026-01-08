@@ -9,3 +9,8 @@ public sealed record CoachEnabledChangedMessage(bool IsEnabled);
 /// Sent when the Coach nudge setting is changed.
 /// </summary>
 public sealed record CoachNudgesEnabledChangedMessage(bool IsEnabled);
+
+/// <summary>
+/// Sent when the Undo button visibility setting is changed.
+/// </summary>
+public sealed record UndoButtonVisibilityChangedMessage(bool IsVisible);
