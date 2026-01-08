@@ -3,15 +3,6 @@ using System.Text.Json.Serialization;
 namespace TwentyFortyEight.Core;
 
 /// <summary>
-/// Orientation of a between-cell wall segment.
-/// </summary>
-public enum WallOrientation
-{
-    Horizontal = 0,
-    Vertical = 1,
-}
-
-/// <summary>
 /// Represents a contiguous wall segment that exists between adjacent cells.
 /// </summary>
 /// <remarks>
@@ -30,24 +21,13 @@ public sealed record WallSegment
     [JsonConstructor]
     public WallSegment(WallOrientation orientation, int divider, int start, int length)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(divider, 0);
+        ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(length, 0);
+
         if (!Enum.IsDefined(typeof(WallOrientation), orientation))
         {
             throw new ArgumentOutOfRangeException(nameof(orientation));
-        }
-
-        if (divider < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(divider));
-        }
-
-        if (start < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(start));
-        }
-
-        if (length <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length));
         }
 
         Orientation = orientation;

@@ -46,6 +46,12 @@
                     </Border>
                 </Grid>
             </Border>
+
+            <!-- Mode Description Text -->
+            <Label x:Name="HelperTextLabel"
+                   FontSize="15"
+                   LineHeight="1.3"
+                   TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
         </VerticalStackLayout>
 
         <!-- Board Size Picker Section -->
@@ -57,12 +63,6 @@
             
             <ContentView x:Name="SizePickerContainer" />
         </VerticalStackLayout>
-
-        <!-- Helper Text -->
-        <Label x:Name="HelperTextLabel"
-               FontSize="15"
-               LineHeight="1.3"
-               TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}" />
 
         <!-- Action Button -->
         <Button x:Name="PlayButton"
