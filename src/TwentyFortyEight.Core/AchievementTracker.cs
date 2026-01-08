@@ -5,7 +5,7 @@ namespace TwentyFortyEight.Core;
 /// Platform-agnostic achievement tracking that works with any platform service
 /// (Game Center, Xbox, Google Play, Steam, etc.).
 /// </summary>
-public class AchievementTracker : IAchievementTracker
+internal class AchievementTracker : IAchievementTracker
 {
     private readonly HashSet<int> _unlockedTiles = [];
     private readonly HashSet<int> _unlockedScores = [];

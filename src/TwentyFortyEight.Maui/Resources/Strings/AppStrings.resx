@@ -356,8 +356,14 @@ Keep combining tiles to reach the 2048 tile and win the game!
     <data name="EnableCoachHint" xml:space="preserve">
       <value>Show move suggestions while you play</value>
     </data>
+    <data name="EnableCoachDescription" xml:space="preserve">
+      <value>Coach suggests a swipe direction and explains why.</value>
+    </data>
     <data name="EnableCoachNudges" xml:space="preserve">
       <value>Coach Nudges</value>
+    </data>
+    <data name="CoachNudgesDescription" xml:space="preserve">
+      <value>Coach Nudges can offer to turn on Coach if you seem stuck.</value>
     </data>
     <data name="EnableCoachNudgesHint" xml:space="preserve">
       <value>Show Coach prompts when you seem stuck</value>

@@ -6,7 +6,7 @@ namespace TwentyFortyEight.Core;
 /// <summary>
 /// A lightweight, deterministic move advisor based on common 2048 heuristics.
 /// </summary>
-public sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvisor
+internal sealed class HeuristicMoveAdvisor(IBoardSimulator simulator) : IMoveAdvisor
 {
     public MoveRecommendation? Recommend(MoveAdvisorRequest request)
     {

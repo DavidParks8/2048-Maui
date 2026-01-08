@@ -40,24 +40,17 @@ public static class MauiProgram
             });
 
         // Register services for dependency injection
-        builder.Services.AddSingleton<IRandomSource, SystemRandomSource>();
-        builder.Services.AddSingleton<IMoveAnalyzer, MoveAnalyzer>();
-        builder.Services.AddSingleton<IBoardSimulator, BoardMoveSimulator>();
-        builder.Services.AddSingleton<IMoveAdvisor, HeuristicMoveAdvisor>();
         builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
         builder.Services.AddSingleton<IStatisticsTracker, StatisticsService>();
-        builder.Services.AddSingleton<IGame2048EngineFactory, Game2048EngineFactory>();
         builder.Services.AddSingleton<IToolbarIconService, ToolbarIconService>();
         builder.Services.AddSingleton<IWindowOverlayService, WindowOverlayService>();
         builder.Services.AddSingleton<IWallOverlayRenderer, WallOverlayRenderer>();
 
-        // Register consolidated services (from refactoring)
-        builder.Services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
-        builder.Services.AddSingleton<IGameStateRepository, GameStateRepository>();
-        builder.Services.AddSingleton<IGameSessionCoordinator, GameSessionCoordinator>();
-        builder.Services.AddSingleton<IBoardSizeChangeService, BoardSizeChangeService>();
-        builder.Services.AddSingleton<ICoachNudgeService, CoachNudgeService>();
-        builder.Services.AddSingleton<ICoachSuggestionService, CoachSuggestionService>();
+        // Register Core services (platform-agnostic game logic)
+        builder.Services.AddTwentyFortyEightCore();
+
+        // Register ViewModels and ViewModel-layer services
+        builder.Services.AddTwentyFortyEightViewModels();
 
         // Register low-level services (used by consolidated services internally)
         builder.Services.AddSingleton<IHapticService, MauiHapticService>();
@@ -79,14 +72,8 @@ public static class MauiProgram
             SwipePreviewInteractionService
         >();
 
-        // Victory ViewModel and animation service
-        builder.Services.AddSingleton<VictoryViewModel>();
-
         builder.Services.AddSingleton<TileAnimationService>();
         builder.Services.AddSingleton<BoardRippleService>();
-
-        // Register achievement tracker
-        builder.Services.AddSingleton<IAchievementTracker, AchievementTracker>();
 
         // Register achievement ID mapper - uses partial class pattern for platform-specific IDs
         builder.Services.AddSingleton<IAchievementIdMapper, AchievementIdMapper>();
@@ -101,9 +88,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<IMauiInitializeService, LiquidGlassInitializer>();
 #endif
 
-        builder.Services.AddSingleton<GameViewModel>();
-        builder.Services.AddTransient<StatsViewModel>();
-        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<StatsPage>();
         builder.Services.AddTransient<SettingsPage>();

@@ -466,11 +466,29 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Coach suggests a swipe direction and explains why..
+        /// </summary>
+        internal static string EnableCoachDescription {
+            get {
+                return ResourceManager.GetString("EnableCoachDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Coach Nudges.
         /// </summary>
         internal static string EnableCoachNudges {
             get {
                 return ResourceManager.GetString("EnableCoachNudges", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Coach Nudges can offer to turn on Coach if you seem stuck..
+        /// </summary>
+        internal static string CoachNudgesDescription {
+            get {
+                return ResourceManager.GetString("CoachNudgesDescription", resourceCulture);
             }
         }
 

@@ -33,6 +33,12 @@ public partial class SettingToggleRow : ContentView
     [AutoBindable]
     private readonly string _semanticHint = string.Empty;
 
+    /// <summary>
+    /// Gets or sets an optional description displayed under the setting label.
+    /// </summary>
+    [AutoBindable]
+    private readonly string _description = string.Empty;
+
 #pragma warning restore CS0169
 
     /// <summary>

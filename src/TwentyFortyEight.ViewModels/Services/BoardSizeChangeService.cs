@@ -7,7 +7,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Default implementation that uses WeakReferenceMessenger to request size changes.
 /// </summary>
-public sealed class BoardSizeChangeService : IBoardSizeChangeService
+internal sealed class BoardSizeChangeService : IBoardSizeChangeService
 {
     public void RequestBoardSizeChange(int newSize)
     {

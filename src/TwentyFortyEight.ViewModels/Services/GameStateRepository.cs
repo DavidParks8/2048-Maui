@@ -10,7 +10,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Handles persistence of game state and best score.
 /// </summary>
-public sealed partial class GameStateRepository(
+internal sealed partial class GameStateRepository(
     IPreferencesService preferencesService,
     ILogger<GameStateRepository> logger
 ) : IGameStateRepository

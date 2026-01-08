@@ -3,7 +3,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Default implementation of coach nudge tracking logic.
 /// </summary>
-public sealed class CoachNudgeService(ISettingsService settingsService) : ICoachNudgeService
+internal sealed class CoachNudgeService(ISettingsService settingsService) : ICoachNudgeService
 {
     private const int InvalidMoveThreshold = 3;
 

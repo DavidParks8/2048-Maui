@@ -22,7 +22,7 @@ namespace TwentyFortyEight.Core;
 /// </code>
 /// </para>
 /// </remarks>
-public class MoveAnalyzer : IMoveAnalyzer
+internal class MoveAnalyzer : IMoveAnalyzer
 {
     // Pool for temporary lookup HashSets (not exposed to callers)
     private static readonly ObjectPool<HashSet<Position>> s_positionSetPool = ObjectPool.Create(

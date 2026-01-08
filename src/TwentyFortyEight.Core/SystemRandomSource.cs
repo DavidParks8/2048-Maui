@@ -3,7 +3,7 @@ namespace TwentyFortyEight.Core;
 /// <summary>
 /// Production implementation of IRandomSource using System.Random.
 /// </summary>
-public class SystemRandomSource : IRandomSource
+internal class SystemRandomSource : IRandomSource
 {
     private readonly Random _random;
 

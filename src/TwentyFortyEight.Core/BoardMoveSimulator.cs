@@ -5,7 +5,7 @@ namespace TwentyFortyEight.Core;
 /// <summary>
 /// Stateless board simulator for previewing moves without mutating game state.
 /// </summary>
-public sealed class BoardMoveSimulator : IBoardSimulator
+internal sealed class BoardMoveSimulator : IBoardSimulator
 {
     private readonly ObjectPool<List<int>> _intListPool = ObjectPool.Create(
         new IntListPooledObjectPolicy()

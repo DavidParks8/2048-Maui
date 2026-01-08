@@ -6,7 +6,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Coordinates meta-game features like achievements and social gaming.
 /// </summary>
-public sealed partial class GameSessionCoordinator(
+internal sealed partial class GameSessionCoordinator(
     ISocialGamingService socialGamingService,
     IAchievementTracker achievementTracker,
     IAchievementIdMapper achievementIdMapper,

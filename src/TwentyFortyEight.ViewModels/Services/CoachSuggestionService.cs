@@ -5,7 +5,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Default implementation of coach suggestion service.
 /// </summary>
-public sealed class CoachSuggestionService(IMoveAdvisor moveAdvisor) : ICoachSuggestionService
+internal sealed class CoachSuggestionService(IMoveAdvisor moveAdvisor) : ICoachSuggestionService
 {
     /// <inheritdoc />
     public MoveRecommendation? GetSuggestion(CoachSuggestionRequest request)

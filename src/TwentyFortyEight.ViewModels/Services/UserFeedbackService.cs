@@ -3,7 +3,7 @@ namespace TwentyFortyEight.ViewModels.Services;
 /// <summary>
 /// Consolidates user feedback mechanisms: accessibility, haptics, and dialogs.
 /// </summary>
-public sealed class UserFeedbackService(
+internal sealed class UserFeedbackService(
     IScreenReaderService screenReaderService,
     IHapticService hapticService,
     IAlertService alertService,

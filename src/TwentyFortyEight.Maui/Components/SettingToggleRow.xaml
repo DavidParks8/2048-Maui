@@ -7,7 +7,12 @@
              x:Name="this">
     
     <Grid ColumnSpacing="16"
+          RowSpacing="4"
           Padding="16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <OnPlatform x:TypeArguments="ColumnDefinitionCollection">
                 <On Platform="WinUI">
@@ -32,12 +37,21 @@
                 <On Platform="MacCatalyst" Value="16,12,8,12" />
             </OnPlatform>
         </Grid.Padding>
-        <Label Grid.Column="0"
+        <Label Grid.Row="0"
+               Grid.Column="0"
                Text="{Binding Label, Source={x:Reference this}}"
                FontSize="17"
                TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-               VerticalOptions="Center" />
-        <Switch Grid.Column="1"
+               VerticalOptions="Start" />
+        <Label Grid.Row="1"
+               Grid.Column="0"
+               Text="{Binding Description, Source={x:Reference this}}"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+               IsVisible="{Binding Description, Source={x:Reference this}, Converter={StaticResource StringNotEmptyConverter}}" />
+        <Switch Grid.Row="0"
+                Grid.Column="1"
+                Grid.RowSpan="2"
                 AutomationId="{Binding AutomationId, Source={x:Reference this}}"
                 IsToggled="{Binding IsToggled, Source={x:Reference this}}"
                 OnColor="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
