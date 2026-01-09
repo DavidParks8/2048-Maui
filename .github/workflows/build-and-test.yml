@@ -1,8 +1,6 @@
 name: Build and Test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -12,6 +10,8 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
+    env:
+      APP_VERSION_CODE: ${{ github.run_number }}
     
     steps:
     - name: Checkout code
@@ -31,7 +31,7 @@ jobs:
         MAUI_TARGET_PLATFORM: android
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: android
       
@@ -56,6 +56,8 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: read
+    env:
+      APP_VERSION_CODE: ${{ github.run_number }}
     
     steps:
     - name: Checkout code
@@ -134,7 +136,7 @@ jobs:
         MAUI_TARGET_PLATFORM: ios
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: ios
 
@@ -148,6 +150,7 @@ jobs:
           -f net10.0-ios \
           -p:RuntimeIdentifier=ios-arm64 \
           -p:BuildIpa=true \
+          -p:ApplicationVersion=$APP_VERSION_CODE \
           -p:CodesignKey="$IOS_SIGNING_IDENTITY" \
           -p:CodesignProvision="$IOS_PROFILE_UUID"
 
@@ -174,6 +177,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+    env:
+      APP_VERSION_CODE: ${{ github.run_number }}
     
     steps:
     - name: Checkout code
@@ -193,6 +198,6 @@ jobs:
         MAUI_TARGET_PLATFORM: windows
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$env:APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: windows
