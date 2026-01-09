@@ -372,3 +372,101 @@ string token = await SecureStorage.GetAsync("oauth_token");
 Avoid allocations at all costs! Code this like it is a fighter jet (no allocations, no exceptions) within reason. Allocations should happen at app start.
 
 Always use compiled bindings in xaml
+
+## iOS Simulator Automation (Appium/WDA)
+
+Use Appium MCP tools for UI testing and validation on iOS simulators. This is useful for verifying fixes and testing user flows.
+
+### Setup
+
+1. **Select platform and device**:
+
+   ```text
+   mcp_appium-mcp_select_platform (platform: "ios", iosDeviceType: "simulator")
+   mcp_appium-mcp_select_device (platform: "ios", deviceUdid: "<UDID>")
+   ```
+
+2. **Boot simulator** (if not already running):
+
+   ```text
+   mcp_appium-mcp_boot_simulator (udid: "<UDID>")
+   ```
+
+3. **Setup and install WebDriverAgent** (first time only):
+
+   ```text
+   mcp_appium-mcp_setup_wda (platform: "ios")
+   mcp_appium-mcp_install_wda (simulatorUdid: "<UDID>", appPath: "<path from setup_wda>")
+   ```
+
+### Build and Install App
+
+```bash
+# Build for iOS simulator
+dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj \
+  -f net10.0-ios -c Debug -p:RuntimeIdentifier=iossimulator-arm64
+
+# Install on simulator
+xcrun simctl install <UDID> "src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app"
+
+# Launch app
+xcrun simctl launch <UDID> com.dappermagna.twentyfortyeight
+```
+
+### Direct WDA Control (More Reliable)
+
+When Appium MCP session creation fails, use WDA directly via curl:
+
+```bash
+# Create WDA session
+curl -s -X POST 'http://127.0.0.1:8100/session' \
+  -H 'Content-Type: application/json' \
+  -d '{"capabilities":{"alwaysMatch":{"bundleId":"com.dappermagna.twentyfortyeight"}}}'
+
+# Get page source (UI hierarchy)
+curl -s 'http://127.0.0.1:8100/session/<SESSION_ID>/source'
+
+# Find element by accessibility ID
+curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/element' \
+  -H 'Content-Type: application/json' \
+  -d '{"using":"accessibility id","value":"ToolbarNewGameButton"}'
+
+# Click element
+curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/element/<ELEMENT_ID>/click' \
+  -H 'Content-Type: application/json' -d '{}'
+
+# Swipe gesture (drag from point to point)
+curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/wda/dragfromtoforduration' \
+  -H 'Content-Type: application/json' \
+  -d '{"fromX":100,"fromY":500,"toX":350,"toY":500,"duration":0.3}'
+```
+
+### Screenshots
+
+```bash
+# Take screenshot
+xcrun simctl io <UDID> screenshot /tmp/screenshot.png
+
+# Open screenshot
+open /tmp/screenshot.png
+```
+
+### Accessibility Testing
+
+The game board exposes its state via accessibility description:
+
+```bash
+curl -s 'http://127.0.0.1:8100/session/<SESSION_ID>/source' | grep -o 'Game board[^"\\]*'
+```
+
+Example output: `Game board. Row 1:empty, empty, 2, empty. Row 2:2, empty, empty, empty...`
+
+### Common Element Accessibility IDs
+
+| Element            | Accessibility ID             |
+| ------------------ | ---------------------------- |
+| New Game button    | `ToolbarNewGameButton`       |
+| Mode button        | `ToolbarModeButton`          |
+| More menu          | `SecondaryToolbarMenuButton` |
+| Start New (dialog) | `Start New`                  |
+| Cancel (dialog)    | `Cancel`                     |

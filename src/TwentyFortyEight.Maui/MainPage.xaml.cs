@@ -84,6 +84,9 @@ public partial class MainPage : ContentPage
         // Wire up ViewModel victory event to VictoryViewModel
         _viewModel.VictoryAnimationRequested += OnVictoryAnimationRequested;
 
+        // Wire up board reset event to update accessibility description
+        _viewModel.BoardReset += OnBoardReset;
+
         // Wire up VictoryViewModel events
         _victoryViewModel.NewGameRequested += OnNewGameRequested;
 
@@ -96,7 +99,7 @@ public partial class MainPage : ContentPage
 
         WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
             this,
-            static (object recipient, RulesetChangedMessage _) =>
+            static (recipient, _) =>
             {
                 MainThread.BeginInvokeOnMainThread(((MainPage)recipient).RebuildBoardGrid);
             }
@@ -194,6 +197,11 @@ public partial class MainPage : ContentPage
     private void OnNewGameRequested(object? sender, EventArgs e)
     {
         _viewModel.NewGameCommand.Execute(null);
+    }
+
+    private void OnBoardReset(object? sender, EventArgs e)
+    {
+        UpdateBoardAccessibilityDescription();
     }
 
     private void OnDirectionInputReceived(object? sender, Direction direction)

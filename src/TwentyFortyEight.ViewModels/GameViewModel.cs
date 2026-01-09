@@ -57,6 +57,12 @@ public partial class GameViewModel : ObservableObject
     public event EventHandler<TileUpdateEventArgs>? TilesUpdated;
 
     /// <summary>
+    /// Event raised when the board is reset (e.g., new game, undo, or game loaded).
+    /// Use this to update accessibility descriptions or other UI state that depends on the board.
+    /// </summary>
+    public event EventHandler? BoardReset;
+
+    /// <summary>
     /// Event raised when victory animation should play.
     /// Forwarded from the Core engine's VictoryAchieved event.
     /// </summary>
@@ -324,6 +330,7 @@ public partial class GameViewModel : ObservableObject
 
         _engine.NewGame();
         UpdateUI();
+        BoardReset?.Invoke(this, EventArgs.Empty);
         _repository.SaveGame(_config, _engine.ToSaveDto());
     }
 
@@ -475,6 +482,7 @@ public partial class GameViewModel : ObservableObject
         if (_engine.Undo())
         {
             UpdateUI();
+            BoardReset?.Invoke(this, EventArgs.Empty);
             _repository.SaveGame(_config, _engine.ToSaveDto());
         }
     }
@@ -577,10 +585,15 @@ public partial class GameViewModel : ObservableObject
         }
         else
         {
-            // No previous board - just update values
+            // No previous board - just update values and reset animation flags.
+            // Resetting IsNewTile/IsMerged ensures tiles from a previous game that were
+            // hidden for animation (e.g., newly spawned tiles) become visible again.
             for (int i = 0; i < state.Board.Length; i++)
             {
-                Tiles[i].Value = state.Board[i];
+                var tile = Tiles[i];
+                tile.IsNewTile = false;
+                tile.IsMerged = false;
+                tile.Value = state.Board[i];
             }
         }
 
@@ -786,6 +799,7 @@ public partial class GameViewModel : ObservableObject
             OnPropertyChanged(nameof(BoardSize));
             OnPropertyChanged(nameof(GameMode));
             UpdateUI();
+            BoardReset?.Invoke(this, EventArgs.Empty);
 
             WeakReferenceMessenger.Default.Send(
                 new RulesetChangedMessage(oldRulesetId, _config.RulesetId, oldSize, _config.Size)

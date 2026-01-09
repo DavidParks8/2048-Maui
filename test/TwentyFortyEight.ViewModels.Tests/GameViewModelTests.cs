@@ -349,6 +349,31 @@ public class GameViewModelTests
     }
 
     [TestMethod]
+    public async Task NewGameAsync_ResetsIsNewTileAndIsMergedFlags()
+    {
+        // Arrange - Regression test: tiles with IsNewTile=true from the previous game's
+        // last move were remaining hidden after New Game because the flags weren't reset.
+        var viewModel = CreateViewModel();
+
+        // Simulate tiles having animation flags set (as would happen during normal gameplay)
+        foreach (var tile in viewModel.Tiles)
+        {
+            tile.IsNewTile = true;
+            tile.IsMerged = true;
+        }
+
+        // Act
+        await viewModel.NewGameCommand.ExecuteAsync(null);
+
+        // Assert - All tiles should have their animation flags reset
+        foreach (var tile in viewModel.Tiles)
+        {
+            Assert.IsFalse(tile.IsNewTile, "IsNewTile should be reset to false after NewGame");
+            Assert.IsFalse(tile.IsMerged, "IsMerged should be reset to false after NewGame");
+        }
+    }
+
+    [TestMethod]
     public void VictoryAnimationRequested_ForwardsEngineVictoryEvent_AfterInitialization()
     {
         // Arrange
