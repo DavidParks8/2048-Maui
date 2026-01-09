@@ -13,8 +13,9 @@ public class GestureRecognizerService : IGestureRecognizerService
     private const double MinPreviewDistance = 8;
 
     // Rough heuristic: treat as "fast" once movement exceeds this speed.
-    // Units: px/ms (e.g., 2.0 => ~2000 px/s).
-    private const double FastSwipeSpeedThreshold = 2.0;
+    // Units: px/ms (e.g., 0.8 => ~800 px/s).
+    // Lowered from 2.0 to make normal swipes less likely to be treated as preview.
+    private const double FastSwipeSpeedThreshold = 0.8;
 
     // Track gesture recognizers per view
     private readonly Dictionary<

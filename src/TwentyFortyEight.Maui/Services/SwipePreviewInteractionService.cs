@@ -123,8 +123,9 @@ public sealed class SwipePreviewInteractionService(
                         return;
                     }
 
-                    // Require a tiny delay and movement so we don't enter preview on taps.
-                    if (e.Elapsed.TotalMilliseconds < 80)
+                    // Require a deliberate delay so we don't enter preview on normal swipes.
+                    // Increased from 80ms to 150ms to make preview less easily triggered.
+                    if (e.Elapsed.TotalMilliseconds < 150)
                     {
                         return;
                     }
