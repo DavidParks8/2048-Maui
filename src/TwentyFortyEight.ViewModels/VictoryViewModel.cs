@@ -32,6 +32,12 @@ public sealed partial class VictoryViewModel(
     public string UndoCountDisplayText => localizationService.FormatUndoCount(State.UndoCount);
 
     /// <summary>
+    /// Gets the localized victory subtitle ("You reached 2048!" or "You blocked 2048!").
+    /// </summary>
+    public string VictorySubtitleText =>
+        localizationService.GetVictorySubtitle(State.IsAdversarialMode);
+
+    /// <summary>
     /// Event raised when the user chooses to keep playing after victory.
     /// </summary>
     public event EventHandler? KeepPlayingRequested;
@@ -64,16 +70,24 @@ public sealed partial class VictoryViewModel(
     /// <param name="score">Current score at time of victory.</param>
     /// <param name="winningValue">The winning tile value (e.g., 2048).</param>
     /// <param name="undoCount">The number of undos performed during the game.</param>
-    public void TriggerVictory(int score, int winningValue = 2048, int undoCount = 0)
+    /// <param name="isAdversarialMode">Whether this is an Adversarial mode victory.</param>
+    public void TriggerVictory(
+        int score,
+        int winningValue = 2048,
+        int undoCount = 0,
+        bool isAdversarialMode = false
+    )
     {
         State.Score = score;
         State.WinningValue = winningValue;
         State.UndoCount = undoCount;
+        State.IsAdversarialMode = isAdversarialMode;
         State.IsActive = true;
 
         // Notify that the formatted text properties have changed
         OnPropertyChanged(nameof(ScoreDisplayText));
         OnPropertyChanged(nameof(UndoCountDisplayText));
+        OnPropertyChanged(nameof(VictorySubtitleText));
 
         if (ShouldReduceMotion)
         {

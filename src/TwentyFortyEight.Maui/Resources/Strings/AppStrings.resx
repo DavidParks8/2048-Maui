@@ -103,6 +103,12 @@
   <data name="WalltastrophyModeDescription" xml:space="preserve">
     <value>Each successful move places a new wall between cells. The wall blocks movement and merges across it.</value>
   </data>
+  <data name="AdversarialMode" xml:space="preserve">
+    <value>Adversarial</value>
+  </data>
+  <data name="AdversarialModeDescription" xml:space="preserve">
+    <value>Block the AI from reaching 2048. Tap empty cells to spawn tiles — the AI moves after each spawn. Lower score wins!</value>
+  </data>
   <data name="ModeSection" xml:space="preserve">
     <value>MODE</value>
   </data>
@@ -123,6 +129,9 @@
   </data>
   <data name="VictorySubtitle" xml:space="preserve">
     <value>You reached 2048!</value>
+  </data>
+  <data name="AdversarialVictorySubtitle" xml:space="preserve">
+    <value>You blocked 2048!</value>
   </data>
   <data name="VictoryAnnouncement" xml:space="preserve">
     <value>Victory! You reached 2048!</value>

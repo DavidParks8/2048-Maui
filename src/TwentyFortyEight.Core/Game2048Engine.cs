@@ -14,6 +14,9 @@ public class Game2048Engine
     private int _currentMoveIndex;
     private GameState _initialState;
 
+    private int _pendingExternalSpawnIndex = -1;
+    private int _pendingExternalSpawnValue;
+
     private GameState _currentState;
 
     /// <summary>
@@ -154,6 +157,9 @@ public class Game2048Engine
         _currentMoveIndex = 0;
         _currentState = new GameState(_config.Size);
 
+        _pendingExternalSpawnIndex = -1;
+        _pendingExternalSpawnValue = 0;
+
         // Start with two random tiles
         SpawnTileWithInfo();
         SpawnTileWithInfo();
@@ -170,6 +176,17 @@ public class Game2048Engine
     /// </summary>
     public bool Move(Direction direction)
     {
+        // In Adversarial mode, moves are made by the AI after a player-controlled spawn.
+        // If no player spawn is pending, treat Move as a no-op.
+        if (_config.Mode == GameMode.Adversarial && _pendingExternalSpawnIndex < 0)
+        {
+            if (!_currentState.IsGameOver && IsGameOver())
+            {
+                FinalizeAdversarialPlayerWinByLockingAi();
+            }
+            return false;
+        }
+
         var playfield = new PlayfieldSnapshot(_currentState.Board, _currentState.Wall);
         var (newBoard, scoreIncrease, boardChanged, maxMergedValue) = _boardSimulator.SimulateMove(
             new BoardMoveRequest(playfield, direction)
@@ -180,9 +197,30 @@ public class Game2048Engine
             // Check if game is over (no moves possible in any direction)
             if (!_currentState.IsGameOver && IsGameOver())
             {
-                _currentState = _currentState.WithUpdate(isGameOver: true);
-                _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+                if (_config.Mode == GameMode.Adversarial)
+                {
+                    FinalizeAdversarialPlayerWinByLockingAi();
+                }
+                else
+                {
+                    _currentState = _currentState.WithUpdate(isGameOver: true);
+                    _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+                }
             }
+
+            // In Adversarial mode, we still want to record the player-controlled spawn as a
+            // committed turn so Undo works even when the AI has no valid moves.
+            if (_config.Mode == GameMode.Adversarial && _pendingExternalSpawnIndex >= 0)
+            {
+                RecordMove(
+                    direction,
+                    spawnedTileIndex: -1,
+                    spawnedTileValue: 0,
+                    wallAfterMove: null
+                );
+                return true;
+            }
+
             return false;
         }
 
@@ -193,18 +231,38 @@ public class Game2048Engine
         }
 
         // Update state - track the new max tile value
+        // Adversarial mode still uses the standard 2048 scoring rules (points increase on merges),
+        // but the objective is inverted (lower final score is better).
         var newScore = _currentState.Score + scoreIncrease;
         var newMoveCount = _currentState.MoveCount + 1;
         var newMaxTile = Math.Max(_currentState.MaxTileValue, maxMergedValue);
         var wasWonBefore = _currentState.IsWon;
-        var isWon = wasWonBefore || newMaxTile >= _config.WinTile;
+        var reachedWinTile = newMaxTile >= _config.WinTile;
+        var isWon =
+            _config.Mode == GameMode.Adversarial ? wasWonBefore : wasWonBefore || reachedWinTile;
 
-        _currentState = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
+        // In Adversarial mode, reaching the win tile is a LOSS (AI reached 2048).
+        // End the game immediately.
+        var isGameOver = false;
+        if (_config.Mode == GameMode.Adversarial && reachedWinTile)
+        {
+            isGameOver = true;
+            isWon = false;
+        }
+
+        _currentState = new GameState(
+            newBoard,
+            newScore,
+            newMoveCount,
+            isWon,
+            isGameOver,
+            newMaxTile
+        );
 
         // Track statistics
         _statisticsTracker.OnMoveMade();
         _statisticsTracker.UpdateHighestTile(newMaxTile);
-        _statisticsTracker.UpdateBestScore(newScore);
+        _statisticsTracker.UpdateBestScore(_config.Mode, newScore);
 
         // Check if game was just won
         if (isWon && !wasWonBefore)
@@ -220,8 +278,13 @@ public class Game2048Engine
             }
         }
 
-        // Spawn a new tile and record it
-        var (spawnIndex, spawnValue) = SpawnTileWithInfo();
+        // Spawn a new tile and record it (non-adversarial modes)
+        int spawnIndex = -1;
+        int spawnValue = 0;
+        if (_config.Mode != GameMode.Adversarial)
+        {
+            (spawnIndex, spawnValue) = SpawnTileWithInfo();
+        }
 
         WallSegment? wallAfterMove = null;
         if (_config.Mode == GameMode.Walltastrophy)
@@ -230,18 +293,92 @@ public class Game2048Engine
             _currentState = _currentState.WithWall(wallAfterMove);
         }
 
-        MoveRecord moveRecord = new(direction, spawnIndex, spawnValue, wallAfterMove);
-
-        _moveHistory.Add(moveRecord);
-        _currentMoveIndex++;
+        RecordMove(direction, spawnIndex, spawnValue, wallAfterMove);
 
         // Check if game is over
-        if (IsGameOver())
+        if (!_currentState.IsGameOver && IsGameOver())
         {
-            _currentState = _currentState.WithUpdate(isGameOver: true);
+            if (_config.Mode == GameMode.Adversarial)
+            {
+                FinalizeAdversarialPlayerWinByLockingAi();
+            }
+            else
+            {
+                _currentState = _currentState.WithUpdate(isGameOver: true);
+                _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+            }
+        }
+
+        // If the AI reached the win tile (Adversarial loss), finalize stats now.
+        if (_currentState.IsGameOver && _config.Mode == GameMode.Adversarial && reachedWinTile)
+        {
             _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
         }
 
+        return true;
+    }
+
+    private void FinalizeAdversarialPlayerWinByLockingAi()
+    {
+        // Winning in Adversarial mode ends the game.
+        // We also raise the victory event so the UI can show the victory overlay
+        // (instead of the generic game-over dialog).
+        _currentState = _currentState.WithUpdate(isGameOver: true, isWon: true);
+
+        _statisticsTracker.OnGameWon();
+
+        // Raise victory event once per game (even if Undo rewinds IsWon)
+        if (!_victoryEventRaised)
+        {
+            _victoryEventRaised = true;
+            VictoryAchieved?.Invoke(this, EventArgs.Empty);
+        }
+
+        _statisticsTracker.OnGameEnded(_currentState.Score, _currentState.IsWon);
+    }
+
+    /// <summary>
+    /// In Adversarial mode, the player places the next tile at a chosen empty cell.
+    /// This does not increment move count and is recorded on the next AI move for Undo.
+    /// </summary>
+    public bool TrySpawnExternalTile(Position position, out int spawnedValue)
+    {
+        spawnedValue = 0;
+
+        if (_config.Mode != GameMode.Adversarial)
+        {
+            return false;
+        }
+
+        if (_currentState.IsGameOver)
+        {
+            return false;
+        }
+
+        if (
+            (uint)position.Row >= (uint)_currentState.Size
+            || (uint)position.Column >= (uint)_currentState.Size
+        )
+        {
+            return false;
+        }
+
+        // Only allow one pending spawn per AI turn.
+        if (_pendingExternalSpawnIndex >= 0)
+        {
+            return false;
+        }
+
+        if (_currentState.Board[position.Row, position.Column] != 0)
+        {
+            return false;
+        }
+
+        spawnedValue = _spawnStrategy.GetSpawnValue(_currentState, _config);
+        _currentState = _currentState.WithTile(position.Row, position.Column, spawnedValue);
+
+        _pendingExternalSpawnIndex = _currentState.Board.GetIndex(position.Row, position.Column);
+        _pendingExternalSpawnValue = spawnedValue;
         return true;
     }
 
@@ -285,12 +422,30 @@ public class Game2048Engine
         // Check if game is over
         if (IsGameOver())
         {
-            _currentState = _currentState.WithUpdate(isGameOver: true);
+            if (
+                _config.Mode == GameMode.Adversarial
+                && _currentState.MaxTileValue < _config.WinTile
+            )
+            {
+                _currentState = _currentState.WithUpdate(isGameOver: true, isWon: true);
+            }
+            else
+            {
+                _currentState = _currentState.WithUpdate(isGameOver: true);
+            }
         }
     }
 
     private GameState ApplyRecordedMove(GameState state, MoveRecord move)
     {
+        // Apply any player-controlled spawn first (Adversarial).
+        if (move.ExternalSpawnedTileIndex >= 0)
+        {
+            var spawnRow = move.ExternalSpawnedTileIndex / state.Size;
+            var spawnCol = move.ExternalSpawnedTileIndex % state.Size;
+            state = state.WithTile(spawnRow, spawnCol, move.ExternalSpawnedTileValue);
+        }
+
         var playfield = new PlayfieldSnapshot(state.Board, state.Wall);
         var (newBoard, scoreIncrease, moved, maxMergedValue) = _boardSimulator.SimulateMove(
             new BoardMoveRequest(playfield, move.Direction)
@@ -298,15 +453,32 @@ public class Game2048Engine
 
         if (!moved)
         {
+            // No movement, but the external spawn may have still changed the board.
             return state;
         }
 
         var newScore = state.Score + scoreIncrease;
         var newMoveCount = state.MoveCount + 1;
         var newMaxTile = Math.Max(state.MaxTileValue, maxMergedValue);
-        var isWon = state.IsWon || newMaxTile >= _config.WinTile;
+        var reachedWinTile = newMaxTile >= _config.WinTile;
+        var isWon =
+            _config.Mode == GameMode.Adversarial ? state.IsWon : state.IsWon || reachedWinTile;
 
-        var updated = new GameState(newBoard, newScore, newMoveCount, isWon, false, newMaxTile);
+        var isGameOver = false;
+        if (_config.Mode == GameMode.Adversarial && reachedWinTile)
+        {
+            isGameOver = true;
+            isWon = false;
+        }
+
+        var updated = new GameState(
+            newBoard,
+            newScore,
+            newMoveCount,
+            isWon,
+            isGameOver,
+            newMaxTile
+        );
 
         if (move.SpawnedTileIndex >= 0)
         {
@@ -321,6 +493,32 @@ public class Game2048Engine
         }
 
         return updated;
+    }
+
+    private void RecordMove(
+        Direction direction,
+        int spawnedTileIndex,
+        int spawnedTileValue,
+        WallSegment? wallAfterMove
+    )
+    {
+        var externalIndex = _pendingExternalSpawnIndex;
+        var externalValue = _pendingExternalSpawnValue;
+
+        _pendingExternalSpawnIndex = -1;
+        _pendingExternalSpawnValue = 0;
+
+        MoveRecord moveRecord = new(
+            direction,
+            spawnedTileIndex,
+            spawnedTileValue,
+            wallAfterMove,
+            externalIndex,
+            externalValue
+        );
+
+        _moveHistory.Add(moveRecord);
+        _currentMoveIndex++;
     }
 
     private (int index, int value) SpawnTileWithInfo()

@@ -121,7 +121,8 @@ public class GameViewModelTests
             _feedbackServiceMock.Object,
             _victoryViewModel,
             _coachNudgeServiceMock.Object,
-            _coachSuggestionServiceMock.Object
+            _coachSuggestionServiceMock.Object,
+            _moveAdvisorMock.Object
         );
     }
 

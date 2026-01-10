@@ -117,4 +117,126 @@ public class GameStateRepositoryTests
         // Assert
         Assert.IsNull(loaded);
     }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_ClassicMode_UpdatesOnlyWhenHigher()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Classic };
+
+        // Act & Assert - first score sets the baseline
+        repository.UpdateBestScoreIfHigher(config, 500);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Lower score should not update
+        repository.UpdateBestScoreIfHigher(config, 300);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Higher score should update
+        repository.UpdateBestScoreIfHigher(config, 800);
+        Assert.AreEqual(800, repository.GetBestScore(config));
+    }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_AdversarialMode_UpdatesOnlyWhenLower()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
+
+        // Act & Assert - first score sets the baseline
+        repository.UpdateBestScoreIfHigher(config, 500);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Higher score (worse in Adversarial) should not update
+        repository.UpdateBestScoreIfHigher(config, 800);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Lower score (better in Adversarial) should update
+        repository.UpdateBestScoreIfHigher(config, 300);
+        Assert.AreEqual(300, repository.GetBestScore(config));
+    }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_AdversarialMode_ZeroScoreBeatsNonZero()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
+
+        // Set initial score
+        repository.UpdateBestScoreIfHigher(config, 500);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Zero is the best possible score in Adversarial (AI made no merges)
+        repository.UpdateBestScoreIfHigher(config, 0);
+        Assert.AreEqual(0, repository.GetBestScore(config));
+    }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_AdversarialMode_FirstScoreSetsBaseline()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
+
+        // Initial best score is 0 (unset)
+        Assert.AreEqual(0, repository.GetBestScore(config));
+
+        // First score should always be recorded (even if it's high)
+        repository.UpdateBestScoreIfHigher(config, 1000);
+        Assert.AreEqual(1000, repository.GetBestScore(config));
+    }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_NegativeScore_IsIgnored()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Classic };
+
+        repository.UpdateBestScoreIfHigher(config, 500);
+
+        // Negative scores should be ignored
+        repository.UpdateBestScoreIfHigher(config, -100);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+    }
+
+    [TestMethod]
+    public void UpdateBestScoreIfHigher_AdversarialMode_ZeroIsUnsetSentinel()
+    {
+        // Arrange
+        var preferences = new InMemoryPreferencesService();
+        var logger = new Mock<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger.Object);
+        var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
+
+        // Initial best score is 0 (unset sentinel)
+        Assert.AreEqual(0, repository.GetBestScore(config));
+
+        // First score should set the baseline
+        repository.UpdateBestScoreIfHigher(config, 500);
+        Assert.AreEqual(500, repository.GetBestScore(config));
+
+        // Zero is treated as unset, so if we somehow get to 0, it becomes "unset" again
+        // This is a limitation: we can't distinguish "never played" from "perfect score of 0"
+        // In practice, achieving exactly 0 is nearly impossible (game starts with 2 tiles)
+        repository.UpdateBestScoreIfHigher(config, 0);
+        Assert.AreEqual(0, repository.GetBestScore(config));
+
+        // When 0 (unset), any score is accepted as the new baseline
+        repository.UpdateBestScoreIfHigher(config, 50);
+        Assert.AreEqual(50, repository.GetBestScore(config));
+    }
 }

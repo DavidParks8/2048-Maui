@@ -112,4 +112,11 @@ public interface ILocalizationService
     /// Gets the localized screen reader announcement for the Coach nudge.
     /// </summary>
     string CoachNudgeAnnouncement { get; }
+
+    /// <summary>
+    /// Gets the localized victory subtitle based on game mode.
+    /// </summary>
+    /// <param name="isAdversarialMode">True if the victory was in Adversarial mode.</param>
+    /// <returns>"You blocked 2048!" for Adversarial, "You reached 2048!" otherwise.</returns>
+    string GetVictorySubtitle(bool isAdversarialMode);
 }

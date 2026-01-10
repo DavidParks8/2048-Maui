@@ -213,6 +213,12 @@ internal sealed partial class GameStateRepository(
 
     public void UpdateBestScoreIfHigher(GameConfig config, int score)
     {
+        if (score < 0)
+        {
+            // Scores are expected to be non-negative.
+            return;
+        }
+
         var boardSize = config.Size;
         if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
         {
@@ -222,10 +228,21 @@ internal sealed partial class GameStateRepository(
         var rulesetId = config.RulesetId;
 
         var currentBest = EnsureBestScoreLoaded(config);
-        if (score <= currentBest)
+        if (config.Mode == GameMode.Adversarial && currentBest < 0)
         {
-            return;
+            // Defensive migration: older Adversarial builds used negative scores.
+            // Treat as unset so the next valid score becomes the baseline.
+            currentBest = 0;
         }
+
+        var shouldUpdate = config.Mode switch
+        {
+            GameMode.Adversarial => currentBest == 0 || score < currentBest,
+            _ => score > currentBest,
+        };
+
+        if (!shouldUpdate)
+            return;
 
         Task saveTask;
         CancellationTokenSource cts;

@@ -39,6 +39,9 @@ public interface IGameStateRepository
     /// <summary>
     /// Updates the best score if the new score is higher.
     /// Implements debouncing internally to avoid storage thrashing.
+    ///
+    /// Note: In Adversarial mode, lower score is better, so this will update when the
+    /// new score is lower than the current best.
     /// </summary>
     /// <param name="config">The game configuration.</param>
     /// <param name="score">The new score to potentially save.</param>

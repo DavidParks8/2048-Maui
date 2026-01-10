@@ -19,7 +19,7 @@ internal sealed class NullStatisticsTracker : IStatisticsTracker
 
     public void OnGameEnded(int finalScore, bool wasWon) { }
 
-    public void UpdateBestScore(int score) { }
+    public void UpdateBestScore(GameMode mode, int score) { }
 
     public void UpdateHighestTile(int tileValue) { }
 
@@ -171,19 +171,35 @@ public class StatisticsTrackerTests
     }
 
     [TestMethod]
-    public void UpdateBestScore_UpdatesOnlyWhenHigher()
+    public void UpdateBestScore_ClassicMode_UpdatesOnlyWhenHigher()
     {
         // Arrange
         InMemoryStatisticsTracker tracker = new();
 
         // Act
-        tracker.UpdateBestScore(500);
-        tracker.UpdateBestScore(300); // Lower, should not update
-        tracker.UpdateBestScore(800); // Higher, should update
+        tracker.UpdateBestScore(GameMode.Classic, 500);
+        tracker.UpdateBestScore(GameMode.Classic, 300); // Lower, should not update
+        tracker.UpdateBestScore(GameMode.Classic, 800); // Higher, should update
 
         // Assert
         var stats = tracker.GetStatistics();
         Assert.AreEqual(800, stats.BestScore);
+    }
+
+    [TestMethod]
+    public void UpdateBestScore_AdversarialMode_UpdatesOnlyWhenLower()
+    {
+        // Arrange
+        InMemoryStatisticsTracker tracker = new();
+
+        // Act
+        tracker.UpdateBestScore(GameMode.Adversarial, 500);
+        tracker.UpdateBestScore(GameMode.Adversarial, 800); // Higher (worse), should not update
+        tracker.UpdateBestScore(GameMode.Adversarial, 300); // Lower (better), should update
+
+        // Assert
+        var stats = tracker.GetStatistics();
+        Assert.AreEqual(300, stats.BestScore);
     }
 
     [TestMethod]
@@ -209,7 +225,7 @@ public class StatisticsTrackerTests
         InMemoryStatisticsTracker tracker = new();
         tracker.OnGameStarted();
         tracker.OnMoveMade();
-        tracker.UpdateBestScore(1000);
+        tracker.UpdateBestScore(GameMode.Classic, 1000);
         tracker.OnGameWon();
         tracker.OnGameEnded(1000, wasWon: true);
 
@@ -251,7 +267,7 @@ public class StatisticsTrackerTests
         // Act - perform operations that should trigger saves
         tracker.OnGameStarted(); // Should save (1)
         tracker.OnGameWon(); // Should save (2)
-        tracker.UpdateBestScore(100); // Should save (3)
+        tracker.UpdateBestScore(GameMode.Classic, 100); // Should save (3)
         tracker.OnGameEnded(100, true); // Should save (4)
 
         // Assert - at least 4 saves should have occurred

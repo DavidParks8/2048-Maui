@@ -13,6 +13,7 @@ public static class PlatformAchievementIds
     public static class iOS
     {
         // Classic (default) mode leaderboards
+        public const string Leaderboard_3x3 = "com.dappermagna.twentyfortyeight.highscores.3x3";
         public const string Leaderboard_4x4 = "com.dappermagna.twentyfortyeight.highscores.4x4";
         public const string Leaderboard_5x5 = "com.dappermagna.twentyfortyeight.highscores.5x5";
         public const string Leaderboard_6x6 = "com.dappermagna.twentyfortyeight.highscores.6x6";
@@ -20,6 +21,8 @@ public static class PlatformAchievementIds
         public const string Leaderboard_8x8 = "com.dappermagna.twentyfortyeight.highscores.8x8";
 
         // Modern mode leaderboards
+        public const string Leaderboard_Modern_3x3 =
+            "com.dappermagna.twentyfortyeight.highscores.modern.3x3";
         public const string Leaderboard_Modern_4x4 =
             "com.dappermagna.twentyfortyeight.highscores.modern.4x4";
         public const string Leaderboard_Modern_5x5 =
@@ -32,6 +35,8 @@ public static class PlatformAchievementIds
             "com.dappermagna.twentyfortyeight.highscores.modern.8x8";
 
         // Walltastrophy mode leaderboards
+        public const string Leaderboard_Walltastrophy_3x3 =
+            "com.dappermagna.twentyfortyeight.highscores.walltastrophy.3x3";
         public const string Leaderboard_Walltastrophy_4x4 =
             "com.dappermagna.twentyfortyeight.highscores.walltastrophy.4x4";
         public const string Leaderboard_Walltastrophy_5x5 =
@@ -42,6 +47,20 @@ public static class PlatformAchievementIds
             "com.dappermagna.twentyfortyeight.highscores.walltastrophy.7x7";
         public const string Leaderboard_Walltastrophy_8x8 =
             "com.dappermagna.twentyfortyeight.highscores.walltastrophy.8x8";
+
+        // Adversarial mode leaderboards (lower score = better)
+        public const string Leaderboard_Adversarial_3x3 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.3x3";
+        public const string Leaderboard_Adversarial_4x4 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.4x4";
+        public const string Leaderboard_Adversarial_5x5 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.5x5";
+        public const string Leaderboard_Adversarial_6x6 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.6x6";
+        public const string Leaderboard_Adversarial_7x7 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.7x7";
+        public const string Leaderboard_Adversarial_8x8 =
+            "com.dappermagna.twentyfortyeight.highscores.adversarial.8x8";
 
         public static string? GetHighScoreLeaderboardId(TwentyFortyEight.Core.GameConfig config)
         {
@@ -55,6 +74,7 @@ public static class PlatformAchievementIds
             {
                 TwentyFortyEight.Core.GameMode.Modern => config.Size switch
                 {
+                    3 => Leaderboard_Modern_3x3,
                     4 => Leaderboard_Modern_4x4,
                     5 => Leaderboard_Modern_5x5,
                     6 => Leaderboard_Modern_6x6,
@@ -64,6 +84,7 @@ public static class PlatformAchievementIds
                 },
                 TwentyFortyEight.Core.GameMode.Walltastrophy => config.Size switch
                 {
+                    3 => Leaderboard_Walltastrophy_3x3,
                     4 => Leaderboard_Walltastrophy_4x4,
                     5 => Leaderboard_Walltastrophy_5x5,
                     6 => Leaderboard_Walltastrophy_6x6,
@@ -71,8 +92,19 @@ public static class PlatformAchievementIds
                     8 => Leaderboard_Walltastrophy_8x8,
                     _ => null,
                 },
+                TwentyFortyEight.Core.GameMode.Adversarial => config.Size switch
+                {
+                    3 => Leaderboard_Adversarial_3x3,
+                    4 => Leaderboard_Adversarial_4x4,
+                    5 => Leaderboard_Adversarial_5x5,
+                    6 => Leaderboard_Adversarial_6x6,
+                    7 => Leaderboard_Adversarial_7x7,
+                    8 => Leaderboard_Adversarial_8x8,
+                    _ => null,
+                },
                 _ => config.Size switch
                 {
+                    3 => Leaderboard_3x3,
                     4 => Leaderboard_4x4,
                     5 => Leaderboard_5x5,
                     6 => Leaderboard_6x6,
