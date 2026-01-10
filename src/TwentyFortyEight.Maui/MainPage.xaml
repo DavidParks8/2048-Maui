@@ -16,6 +16,7 @@
     <ContentPage.Resources>
         <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
         <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+        <converters:GameModeToDisplayNameConverter x:Key="GameModeToDisplayNameConverter" />
     </ContentPage.Resources>
 
     <ContentPage.ToolbarItems>
@@ -120,60 +121,112 @@
                                       ValueDescription="{x:Static strings:AppStrings.BestScoreDescription}" />
         </Grid>
 
-        <!-- Game Board -->
-        <Border x:Name="BoardContainer"
-                Grid.Row="2"
-            Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                Stroke="Transparent"
-                StrokeThickness="0"
-                Padding="10"
-                VerticalOptions="Center"
-                HorizontalOptions="Center"
-                MaximumWidthRequest="820"
-                MaximumHeightRequest="820"
-                StrokeShape="RoundRectangle 10"
-                AutomationProperties.IsInAccessibleTree="True"
-                SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
+        <!-- Game Board with attached mode indicator -->
+        <Grid Grid.Row="2"
+              HorizontalOptions="Center"
+              VerticalOptions="Center">
+            
+            <Border x:Name="BoardContainer"
+                    Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+                    Stroke="Transparent"
+                    StrokeThickness="0"
+                    Padding="10"
+                    VerticalOptions="Center"
+                    HorizontalOptions="Center"
+                    MaximumWidthRequest="820"
+                    MaximumHeightRequest="820"
+                    StrokeShape="RoundRectangle 10"
+                    AutomationProperties.IsInAccessibleTree="True"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
 
-            <Border.Behaviors>
-                <behaviors:RippleBehavior />
-                <behaviors:VictoryOverlayBehavior />
-            </Border.Behaviors>
+                <Border.Behaviors>
+                    <behaviors:RippleBehavior />
+                    <behaviors:VictoryOverlayBehavior />
+                </Border.Behaviors>
 
-            <Grid>
-                <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
-                <Grid x:Name="GameBoard"
-                      ColumnSpacing="10"
-                      RowSpacing="10"
-                      SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
-                    <!-- Tiles will be added programmatically in code-behind -->
-                    <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
+                <Grid>
+                    <!-- Grid for tiles - rows and columns are generated dynamically in code-behind -->
+                    <Grid x:Name="GameBoard"
+                          ColumnSpacing="10"
+                          RowSpacing="10"
+                          SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
+                        <!-- Tiles will be added programmatically in code-behind -->
+                        <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
+                    </Grid>
+
+                    <!-- Walltastrophy wall overlay (fills the divider spacing between cells) -->
+                    <AbsoluteLayout x:Name="WallOverlayLayer"
+                                    InputTransparent="True"
+                                    ZIndex="5" />
+
+                    <!-- Coach nudge (appears only when Coach is off and user is struggling) -->
+                    <components:CoachNudgeBanner
+                        x:Name="CoachNudgeContainer"
+                        IsVisible="{Binding IsCoachNudgeVisible}"
+                        DismissCommand="{Binding DismissCoachNudgeCommand}"
+                        EnableCoachCommand="{Binding EnableCoachFromNudgeCommand}" />
+
+                    <!-- Coach animated swipe hint -->
+                    <components:CoachSwipeHintOverlay
+                        IsActive="{Binding IsCoachSuggestionVisible}"
+                        Direction="{Binding CoachSuggestedDirection}"
+                        Reason="{Binding CoachPrimaryReason}"
+                        MoveCounter="{Binding CoachMoveCounter}"
+                        InputTransparent="True"
+                        ZIndex="10" />
                 </Grid>
+            </Border>
 
-                                <!-- Walltastrophy wall overlay (fills the divider spacing between cells) -->
-                                <AbsoluteLayout x:Name="WallOverlayLayer"
-                                                                InputTransparent="True"
-                                                                ZIndex="5" />
-
-                <!-- Coach nudge (appears only when Coach is off and user is struggling) -->
-                <components:CoachNudgeBanner
-                    x:Name="CoachNudgeContainer"
-                    IsVisible="{Binding IsCoachNudgeVisible}"
-                    DismissCommand="{Binding DismissCoachNudgeCommand}"
-                    EnableCoachCommand="{Binding EnableCoachFromNudgeCommand}" />
-
-                <!-- Coach animated swipe hint -->
-                <components:CoachSwipeHintOverlay
-                    IsActive="{Binding IsCoachSuggestionVisible}"
-                    Direction="{Binding CoachSuggestedDirection}"
-                    Reason="{Binding CoachPrimaryReason}"
-                    MoveCounter="{Binding CoachMoveCounter}"
-                    InputTransparent="True"
-                    ZIndex="10" />
+            <!-- Mode indicator pill attached to top of board -->
+            <Grid x:Name="GameModeIndicator"
+                  InputTransparent="True"
+                  ZIndex="20"
+                  HorizontalOptions="Center"
+                  VerticalOptions="Start"
+                  TranslationY="-36">
+                
+                <!-- Main pill body -->
+                <Border Padding="24,8,24,8"
+                        Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+                        Stroke="Transparent"
+                        StrokeShape="RoundRectangle 20,20,0,0"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Start">
+                    <Label Text="{Binding GameMode, Converter={StaticResource GameModeToDisplayNameConverter}}"
+                           FontSize="16"
+                           HorizontalTextAlignment="Center"
+                           VerticalTextAlignment="Center" />
+                </Border>
+                
+                <!-- Left inverted corner: gray square with black curve on top -->
+                <Grid WidthRequest="10" HeightRequest="10"
+                      HorizontalOptions="Start" VerticalOptions="End"
+                      TranslationX="-9"
+                      TranslationY="-1">
+                    <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+                            Stroke="Transparent"
+                            StrokeThickness="0" />
+                    <Border Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+                            Stroke="Transparent"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 0,0,0,10" />
+                </Grid>
+                
+                <!-- Right inverted corner: gray square with black curve on top -->
+                <Grid WidthRequest="10" HeightRequest="10"
+                      HorizontalOptions="End" VerticalOptions="End"
+                      TranslationX="10"
+                      TranslationY="-1">
+                    <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
+                            Stroke="Transparent"
+                            StrokeThickness="0" />
+                    <Border Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+                            Stroke="Transparent"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 0,0,10,0" />
+                </Grid>
             </Grid>
-        </Border>
-
-        <!-- Controls: voice-friendly directional buttons (for iOS Voice Control) + Undo -->
+        </Grid>
         <Grid Grid.Row="3">
             <!-- Movement buttons (centered with board) -->
             <HorizontalStackLayout x:Name="MoveButtonsContainer"
