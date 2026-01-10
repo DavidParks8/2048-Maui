@@ -215,7 +215,7 @@
                 <!-- Right inverted corner: gray square with black curve on top -->
                 <Grid WidthRequest="10" HeightRequest="10"
                       HorizontalOptions="End" VerticalOptions="End"
-                      TranslationX="10"
+                      TranslationX="9"
                       TranslationY="-1">
                     <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                             Stroke="Transparent"
