@@ -193,7 +193,7 @@ jobs:
       run: dotnet workload install maui
       
     - name: Restore dependencies
-      run: dotnet restore 2048-Maui.slnx -p:RuntimeIdentifier=win-x64
+      run: dotnet restore 2048-Maui.slnx
       env:
         MAUI_TARGET_PLATFORM: windows
       
