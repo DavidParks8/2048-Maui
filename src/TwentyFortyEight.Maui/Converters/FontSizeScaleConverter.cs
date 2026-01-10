@@ -25,6 +25,6 @@ public class FontSizeScaleConverter : IValueConverter
         CultureInfo culture
     )
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }

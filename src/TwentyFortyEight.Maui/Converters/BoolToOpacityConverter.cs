@@ -24,6 +24,6 @@ public class BoolToOpacityConverter : IValueConverter
         CultureInfo culture
     )
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }

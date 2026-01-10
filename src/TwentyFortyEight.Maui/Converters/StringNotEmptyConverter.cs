@@ -16,6 +16,6 @@ public class StringNotEmptyConverter : IValueConverter
         CultureInfo culture
     )
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }

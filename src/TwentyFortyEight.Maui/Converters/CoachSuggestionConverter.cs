@@ -40,6 +40,6 @@ public class CoachSuggestionConverter : IValueConverter
         CultureInfo culture
     )
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }
