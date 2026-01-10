@@ -49,7 +49,7 @@ public partial class MainPage : ContentPage
     // Responsive sizing
     private const double DefaultBoardSize = 400;
     private const double MinBoardSize = 280;
-    private const double MaxBoardSize = 500;
+    private const double MaxBoardSize = 800;
 
     public MainPage(
         GameViewModel viewModel,

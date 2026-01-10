@@ -129,8 +129,8 @@
                 Padding="10"
                 VerticalOptions="Center"
                 HorizontalOptions="Center"
-                MaximumWidthRequest="520"
-                MaximumHeightRequest="520"
+                MaximumWidthRequest="820"
+                MaximumHeightRequest="820"
                 StrokeShape="RoundRectangle 10"
                 AutomationProperties.IsInAccessibleTree="True"
                 SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
@@ -180,7 +180,7 @@
                            Spacing="8"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"
-                           MaximumWidthRequest="520">
+                           MaximumWidthRequest="820">
                 <!-- Left -->
                 <Border x:Name="MoveLeftContainer"
                     WidthRequest="56"
