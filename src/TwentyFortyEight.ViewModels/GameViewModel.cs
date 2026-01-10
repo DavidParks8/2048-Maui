@@ -349,19 +349,16 @@ public partial class GameViewModel : ObservableObject
                     );
                     MarkGameSaveDirty();
 
-                    // In adversarial mode, lower score is better (scores remain non-negative).
-                    // Don't treat BestScore == 0 as "no best score yet" - 0 would be the perfect score.
-                    // Only update if we've beaten a previously-set non-zero best, or this is our first completed game.
-                    bool isNewBest = BestScore > 0 && Score < BestScore;
-                    if (isNewBest)
-                    {
-                        BestScore = Score;
-                        _repository.UpdateBestScoreIfHigher(_config, Score);
-                    }
+                    // In adversarial mode, lower score is better. Best score is only updated on victory
+                    // (see OnEngineVictoryAchieved), not during gameplay.
 
                     await Task.Delay(GetInputBlockDuration());
                     await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
-                    await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest, _config);
+                    await _sessionCoordinator.OnScoreChangedAsync(
+                        Score,
+                        isNewBestScore: false,
+                        _config
+                    );
                 }
                 else
                 {
@@ -1176,7 +1173,32 @@ public partial class GameViewModel : ObservableObject
         // Sync now so victory UI always sees the final, up-to-date values.
         UpdateUI();
 
+        // In adversarial mode, lower score is better. Update best score only on victory.
+        if (IsAdversarialMode)
+        {
+            TryUpdateAdversarialBestScore();
+        }
+
         VictoryAnimationRequested?.Invoke(this, e);
+    }
+
+    /// <summary>
+    /// Updates the best score for adversarial mode when appropriate.
+    /// In adversarial mode, lower score is better. Updates when:
+    /// - BestScore is 0 (first win ever), or
+    /// - Current Score is lower (better) than the existing BestScore.
+    /// </summary>
+    /// <remarks>
+    /// Internal for testing purposes.
+    /// </remarks>
+    internal void TryUpdateAdversarialBestScore()
+    {
+        bool isNewBest = BestScore == 0 || Score < BestScore;
+        if (isNewBest)
+        {
+            BestScore = Score;
+            _repository.UpdateBestScoreIfHigher(_config, Score);
+        }
     }
 
     private async Task ShowGameOverDialogAsync()

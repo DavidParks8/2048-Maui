@@ -649,4 +649,160 @@ public class GameViewModelTests
         Assert.IsNotNull(field);
         field!.SetValue(viewModel, value);
     }
+
+    #region Best Score Tests - Adversarial Mode
+
+    private GameViewModel CreateAdversarialViewModel(int initialBestScore = 0)
+    {
+        var adversarialConfig = new GameConfig { Mode = GameMode.Adversarial };
+        _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(adversarialConfig);
+        _repositoryMock
+            .Setup(r => r.GetBestScore(It.IsAny<GameConfig>()))
+            .Returns(initialBestScore);
+
+        return CreateViewModel();
+    }
+
+    [TestMethod]
+    public void TryUpdateAdversarialBestScore_UpdatesBestScoreWhenBestScoreIsZero()
+    {
+        // Arrange - First adversarial win (BestScore starts at 0)
+        var viewModel = CreateAdversarialViewModel(initialBestScore: 0);
+        Assert.AreEqual(0, viewModel.BestScore);
+        Assert.IsTrue(viewModel.IsAdversarialMode);
+
+        // Simulate some score during gameplay
+        viewModel.Score = 256;
+
+        // Act - Call the extracted best score update method
+        viewModel.TryUpdateAdversarialBestScore();
+
+        // Assert - Best score should update since BestScore was 0 (first win)
+        Assert.AreEqual(256, viewModel.BestScore);
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), 256),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public void TryUpdateAdversarialBestScore_UpdatesBestScoreWhenScoreIsLowerThanBest()
+    {
+        // Arrange - Adversarial mode: lower score is better
+        var viewModel = CreateAdversarialViewModel(initialBestScore: 500);
+        Assert.AreEqual(500, viewModel.BestScore);
+        Assert.IsTrue(viewModel.IsAdversarialMode);
+
+        // Simulate a lower (better) score
+        viewModel.Score = 200;
+
+        // Act - Call the extracted best score update method
+        viewModel.TryUpdateAdversarialBestScore();
+
+        // Assert - Best score should update since Score < BestScore
+        Assert.AreEqual(200, viewModel.BestScore);
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), 200),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public void TryUpdateAdversarialBestScore_DoesNotUpdateBestScoreWhenScoreIsHigherThanBest()
+    {
+        // Arrange - Adversarial mode: lower score is better
+        var viewModel = CreateAdversarialViewModel(initialBestScore: 100);
+        Assert.AreEqual(100, viewModel.BestScore);
+        Assert.IsTrue(viewModel.IsAdversarialMode);
+
+        // Simulate a higher (worse) score
+        viewModel.Score = 300;
+
+        // Act - Call the extracted best score update method
+        viewModel.TryUpdateAdversarialBestScore();
+
+        // Assert - Best score should NOT update since Score > BestScore
+        Assert.AreEqual(100, viewModel.BestScore);
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
+            Times.Never
+        );
+    }
+
+    [TestMethod]
+    public void TryUpdateAdversarialBestScore_DoesNotUpdateBestScoreWhenScoreEqualsBest()
+    {
+        // Arrange - Adversarial mode: equal score should not update
+        var viewModel = CreateAdversarialViewModel(initialBestScore: 150);
+        Assert.AreEqual(150, viewModel.BestScore);
+        Assert.IsTrue(viewModel.IsAdversarialMode);
+
+        // Simulate the same score
+        viewModel.Score = 150;
+
+        // Act - Call the extracted best score update method
+        viewModel.TryUpdateAdversarialBestScore();
+
+        // Assert - Best score should NOT update since Score == BestScore (not strictly better)
+        Assert.AreEqual(150, viewModel.BestScore);
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
+            Times.Never
+        );
+    }
+
+    [TestMethod]
+    public void NonAdversarialMode_OnVictory_DoesNotUpdateBestScoreInVictoryHandler()
+    {
+        // Arrange - Normal mode (best score update happens in Move, not victory handler)
+        _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(100);
+        var viewModel = CreateViewModel();
+        Assert.IsFalse(viewModel.IsAdversarialMode);
+
+        // Simulate a higher score
+        viewModel.Score = 500;
+        viewModel.BestScore = 100; // Reset after any setup changes
+
+        // Mark as initialized so victory handler runs
+        SetPrivateField(viewModel, "_isInitialized", true);
+
+        // Act - Trigger victory event
+        InvokePrivateEngineVictoryHandler(viewModel, EventArgs.Empty);
+
+        // Assert - Victory handler should NOT update best score in non-adversarial mode
+        // (best score is updated during Move() in non-adversarial mode)
+        Assert.AreEqual(100, viewModel.BestScore);
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
+            Times.Never
+        );
+    }
+
+    [TestMethod]
+    public void AdversarialMode_OnVictory_CallsTryUpdateAdversarialBestScore()
+    {
+        // Arrange - Adversarial mode: victory handler should call TryUpdateAdversarialBestScore
+        var viewModel = CreateAdversarialViewModel(initialBestScore: 0);
+        Assert.IsTrue(viewModel.IsAdversarialMode);
+
+        // Simulate a score during gameplay
+        viewModel.Score = 100;
+
+        // Mark as initialized so victory handler runs
+        SetPrivateField(viewModel, "_isInitialized", true);
+
+        // Act - Trigger victory event
+        InvokePrivateEngineVictoryHandler(viewModel, EventArgs.Empty);
+
+        // Assert - Best score should have been updated (since initial was 0)
+        // Note: UpdateUI() in victory handler resets Score to engine score (0),
+        // so we verify the repository call was made with 0 (the engine's score after UpdateUI)
+        // This test verifies the adversarial code path is executed.
+        _repositoryMock.Verify(
+            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
+            Times.Once
+        );
+    }
+
+    #endregion
 }
