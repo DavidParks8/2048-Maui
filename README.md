@@ -13,7 +13,7 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 - 💾 Auto-save and resume game state
 - 🏆 Best score tracking
 - 🧩 Multiple board sizes (3x3 through 8x8)
-- 🧱 Multiple game modes (Modern + Classic + Walltastrophy)
+- 🧱 Multiple game modes (Modern + Classic + Walltastrophy + Adversarial)
 - 🧠 Optional Move Coach (recommended direction + reason)
 - 🛟 Coach Nudges when you're stuck (optional)
 - 👆 Swipe preview (slow-drag previews a move before committing)
@@ -125,6 +125,7 @@ Create the following leaderboards:
 
 | Leaderboard ID | Name | Score Format | Sort Order |
 | --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.3x3` | Classic 3×3 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.4x4` | Classic 4×4 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.5x5` | Classic 5×5 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.6x6` | Classic 6×6 High Scores | Integer | High to Low |
@@ -135,6 +136,7 @@ Create the following leaderboards:
 
 | Leaderboard ID | Name | Score Format | Sort Order |
 | --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.modern.3x3` | Modern 3×3 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.modern.4x4` | Modern 4×4 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.modern.5x5` | Modern 5×5 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.modern.6x6` | Modern 6×6 High Scores | Integer | High to Low |
@@ -145,11 +147,25 @@ Create the following leaderboards:
 
 | Leaderboard ID | Name | Score Format | Sort Order |
 | --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.walltastrophy.3x3` | Walltastrophy 3×3 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.walltastrophy.4x4` | Walltastrophy 4×4 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.walltastrophy.5x5` | Walltastrophy 5×5 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.walltastrophy.6x6` | Walltastrophy 6×6 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.walltastrophy.7x7` | Walltastrophy 7×7 High Scores | Integer | High to Low |
 | `com.dappermagna.twentyfortyeight.highscores.walltastrophy.8x8` | Walltastrophy 8×8 High Scores | Integer | High to Low |
+
+#### Adversarial Mode Leaderboards
+
+Adversarial mode is scored using normal 2048 merge scoring, but the objective is inverted: **lower score is better**. Configure these leaderboards with **Low to High** sort order.
+
+| Leaderboard ID | Name | Score Format | Sort Order |
+| --- | --- | --- | --- |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.3x3` | Adversarial 3×3 Low Scores | Integer | Low to High |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.4x4` | Adversarial 4×4 Low Scores | Integer | Low to High |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.5x5` | Adversarial 5×5 Low Scores | Integer | Low to High |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.6x6` | Adversarial 6×6 Low Scores | Integer | Low to High |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.7x7` | Adversarial 7×7 Low Scores | Integer | Low to High |
+| `com.dappermagna.twentyfortyeight.highscores.adversarial.8x8` | Adversarial 8×8 Low Scores | Integer | Low to High |
 
 **Note:** Only the default win tile (2048) is supported for leaderboard submissions. Custom win tiles do not submit scores to leaderboards.
 
@@ -189,7 +205,7 @@ A fully-testable, UI-independent game engine that implements the classic 2048 ru
 - Game2048Engine: move logic, merge rules, win/game-over detection
 - GameState: immutable state representation for undo/redo
 - GameConfig: configurable board size + win conditions
-- GameMode: ruleset variants (Modern, Classic, Walltastrophy)
+- GameMode: ruleset variants (Modern, Classic, Walltastrophy, Adversarial)
 - IRandomSource: abstraction for deterministic testing
 - GameStateDto: JSON-friendly serialization for persistence
 - MoveAnalyzer / HeuristicMoveAdvisor: platform-agnostic move analysis and coaching
@@ -242,6 +258,15 @@ Comprehensive test suite using MSTest covering:
 5. New Tiles: After each move, a new tile appears in a random empty spot (value depends on game mode)
 6. Winning: Reach the 2048 tile (game can continue after winning)
 7. Game Over: No more valid moves available
+
+### Adversarial Mode
+
+Adversarial mode flips the role: **you place tiles to try to block the AI**.
+
+- Input: Tap an empty cell to spawn a random `2` or `4`, then the AI automatically makes one move.
+- Win: The AI has no legal moves (board is locked).
+- Loss: The AI creates the win tile (2048 by default).
+- Scoring: Standard 2048 merge scoring (non-negative), but **lower final score is better**.
 
 ## CI/CD
 

@@ -23,4 +23,11 @@ public enum GameMode
     /// New tiles are spawned using the modern/adaptive spawn strategy.
     /// </summary>
     Modern = 2,
+
+    /// <summary>
+    /// Adversarial ruleset: the player places tiles and an AI performs moves.
+    /// Objective is to prevent the AI from reaching the win tile.
+    /// Lower score is better.
+    /// </summary>
+    Adversarial = 3,
 }

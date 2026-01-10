@@ -74,6 +74,7 @@ public class GameConfig
             GameMode.Modern => "modern",
             GameMode.Classic => "classic",
             GameMode.Walltastrophy => "walltastrophy",
+            GameMode.Adversarial => "adversarial",
             _ => "classic",
         };
 }

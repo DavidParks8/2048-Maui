@@ -198,6 +198,11 @@ public partial class ModeSelectionView : ContentView
         _viewModel.PendingGameMode = GameMode.Walltastrophy;
     }
 
+    private void OnAdversarialModeClicked(object? sender, EventArgs e)
+    {
+        _viewModel.PendingGameMode = GameMode.Adversarial;
+    }
+
     private void UpdateHelperText()
     {
         ModeDescriptionLabel.Text = _viewModel.PendingGameMode switch
@@ -205,6 +210,7 @@ public partial class ModeSelectionView : ContentView
             GameMode.Modern => AppStrings.ModernModeDescription,
             GameMode.Classic => AppStrings.ClassicModeDescription,
             GameMode.Walltastrophy => AppStrings.WalltastrophyModeDescription,
+            GameMode.Adversarial => AppStrings.AdversarialModeDescription,
             _ => AppStrings.ModernModeDescription,
         };
     }
@@ -215,6 +221,7 @@ public partial class ModeSelectionView : ContentView
         bool isModern = selectedMode == GameMode.Modern;
         bool isClassic = selectedMode == GameMode.Classic;
         bool isWalltastrophy = selectedMode == GameMode.Walltastrophy;
+        bool isAdversarial = selectedMode == GameMode.Adversarial;
 
         var selectedBackground = GetThemeColor("Gray200", "Gray600");
         var selectedTextColor = GetThemeColor("NativeTextPrimaryLight", "NativeTextPrimaryDark");
@@ -226,12 +233,14 @@ public partial class ModeSelectionView : ContentView
         ModernTab.Background = isModern ? selectedBackground : Colors.Transparent;
         ClassicTab.Background = isClassic ? selectedBackground : Colors.Transparent;
         WalltastrophyTab.Background = isWalltastrophy ? selectedBackground : Colors.Transparent;
+        AdversarialTab.Background = isAdversarial ? selectedBackground : Colors.Transparent;
 
         ModernTabButton.TextColor = isModern ? selectedTextColor : unselectedTextColor;
         ClassicTabButton.TextColor = isClassic ? selectedTextColor : unselectedTextColor;
         WalltastrophyTabButton.TextColor = isWalltastrophy
             ? selectedTextColor
             : unselectedTextColor;
+        AdversarialTabButton.TextColor = isAdversarial ? selectedTextColor : unselectedTextColor;
     }
 
     private void OnPlayClicked(object? sender, EventArgs e)

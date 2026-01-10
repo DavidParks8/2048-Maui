@@ -19,18 +19,15 @@
                     Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
                     components:LiquidGlass.EffectType="Regular"
                     components:LiquidGlass.EnableShadowEffect="False"
-                    components:LiquidGlass.CornerRadius="22">
-                <FlexLayout Direction="Row"
-                        Wrap="Wrap"
-                        JustifyContent="SpaceEvenly"
-                        AlignContent="Start"
-                        AlignItems="Start"
-                        Padding="2">
+                    components:LiquidGlass.CornerRadius="22"
+                    Padding="4">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" RowSpacing="4" ColumnSpacing="4">
+                    <!-- Row 0: Modern, Classic -->
                     <Border x:Name="ModernTab"
+                            Grid.Row="0" Grid.Column="0"
                             StrokeThickness="0"
-                            StrokeShape="RoundRectangle 20"
-                            Padding="0"
-                        Margin="0,0,0,1">
+                            StrokeShape="RoundRectangle 18"
+                            Padding="0">
                         <Button x:Name="ModernTabButton"
                                 Text="{x:Static strings:AppStrings.ModernMode}"
                                 FontSize="15"
@@ -42,10 +39,10 @@
                     </Border>
 
                     <Border x:Name="ClassicTab"
+                            Grid.Row="0" Grid.Column="1"
                             StrokeThickness="0"
-                            StrokeShape="RoundRectangle 20"
-                            Padding="0"
-                        Margin="0,0,0,1">
+                            StrokeShape="RoundRectangle 18"
+                            Padding="0">
                         <Button x:Name="ClassicTabButton"
                                 Text="{x:Static strings:AppStrings.ClassicMode}"
                                 FontSize="15"
@@ -56,11 +53,12 @@
                                 Clicked="OnClassicModeClicked" />
                     </Border>
 
+                    <!-- Row 1: Walltastrophy, Adversarial -->
                     <Border x:Name="WalltastrophyTab"
+                            Grid.Row="1" Grid.Column="0"
                             StrokeThickness="0"
-                            StrokeShape="RoundRectangle 20"
-                            Padding="0"
-                        Margin="0,0,0,1">
+                            StrokeShape="RoundRectangle 18"
+                            Padding="0">
                         <Button x:Name="WalltastrophyTabButton"
                                 Text="{x:Static strings:AppStrings.WalltastrophyMode}"
                                 FontSize="15"
@@ -70,7 +68,22 @@
                                 Background="Transparent"
                                 Clicked="OnWalltastrophyModeClicked" />
                     </Border>
-                </FlexLayout>
+
+                    <Border x:Name="AdversarialTab"
+                            Grid.Row="1" Grid.Column="1"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 18"
+                            Padding="0">
+                        <Button x:Name="AdversarialTabButton"
+                                Text="{x:Static strings:AppStrings.AdversarialMode}"
+                                FontSize="15"
+                                FontAttributes="Bold"
+                                Padding="8,6"
+                                LineBreakMode="NoWrap"
+                                Background="Transparent"
+                                Clicked="OnAdversarialModeClicked" />
+                    </Border>
+                </Grid>
             </Border>
 
             <!-- Mode Description Text -->

@@ -40,6 +40,12 @@ public sealed partial class VictoryState : ObservableObject
     private int _undoCount;
 
     /// <summary>
+    /// Whether the victory was in Adversarial mode (blocking 2048 vs reaching 2048).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isAdversarialMode;
+
+    /// <summary>
     /// Resets the victory state to its initial values.
     /// </summary>
     public void Reset()
@@ -48,6 +54,8 @@ public sealed partial class VictoryState : ObservableObject
         IsModalVisible = false;
         WinningValue = 0;
         Score = 0;
+        UndoCount = 0;
+        IsAdversarialMode = false;
         UndoCount = 0;
     }
 }

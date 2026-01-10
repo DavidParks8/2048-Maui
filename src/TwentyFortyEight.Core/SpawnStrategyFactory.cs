@@ -10,6 +10,7 @@ internal sealed class SpawnStrategyFactory(
         return config.Mode switch
         {
             GameMode.Classic => classicSpawnStrategy,
+            GameMode.Adversarial => classicSpawnStrategy,
             _ => modernSpawnStrategy,
         };
     }

@@ -836,6 +836,24 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Adversarial.
+        /// </summary>
+        internal static string AdversarialMode {
+            get {
+                return ResourceManager.GetString("AdversarialMode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Block the AI from reaching 2048. Tap empty cells to spawn tiles — the AI moves after each spawn. Lower score wins!.
+        /// </summary>
+        internal static string AdversarialModeDescription {
+            get {
+                return ResourceManager.GetString("AdversarialModeDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to MODE.
         /// </summary>
         internal static string ModeSection {
@@ -1237,6 +1255,15 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         internal static string VictorySubtitle {
             get {
                 return ResourceManager.GetString("VictorySubtitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You blocked 2048!.
+        /// </summary>
+        internal static string AdversarialVictorySubtitle {
+            get {
+                return ResourceManager.GetString("AdversarialVictorySubtitle", resourceCulture);
             }
         }
 

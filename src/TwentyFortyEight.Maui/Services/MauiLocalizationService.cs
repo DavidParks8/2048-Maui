@@ -79,4 +79,8 @@ public class MauiLocalizationService : ILocalizationService
     /// <inheritdoc />
     public string FormatUndoCount(int undoCount) =>
         string.Format(CultureInfo.CurrentCulture, AppStrings.UndosUsedFormat, undoCount);
+
+    /// <inheritdoc />
+    public string GetVictorySubtitle(bool isAdversarialMode) =>
+        isAdversarialMode ? AppStrings.AdversarialVictorySubtitle : AppStrings.VictorySubtitle;
 }

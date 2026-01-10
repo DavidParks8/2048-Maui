@@ -33,6 +33,7 @@ public partial class GameViewModel : ObservableObject
     private readonly VictoryViewModel _victoryViewModel;
     private readonly ICoachNudgeService _coachNudgeService;
     private readonly ICoachSuggestionService _coachSuggestionService;
+    private readonly IMoveAdvisor _moveAdvisor;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -112,6 +113,11 @@ public partial class GameViewModel : ObservableObject
     public GameMode GameMode => _config.Mode;
 
     /// <summary>
+    /// Gets whether the current game mode is Adversarial (player blocks AI).
+    /// </summary>
+    public bool IsAdversarialMode => _config.Mode == GameMode.Adversarial;
+
+    /// <summary>
     /// Gets the current between-cell wall segment (Walltastrophy), or null.
     /// </summary>
     public WallSegment? Wall => _engine.CurrentState.Wall;
@@ -173,11 +179,13 @@ public partial class GameViewModel : ObservableObject
         IUserFeedbackService feedbackService,
         VictoryViewModel victoryViewModel,
         ICoachNudgeService coachNudgeService,
-        ICoachSuggestionService coachSuggestionService
+        ICoachSuggestionService coachSuggestionService,
+        IMoveAdvisor moveAdvisor
     )
     {
         _logger = logger;
         _moveAnalyzer = moveAnalyzer;
+        _moveAdvisor = moveAdvisor;
         _boardSimulator = boardSimulator;
         _settingsService = settingsService;
         _statisticsTracker = statisticsTracker;
@@ -274,6 +282,105 @@ public partial class GameViewModel : ObservableObject
         else
         {
             ClearCoachSuggestion();
+        }
+    }
+
+    /// <summary>
+    /// In Adversarial mode, the player taps an empty cell to spawn a tile.
+    /// After spawning, the AI automatically executes a move.
+    /// </summary>
+    [RelayCommand]
+    private async Task TapEmptyCellAsync(int tileIndex)
+    {
+        if (!IsAdversarialMode)
+        {
+            return;
+        }
+
+        // Don't queue up rapid taps - if a move is in progress, ignore this tap
+        if (!await _moveLock.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            if (_engine.CurrentState.IsGameOver)
+            {
+                return;
+            }
+
+            // Convert tile index to Position
+            int row = tileIndex / BoardSize;
+            int col = tileIndex % BoardSize;
+            var position = new Position(row, col);
+
+            // Try to spawn at tapped position
+            if (!_engine.TrySpawnExternalTile(position, out var spawnedValue))
+            {
+                return;
+            }
+
+            // Store previous state for animation
+            var previousBoard = _engine.CurrentState.Board.Clone();
+            var previousWall = _engine.CurrentState.Wall;
+
+            // Get AI's recommended move
+            var recommendation = _moveAdvisor.Recommend(
+                new MoveAdvisorRequest(
+                    new PlayfieldSnapshot(_engine.CurrentState.Board, _engine.CurrentState.Wall),
+                    _config
+                )
+            );
+
+            if (recommendation is not null)
+            {
+                // AI executes its best move
+                var moved = _engine.Move(recommendation.Value.Direction);
+
+                if (moved)
+                {
+                    _feedbackService.PerformMoveHaptic();
+                    UpdateUI(
+                        previousBoard,
+                        recommendation.Value.Direction,
+                        previousWall,
+                        skipSlideAnimation: false
+                    );
+                    MarkGameSaveDirty();
+
+                    // In adversarial mode, lower score is better (scores remain non-negative).
+                    // Don't treat BestScore == 0 as "no best score yet" - 0 would be the perfect score.
+                    // Only update if we've beaten a previously-set non-zero best, or this is our first completed game.
+                    bool isNewBest = BestScore > 0 && Score < BestScore;
+                    if (isNewBest)
+                    {
+                        BestScore = Score;
+                        _repository.UpdateBestScoreIfHigher(_config, Score);
+                    }
+
+                    await Task.Delay(GetInputBlockDuration());
+                    await _sessionCoordinator.OnMoveCompletedAsync(_engine.CurrentState);
+                    await _sessionCoordinator.OnScoreChangedAsync(Score, isNewBest, _config);
+                }
+                else
+                {
+                    // AI couldn't move - player wins!
+                    UpdateUI();
+                }
+            }
+            else
+            {
+                // No valid moves for AI - player wins!
+                // The engine will mark game over with IsWon=true
+                _engine.Move(Direction.Up); // Trigger game over check
+                UpdateUI();
+            }
+        }
+        finally
+        {
+            _moveLock.Release();
+            ScheduleGameSaveIfDirty();
         }
     }
 
@@ -529,6 +636,12 @@ public partial class GameViewModel : ObservableObject
             return;
         }
 
+        // In Adversarial mode, player cannot swipe - only tap empty cells
+        if (IsAdversarialMode)
+        {
+            return;
+        }
+
         await _moveLock.WaitAsync();
 
         try
@@ -748,9 +861,14 @@ public partial class GameViewModel : ObservableObject
             // Don't announce during initialization
             if (_isInitialized)
             {
-                _feedbackService.AnnounceGameOver(Score);
-                // Show game over dialog asynchronously (fire and forget)
-                _ = ShowGameOverDialogAsync();
+                // In Adversarial mode, a win should show the victory overlay, not the generic game-over dialog.
+                // Losses still use the game-over dialog.
+                if (!(_config.Mode == GameMode.Adversarial && state.IsWon))
+                {
+                    _feedbackService.AnnounceGameOver(Score);
+                    // Show game over dialog asynchronously (fire and forget)
+                    _ = ShowGameOverDialogAsync();
+                }
             }
         }
 
@@ -996,6 +1114,7 @@ public partial class GameViewModel : ObservableObject
             // Notify UI that BoardSize changed and refresh values.
             OnPropertyChanged(nameof(BoardSize));
             OnPropertyChanged(nameof(GameMode));
+            OnPropertyChanged(nameof(IsAdversarialMode));
             UpdateUI();
             BoardReset?.Invoke(this, EventArgs.Empty);
 

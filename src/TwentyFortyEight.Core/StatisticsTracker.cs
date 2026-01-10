@@ -129,15 +129,23 @@ public abstract class StatisticsTracker : IStatisticsTracker
     }
 
     /// <summary>
-    /// Updates the best score if the new score is higher.
+    /// Updates the best score if the new score is better.
+    /// For most modes, higher is better; for Adversarial mode, lower is better.
     /// </summary>
     /// <param name="score">The score to check.</param>
-    public void UpdateBestScore(int score)
+    public void UpdateBestScore(GameMode mode, int score)
     {
         lock (_lock)
         {
             var stats = Statistics;
-            if (score > stats.BestScore)
+
+            var shouldUpdate = mode switch
+            {
+                GameMode.Adversarial => stats.BestScore == 0 || score < stats.BestScore,
+                _ => score > stats.BestScore,
+            };
+
+            if (shouldUpdate)
             {
                 stats.BestScore = score;
                 Save(stats);

@@ -35,6 +35,7 @@ public partial class MainPage : ContentPage
     private readonly IToolbarIconService _toolbarIconService;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
+    private readonly Dictionary<TileViewModel, Border> _emptyCells = [];
     private readonly StringBuilder _boardAccessibilityBuilder = new(capacity: 256);
     private EventHandler<AppThemeChangedEventArgs>? _themeChangedHandler;
     private CancellationTokenSource? _animationCts;
@@ -127,8 +128,10 @@ public partial class MainPage : ContentPage
         _inputCoordinationService.RegisterBehaviors(this);
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
 
-        // Set up gesture recognizers for swipe detection
-        _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
+        // Set up gesture recognizers for swipe detection.
+        // Adversarial mode uses tap-to-spawn; swipes/pans can interfere with taps (and can trigger
+        // long-running UIGestureRecognizer blocking warnings on iOS), so disable them there.
+        UpdateSwipeRecognizersForMode();
         _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
 
         // Subscribe to bottom sheet dismissal to sync ViewModel state
@@ -148,17 +151,62 @@ public partial class MainPage : ContentPage
         bool showDirectionButtons;
         try
         {
-            showDirectionButtons = _accessibilitySettingsService.IsVoiceControlEnabled();
+            // In Adversarial mode, player taps to spawn tiles - directional buttons are not used.
+            if (_viewModel.IsAdversarialMode)
+            {
+                showDirectionButtons = false;
+            }
+            else
+            {
+                showDirectionButtons = _accessibilitySettingsService.IsVoiceControlEnabled();
+            }
         }
         catch
         {
             showDirectionButtons = false;
         }
 
-        MoveLeftContainer.IsVisible = showDirectionButtons;
-        MoveUpContainer.IsVisible = showDirectionButtons;
-        MoveDownContainer.IsVisible = showDirectionButtons;
-        MoveRightContainer.IsVisible = showDirectionButtons;
+        // Only update if changed to avoid unnecessary layout invalidations and property change events.
+        if (MoveLeftContainer.IsVisible != showDirectionButtons)
+        {
+            MoveLeftContainer.IsVisible = showDirectionButtons;
+            MoveUpContainer.IsVisible = showDirectionButtons;
+            MoveDownContainer.IsVisible = showDirectionButtons;
+            MoveRightContainer.IsVisible = showDirectionButtons;
+        }
+    }
+
+    private void UpdateTileCellsAccessibilityForMode()
+    {
+        bool isAdversarial = _viewModel.IsAdversarialMode;
+        foreach (var (tile, emptyCell) in _emptyCells)
+        {
+            UpdateTileCellAccessibility(emptyCell, tile, isAdversarial);
+        }
+    }
+
+    private static void UpdateTileCellAccessibility(
+        Border emptyCell,
+        TileViewModel tile,
+        bool isAdversarialMode
+    )
+    {
+        // In Adversarial mode, only EMPTY cells are tap targets for spawning tiles.
+        // Occupied cells should not be in the accessibility tree.
+        bool shouldBeAccessible = isAdversarialMode && tile.Value == 0;
+
+        if (shouldBeAccessible)
+        {
+            AutomationProperties.SetIsInAccessibleTree(emptyCell, true);
+            AutomationProperties.SetName(
+                emptyCell,
+                $"Spawn at row {tile.Row + 1}, column {tile.Column + 1}"
+            );
+        }
+        else
+        {
+            AutomationProperties.SetIsInAccessibleTree(emptyCell, false);
+        }
     }
 
     private void RebuildBoardGrid()
@@ -187,6 +235,7 @@ public partial class MainPage : ContentPage
         GameBoard.ColumnDefinitions.Clear();
         _tileBorders.Clear();
         _tileLabels.Clear();
+        _emptyCells.Clear();
         WallOverlayLayer.Children.Clear();
 
         CreateTiles();
@@ -229,6 +278,9 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
         _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
+
+        // Ensure swipe recognizers match the active mode when returning to the page.
+        UpdateSwipeRecognizersForMode();
 
         // Keep Voice Control visibility in sync with OS state.
         // Re-subscribe to changes and immediately check current state to handle edge cases
@@ -275,10 +327,28 @@ public partial class MainPage : ContentPage
 
     private async void OnSwipePanUpdated(object? sender, SwipePanEventArgs e)
     {
+        if (_viewModel.IsAdversarialMode)
+        {
+            return;
+        }
+
         await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
             e,
             BuildSwipePreviewContext()
         );
+    }
+
+    private void UpdateSwipeRecognizersForMode()
+    {
+        if (_viewModel.IsAdversarialMode)
+        {
+            _gestureRecognizerService.DetachSwipeRecognizers(RootLayout);
+            _swipePreviewInteractionService.Reset();
+        }
+        else
+        {
+            _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
+        }
     }
 
     private SwipePreviewUiContext BuildSwipePreviewContext()
@@ -382,6 +452,7 @@ public partial class MainPage : ContentPage
         for (int i = 0; i < _viewModel.Tiles.Count; i++)
         {
             var tile = _viewModel.Tiles[i];
+            var tileIndex = i; // Capture for closure
 
             Border emptyCell = new()
             {
@@ -395,10 +466,30 @@ public partial class MainPage : ContentPage
                 },
             };
 
-            // Tiles/cells are not actionable; keep them out of the accessibility tree to avoid
-            // Voice Control clutter and misleading tap targets. The board container exposes the
-            // full board state via SemanticProperties.Description.
-            AutomationProperties.SetIsInAccessibleTree(emptyCell, false);
+            // Tiles/cells are not actionable in standard modes; keep them out of the accessibility tree.
+            // In Adversarial mode, empty cells become tap targets for spawning tiles, so we make them accessible.
+            UpdateTileCellAccessibility(emptyCell, tile, _viewModel.IsAdversarialMode);
+
+            // Store reference for later accessibility updates when mode changes
+            _emptyCells[tile] = emptyCell;
+
+            // Add tap gesture for adversarial mode where player spawns tiles.
+            // Create a shared tap handler - we'll add it to both emptyCell and the visible border
+            // since the border sits on top and would otherwise block taps.
+            void HandleTileTap(object? s, TappedEventArgs e)
+            {
+                if (
+                    _viewModel.IsAdversarialMode
+                    && _viewModel.TapEmptyCellCommand.CanExecute(tileIndex)
+                )
+                {
+                    _viewModel.TapEmptyCellCommand.Execute(tileIndex);
+                }
+            }
+
+            TapGestureRecognizer emptyTapGesture = new();
+            emptyTapGesture.Tapped += HandleTileTap;
+            emptyCell.GestureRecognizers.Add(emptyTapGesture);
 
             var label = new Label
             {
@@ -469,6 +560,11 @@ public partial class MainPage : ContentPage
             BindScaledFontSize(label);
 
             border.BindingContext = tile;
+
+            // Add tap gesture to border as well since it overlays emptyCell
+            TapGestureRecognizer borderTapGesture = new();
+            borderTapGesture.Tapped += HandleTileTap;
+            border.GestureRecognizers.Add(borderTapGesture);
 
             Grid.SetRow(emptyCell, tile.Row);
             Grid.SetColumn(emptyCell, tile.Column);
@@ -581,6 +677,12 @@ public partial class MainPage : ContentPage
         {
             HandleCoachNudgeVisibilityChanged();
         }
+        else if (e.PropertyName == nameof(GameViewModel.IsAdversarialMode))
+        {
+            UpdateSwipeRecognizersForMode();
+            UpdateVoiceControlMoveButtonsVisibility();
+            UpdateTileCellsAccessibilityForMode();
+        }
     }
 
     private void UpdateWallOverlay(WallSegment? wall)
@@ -684,7 +786,11 @@ public partial class MainPage : ContentPage
         try
         {
             // Trigger victory through the VictoryViewModel (MVVM pattern)
-            _victoryViewModel.TriggerVictory(_viewModel.Score, undoCount: _viewModel.UndoCount);
+            _victoryViewModel.TriggerVictory(
+                _viewModel.Score,
+                undoCount: _viewModel.UndoCount,
+                isAdversarialMode: _viewModel.IsAdversarialMode
+            );
         }
         finally
         {
@@ -696,6 +802,12 @@ public partial class MainPage : ContentPage
     {
         UpdateWallOverlay(e.WallAfterMove);
         UpdateBoardAccessibilityDescription();
+
+        // In Adversarial mode, update which cells are accessible (only empty cells).
+        if (_viewModel.IsAdversarialMode)
+        {
+            UpdateTileCellsAccessibilityForMode();
+        }
 
         await _swipePreviewInteractionService.HandleTilesUpdatedAsync(
             e,

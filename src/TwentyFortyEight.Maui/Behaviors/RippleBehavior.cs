@@ -1,5 +1,6 @@
 using SkiaSharp.Views.Maui.Controls;
 using TwentyFortyEight.Maui.Services;
+using TwentyFortyEight.ViewModels;
 
 namespace TwentyFortyEight.Maui.Behaviors;
 
@@ -137,6 +138,15 @@ public sealed class RippleBehavior : Behavior<View>
         if (_attachedElement is null)
             return;
 
+        // The ripple effect is purely decorative and can interfere with fast-tap gameplay.
+        // Disable it entirely in Adversarial mode (where rapid taps are expected).
+        if (IsAdversarialModeActive())
+        {
+            _lastPointerPressPoint = null;
+            _lastPointerPressTimeUtc = default;
+            return;
+        }
+
         // Don't allow ripple while gameplay input is blocked (e.g., victory cinematic/modal).
         if (_inputCoordinationService?.IsInputBlocked == true)
             return;
@@ -170,6 +180,9 @@ public sealed class RippleBehavior : Behavior<View>
     private async Task StartRippleAsync(Point originInElement)
     {
         if (_rippleService is null || _rippleOverlay is null || _attachedElement is null)
+            return;
+
+        if (IsAdversarialModeActive())
             return;
 
         // Re-check before starting in case state changed after pointer event.
@@ -248,5 +261,19 @@ public sealed class RippleBehavior : Behavior<View>
         {
             _rippleGate.Release();
         }
+    }
+
+    private bool IsAdversarialModeActive()
+    {
+        // The behavior is attached to the board container, which is normally bound to GameViewModel.
+        // Be defensive and check up the visual tree as well.
+        if (_attachedElement is null)
+            return false;
+
+        var bindingContext =
+            _attachedElement.BindingContext
+            ?? (_attachedElement.Parent as BindableObject)?.BindingContext;
+
+        return bindingContext is GameViewModel { IsAdversarialMode: true };
     }
 }

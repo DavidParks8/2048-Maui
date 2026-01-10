@@ -34,10 +34,11 @@ public interface IStatisticsTracker
     void OnGameEnded(int finalScore, bool wasWon);
 
     /// <summary>
-    /// Updates the best score if the new score is higher.
+    /// Updates the best score if the new score is better.
+    /// For most modes, higher is better; for Adversarial mode, lower is better.
     /// </summary>
     /// <param name="score">The score to check.</param>
-    void UpdateBestScore(int score);
+    void UpdateBestScore(GameMode mode, int score);
 
     /// <summary>
     /// Updates the highest tile if the new tile value is higher.

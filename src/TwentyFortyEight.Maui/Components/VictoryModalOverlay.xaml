@@ -41,7 +41,7 @@
                            HorizontalOptions="Center"
                            SemanticProperties.HeadingLevel="Level1" />
 
-                    <Label Text="{x:Static resx:AppStrings.VictorySubtitle}"
+                    <Label Text="{Binding VictorySubtitleText}"
                            FontSize="18"
                            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
                            HorizontalOptions="Center" />
@@ -68,7 +68,13 @@
                         <Button x:Name="KeepPlayingButton"
                                 Text="{x:Static resx:AppStrings.KeepPlaying}"
                                 Command="{Binding KeepPlayingCommand}"
-                                SemanticProperties.Hint="{x:Static resx:AppStrings.KeepPlayingHint}" />
+                                SemanticProperties.Hint="{x:Static resx:AppStrings.KeepPlayingHint}">
+                            <Button.Triggers>
+                                <DataTrigger TargetType="Button" Binding="{Binding State.IsAdversarialMode}" Value="True">
+                                    <Setter Property="IsVisible" Value="False" />
+                                </DataTrigger>
+                            </Button.Triggers>
+                        </Button>
 
                         <Button x:Name="NewGameButton"
                                 Text="{x:Static resx:AppStrings.NewGame}"
