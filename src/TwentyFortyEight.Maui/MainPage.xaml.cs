@@ -192,6 +192,11 @@ public partial class MainPage : ContentPage
         CreateTiles();
         UpdateWallOverlay(_viewModel.Wall);
         UpdateBoardAccessibilityDescription();
+
+        // Invalidate animation caches and warm up overlay pool for the new board size.
+        // Max movements on an NxN board is roughly N*N (every tile could move).
+        _animationService.InvalidateCache();
+        _animationService.WarmUpOverlayPool(_viewModel.BoardSize * _viewModel.BoardSize);
     }
 
     private void OnNewGameRequested(object? sender, EventArgs e)

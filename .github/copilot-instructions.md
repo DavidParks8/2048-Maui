@@ -1,0 +1,1 @@
+Read all AGENTS.md files fully before attempting any task. This only needs to be done once per session.

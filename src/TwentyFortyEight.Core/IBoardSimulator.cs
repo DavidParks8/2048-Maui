@@ -16,4 +16,11 @@ public interface IBoardSimulator
     (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) SimulateMove(
         BoardMoveRequest request
     );
+
+    /// <summary>
+    /// Quickly probes whether a move would change the board, without allocating a new board.
+    /// </summary>
+    /// <param name="request">Move simulation request.</param>
+    /// <returns>True if the move would change the board; otherwise, false.</returns>
+    bool WouldMove(BoardMoveRequest request);
 }

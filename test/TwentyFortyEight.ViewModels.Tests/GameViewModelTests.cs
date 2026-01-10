@@ -147,6 +147,26 @@ public class GameViewModelTests
     }
 
     [TestMethod]
+    public async Task MoveCommand_WhenMoveAlreadyInProgress_QueuesSecondMove()
+    {
+        _moveAnalyzerMock
+            .Setup(m => m.Analyze(It.IsAny<MoveAnalysisRequest>()))
+            .Returns(() => new MoveAnalysisResult(boardSize: 4));
+
+        var viewModel = CreateViewModel();
+
+        // Start the first move and immediately request a second move.
+        // Prior behavior: second move was dropped due to non-blocking move lock.
+        // Current behavior: second move awaits the move lock and runs after the first completes.
+        var first = viewModel.MoveCommand.ExecuteAsync(Direction.Left);
+        var second = viewModel.MoveCommand.ExecuteAsync(Direction.Down);
+
+        await Task.WhenAll(first, second);
+
+        Assert.AreEqual(2, viewModel.Moves);
+    }
+
+    [TestMethod]
     public void ToggleCoachCommand_WhenAdvisorReturnsRecommendation_ShowsSuggestion()
     {
         // Arrange

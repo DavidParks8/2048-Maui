@@ -348,18 +348,10 @@ public class Game2048Engine
         if (_config.Mode == GameMode.Walltastrophy)
         {
             // Walls can eliminate moves even when empties exist, so probe all directions.
-            return !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Up))
-                    .moved
-                && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Down))
-                    .moved
-                && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Left))
-                    .moved
-                && !_boardSimulator
-                    .SimulateMove(new BoardMoveRequest(playfield, Direction.Right))
-                    .moved;
+            return !_boardSimulator.WouldMove(new BoardMoveRequest(playfield, Direction.Up))
+                && !_boardSimulator.WouldMove(new BoardMoveRequest(playfield, Direction.Down))
+                && !_boardSimulator.WouldMove(new BoardMoveRequest(playfield, Direction.Left))
+                && !_boardSimulator.WouldMove(new BoardMoveRequest(playfield, Direction.Right));
         }
 
         // Non-walltastrophy modes: game is not over if there are empty cells or possible merges.

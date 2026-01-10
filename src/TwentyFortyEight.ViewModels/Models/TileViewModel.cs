@@ -44,9 +44,35 @@ public partial class TileViewModel : ObservableObject
     public double FontSize => GetTileFontSize(Value);
 
     /// <summary>
+    /// Pre-cached font sizes for common tile values (powers of 2).
+    /// Avoids Math.Log10 calls during animation setup.
+    /// </summary>
+    private static readonly Dictionary<int, double> s_fontSizeCache = BuildFontSizeCache();
+
+    private static Dictionary<int, double> BuildFontSizeCache()
+    {
+        // Pre-cache all powers of 2 from 2 to 2^20 (covers 8x8 boards with high scores)
+        Dictionary<int, double> cache = new() { [0] = 32 };
+        for (int i = 1; i <= 20; i++)
+        {
+            int value = 1 << i; // 2^i
+            cache[value] = CalculateFontSize(value);
+        }
+        return cache;
+    }
+
+    /// <summary>
     /// Gets the appropriate font size for a tile based on the number of digits.
+    /// Uses cached values for common powers of 2.
     /// </summary>
     public static double GetTileFontSize(int value)
+    {
+        if (s_fontSizeCache.TryGetValue(value, out var cached))
+            return cached;
+        return CalculateFontSize(value);
+    }
+
+    private static double CalculateFontSize(int value)
     {
         if (value == 0)
             return 32;
@@ -77,14 +103,30 @@ public partial class TileViewModel : ObservableObject
 
     /// <summary>
     /// Partial method hook called when Value property changes.
-    /// Notifies dependent properties to update.
+    /// Notifies dependent properties to update only if the value actually changed.
     /// </summary>
-    partial void OnValueChanged(int value)
+    partial void OnValueChanged(int oldValue, int newValue)
     {
+        // Skip notifications if value didn't actually change
+        if (oldValue == newValue)
+            return;
+
         OnPropertyChanged(nameof(DisplayValue));
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(TextColor));
-        OnPropertyChanged(nameof(FontSize));
+
+        // Only notify FontSize if digit count changed
+        if (GetDigitCount(oldValue) != GetDigitCount(newValue))
+        {
+            OnPropertyChanged(nameof(FontSize));
+        }
+    }
+
+    private static int GetDigitCount(int value)
+    {
+        if (value == 0)
+            return 0;
+        return (int)Math.Floor(Math.Log10(value)) + 1;
     }
 
     /// <summary>
@@ -93,9 +135,7 @@ public partial class TileViewModel : ObservableObject
     /// </summary>
     public void RefreshColors()
     {
-#if ANDROID || IOS || MACCATALYST || WINDOWS
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(TextColor));
-#endif
     }
 }

@@ -3,13 +3,14 @@ namespace TwentyFortyEight.ViewModels;
 /// <summary>
 /// Constants for animation durations used throughout the application.
 /// These values are shared between the ViewModel and animation service layers.
+/// Durations are kept short to allow rapid input without blocking.
 /// </summary>
 public static class AnimationConstants
 {
     /// <summary>
     /// Base duration of the slide animation in milliseconds.
     /// </summary>
-    public const uint BaseSlideAnimationDuration = 150;
+    public const uint BaseSlideAnimationDuration = 120;
 
     /// <summary>
     /// Base duration of the scale-up animation for merged tiles in milliseconds.
@@ -25,13 +26,4 @@ public static class AnimationConstants
     /// Base duration of the scale animation for new tiles in milliseconds.
     /// </summary>
     public const uint BaseNewTileScaleDuration = 100;
-
-    /// <summary>
-    /// Total base sequence duration for a complete move animation (slide + merge + spawn).
-    /// </summary>
-    public const uint BaseTotalSequenceDuration =
-        BaseSlideAnimationDuration
-        + BaseMergePulseUpDuration
-        + BaseMergePulseDownDuration
-        + BaseNewTileScaleDuration;
 }

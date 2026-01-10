@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using TwentyFortyEight.Core;
 
 namespace TwentyFortyEight.ViewModels.Models;
@@ -11,17 +10,17 @@ public class TileUpdateEventArgs : EventArgs
     /// <summary>
     /// Tiles that moved to a new position.
     /// </summary>
-    public required FrozenSet<TileViewModel> MovedTiles { get; init; }
+    public required IReadOnlySet<TileViewModel> MovedTiles { get; init; }
 
     /// <summary>
     /// Tiles that are newly spawned.
     /// </summary>
-    public required FrozenSet<TileViewModel> NewTiles { get; init; }
+    public required IReadOnlySet<TileViewModel> NewTiles { get; init; }
 
     /// <summary>
     /// Tiles that resulted from a merge.
     /// </summary>
-    public required FrozenSet<TileViewModel> MergedTiles { get; init; }
+    public required IReadOnlySet<TileViewModel> MergedTiles { get; init; }
 
     /// <summary>
     /// Direction of the move that triggered these updates.

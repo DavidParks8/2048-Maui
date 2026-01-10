@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +16,7 @@ namespace TwentyFortyEight.ViewModels;
 public partial class GameViewModel : ObservableObject
 {
     private const int DefaultBoardSize = 4;
+    private const int GameSaveDebounceMilliseconds = 250;
 
     private bool _isNewGameConfirmationInProgress;
 
@@ -40,6 +40,14 @@ public partial class GameViewModel : ObservableObject
     /// Ensures only one move is processed at a time to avoid broken board state from fast swiping.
     /// </summary>
     private readonly SemaphoreSlim _moveLock = new(1, 1);
+
+    private readonly Lock _gameSaveSync = new();
+    private CancellationTokenSource? _gameSaveDebounceCts;
+    private Task _gameSaveTask = Task.CompletedTask;
+    private volatile bool _isGameSaveDirty;
+
+    private const int CoachSuggestionDebounceMilliseconds = 50;
+    private CancellationTokenSource? _coachSuggestionCts;
 
     /// <summary>
     /// Flag to track if initialization is complete to prevent screen reader announcements during startup.
@@ -202,7 +210,7 @@ public partial class GameViewModel : ObservableObject
                 if (recipient is GameViewModel vm)
                 {
                     vm.IsCoachEnabled = message.IsEnabled;
-                    vm.UpdateCoachSuggestion();
+                    vm.UpdateCoachSuggestionSync();
                 }
             }
         );
@@ -261,7 +269,7 @@ public partial class GameViewModel : ObservableObject
 
         if (IsCoachEnabled)
         {
-            UpdateCoachSuggestion();
+            UpdateCoachSuggestionSync();
         }
         else
         {
@@ -283,7 +291,7 @@ public partial class GameViewModel : ObservableObject
         _settingsService.CoachEnabled = true;
         _coachNudgeService.Dismiss();
         IsCoachNudgeVisible = false;
-        UpdateCoachSuggestion();
+        UpdateCoachSuggestionSync();
     }
 
     private void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
@@ -332,6 +340,129 @@ public partial class GameViewModel : ObservableObject
         UpdateUI();
         BoardReset?.Invoke(this, EventArgs.Empty);
         _repository.SaveGame(_config, _engine.ToSaveDto());
+    }
+
+    private void MarkGameSaveDirty()
+    {
+        _isGameSaveDirty = true;
+    }
+
+    public async Task FlushPendingSavesAsync()
+    {
+        CancellationTokenSource? cts;
+        Task inFlight;
+        var needsSnapshot = _isGameSaveDirty;
+
+        lock (_gameSaveSync)
+        {
+            cts = _gameSaveDebounceCts;
+            _gameSaveDebounceCts = null;
+            inFlight = _gameSaveTask;
+            needsSnapshot |= !inFlight.IsCompleted;
+        }
+
+        _isGameSaveDirty = false;
+
+        if (cts is not null)
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        try
+        {
+            await inFlight.ConfigureAwait(false);
+        }
+        catch
+        {
+            // Ignore: failures here should not block app suspension.
+        }
+
+        if (needsSnapshot)
+        {
+            await _moveLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var save = _engine.ToSaveDto();
+                var config = _config;
+                _repository.SaveGame(config, save);
+            }
+            finally
+            {
+                _moveLock.Release();
+            }
+        }
+
+        await _repository.FlushAsync(_config).ConfigureAwait(false);
+    }
+
+    private void ScheduleGameSaveIfDirty()
+    {
+        if (!_isGameSaveDirty)
+        {
+            return;
+        }
+
+        _isGameSaveDirty = false;
+
+        CancellationTokenSource cts;
+        lock (_gameSaveSync)
+        {
+            _gameSaveDebounceCts?.Cancel();
+            _gameSaveDebounceCts?.Dispose();
+
+            cts = new CancellationTokenSource();
+            _gameSaveDebounceCts = cts;
+            _gameSaveTask = Task.Run(() => DebouncedSnapshotAndSaveAsync(cts.Token));
+        }
+
+        _ = _gameSaveTask.ContinueWith(
+            static (_, state) =>
+            {
+                var vm = (GameViewModel)state!;
+                vm.CleanupAfterGameSave();
+            },
+            this,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
+    }
+
+    private void CleanupAfterGameSave()
+    {
+        lock (_gameSaveSync)
+        {
+            if (_gameSaveTask.IsCompleted)
+            {
+                _gameSaveTask = Task.CompletedTask;
+            }
+        }
+    }
+
+    private async Task DebouncedSnapshotAndSaveAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(GameSaveDebounceMilliseconds, cancellationToken).ConfigureAwait(false);
+
+            await _moveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var save = _engine.ToSaveDto();
+                var config = _config;
+
+                _repository.SaveGame(config, save);
+            }
+            finally
+            {
+                _moveLock.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled - expected
+        }
     }
 
     [RelayCommand]
@@ -398,19 +529,13 @@ public partial class GameViewModel : ObservableObject
             return;
         }
 
-        // Use non-blocking Wait(0) to check if we can acquire the lock immediately
-        // If not, another move is in progress - skip this one
-        if (!_moveLock.Wait(0))
-        {
-            return;
-        }
+        await _moveLock.WaitAsync();
 
         try
         {
             // Capture previous state before the move
             var previousBoard = _engine.CurrentState.Board.Clone();
             var previousWall = _engine.CurrentState.Wall;
-            var previousScore = Score;
 
             var moved = _engine.Move(direction);
             if (moved)
@@ -424,7 +549,7 @@ public partial class GameViewModel : ObservableObject
                 _feedbackService.PerformMoveHaptic();
 
                 UpdateUI(previousBoard, direction, previousWall, skipSlideAnimation);
-                _repository.SaveGame(_config, _engine.ToSaveDto());
+                MarkGameSaveDirty();
 
                 // Update best score and submit to social gaming service
                 bool isNewBest = Score > BestScore;
@@ -456,19 +581,17 @@ public partial class GameViewModel : ObservableObject
         finally
         {
             _moveLock.Release();
+            ScheduleGameSaveIfDirty();
         }
     }
 
     private TimeSpan GetInputBlockDuration()
     {
-        // Only block input during the slide.
-        // This makes the game feel responsive even if animations overlap.
+        // Limit moves to ~6.6 per second (150ms between moves).
+        // This gives animations time to complete while still feeling responsive.
         // The MAUI animation system automatically respects OS accessibility settings
         // (like reduced motion on iOS/Android) and will skip or shorten animations appropriately.
-        var durationMs = AnimationConstants.BaseSlideAnimationDuration;
-
-        // Add a tiny buffer (e.g. 10ms) to ensure the UI thread has picked up the change
-        return TimeSpan.FromMilliseconds(durationMs + 10);
+        return TimeSpan.FromMilliseconds(150);
     }
 
     [RelayCommand(CanExecute = nameof(CanUndo))]
@@ -483,7 +606,8 @@ public partial class GameViewModel : ObservableObject
         {
             UpdateUI();
             BoardReset?.Invoke(this, EventArgs.Empty);
-            _repository.SaveGame(_config, _engine.ToSaveDto());
+            MarkGameSaveDirty();
+            ScheduleGameSaveIfDirty();
         }
     }
 
@@ -533,31 +657,42 @@ public partial class GameViewModel : ObservableObject
             {
                 var tile = Tiles[i];
                 var newValue = state.Board[i];
-
-                // Reset animation flags
-                tile.IsNewTile = false;
-                tile.IsMerged = false;
+                var oldValue = tile.Value;
 
                 // Categorize tile based on analysis results
                 if (analysis.SpawnedIndices.Contains(i))
                 {
                     tile.IsNewTile = true;
+                    tile.IsMerged = false;
                     newTiles.Add(tile);
                 }
                 else if (analysis.MergedIndices.Contains(i))
                 {
+                    tile.IsNewTile = false;
                     tile.IsMerged = true;
                     mergedTiles.Add(tile);
                 }
                 else if (analysis.MovedToIndices.Contains(i))
                 {
+                    tile.IsNewTile = false;
+                    tile.IsMerged = false;
                     movedTiles.Add(tile);
                 }
+                else if (tile.IsNewTile || tile.IsMerged)
+                {
+                    // Reset animation flags only if they were set
+                    tile.IsNewTile = false;
+                    tile.IsMerged = false;
+                }
 
-                tile.Value = newValue;
+                // Only set Value if it changed (triggers property change notifications)
+                if (oldValue != newValue)
+                {
+                    tile.Value = newValue;
+                }
             }
 
-            // Create event args with frozen collections if there are changes
+            // Create event args with immutable collections if there are changes
             if (
                 movedTiles.Count > 0
                 || newTiles.Count > 0
@@ -571,9 +706,9 @@ public partial class GameViewModel : ObservableObject
 
                 TileUpdateEventArgs eventArgs = new()
                 {
-                    MovedTiles = movedTiles.ToFrozenSet(),
-                    NewTiles = newTiles.ToFrozenSet(),
-                    MergedTiles = mergedTiles.ToFrozenSet(),
+                    MovedTiles = movedTiles,
+                    NewTiles = newTiles,
+                    MergedTiles = mergedTiles,
                     MoveDirection = moveDirection.Value,
                     TileMovements = movementsCopy,
                     SkipSlideAnimation = skipSlideAnimation,
@@ -622,10 +757,73 @@ public partial class GameViewModel : ObservableObject
         // Refresh command can execute states
         UndoCommand.NotifyCanExecuteChanged();
 
-        UpdateCoachSuggestion();
+        ScheduleCoachSuggestionUpdate();
     }
 
-    private void UpdateCoachSuggestion()
+    /// <summary>
+    /// Schedules a debounced coach suggestion update on a background thread.
+    /// Multiple rapid calls will cancel previous pending updates.
+    /// </summary>
+    private void ScheduleCoachSuggestionUpdate()
+    {
+        // Cancel any pending coach suggestion update
+        _coachSuggestionCts?.Cancel();
+        _coachSuggestionCts?.Dispose();
+        _coachSuggestionCts = new CancellationTokenSource();
+        var token = _coachSuggestionCts.Token;
+
+        // Capture state needed for the background computation
+        var state = _engine.CurrentState;
+        var board = state.Board.Clone();
+        var wall = state.Wall;
+        var isCoachEnabled = IsCoachEnabled;
+        var isGameOver = state.IsGameOver;
+        var config = _config;
+
+        _ = Task.Run(
+            async () =>
+            {
+                try
+                {
+                    // Short debounce to coalesce rapid swipes
+                    await Task.Delay(CoachSuggestionDebounceMilliseconds, token);
+                    token.ThrowIfCancellationRequested();
+
+                    // Compute suggestion on background thread
+                    var recommendation = _coachSuggestionService.GetSuggestion(
+                        new CoachSuggestionRequest(board, config, isCoachEnabled, isGameOver, wall)
+                    );
+
+                    token.ThrowIfCancellationRequested();
+
+                    // Update UI on main thread
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        if (token.IsCancellationRequested)
+                            return;
+
+                        if (recommendation is null)
+                        {
+                            ClearCoachSuggestion();
+                        }
+                        else
+                        {
+                            CoachSuggestedDirection = recommendation.Value.Direction;
+                            CoachPrimaryReason = recommendation.Value.PrimaryReason;
+                            IsCoachSuggestionVisible = true;
+                        }
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when a newer update supersedes this one
+                }
+            },
+            token
+        );
+    }
+
+    private void UpdateCoachSuggestionSync()
     {
         var state = _engine.CurrentState;
         var recommendation = _coachSuggestionService.GetSuggestion(

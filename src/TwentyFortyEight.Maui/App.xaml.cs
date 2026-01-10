@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui;
@@ -41,6 +42,9 @@ public partial class App : Application
             MinimumHeight = 700, // Ensures full UI visibility with adequate margins
         };
 
+        window.Stopped += OnWindowStopped;
+        window.Destroying += OnWindowDestroying;
+
         // Authenticate with social gaming service on app startup (fire and forget)
         MainThread.BeginInvokeOnMainThread(async () =>
         {
@@ -56,4 +60,38 @@ public partial class App : Application
 
         return window;
     }
+
+    private void OnWindowStopped(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            MainThread.BeginInvokeOnMainThread(() => _ = FlushGameAsync(window));
+        }
+    }
+
+    private void OnWindowDestroying(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            MainThread.BeginInvokeOnMainThread(() => _ = FlushGameAsync(window));
+        }
+    }
+
+    private async Task FlushGameAsync(Window window)
+    {
+        try
+        {
+            if (window.Page is Shell shell && shell.CurrentPage?.BindingContext is GameViewModel vm)
+            {
+                await vm.FlushPendingSavesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogFlushGameFailed(_logger, ex);
+        }
+    }
+
+    [LoggerMessage(EventId = 1002, Level = LogLevel.Error, Message = "Failed to flush game state")]
+    private static partial void LogFlushGameFailed(ILogger logger, Exception ex);
 }

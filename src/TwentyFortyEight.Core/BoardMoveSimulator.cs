@@ -11,6 +11,12 @@ internal sealed class BoardMoveSimulator : IBoardSimulator
         new IntListPooledObjectPolicy()
     );
 
+    public bool WouldMove(BoardMoveRequest request)
+    {
+        var (_, moved, _) = SimulateMoveCore(request, result: null);
+        return moved;
+    }
+
     public (Board newBoard, int scoreIncrease, bool moved, int maxMergedValue) SimulateMove(
         BoardMoveRequest request
     )
@@ -18,9 +24,24 @@ internal sealed class BoardMoveSimulator : IBoardSimulator
         var playfield = request.Playfield;
         var direction = request.Direction;
         var board = playfield.Board;
-        var wall = playfield.Wall;
         var size = board.Size;
         var result = new int[size, size];
+
+        var (scoreIncrease, moved, maxMergedValue) = SimulateMoveCore(request, result);
+
+        return (Board.FromMutableArray(result, size), scoreIncrease, moved, maxMergedValue);
+    }
+
+    private (int scoreIncrease, bool moved, int maxMergedValue) SimulateMoveCore(
+        BoardMoveRequest request,
+        int[,]? result
+    )
+    {
+        var playfield = request.Playfield;
+        var direction = request.Direction;
+        var board = playfield.Board;
+        var wall = playfield.Wall;
+        var size = board.Size;
         var moved = false;
         var scoreIncrease = 0;
         var maxMergedValue = 0;
@@ -94,7 +115,7 @@ internal sealed class BoardMoveSimulator : IBoardSimulator
             _intListPool.Return(newValues);
         }
 
-        return (Board.FromMutableArray(result, size), scoreIncrease, moved, maxMergedValue);
+        return (scoreIncrease, moved, maxMergedValue);
     }
 
     private static void FillLineIndices(Span<int> indices, int size, int line, Direction direction)
@@ -114,7 +135,7 @@ internal sealed class BoardMoveSimulator : IBoardSimulator
 
     private static void ProcessSegment(
         Board board,
-        int[,] result,
+        int[,]? result,
         Span<int> indices,
         int segmentStart,
         int segmentLength,
@@ -170,7 +191,11 @@ internal sealed class BoardMoveSimulator : IBoardSimulator
             var row = idx / board.Size;
             var col = idx % board.Size;
             var newValue = newValues[i];
-            result[row, col] = newValue;
+
+            if (result is not null)
+            {
+                result[row, col] = newValue;
+            }
             if (board[row, col] != newValue)
             {
                 moved = true;

@@ -23,6 +23,14 @@ internal sealed partial class GameStateRepository(
 
     private readonly Lock _sync = new();
 
+    // Per-ruleset debouncing for game state saves
+    private readonly Dictionary<string, CancellationTokenSource> _gameSaveDebounceByRulesetId = [];
+    private readonly Dictionary<string, Task> _gameSaveTaskByRulesetId = [];
+    private readonly Dictionary<
+        string,
+        (GameConfig Config, CoreGameSave Save)
+    > _pendingGameSaveByRulesetId = [];
+
     // Per-ruleset debouncing for best score saves
     private readonly Dictionary<
         string,
@@ -133,42 +141,66 @@ internal sealed partial class GameStateRepository(
     public void SaveGame(GameConfig config, CoreGameSave save)
     {
         var boardSize = config.Size;
-        try
+        if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
         {
-            if (save.InitialState is null)
+            return;
+        }
+
+        var rulesetId = config.RulesetId;
+
+        Task saveTask;
+        CancellationTokenSource cts;
+
+        lock (_sync)
+        {
+            _pendingGameSaveByRulesetId[rulesetId] = (config, save);
+
+            if (_gameSaveDebounceByRulesetId.TryGetValue(rulesetId, out var existingCts))
             {
-                throw new InvalidOperationException(
-                    "Attempted to save a game without an InitialState."
-                );
+                existingCts.Cancel();
+                existingCts.Dispose();
             }
 
-            var initial = save.InitialState.ToGameState();
-            if (initial.Size != boardSize)
+            cts = new CancellationTokenSource();
+            _gameSaveDebounceByRulesetId[rulesetId] = cts;
+
+            saveTask = DebouncedSaveGameAsync(rulesetId, cts.Token);
+            _gameSaveTaskByRulesetId[rulesetId] = saveTask;
+        }
+
+        _ = saveTask.ContinueWith(
+            static (t, state) =>
             {
-                throw new InvalidOperationException(
-                    $"Attempted to save a {initial.Size}x{initial.Size} game into the {boardSize}x{boardSize} slot."
-                );
-            }
-
-            save.CurrentMoveIndex = Math.Clamp(
-                save.CurrentMoveIndex,
-                0,
-                save.MoveHistory?.Length ?? 0
-            );
-
-            var json = JsonSerializer.Serialize(save, GameSerializationContext.Default.GameSave);
-            preferencesService.SetString(GetSavedGameKey(config.RulesetId), json);
-        }
-        catch (Exception ex)
-        {
-            LogSaveGameStateFailed(logger, ex);
-        }
+                var tuple =
+                    (Tuple<GameStateRepository, string, Task, CancellationTokenSource>)state!;
+                tuple.Item1.CleanupAfterGameSave(tuple.Item2, tuple.Item3, tuple.Item4);
+            },
+            Tuple.Create(this, rulesetId, saveTask, cts),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
     }
 
     public void ClearSavedGame(GameConfig config)
     {
         try
         {
+            var rulesetId = config.RulesetId;
+            lock (_sync)
+            {
+                _pendingGameSaveByRulesetId.Remove(rulesetId);
+
+                if (_gameSaveDebounceByRulesetId.TryGetValue(rulesetId, out var cts))
+                {
+                    _gameSaveDebounceByRulesetId.Remove(rulesetId);
+                    cts.Cancel();
+                    cts.Dispose();
+                }
+
+                _gameSaveTaskByRulesetId.Remove(rulesetId);
+            }
+
             preferencesService.Remove(GetSavedGameKey(config.RulesetId));
         }
         catch (Exception ex)
@@ -234,15 +266,142 @@ internal sealed partial class GameStateRepository(
     public Task FlushAsync(GameConfig config)
     {
         var rulesetId = config.RulesetId;
+        Task? bestScoreTask = null;
+        Task? gameSaveTask = null;
+        Task? forcedGameSaveTask = null;
+
         lock (_sync)
         {
             if (_bestScoreSaveTaskByRulesetId.TryGetValue(rulesetId, out var task))
             {
-                return task;
+                bestScoreTask = task;
+            }
+
+            if (_pendingGameSaveByRulesetId.TryGetValue(rulesetId, out var pending))
+            {
+                // Cancel any pending debounce and flush the latest save immediately.
+                if (_gameSaveDebounceByRulesetId.TryGetValue(rulesetId, out var cts))
+                {
+                    _gameSaveDebounceByRulesetId.Remove(rulesetId);
+                    cts.Cancel();
+                    cts.Dispose();
+                }
+
+                forcedGameSaveTask = Task.Run(() => PersistGame(pending.Config, pending.Save));
+                _gameSaveTaskByRulesetId[rulesetId] = forcedGameSaveTask;
+            }
+            else if (_gameSaveTaskByRulesetId.TryGetValue(rulesetId, out var saveTask))
+            {
+                gameSaveTask = saveTask;
             }
         }
 
-        return Task.CompletedTask;
+        if (forcedGameSaveTask is not null)
+        {
+            gameSaveTask = forcedGameSaveTask;
+        }
+
+        if (bestScoreTask is null)
+        {
+            return gameSaveTask ?? Task.CompletedTask;
+        }
+
+        if (gameSaveTask is null)
+        {
+            return bestScoreTask;
+        }
+
+        return Task.WhenAll(bestScoreTask, gameSaveTask);
+    }
+
+    private void PersistGame(GameConfig config, CoreGameSave save)
+    {
+        try
+        {
+            if (save.InitialState is null)
+            {
+                return;
+            }
+
+            var boardSize = config.Size;
+            if (boardSize <= 0 || boardSize > GameConfig.MaxReasonableBoardSize)
+            {
+                return;
+            }
+
+            var initial = save.InitialState.ToGameState();
+            if (initial.Size != boardSize)
+            {
+                return;
+            }
+
+            save.CurrentMoveIndex = Math.Clamp(
+                save.CurrentMoveIndex,
+                0,
+                save.MoveHistory?.Length ?? 0
+            );
+
+            var json = JsonSerializer.Serialize(save, GameSerializationContext.Default.GameSave);
+            preferencesService.SetString(GetSavedGameKey(config.RulesetId), json);
+        }
+        catch (Exception ex)
+        {
+            LogSaveGameStateFailed(logger, ex);
+        }
+    }
+
+    private void CleanupAfterGameSave(
+        string rulesetId,
+        Task completedTask,
+        CancellationTokenSource cts
+    )
+    {
+        lock (_sync)
+        {
+            if (
+                _gameSaveTaskByRulesetId.TryGetValue(rulesetId, out var currentTask)
+                && ReferenceEquals(currentTask, completedTask)
+            )
+            {
+                _gameSaveTaskByRulesetId.Remove(rulesetId);
+            }
+
+            if (
+                _gameSaveDebounceByRulesetId.TryGetValue(rulesetId, out var currentCts)
+                && ReferenceEquals(currentCts, cts)
+            )
+            {
+                _gameSaveDebounceByRulesetId.Remove(rulesetId);
+                cts.Dispose();
+            }
+        }
+    }
+
+    private async Task DebouncedSaveGameAsync(string rulesetId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(250, cancellationToken);
+
+            (GameConfig Config, CoreGameSave Save) pending;
+            lock (_sync)
+            {
+                if (!_pendingGameSaveByRulesetId.TryGetValue(rulesetId, out pending))
+                {
+                    return;
+                }
+            }
+
+            PersistGame(pending.Config, pending.Save);
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled - expected
+        }
+        catch (Exception ex)
+        {
+            LogSaveGameStateFailed(logger, ex);
+        }
     }
 
     private void CleanupAfterBestScoreSave(
