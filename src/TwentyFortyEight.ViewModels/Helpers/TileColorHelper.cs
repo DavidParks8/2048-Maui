@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Numerics;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
 
@@ -11,6 +13,10 @@ namespace TwentyFortyEight.ViewModels.Helpers;
 public static class TileColorHelper
 {
     private const int DarkTextThreshold = 4;
+
+    private static readonly int[] TileValueCycle;
+    private static readonly int MaxDefinedTileValue;
+    private static readonly ConcurrentDictionary<int, int> NormalizedTileValueCache = new();
 
     private static readonly Color TextColorDark = Color.FromArgb("#776e65");
     private static readonly Color TextColorLight = Color.FromArgb("#f9f6f2");
@@ -75,6 +81,9 @@ public static class TileColorHelper
 
     static TileColorHelper()
     {
+        TileValueCycle = [.. LightThemeColors.Keys.OrderBy(x => x)];
+        MaxDefinedTileValue = TileValueCycle[^1];
+
         LightThemeBrushes = new Dictionary<int, SolidColorBrush>(LightThemeColors.Count);
         foreach (var (value, color) in LightThemeColors)
         {
@@ -89,18 +98,51 @@ public static class TileColorHelper
     }
 
     /// <summary>
+    /// Gets the wrapped key for values above the precomputed range.
+    /// Only called for values > MaxDefinedTileValue.
+    /// </summary>
+    private static int GetWrappedTileValue(int value)
+    {
+        if (NormalizedTileValueCache.TryGetValue(value, out int cached))
+            return cached;
+
+        // Only wrap true powers of two. If something unexpected comes in (e.g. during animation),
+        // fall back to the empty tile color.
+        int normalized;
+        if (!BitOperations.IsPow2(value))
+        {
+            normalized = 0;
+        }
+        else
+        {
+            // Wrap higher powers of two through the defined key cycle.
+            // With keys [0, 2, 4, 8, ...], 2^(N+1) maps back to 0.
+            int exponent = BitOperations.Log2((uint)value);
+            int index = exponent % TileValueCycle.Length;
+            normalized = TileValueCycle[index];
+        }
+
+        NormalizedTileValueCache.TryAdd(value, normalized);
+        return normalized;
+    }
+
+    private static T GetFromMap<T>(int value, Dictionary<int, T> map)
+    {
+        // Hot path: values within precomputed range — single lookup, use result directly.
+        if (value <= MaxDefinedTileValue)
+            return map.TryGetValue(value, out var result) ? result : map[0];
+
+        // Cold path: wrap higher values then lookup.
+        return map[GetWrappedTileValue(value)];
+    }
+
+    /// <summary>
     /// Gets the background color for a tile based on its value and the current theme.
     /// </summary>
     public static Color GetTileBackgroundColor(int value)
     {
         bool isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
-        var colorMap = isDark ? DarkThemeColors : LightThemeColors;
-
-        // Cap values above 1048576 to use the highest defined color
-        if (value > 1048576)
-            value = 1048576;
-
-        return colorMap.TryGetValue(value, out var color) ? color : colorMap[0];
+        return GetFromMap(value, isDark ? DarkThemeColors : LightThemeColors);
     }
 
     /// <summary>
@@ -109,13 +151,7 @@ public static class TileColorHelper
     public static SolidColorBrush GetTileBackgroundBrush(int value)
     {
         bool isDark = Application.Current?.RequestedTheme == AppTheme.Dark;
-        var brushMap = isDark ? DarkThemeBrushes : LightThemeBrushes;
-
-        // Cap values above 1048576 to use the highest defined brush
-        if (value > 1048576)
-            value = 1048576;
-
-        return brushMap.TryGetValue(value, out var brush) ? brush : brushMap[0];
+        return GetFromMap(value, isDark ? DarkThemeBrushes : LightThemeBrushes);
     }
 
     /// <summary>
