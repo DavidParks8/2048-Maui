@@ -329,7 +329,7 @@ public partial class MainPage : ContentPage
         if (_viewModel.IsAdversarialMode)
         {
             // Track swipe attempts in adversarial mode
-            // Only track completed swipes that were intentional (not just touch/tap)
+            // Only count completed swipes with a recognized direction (not just taps or short touches)
             if (e.Status == GestureStatus.Completed && e.SwipeDirection.HasValue)
             {
                 _consecutiveAdversarialSwipeAttempts++;
