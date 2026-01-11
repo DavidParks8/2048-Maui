@@ -832,19 +832,12 @@ public partial class GameViewModel : ObservableObject
                 tilesUpdatedRaised = true;
             }
 
-            // Update properties
-            Score = state.Score;
-            Moves = state.MoveCount;
-            CanUndo = _engine.CanUndo;
-
             // Wall may change on moves. Only notify via PropertyChanged if TilesUpdated wasn't raised.
             // This prevents duplicate wall updates during rapid swipes in Walltastrophy mode.
             if (!tilesUpdatedRaised)
             {
                 OnPropertyChanged(nameof(Wall));
             }
-            // UndoCount may change on undo.
-            OnPropertyChanged(nameof(UndoCount));
         }
         else
         {
@@ -859,16 +852,16 @@ public partial class GameViewModel : ObservableObject
                 tile.Value = state.Board[i];
             }
 
-            // Update properties
-            Score = state.Score;
-            Moves = state.MoveCount;
-            CanUndo = _engine.CanUndo;
-
             // Wall may change on undo or initial load. Notify via PropertyChanged.
             OnPropertyChanged(nameof(Wall));
-            // UndoCount may change on undo.
-            OnPropertyChanged(nameof(UndoCount));
         }
+
+        // Update properties (common to both branches)
+        Score = state.Score;
+        Moves = state.MoveCount;
+        CanUndo = _engine.CanUndo;
+        // UndoCount may change on undo.
+        OnPropertyChanged(nameof(UndoCount));
 
         // Handle game over state
         if (state.IsGameOver)
