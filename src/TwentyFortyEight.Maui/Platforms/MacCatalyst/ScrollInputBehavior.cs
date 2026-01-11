@@ -15,6 +15,12 @@ public partial class ScrollInputBehavior
     partial void AttachPlatformHandler(ContentPage page)
     {
         page.Loaded += OnPageLoaded;
+
+        // If page is already loaded, set up handler immediately
+        if (page.IsLoaded)
+        {
+            OnPageLoaded(page, EventArgs.Empty);
+        }
     }
 
     partial void DetachPlatformHandler(ContentPage page)

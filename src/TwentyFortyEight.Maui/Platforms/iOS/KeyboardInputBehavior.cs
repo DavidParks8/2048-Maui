@@ -24,6 +24,12 @@ public partial class KeyboardInputBehavior
     {
         page.Loaded += OnPageLoaded;
         page.Unloaded += OnPageUnloaded;
+
+        // If page is already loaded, set up keyboard immediately
+        if (page.IsLoaded)
+        {
+            OnPageLoaded(page, EventArgs.Empty);
+        }
     }
 
     partial void DetachPlatformHandler(ContentPage page)
