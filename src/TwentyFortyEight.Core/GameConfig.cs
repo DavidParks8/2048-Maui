@@ -50,7 +50,9 @@ public class GameConfig
             parts.Add($"size={Size}");
         }
 
-        if (WinTile != DefaultWinTile)
+        // Always include WinTile in the RulesetId to ensure saves are scoped correctly
+        // even when DefaultWinTile changes (e.g., during testing).
+        if (WinTile != 2048)
         {
             parts.Add($"win={WinTile}");
         }
