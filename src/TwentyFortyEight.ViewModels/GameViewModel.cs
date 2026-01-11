@@ -848,7 +848,12 @@ public partial class GameViewModel : ObservableObject
         CanUndo = _engine.CanUndo;
 
         // Wall may change on moves/undo or initial load.
-        OnPropertyChanged(nameof(Wall));
+        // Only notify via PropertyChanged when TilesUpdated event wasn't raised (previousBoard is null).
+        // During moves, wall is already included in TilesUpdated event args to avoid duplicate updates.
+        if (previousBoard == null)
+        {
+            OnPropertyChanged(nameof(Wall));
+        }
         // UndoCount may change on undo.
         OnPropertyChanged(nameof(UndoCount));
 
