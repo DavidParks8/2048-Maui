@@ -31,6 +31,7 @@ public partial class MainPage : ContentPage
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly IMessenger _messenger;
+    private readonly IAdversarialSwipeTracker _adversarialSwipeTracker;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
     private readonly Dictionary<TileViewModel, Border> _emptyCells = [];
@@ -43,10 +44,6 @@ public partial class MainPage : ContentPage
     private bool _revertModeSelectionOnDismiss;
     private int _modeSheetOriginalBoardSize;
     private GameMode _modeSheetOriginalGameMode;
-
-    // Track consecutive swipe attempts in adversarial mode
-    private int _consecutiveAdversarialSwipeAttempts = 0;
-    private const int SwipeAttemptsBeforeToast = 2;
 
     public MainPage(
         GameViewModel viewModel,
@@ -61,7 +58,8 @@ public partial class MainPage : ContentPage
         IAccessibilitySettingsService accessibilitySettingsService,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService,
-        IMessenger messenger
+        IMessenger messenger,
+        IAdversarialSwipeTracker adversarialSwipeTracker
     )
     {
         InitializeComponent();
@@ -79,6 +77,7 @@ public partial class MainPage : ContentPage
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         _messenger = messenger;
+        _adversarialSwipeTracker = adversarialSwipeTracker;
         BindingContext = _viewModel;
 
         // Wire up ViewModel victory event to VictoryViewModel
@@ -332,11 +331,8 @@ public partial class MainPage : ContentPage
             // Only count completed swipes with a recognized direction (not just taps or short touches)
             if (e.Status == GestureStatus.Completed && e.SwipeDirection.HasValue)
             {
-                _consecutiveAdversarialSwipeAttempts++;
-
-                if (_consecutiveAdversarialSwipeAttempts >= SwipeAttemptsBeforeToast)
+                if (_adversarialSwipeTracker.RecordSwipeAttempt())
                 {
-                    _consecutiveAdversarialSwipeAttempts = 0; // Reset counter
                     await _userFeedbackService.ShowAdversarialModeTapHintAsync();
                 }
             }
@@ -344,7 +340,7 @@ public partial class MainPage : ContentPage
         }
 
         // Reset counter when not in adversarial mode
-        _consecutiveAdversarialSwipeAttempts = 0;
+        _adversarialSwipeTracker.Reset();
 
         await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
             e,
@@ -688,7 +684,7 @@ public partial class MainPage : ContentPage
             UpdateVoiceControlMoveButtonsVisibility();
             UpdateTileCellsAccessibilityForMode();
             // Reset swipe attempt counter when mode changes
-            _consecutiveAdversarialSwipeAttempts = 0;
+            _adversarialSwipeTracker.Reset();
         }
     }
 

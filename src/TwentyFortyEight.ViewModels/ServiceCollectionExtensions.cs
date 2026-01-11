@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBoardSizeChangeService, BoardSizeChangeService>();
         services.AddSingleton<ICoachNudgeService, CoachNudgeService>();
         services.AddSingleton<ICoachSuggestionService, CoachSuggestionService>();
+        services.AddTransient<IAdversarialSwipeTracker, AdversarialSwipeTracker>();
 
         return services;
     }
