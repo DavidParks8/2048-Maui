@@ -1,6 +1,5 @@
 using Moq;
 using TwentyFortyEight.Core;
-using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels.Tests;

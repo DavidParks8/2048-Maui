@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TwentyFortyEight.Core;
 
 namespace TwentyFortyEight.Tests;

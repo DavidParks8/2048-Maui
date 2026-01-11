@@ -1,6 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TwentyFortyEight.ViewModels;
-
 namespace TwentyFortyEight.ViewModels.Tests;
 
 [TestClass]

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Serialization;

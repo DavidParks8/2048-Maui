@@ -1,5 +1,3 @@
-using TwentyFortyEight.Core;
-
 namespace TwentyFortyEight.Core.Tests;
 
 /// <summary>

@@ -1,8 +1,6 @@
-using System.Collections.Frozen;
 using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Helpers;
 using TwentyFortyEight.ViewModels.Models;
-using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.Maui.Services;
 

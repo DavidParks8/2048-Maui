@@ -1,6 +1,5 @@
 using System.Windows.Input;
 using Maui.BindableProperty.Generator.Core;
-using Microsoft.Maui.Controls;
 
 namespace TwentyFortyEight.Maui.Components;
 

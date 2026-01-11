@@ -1,11 +1,8 @@
-using System;
-using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;
 using TwentyFortyEight.ViewModels;
-using TwentyFortyEight.ViewModels.Helpers;
 #if IOS || MACCATALYST
 using UIKit;
 #endif

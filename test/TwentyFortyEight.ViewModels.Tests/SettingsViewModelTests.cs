@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Moq;
-using TwentyFortyEight.ViewModels;
 using TwentyFortyEight.ViewModels.Messages;
 using TwentyFortyEight.ViewModels.Services;
 

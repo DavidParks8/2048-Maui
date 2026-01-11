@@ -1,5 +1,3 @@
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Graphics;
 using TwentyFortyEight.ViewModels.Helpers;
 
 namespace TwentyFortyEight.ViewModels.Tests;

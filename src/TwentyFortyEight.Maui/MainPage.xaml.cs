@@ -1,9 +1,6 @@
-using System.Linq;
 using System.Text;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Controls.Shapes;
-using Microsoft.Maui.Graphics;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.Maui.Converters;
 using TwentyFortyEight.Maui.Resources.Strings;

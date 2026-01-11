@@ -1,8 +1,6 @@
 using System.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
-using SkiaSharp.Skottie;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
 
@@ -103,7 +101,23 @@ public sealed partial class LoopingLottieOverlay : SKCanvasView
     public void Start()
     {
         IsVisible = true;
-        EnsureTimerRunning();
+        // Start animation with a slight delay to avoid competing with fade animations
+        _ = StartWithDelayAsync();
+    }
+
+    private async Task StartWithDelayAsync()
+    {
+        // Wait for animation to be loaded first
+        await EnsureAnimationLoadedAsync();
+
+        // Small delay to let initial fade animation begin without competition
+        await Task.Delay(50);
+
+        if (IsVisible && _animation is not null)
+        {
+            _clock.Restart();
+            EnsureTimerRunning();
+        }
     }
 
     public void Stop()
@@ -115,6 +129,7 @@ public sealed partial class LoopingLottieOverlay : SKCanvasView
     private void OnLoaded(object? sender, EventArgs e)
     {
         _isLoaded = true;
+        // Pre-load animation so it's ready when Start() is called
         _ = EnsureAnimationLoadedAsync();
         if (IsVisible)
         {
@@ -136,6 +151,7 @@ public sealed partial class LoopingLottieOverlay : SKCanvasView
         _isLoading = true;
         try
         {
+            // Read file on main thread (required by FileSystem API)
             using var stream = await FileSystem.OpenAppPackageFileAsync(AssetName);
             var data = SKData.Create(stream);
             if (data is null)
@@ -147,9 +163,17 @@ public sealed partial class LoopingLottieOverlay : SKCanvasView
                 return;
             }
 
-            if (
-                !SkiaSharp.Skottie.Animation.TryCreate(data, out var animation) || animation is null
-            )
+            // Parse animation on background thread to avoid UI jank
+            var animation = await Task.Run(() =>
+            {
+                if (SkiaSharp.Skottie.Animation.TryCreate(data, out var anim) && anim is not null)
+                {
+                    return anim;
+                }
+                return null;
+            });
+
+            if (animation is null)
             {
                 if (_logger is ILogger logger)
                 {
@@ -159,8 +183,7 @@ public sealed partial class LoopingLottieOverlay : SKCanvasView
             }
 
             _animation = animation;
-            _clock.Reset();
-            _clock.Start();
+            // Don't auto-start the clock; let StartWithDelayAsync handle timing
         }
         catch (Exception ex)
         {

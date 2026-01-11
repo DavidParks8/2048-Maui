@@ -1,7 +1,3 @@
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Controls.Xaml;
-using Microsoft.Maui.Devices;
-
 namespace TwentyFortyEight.Maui.Helpers;
 
 [ContentProperty(nameof(Multiplier))]

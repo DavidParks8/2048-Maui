@@ -1,5 +1,3 @@
-using Microsoft.Maui.Controls;
-
 namespace TwentyFortyEight.Maui.Services;
 
 public partial class ToolbarIconService : IToolbarIconService

@@ -1,8 +1,6 @@
 #if ANDROID
 using Android.Content;
 using Android.Graphics;
-using System.IO;
-using Microsoft.Maui.Controls;
 using Microsoft.Maui.Platform;
 using MauiColor = Microsoft.Maui.Graphics.Color;
 

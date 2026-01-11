@@ -1,8 +1,6 @@
 #if ANDROID
 using Android.Content.Res;
-using Microsoft.Maui.Controls;
 using Microsoft.Maui.Handlers;
-using Microsoft.Maui.Platform;
 using AndroidSwitch = AndroidX.AppCompat.Widget.SwitchCompat;
 
 namespace TwentyFortyEight.Maui.Platforms.Android.Handlers;

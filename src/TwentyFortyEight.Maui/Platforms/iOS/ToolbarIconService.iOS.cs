@@ -1,8 +1,4 @@
 #if IOS
-using System.IO;
-using Foundation;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Platform;
 using UIKit;
 

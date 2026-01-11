@@ -1,6 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using TwentyFortyEight.Core;
 
 namespace TwentyFortyEight.Core.Tests;
 

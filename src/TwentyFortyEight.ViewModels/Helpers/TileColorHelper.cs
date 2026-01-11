@@ -1,7 +1,5 @@
 using System.Collections.Concurrent;
 using System.Numerics;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Graphics;
 
 namespace TwentyFortyEight.ViewModels.Helpers;
 
