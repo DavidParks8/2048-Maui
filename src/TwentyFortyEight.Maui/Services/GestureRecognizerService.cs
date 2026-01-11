@@ -171,6 +171,7 @@ public class GestureRecognizerService : IGestureRecognizerService
             _pointerStopwatch = null;
             _activeInput = ActiveInput.None;
             _activeView = null;
+            _activePointerCount = 0; // Reset pointer count if switching views
             return;
         }
 
@@ -186,6 +187,7 @@ public class GestureRecognizerService : IGestureRecognizerService
                 _pointerStopwatch = null;
                 _activeInput = ActiveInput.None;
                 _activeView = null;
+                _activePointerCount = 0; // Reset pointer count on cleanup
                 return;
             }
             endPoint = _pointerLastKnownPoint;
@@ -208,6 +210,7 @@ public class GestureRecognizerService : IGestureRecognizerService
 
         _activeInput = ActiveInput.None;
         _activeView = null;
+        _activePointerCount = 0; // Reset pointer count to ensure clean state
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -261,6 +264,7 @@ public class GestureRecognizerService : IGestureRecognizerService
 
                 _activeInput = ActiveInput.None;
                 _activeView = null;
+                _activePointerCount = 0; // Reset pointer count when pan completes/cancels
                 break;
         }
     }
