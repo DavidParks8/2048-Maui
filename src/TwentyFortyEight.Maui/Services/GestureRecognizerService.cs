@@ -31,6 +31,10 @@ public class GestureRecognizerService : IGestureRecognizerService
     private Stopwatch? _panStopwatch;
     private Stopwatch? _pointerStopwatch;
 
+    // Track the number of active pointers to handle multitouch scenarios.
+    // We only process gestures from the first pointer and ignore additional touches.
+    private int _activePointerCount;
+
     private enum ActiveInput
     {
         None,
@@ -91,6 +95,15 @@ public class GestureRecognizerService : IGestureRecognizerService
         if (_activeInput == ActiveInput.Pan)
             return;
 
+        // Increment the active pointer count to track multitouch scenarios
+        _activePointerCount++;
+
+        // Only process the first pointer. Ignore additional touches while a gesture is active.
+        if (_activePointerCount > 1)
+        {
+            return;
+        }
+
         _activeInput = ActiveInput.Pointer;
         _activeView = view;
 
@@ -106,7 +119,8 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_activeInput != ActiveInput.Pointer)
+        // Only process movement for the initial pointer
+        if (_activeInput != ActiveInput.Pointer || _activePointerCount != 1)
             return;
 
         if (_pointerStartPoint is null || sender is not View view)
@@ -131,8 +145,17 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (_activeInput != ActiveInput.Pointer)
+        // Decrement the active pointer count
+        if (_activePointerCount > 0)
+        {
+            _activePointerCount--;
+        }
+
+        // Only complete the gesture when the last (first) pointer is released
+        if (_activeInput != ActiveInput.Pointer || _activePointerCount > 0)
+        {
             return;
+        }
 
         if (_pointerStartPoint is null || sender is not View view)
         {
