@@ -166,8 +166,8 @@ public class AdversarialSwipeTrackerTests
         await Task.WhenAll(tasks);
 
         // Assert - Should have triggered at least once without crashes
-        Assert.IsTrue(triggerCount > 0, "Should have triggered at least once");
-        Assert.IsTrue(triggerCount <= (threadCount * attemptsPerThread) / 2, 
+        Assert.IsGreaterThan(triggerCount, 0, "Should have triggered at least once");
+        Assert.IsLessThanOrEqual(triggerCount, (threadCount * attemptsPerThread) / 2, 
             "Should not trigger more than expected given the threshold and cooldown");
     }
 }
