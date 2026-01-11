@@ -31,6 +31,10 @@ public class GestureRecognizerService : IGestureRecognizerService
     private Stopwatch? _panStopwatch;
     private Stopwatch? _pointerStopwatch;
 
+    // Track the number of active pointers to handle multitouch scenarios.
+    // We only process gestures from the first pointer and ignore additional touches.
+    private int _activePointerCount;
+
     private enum ActiveInput
     {
         None,
@@ -91,6 +95,15 @@ public class GestureRecognizerService : IGestureRecognizerService
         if (_activeInput == ActiveInput.Pan)
             return;
 
+        // Increment the active pointer count to track multitouch scenarios
+        _activePointerCount++;
+
+        // Only process the first pointer. Ignore additional touches while a gesture is active.
+        if (_activePointerCount > 1)
+        {
+            return;
+        }
+
         _activeInput = ActiveInput.Pointer;
         _activeView = view;
 
@@ -106,7 +119,8 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_activeInput != ActiveInput.Pointer)
+        // Only process movement for the initial pointer
+        if (_activeInput != ActiveInput.Pointer || _activePointerCount != 1)
             return;
 
         if (_pointerStartPoint is null || sender is not View view)
@@ -131,8 +145,17 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (_activeInput != ActiveInput.Pointer)
+        // Decrement the active pointer count
+        if (_activePointerCount > 0)
+        {
+            _activePointerCount--;
+        }
+
+        // Only complete the gesture when the last (first) pointer is released
+        if (_activeInput != ActiveInput.Pointer || _activePointerCount > 0)
+        {
             return;
+        }
 
         if (_pointerStartPoint is null || sender is not View view)
         {
@@ -148,6 +171,9 @@ public class GestureRecognizerService : IGestureRecognizerService
             _pointerStopwatch = null;
             _activeInput = ActiveInput.None;
             _activeView = null;
+            // Reset pointer count when switching views since we're abandoning the gesture
+            // on the old view. New touches on the new view will start fresh.
+            _activePointerCount = 0;
             return;
         }
 
@@ -163,6 +189,9 @@ public class GestureRecognizerService : IGestureRecognizerService
                 _pointerStopwatch = null;
                 _activeInput = ActiveInput.None;
                 _activeView = null;
+                // Reset pointer count in error state - we have no position data so the
+                // gesture is invalid. New touches will start fresh.
+                _activePointerCount = 0;
                 return;
             }
             endPoint = _pointerLastKnownPoint;
@@ -185,6 +214,9 @@ public class GestureRecognizerService : IGestureRecognizerService
 
         _activeInput = ActiveInput.None;
         _activeView = null;
+        // Pointer count is already 0 here (enforced by check at line 155),
+        // but reset explicitly to ensure clean state for next gesture.
+        _activePointerCount = 0;
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -238,6 +270,11 @@ public class GestureRecognizerService : IGestureRecognizerService
 
                 _activeInput = ActiveInput.None;
                 _activeView = null;
+                // Reset pointer count when Pan completes. Pan and Pointer are mutually
+                // exclusive based on the _activeInput state machine (each handler ignores
+                // events while the other input type is active), so pointer count should be
+                // 0 during Pan. Reset ensures a clean state if we switch to Pointer gestures later.
+                _activePointerCount = 0;
                 break;
         }
     }
