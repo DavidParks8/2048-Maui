@@ -44,6 +44,10 @@ public partial class MainPage : ContentPage
     private int _modeSheetOriginalBoardSize;
     private GameMode _modeSheetOriginalGameMode;
 
+    // Track consecutive swipe attempts in adversarial mode
+    private int _consecutiveAdversarialSwipeAttempts = 0;
+    private const int SwipeAttemptsBeforeToast = 2;
+
     public MainPage(
         GameViewModel viewModel,
         VictoryViewModel victoryViewModel,
@@ -324,8 +328,23 @@ public partial class MainPage : ContentPage
     {
         if (_viewModel.IsAdversarialMode)
         {
+            // Track swipe attempts in adversarial mode
+            // Only track completed swipes that were intentional (not just touch/tap)
+            if (e.Status == GestureStatus.Completed && e.SwipeDirection.HasValue)
+            {
+                _consecutiveAdversarialSwipeAttempts++;
+
+                if (_consecutiveAdversarialSwipeAttempts >= SwipeAttemptsBeforeToast)
+                {
+                    _consecutiveAdversarialSwipeAttempts = 0; // Reset counter
+                    await _userFeedbackService.ShowAdversarialModeTapHintAsync();
+                }
+            }
             return;
         }
+
+        // Reset counter when not in adversarial mode
+        _consecutiveAdversarialSwipeAttempts = 0;
 
         await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
             e,
@@ -668,6 +687,8 @@ public partial class MainPage : ContentPage
             UpdateSwipeRecognizersForMode();
             UpdateVoiceControlMoveButtonsVisibility();
             UpdateTileCellsAccessibilityForMode();
+            // Reset swipe attempt counter when mode changes
+            _consecutiveAdversarialSwipeAttempts = 0;
         }
     }
 

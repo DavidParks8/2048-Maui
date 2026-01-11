@@ -1284,5 +1284,14 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
                 return ResourceManager.GetString("VictoryTrophyEmoji", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Tap empty cells to spawn tiles in this mode.
+        /// </summary>
+        internal static string AdversarialModeTapHint {
+            get {
+                return ResourceManager.GetString("AdversarialModeTapHint", resourceCulture);
+            }
+        }
     }
 }

@@ -83,4 +83,7 @@ public class MauiLocalizationService : ILocalizationService
     /// <inheritdoc />
     public string GetVictorySubtitle(bool isAdversarialMode) =>
         isAdversarialMode ? AppStrings.AdversarialVictorySubtitle : AppStrings.VictorySubtitle;
+
+    /// <inheritdoc />
+    public string AdversarialModeTapHint => AppStrings.AdversarialModeTapHint;
 }
