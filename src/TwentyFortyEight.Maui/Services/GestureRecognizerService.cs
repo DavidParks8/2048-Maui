@@ -171,7 +171,9 @@ public class GestureRecognizerService : IGestureRecognizerService
             _pointerStopwatch = null;
             _activeInput = ActiveInput.None;
             _activeView = null;
-            _activePointerCount = 0; // Reset pointer count if switching views
+            // Reset pointer count when switching views since we're abandoning the gesture
+            // on the old view. New touches on the new view will start fresh.
+            _activePointerCount = 0;
             return;
         }
 
@@ -187,7 +189,9 @@ public class GestureRecognizerService : IGestureRecognizerService
                 _pointerStopwatch = null;
                 _activeInput = ActiveInput.None;
                 _activeView = null;
-                _activePointerCount = 0; // Reset pointer count on cleanup
+                // Reset pointer count in error state - we have no position data so the
+                // gesture is invalid. New touches will start fresh.
+                _activePointerCount = 0;
                 return;
             }
             endPoint = _pointerLastKnownPoint;
@@ -210,7 +214,9 @@ public class GestureRecognizerService : IGestureRecognizerService
 
         _activeInput = ActiveInput.None;
         _activeView = null;
-        _activePointerCount = 0; // Reset pointer count to ensure clean state
+        // Pointer count is already 0 here (enforced by check at line 155),
+        // but reset explicitly to ensure clean state for next gesture.
+        _activePointerCount = 0;
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -264,7 +270,10 @@ public class GestureRecognizerService : IGestureRecognizerService
 
                 _activeInput = ActiveInput.None;
                 _activeView = null;
-                _activePointerCount = 0; // Reset pointer count when pan completes/cancels
+                // Reset pointer count when Pan completes. Pan and Pointer are mutually
+                // exclusive (see check at line 216), so pointer count should be 0 during
+                // Pan. Reset ensures clean state if we switch to Pointer gestures later.
+                _activePointerCount = 0;
                 break;
         }
     }
