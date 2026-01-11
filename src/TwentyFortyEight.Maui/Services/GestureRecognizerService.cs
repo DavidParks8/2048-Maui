@@ -271,8 +271,9 @@ public class GestureRecognizerService : IGestureRecognizerService
                 _activeInput = ActiveInput.None;
                 _activeView = null;
                 // Reset pointer count when Pan completes. Pan and Pointer are mutually
-                // exclusive (see check at line 216), so pointer count should be 0 during
-                // Pan. Reset ensures clean state if we switch to Pointer gestures later.
+                // exclusive based on the _activeInput state machine (each handler ignores
+                // events while the other input type is active), so pointer count should be
+                // 0 during Pan. Reset ensures a clean state if we switch to Pointer gestures later.
                 _activePointerCount = 0;
                 break;
         }
