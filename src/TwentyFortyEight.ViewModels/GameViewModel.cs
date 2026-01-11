@@ -802,6 +802,9 @@ public partial class GameViewModel : ObservableObject
                 }
             }
 
+            // Track whether we raised TilesUpdated event (to avoid duplicate wall updates).
+            bool tilesUpdatedRaised = false;
+
             // Create event args with immutable collections if there are changes
             if (
                 movedTiles.Count > 0
@@ -826,6 +829,14 @@ public partial class GameViewModel : ObservableObject
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
+                tilesUpdatedRaised = true;
+            }
+
+            // Wall may change on moves. Only notify via PropertyChanged if TilesUpdated wasn't raised.
+            // This prevents duplicate wall updates during rapid swipes in Walltastrophy mode.
+            if (!tilesUpdatedRaised)
+            {
+                OnPropertyChanged(nameof(Wall));
             }
         }
         else
@@ -840,15 +851,15 @@ public partial class GameViewModel : ObservableObject
                 tile.IsMerged = false;
                 tile.Value = state.Board[i];
             }
+
+            // Wall may change on undo or initial load. Notify via PropertyChanged.
+            OnPropertyChanged(nameof(Wall));
         }
 
-        // Update properties
+        // Update properties (common to both branches)
         Score = state.Score;
         Moves = state.MoveCount;
         CanUndo = _engine.CanUndo;
-
-        // Wall may change on moves/undo or initial load.
-        OnPropertyChanged(nameof(Wall));
         // UndoCount may change on undo.
         OnPropertyChanged(nameof(UndoCount));
 
