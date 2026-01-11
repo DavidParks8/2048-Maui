@@ -373,11 +373,11 @@ Avoid allocations at all costs! Code this like it is a fighter jet (no allocatio
 
 Always use compiled bindings in xaml
 
-## iOS Simulator Automation (Appium/WDA)
+## iOS Simulator Automation (Appium)
 
-Use Appium MCP tools for UI testing and validation on iOS simulators. This is useful for verifying fixes and testing user flows.
+Use Appium for UI testing and validation on iOS simulators. This is useful for verifying gesture fixes and testing user flows.
 
-### Setup
+### Setup with MCP Tools
 
 1. **Select platform and device**:
 
@@ -396,15 +396,17 @@ Use Appium MCP tools for UI testing and validation on iOS simulators. This is us
 
    ```text
    mcp_appium-mcp_setup_wda (platform: "ios")
-   mcp_appium-mcp_install_wda (simulatorUdid: "<UDID>", appPath: "<path from setup_wda>")
+   mcp_appium-mcp_install_wda (simulatorUdid: "<UDID>")
    ```
 
 ### Build and Install App
 
 ```bash
-# Build for iOS simulator
-dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj \
-  -f net10.0-ios -c Debug -p:RuntimeIdentifier=iossimulator-arm64
+# Build for iOS simulator (use the build task or command)
+dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+
+# Get bundle ID from built app
+defaults read "src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app/Info.plist" CFBundleIdentifier
 
 # Install on simulator
 xcrun simctl install <UDID> "src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app"
@@ -413,53 +415,105 @@ xcrun simctl install <UDID> "src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/ios
 xcrun simctl launch <UDID> com.dappermagna.twentyfortyeight
 ```
 
-### Direct WDA Control (More Reliable)
+### Running Appium Server (Recommended Approach)
 
-When Appium MCP session creation fails, use WDA directly via curl:
+The most reliable method is to start a standalone Appium server and use curl for API calls:
 
 ```bash
-# Create WDA session
-curl -s -X POST 'http://127.0.0.1:8100/session' \
-  -H 'Content-Type: application/json' \
-  -d '{"capabilities":{"alwaysMatch":{"bundleId":"com.dappermagna.twentyfortyeight"}}}'
+# Start Appium server in background
+nohup npx -y appium@latest --port 4723 --address 127.0.0.1 --relaxed-security > /tmp/appium.log 2>&1 &
 
-# Get page source (UI hierarchy)
-curl -s 'http://127.0.0.1:8100/session/<SESSION_ID>/source'
+# Verify server is running
+curl -s http://127.0.0.1:4723/status
+# Expected: {"value":{"ready":true,"message":"The server is ready to accept new connections"...}}
+```
+
+### Creating an Appium Session
+
+```bash
+# Create session (returns sessionId)
+curl -s -X POST http://127.0.0.1:4723/session \
+  -H "Content-Type: application/json" \
+  -d '{"capabilities":{"alwaysMatch":{"platformName":"iOS","appium:automationName":"XCUITest","appium:udid":"<UDID>","appium:bundleId":"com.dappermagna.twentyfortyeight","appium:noReset":true}}}'
+
+# Extract session ID from response for subsequent calls
+SESSION_ID="<from response>"
+```
+
+### Appium API Commands
+
+```bash
+# Get page source (UI hierarchy as XML)
+curl -s "http://127.0.0.1:4723/session/${SESSION_ID}/source"
+
+# Take screenshot (returns base64 PNG)
+curl -s "http://127.0.0.1:4723/session/${SESSION_ID}/screenshot"
 
 # Find element by accessibility ID
-curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/element' \
-  -H 'Content-Type: application/json' \
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/element" \
+  -H "Content-Type: application/json" \
   -d '{"using":"accessibility id","value":"ToolbarNewGameButton"}'
 
 # Click element
-curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/element/<ELEMENT_ID>/click' \
-  -H 'Content-Type: application/json' -d '{}'
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/element/${ELEMENT_ID}/click" \
+  -H "Content-Type: application/json" -d '{}'
 
-# Swipe gesture (drag from point to point)
-curl -s -X POST 'http://127.0.0.1:8100/session/<SESSION_ID>/wda/dragfromtoforduration' \
-  -H 'Content-Type: application/json' \
-  -d '{"fromX":100,"fromY":500,"toX":350,"toY":500,"duration":0.3}'
+# Delete session when done
+curl -s -X DELETE "http://127.0.0.1:4723/session/${SESSION_ID}"
 ```
 
-### Screenshots
+### W3C Actions for Gestures
+
+Use W3C Actions API for swipe gestures. This is critical for testing gesture recognition:
 
 ```bash
-# Take screenshot
+# Fast swipe DOWN (start at y=350, end at y=800)
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/actions" \
+  -H "Content-Type: application/json" \
+  -d '{"actions":[{"type":"pointer","id":"finger1","parameters":{"pointerType":"touch"},"actions":[{"type":"pointerMove","duration":0,"x":200,"y":350},{"type":"pointerDown","button":0},{"type":"pointerMove","duration":100,"x":200,"y":800},{"type":"pointerUp","button":0}]}]}'
+
+# Fast swipe UP (start at y=550, end at y=100)
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/actions" \
+  -H "Content-Type: application/json" \
+  -d '{"actions":[{"type":"pointer","id":"finger1","parameters":{"pointerType":"touch"},"actions":[{"type":"pointerMove","duration":0,"x":200,"y":550},{"type":"pointerDown","button":0},{"type":"pointerMove","duration":100,"x":200,"y":100},{"type":"pointerUp","button":0}]}]}'
+
+# Fast swipe LEFT (start at x=350, end at x=-50 - exits view bounds)
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/actions" \
+  -H "Content-Type: application/json" \
+  -d '{"actions":[{"type":"pointer","id":"finger1","parameters":{"pointerType":"touch"},"actions":[{"type":"pointerMove","duration":0,"x":350,"y":400},{"type":"pointerDown","button":0},{"type":"pointerMove","duration":80,"x":-50,"y":400},{"type":"pointerUp","button":0}]}]}'
+
+# Fast swipe RIGHT (start at x=50, end at x=450 - exits view bounds)
+curl -s -X POST "http://127.0.0.1:4723/session/${SESSION_ID}/actions" \
+  -H "Content-Type: application/json" \
+  -d '{"actions":[{"type":"pointer","id":"finger1","parameters":{"pointerType":"touch"},"actions":[{"type":"pointerMove","duration":0,"x":50,"y":450},{"type":"pointerDown","button":0},{"type":"pointerMove","duration":80,"x":450,"y":450},{"type":"pointerUp","button":0}]}]}'
+```
+
+**Key parameters:**
+
+- `duration`: Swipe speed in ms (lower = faster). Use 80-100ms for fast swipes
+- Coordinates can exceed view bounds to test edge cases (e.g., x=-50 or y=900)
+
+### Verifying Board State
+
+The game board exposes its state via accessibility description:
+
+```bash
+# Parse board state from page source
+curl -s "http://127.0.0.1:4723/session/${SESSION_ID}/source" | \
+  python3 -c "import sys,re; m=re.search(r'Game board[^\"]*', sys.stdin.read()); print(m.group(0) if m else 'Not found')"
+```
+
+Example output: `Game board. Row 1:4, 2, empty, empty. Row 2:empty, empty, empty, empty...`
+
+### Screenshots with simctl
+
+```bash
+# Take screenshot directly via simctl
 xcrun simctl io <UDID> screenshot /tmp/screenshot.png
 
 # Open screenshot
 open /tmp/screenshot.png
 ```
-
-### Accessibility Testing
-
-The game board exposes its state via accessibility description:
-
-```bash
-curl -s 'http://127.0.0.1:8100/session/<SESSION_ID>/source' | grep -o 'Game board[^"\\]*'
-```
-
-Example output: `Game board. Row 1:empty, empty, 2, empty. Row 2:2, empty, empty, empty...`
 
 ### Common Element Accessibility IDs
 
@@ -468,5 +522,21 @@ Example output: `Game board. Row 1:empty, empty, 2, empty. Row 2:2, empty, empty
 | New Game button    | `ToolbarNewGameButton`       |
 | Mode button        | `ToolbarModeButton`          |
 | More menu          | `SecondaryToolbarMenuButton` |
+| Undo button        | `Undo last move`             |
+| Game board         | `Game board. Row 1:...`      |
 | Start New (dialog) | `Start New`                  |
 | Cancel (dialog)    | `Cancel`                     |
+
+### Screen Dimensions (iPhone 17 Pro Simulator)
+
+- Screen: 402 x 874 points
+- Navigation bar: y=62 to y=116
+- Game board: x=16, y=299, width=370, height=372
+- Bottom controls: y=768+
+
+### Troubleshooting
+
+1. **"No driver found" from MCP tools**: Use curl with standalone Appium server instead
+2. **Server not responding**: Check if Appium is running with `ps aux | grep appium`
+3. **Session creation fails**: Ensure WDA is installed and app is already running
+4. **Swipes not detected**: Verify coordinates are within/near the game board area
