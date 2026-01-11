@@ -54,18 +54,36 @@ public class AdversarialSwipeTrackerTests
     }
 
     [TestMethod]
-    public void RecordSwipeAttempt_FourthAttempt_ReturnsTrue()
+    public void RecordSwipeAttempt_FourthAttemptWithinCooldown_ReturnsFalse()
     {
         // Arrange
         _tracker.RecordSwipeAttempt(); // First attempt
         _tracker.RecordSwipeAttempt(); // Second attempt - triggers hint and resets
         _tracker.RecordSwipeAttempt(); // Third attempt (first after reset)
 
-        // Act
+        // Act - Fourth attempt is within cooldown period
         bool shouldShowHint = _tracker.RecordSwipeAttempt(); // Fourth attempt (second after reset)
 
         // Assert
-        Assert.IsTrue(shouldShowHint, "Second swipe attempt after reset should trigger hint");
+        Assert.IsFalse(shouldShowHint, "Should not trigger hint within cooldown period");
+    }
+
+    [TestMethod]
+    public async Task RecordSwipeAttempt_FourthAttemptAfterCooldown_ReturnsTrue()
+    {
+        // Arrange
+        _tracker.RecordSwipeAttempt(); // First attempt
+        _tracker.RecordSwipeAttempt(); // Second attempt - triggers hint and resets
+        _tracker.RecordSwipeAttempt(); // Third attempt (first after reset)
+
+        // Wait for cooldown period to expire (3 seconds + buffer)
+        await Task.Delay(3100);
+
+        // Act - Fourth attempt after cooldown
+        bool shouldShowHint = _tracker.RecordSwipeAttempt(); // Fourth attempt (second after reset)
+
+        // Assert
+        Assert.IsTrue(shouldShowHint, "Should trigger hint after cooldown period expires");
     }
 
     [TestMethod]
@@ -111,14 +129,45 @@ public class AdversarialSwipeTrackerTests
     }
 
     [TestMethod]
-    public void RecordSwipeAttempt_ConsecutiveCalls_FollowsExpectedPattern()
+    public void RecordSwipeAttempt_ConsecutiveCalls_FollowsExpectedPatternWithCooldown()
     {
-        // Test the complete pattern: false, true, false, true, false, true
+        // Test the pattern with cooldown: false, true, false (within cooldown), false (still within cooldown)
         Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 1 should not trigger");
         Assert.IsTrue(_tracker.RecordSwipeAttempt(), "Attempt 2 should trigger");
         Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 3 should not trigger");
-        Assert.IsTrue(_tracker.RecordSwipeAttempt(), "Attempt 4 should trigger");
-        Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 5 should not trigger");
-        Assert.IsTrue(_tracker.RecordSwipeAttempt(), "Attempt 6 should trigger");
+        Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 4 should not trigger (within cooldown)");
+    }
+
+    [TestMethod]
+    public async Task RecordSwipeAttempt_ThreadSafety_MultipleThreads()
+    {
+        // Arrange
+        const int threadCount = 10;
+        const int attemptsPerThread = 10;
+        int triggerCount = 0;
+        var tasks = new List<Task>();
+
+        // Act - Multiple threads calling RecordSwipeAttempt concurrently
+        for (int i = 0; i < threadCount; i++)
+        {
+            tasks.Add(Task.Run(() =>
+            {
+                for (int j = 0; j < attemptsPerThread; j++)
+                {
+                    if (_tracker.RecordSwipeAttempt())
+                    {
+                        Interlocked.Increment(ref triggerCount);
+                    }
+                    Thread.Sleep(10); // Small delay between attempts
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+
+        // Assert - Should have triggered at least once without crashes
+        Assert.IsTrue(triggerCount > 0, "Should have triggered at least once");
+        Assert.IsTrue(triggerCount <= (threadCount * attemptsPerThread) / 2, 
+            "Should not trigger more than expected given the threshold and cooldown");
     }
 }

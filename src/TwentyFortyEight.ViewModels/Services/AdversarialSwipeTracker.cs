@@ -2,21 +2,38 @@ namespace TwentyFortyEight.ViewModels.Services;
 
 /// <summary>
 /// Tracks swipe attempts in adversarial mode and determines when to show hints.
+/// Thread-safe with cooldown to prevent toast spam.
 /// </summary>
 internal sealed class AdversarialSwipeTracker : IAdversarialSwipeTracker
 {
     private const int SwipeAttemptsBeforeHint = 2;
+    private const int CooldownMilliseconds = 3000; // 3 seconds cooldown between toasts
+    
     private int _consecutiveSwipeAttempts = 0;
+    private long _lastHintShownTicks = 0;
 
     /// <inheritdoc />
     public bool RecordSwipeAttempt()
     {
-        _consecutiveSwipeAttempts++;
+        // Use Interlocked.Increment for thread-safe increment
+        int currentCount = Interlocked.Increment(ref _consecutiveSwipeAttempts);
 
-        if (_consecutiveSwipeAttempts >= SwipeAttemptsBeforeHint)
+        if (currentCount >= SwipeAttemptsBeforeHint)
         {
-            _consecutiveSwipeAttempts = 0; // Reset counter after showing hint
-            return true;
+            // Check cooldown period
+            long currentTicks = DateTime.UtcNow.Ticks;
+            long lastShown = Interlocked.Read(ref _lastHintShownTicks);
+            long ticksSinceLastHint = currentTicks - lastShown;
+            long cooldownTicks = TimeSpan.FromMilliseconds(CooldownMilliseconds).Ticks;
+
+            if (ticksSinceLastHint >= cooldownTicks)
+            {
+                // Update last shown time atomically
+                Interlocked.Exchange(ref _lastHintShownTicks, currentTicks);
+                // Reset counter after showing hint
+                Interlocked.Exchange(ref _consecutiveSwipeAttempts, 0);
+                return true;
+            }
         }
 
         return false;
@@ -25,6 +42,6 @@ internal sealed class AdversarialSwipeTracker : IAdversarialSwipeTracker
     /// <inheritdoc />
     public void Reset()
     {
-        _consecutiveSwipeAttempts = 0;
+        Interlocked.Exchange(ref _consecutiveSwipeAttempts, 0);
     }
 }
