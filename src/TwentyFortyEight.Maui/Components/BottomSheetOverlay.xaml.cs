@@ -40,6 +40,7 @@ public partial class BottomSheetOverlay : ContentView
 
     private const double BaseBottomPadding = 16;
     private const double DetentSnapTolerance = 24;
+    private const double DismissVelocityThreshold = 800; // pixels per second
 
     private double _windowHeight;
     private double _windowWidth;
@@ -50,6 +51,8 @@ public partial class BottomSheetOverlay : ContentView
     private bool _isDragging;
     private bool _isInitialized;
     private bool _showAnimationStarted;
+    private DateTime _lastPanUpdateTime;
+    private double _lastPanY;
 
     public BottomSheetOverlay()
     {
@@ -128,6 +131,8 @@ public partial class BottomSheetOverlay : ContentView
             case GestureStatus.Started:
                 _isDragging = true;
                 _dragStartTranslation = SheetContainer.TranslationY;
+                _lastPanUpdateTime = DateTime.UtcNow;
+                _lastPanY = e.TotalY;
                 break;
 
             case GestureStatus.Running:
@@ -138,12 +143,16 @@ public partial class BottomSheetOverlay : ContentView
                 // maximum = window height (fully hidden)
                 newTranslationY = Math.Clamp(newTranslationY, _topInset, _windowHeight);
                 SheetContainer.TranslationY = newTranslationY;
+
+                // Track for velocity calculation
+                _lastPanUpdateTime = DateTime.UtcNow;
+                _lastPanY = e.TotalY;
                 break;
 
             case GestureStatus.Completed:
                 try
                 {
-                    await SnapToNearestDetentAsync();
+                    await SnapToNearestDetentAsync(e);
                 }
                 finally
                 {
@@ -159,7 +168,7 @@ public partial class BottomSheetOverlay : ContentView
         }
     }
 
-    private async Task SnapToNearestDetentAsync()
+    private async Task SnapToNearestDetentAsync(PanUpdatedEventArgs? panEventArgs = null)
     {
         if (SheetContainer == null || _windowHeight <= 0)
         {
@@ -171,6 +180,30 @@ public partial class BottomSheetOverlay : ContentView
         try
         {
             var currentTranslation = SheetContainer.TranslationY;
+
+            // Calculate velocity if we have pan event data
+            var velocity = 0.0;
+            if (panEventArgs != null)
+            {
+                var now = DateTime.UtcNow;
+                var timeDelta = (now - _lastPanUpdateTime).TotalSeconds;
+                
+                // Only calculate velocity if we have a reasonable time delta
+                if (timeDelta > 0 && timeDelta < 0.5) // Less than 500ms since last update
+                {
+                    var distanceDelta = panEventArgs.TotalY - _lastPanY;
+                    velocity = distanceDelta / timeDelta;
+                }
+            }
+
+            // Check if fast swipe down (positive velocity = downward)
+            if (velocity > DismissVelocityThreshold)
+            {
+                // Fast swipe down - dismiss immediately
+                CloseCommand?.Execute(null);
+                return;
+            }
+
             var halfExpandedTranslation = GetHalfExpandedTranslation();
             var fullExpandedTranslation = _topInset; // Stops at bottom of nav bar
             var dismissTranslation = _windowHeight * (1 - DismissThreshold);
