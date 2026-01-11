@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Maui.BindableProperty.Generator.Core;
+using TwentyFortyEight.ViewModels.Helpers;
 
 namespace TwentyFortyEight.Maui.Components;
 
@@ -55,6 +56,7 @@ public partial class BottomSheetOverlay : ContentView
     private bool _showAnimationStarted;
     private DateTime _lastPanUpdateTime;
     private double _lastPanY;
+    private double _lastPanX;
 
     public BottomSheetOverlay()
     {
@@ -135,6 +137,7 @@ public partial class BottomSheetOverlay : ContentView
                 _dragStartTranslation = SheetContainer.TranslationY;
                 _lastPanUpdateTime = DateTime.UtcNow;
                 _lastPanY = e.TotalY;
+                _lastPanX = e.TotalX;
                 break;
 
             case GestureStatus.Running:
@@ -149,6 +152,7 @@ public partial class BottomSheetOverlay : ContentView
                 // Track for velocity calculation
                 _lastPanUpdateTime = DateTime.UtcNow;
                 _lastPanY = e.TotalY;
+                _lastPanX = e.TotalX;
                 break;
 
             case GestureStatus.Completed:
@@ -175,15 +179,16 @@ public partial class BottomSheetOverlay : ContentView
         var now = DateTime.UtcNow;
         var timeDelta = (now - _lastPanUpdateTime).TotalSeconds;
 
-        // Only calculate velocity if we have a reasonable time delta
-        // Avoid very small time deltas that could cause unrealistic velocity values
-        if (timeDelta >= MinVelocityTimeDeltaSeconds && timeDelta < MaxVelocityTimeDeltaSeconds)
-        {
-            var distanceDelta = panEventArgs.TotalY - _lastPanY;
-            return distanceDelta / timeDelta;
-        }
+        var distanceDeltaY = panEventArgs.TotalY - _lastPanY;
+        var distanceDeltaX = panEventArgs.TotalX - _lastPanX;
 
-        return 0.0;
+        return BottomSheetGestureHelper.CalculateSwipeVelocity(
+            distanceDeltaX,
+            distanceDeltaY,
+            timeDelta,
+            MinVelocityTimeDeltaSeconds,
+            MaxVelocityTimeDeltaSeconds
+        );
     }
 
     private Task SnapToNearestDetentAsync()
