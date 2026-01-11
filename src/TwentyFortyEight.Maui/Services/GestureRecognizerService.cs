@@ -25,6 +25,7 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     // Touch/pointer tracking for swipe detection
     private Point? _pointerStartPoint;
+    private Point? _pointerLastKnownPoint;
     private Point _panAccumulator;
 
     private Stopwatch? _panStopwatch;
@@ -94,6 +95,7 @@ public class GestureRecognizerService : IGestureRecognizerService
         _activeView = view;
 
         _pointerStartPoint = e.GetPosition(view);
+        _pointerLastKnownPoint = _pointerStartPoint;
         _pointerStopwatch = Stopwatch.StartNew();
 
         SwipePanUpdated?.Invoke(
@@ -117,6 +119,9 @@ public class GestureRecognizerService : IGestureRecognizerService
         if (position is null)
             return;
 
+        // Track the last known valid position for use if pointer ends outside view bounds
+        _pointerLastKnownPoint = position;
+
         var deltaX = position.Value.X - _pointerStartPoint.Value.X;
         var deltaY = position.Value.Y - _pointerStartPoint.Value.Y;
         var elapsed = _pointerStopwatch?.Elapsed ?? TimeSpan.Zero;
@@ -132,12 +137,14 @@ public class GestureRecognizerService : IGestureRecognizerService
         if (_pointerStartPoint is null || sender is not View view)
         {
             _pointerStartPoint = null;
+            _pointerLastKnownPoint = null;
             return;
         }
 
         if (!ReferenceEquals(_activeView, view))
         {
             _pointerStartPoint = null;
+            _pointerLastKnownPoint = null;
             _pointerStopwatch = null;
             _activeInput = ActiveInput.None;
             _activeView = null;
@@ -145,10 +152,21 @@ public class GestureRecognizerService : IGestureRecognizerService
         }
 
         var endPoint = e.GetPosition(view);
+        
+        // If the pointer ended outside the view bounds, use the last known valid position
+        // This ensures fast swipes that start inside and end outside the view are still processed
         if (endPoint is null)
         {
-            _pointerStartPoint = null;
-            return;
+            if (_pointerLastKnownPoint is null)
+            {
+                _pointerStartPoint = null;
+                _pointerLastKnownPoint = null;
+                _pointerStopwatch = null;
+                _activeInput = ActiveInput.None;
+                _activeView = null;
+                return;
+            }
+            endPoint = _pointerLastKnownPoint;
         }
 
         var deltaX = endPoint.Value.X - _pointerStartPoint.Value.X;
@@ -163,6 +181,7 @@ public class GestureRecognizerService : IGestureRecognizerService
         ProcessSwipe(deltaX, deltaY);
 
         _pointerStartPoint = null;
+        _pointerLastKnownPoint = null;
         _pointerStopwatch = null;
 
         _activeInput = ActiveInput.None;
