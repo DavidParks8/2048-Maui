@@ -802,6 +802,9 @@ public partial class GameViewModel : ObservableObject
                 }
             }
 
+            // Track whether we raised TilesUpdated event (to avoid duplicate wall updates).
+            bool tilesUpdatedRaised = false;
+
             // Create event args with immutable collections if there are changes
             if (
                 movedTiles.Count > 0
@@ -826,7 +829,22 @@ public partial class GameViewModel : ObservableObject
                 };
 
                 TilesUpdated?.Invoke(this, eventArgs);
+                tilesUpdatedRaised = true;
             }
+
+            // Update properties
+            Score = state.Score;
+            Moves = state.MoveCount;
+            CanUndo = _engine.CanUndo;
+
+            // Wall may change on moves. Only notify via PropertyChanged if TilesUpdated wasn't raised.
+            // This prevents duplicate wall updates during rapid swipes in Walltastrophy mode.
+            if (!tilesUpdatedRaised)
+            {
+                OnPropertyChanged(nameof(Wall));
+            }
+            // UndoCount may change on undo.
+            OnPropertyChanged(nameof(UndoCount));
         }
         else
         {
@@ -840,22 +858,17 @@ public partial class GameViewModel : ObservableObject
                 tile.IsMerged = false;
                 tile.Value = state.Board[i];
             }
-        }
 
-        // Update properties
-        Score = state.Score;
-        Moves = state.MoveCount;
-        CanUndo = _engine.CanUndo;
+            // Update properties
+            Score = state.Score;
+            Moves = state.MoveCount;
+            CanUndo = _engine.CanUndo;
 
-        // Wall may change on moves/undo or initial load.
-        // Only notify via PropertyChanged when TilesUpdated event wasn't raised (previousBoard is null).
-        // During moves, wall is already included in TilesUpdated event args to avoid duplicate updates.
-        if (previousBoard == null)
-        {
+            // Wall may change on undo or initial load. Notify via PropertyChanged.
             OnPropertyChanged(nameof(Wall));
+            // UndoCount may change on undo.
+            OnPropertyChanged(nameof(UndoCount));
         }
-        // UndoCount may change on undo.
-        OnPropertyChanged(nameof(UndoCount));
 
         // Handle game over state
         if (state.IsGameOver)
