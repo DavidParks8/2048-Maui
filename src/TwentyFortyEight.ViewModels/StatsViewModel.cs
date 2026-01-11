@@ -16,6 +16,7 @@ public partial class StatsViewModel : ObservableObject
     private readonly IAlertService _alertService;
     private readonly ILocalizationService _localizationService;
     private readonly ISettingsService _settingsService;
+    private readonly IMessenger _messenger;
 
     [ObservableProperty]
     private string _boardSizeDisplay = string.Empty;
@@ -51,17 +52,19 @@ public partial class StatsViewModel : ObservableObject
         IStatisticsTracker statisticsTracker,
         IAlertService alertService,
         ILocalizationService localizationService,
-        ISettingsService settingsService
+        ISettingsService settingsService,
+        IMessenger messenger
     )
     {
         _statisticsTracker = statisticsTracker;
         _alertService = alertService;
         _localizationService = localizationService;
         _settingsService = settingsService;
+        _messenger = messenger;
 
-        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
+        _messenger.Register<RulesetChangedMessage>(
             this,
-            static (object recipient, RulesetChangedMessage message) =>
+            static (recipient, message) =>
             {
                 var vm = (StatsViewModel)recipient;
                 vm.UpdateBoardSizeDisplay(message.NewBoardSize);

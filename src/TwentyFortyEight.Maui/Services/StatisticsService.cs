@@ -18,6 +18,7 @@ public sealed partial class StatisticsService : StatisticsTracker
     private readonly ILogger<StatisticsService> _logger;
     private readonly IPreferencesService _preferencesService;
     private readonly ISettingsService _settingsService;
+    private readonly IMessenger _messenger;
     private readonly Lock _sync = new();
 
     private string _rulesetId;
@@ -26,19 +27,21 @@ public sealed partial class StatisticsService : StatisticsTracker
     public StatisticsService(
         ILogger<StatisticsService> logger,
         IPreferencesService preferencesService,
-        ISettingsService settingsService
+        ISettingsService settingsService,
+        IMessenger messenger
     )
     {
         _logger = logger;
         _preferencesService = preferencesService;
         _settingsService = settingsService;
+        _messenger = messenger;
 
         var config = _settingsService.LastActiveGameConfig;
 
         _rulesetId = config.RulesetId;
         _boardSize = config.Size;
 
-        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
+        _messenger.Register<RulesetChangedMessage>(
             this,
             static (recipient, message) =>
             {

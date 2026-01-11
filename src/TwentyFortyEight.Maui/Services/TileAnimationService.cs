@@ -15,11 +15,6 @@ public class TileAnimationService
     /// </summary>
     private const double DefaultBoardDimension = 400;
 
-    /// <summary>
-    /// Small delay to ensure UI updates before animating in milliseconds.
-    /// </summary>
-    private const int UiUpdateDelay = 10;
-
     private sealed class SwipePreviewSession
     {
         public required Grid GameBoard { get; init; }

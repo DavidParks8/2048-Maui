@@ -12,6 +12,7 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settingsService;
     private readonly IHapticService _hapticService;
+    private readonly IMessenger _messenger;
 
     [ObservableProperty]
     private bool _hapticsEnabled;
@@ -30,10 +31,15 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public bool IsHapticsSupported => _hapticService.IsSupported;
 
-    public SettingsViewModel(ISettingsService settingsService, IHapticService hapticService)
+    public SettingsViewModel(
+        ISettingsService settingsService,
+        IHapticService hapticService,
+        IMessenger messenger
+    )
     {
         _settingsService = settingsService;
         _hapticService = hapticService;
+        _messenger = messenger;
 
         // Load current settings
         _hapticsEnabled = _settingsService.HapticsEnabled;
@@ -50,18 +56,18 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnCoachEnabledChanged(bool value)
     {
         _settingsService.CoachEnabled = value;
-        WeakReferenceMessenger.Default.Send(new CoachEnabledChangedMessage(value));
+        _messenger.Send(new CoachEnabledChangedMessage(value));
     }
 
     partial void OnCoachNudgesEnabledChanged(bool value)
     {
         _settingsService.CoachNudgesEnabled = value;
-        WeakReferenceMessenger.Default.Send(new CoachNudgesEnabledChangedMessage(value));
+        _messenger.Send(new CoachNudgesEnabledChangedMessage(value));
     }
 
     partial void OnUndoButtonVisibleChanged(bool value)
     {
         _settingsService.UndoButtonVisible = value;
-        WeakReferenceMessenger.Default.Send(new UndoButtonVisibilityChangedMessage(value));
+        _messenger.Send(new UndoButtonVisibilityChangedMessage(value));
     }
 }

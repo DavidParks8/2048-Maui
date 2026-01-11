@@ -30,6 +30,7 @@ public partial class MainPage : ContentPage
     private readonly IAccessibilitySettingsService _accessibilitySettingsService;
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
+    private readonly IMessenger _messenger;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
     private readonly Dictionary<TileViewModel, Border> _emptyCells = [];
@@ -43,11 +44,6 @@ public partial class MainPage : ContentPage
     private int _modeSheetOriginalBoardSize;
     private GameMode _modeSheetOriginalGameMode;
 
-    // Responsive sizing
-    private const double DefaultBoardSize = 400;
-    private const double MinBoardSize = 280;
-    private const double MaxBoardSize = 800;
-
     public MainPage(
         GameViewModel viewModel,
         VictoryViewModel victoryViewModel,
@@ -60,7 +56,8 @@ public partial class MainPage : ContentPage
         IWallOverlayRenderer wallOverlayRenderer,
         IAccessibilitySettingsService accessibilitySettingsService,
         ILogger<MainPage> logger,
-        IToolbarIconService toolbarIconService
+        IToolbarIconService toolbarIconService,
+        IMessenger messenger
     )
     {
         InitializeComponent();
@@ -77,6 +74,7 @@ public partial class MainPage : ContentPage
         _accessibilitySettingsService = accessibilitySettingsService;
         _logger = logger;
         _toolbarIconService = toolbarIconService;
+        _messenger = messenger;
         BindingContext = _viewModel;
 
         // Wire up ViewModel victory event to VictoryViewModel
@@ -95,7 +93,7 @@ public partial class MainPage : ContentPage
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
 
-        WeakReferenceMessenger.Default.Register<RulesetChangedMessage>(
+        _messenger.Register<RulesetChangedMessage>(
             this,
             static (recipient, _) =>
             {
@@ -389,18 +387,8 @@ public partial class MainPage : ContentPage
         // Cancel any ongoing animations during resize
         _animationCts?.Cancel();
 
-        // Account for padding and non-board UI elements
-        const double horizontalReserved = 50; // 20px page padding + 10px border padding + 5px safety margin on each side
-        const double verticalReserved = 260; // header ~80px, status ~30px, controls ~70px, spacing ~30px, padding 40px, board padding 20px
-
-        double availableWidth = pageWidth - horizontalReserved;
-        double availableHeight = pageHeight - verticalReserved;
-
-        // Take the smaller dimension to maintain square aspect ratio
-        double targetSize = Math.Min(availableWidth, availableHeight);
-
-        // Apply min/max constraints
-        double boardSize = Math.Clamp(targetSize, MinBoardSize, MaxBoardSize);
+        // Calculate responsive board dimensions using extracted helper
+        double boardSize = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
 
         // Apply to GameBoard
         GameBoard.WidthRequest = boardSize;
@@ -411,12 +399,13 @@ public partial class MainPage : ContentPage
         WallOverlayLayer.HeightRequest = boardSize;
 
         // Calculate and update scale factor for font sizes
-        const int defaultGridSize = 4;
-        _viewModel.BoardScaleFactor =
-            (boardSize / DefaultBoardSize) * (defaultGridSize / (double)_viewModel.BoardSize);
+        _viewModel.BoardScaleFactor = BoardLayoutCalculator.CalculateScaleFactor(
+            boardSize,
+            _viewModel.BoardSize
+        );
 
         // Scale tile spacing for very small boards
-        double tileSpacing = Math.Max(5, boardSize / 40);
+        double tileSpacing = BoardLayoutCalculator.CalculateTileSpacing(boardSize);
         GameBoard.ColumnSpacing = tileSpacing;
         GameBoard.RowSpacing = tileSpacing;
 

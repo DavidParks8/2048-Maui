@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using TwentyFortyEight.ViewModels.Services;
 
 namespace TwentyFortyEight.ViewModels;
@@ -6,6 +7,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddTwentyFortyEightViewModels(this IServiceCollection services)
     {
+        // Messaging
+        services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
+
         // ViewModels
         services.AddSingleton<GameViewModel>();
         services.AddSingleton<VictoryViewModel>();

@@ -11,6 +11,19 @@ namespace TwentyFortyEight.ViewModels.Tests;
 [TestClass]
 public class SettingsViewModelTests
 {
+    private static SettingsViewModel CreateViewModel(
+        Mock<ISettingsService> settingsServiceMock,
+        Mock<IHapticService> hapticServiceMock,
+        IMessenger? messenger = null
+    )
+    {
+        return new SettingsViewModel(
+            settingsServiceMock.Object,
+            hapticServiceMock.Object,
+            messenger ?? new WeakReferenceMessenger()
+        );
+    }
+
     [TestMethod]
     public void Constructor_LoadsHapticsEnabledFromService()
     {
@@ -22,7 +35,7 @@ public class SettingsViewModelTests
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
 
         // Act
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        SettingsViewModel viewModel = CreateViewModel(settingsServiceMock, hapticServiceMock);
 
         // Assert
         Assert.IsFalse(viewModel.HapticsEnabled);
@@ -39,7 +52,7 @@ public class SettingsViewModelTests
         hapticServiceMock.Setup(h => h.IsSupported).Returns(false);
 
         // Act
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        SettingsViewModel viewModel = CreateViewModel(settingsServiceMock, hapticServiceMock);
 
         // Assert
         Assert.IsFalse(viewModel.IsHapticsSupported);
@@ -54,7 +67,7 @@ public class SettingsViewModelTests
         settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
         settingsServiceMock.Setup(s => s.CoachEnabled).Returns(false);
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        SettingsViewModel viewModel = CreateViewModel(settingsServiceMock, hapticServiceMock);
 
         // Act
         viewModel.HapticsEnabled = false;
@@ -72,7 +85,7 @@ public class SettingsViewModelTests
         settingsServiceMock.Setup(s => s.HapticsEnabled).Returns(true);
         settingsServiceMock.Setup(s => s.CoachEnabled).Returns(false);
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        SettingsViewModel viewModel = CreateViewModel(settingsServiceMock, hapticServiceMock);
 
         // Act
         viewModel.CoachEnabled = true;
@@ -92,11 +105,16 @@ public class SettingsViewModelTests
         settingsServiceMock.Setup(s => s.CoachNudgesEnabled).Returns(true);
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
 
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        var messenger = new WeakReferenceMessenger();
+        SettingsViewModel viewModel = CreateViewModel(
+            settingsServiceMock,
+            hapticServiceMock,
+            messenger
+        );
 
         bool? receivedValue = null;
         object recipient = new();
-        WeakReferenceMessenger.Default.Register<CoachNudgesEnabledChangedMessage>(
+        messenger.Register<CoachNudgesEnabledChangedMessage>(
             recipient,
             (_, message) => receivedValue = message.IsEnabled
         );
@@ -109,7 +127,7 @@ public class SettingsViewModelTests
         Assert.IsNotNull(receivedValue);
         Assert.IsFalse(receivedValue.Value);
 
-        WeakReferenceMessenger.Default.UnregisterAll(recipient);
+        messenger.UnregisterAll(recipient);
     }
 
     [TestMethod]
@@ -124,7 +142,7 @@ public class SettingsViewModelTests
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
 
         // Act
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        SettingsViewModel viewModel = CreateViewModel(settingsServiceMock, hapticServiceMock);
 
         // Assert
         Assert.IsFalse(viewModel.UndoButtonVisible);
@@ -141,11 +159,16 @@ public class SettingsViewModelTests
         settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(true);
         hapticServiceMock.Setup(h => h.IsSupported).Returns(true);
 
-        SettingsViewModel viewModel = new(settingsServiceMock.Object, hapticServiceMock.Object);
+        var messenger = new WeakReferenceMessenger();
+        SettingsViewModel viewModel = CreateViewModel(
+            settingsServiceMock,
+            hapticServiceMock,
+            messenger
+        );
 
         bool? receivedValue = null;
         object recipient = new();
-        WeakReferenceMessenger.Default.Register<UndoButtonVisibilityChangedMessage>(
+        messenger.Register<UndoButtonVisibilityChangedMessage>(
             recipient,
             (_, message) => receivedValue = message.IsVisible
         );
@@ -158,6 +181,6 @@ public class SettingsViewModelTests
         Assert.IsNotNull(receivedValue);
         Assert.IsFalse(receivedValue.Value);
 
-        WeakReferenceMessenger.Default.UnregisterAll(recipient);
+        messenger.UnregisterAll(recipient);
     }
 }

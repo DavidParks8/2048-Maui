@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using TwentyFortyEight.Core;
+using TwentyFortyEight.ViewModels.Helpers;
 
 namespace TwentyFortyEight.Maui.Services;
 
@@ -9,14 +10,6 @@ namespace TwentyFortyEight.Maui.Services;
 /// </summary>
 public class GestureRecognizerService : IGestureRecognizerService
 {
-    private const double MinSwipeDistance = 30;
-    private const double MinPreviewDistance = 8;
-
-    // Rough heuristic: treat as "fast" once movement exceeds this speed.
-    // Units: px/ms (e.g., 0.8 => ~800 px/s).
-    // Lowered from 2.0 to make normal swipes less likely to be treated as preview.
-    private const double FastSwipeSpeedThreshold = 0.8;
-
     // Track gesture recognizers per view
     private readonly Dictionary<
         View,
@@ -279,57 +272,28 @@ public class GestureRecognizerService : IGestureRecognizerService
         }
     }
 
-    private SwipePanEventArgs BuildPanArgs(
+    private static SwipePanEventArgs BuildPanArgs(
         GestureStatus status,
         double totalX,
         double totalY,
         TimeSpan elapsed
     )
     {
-        var distance = Math.Sqrt((totalX * totalX) + (totalY * totalY));
-        var elapsedMs = Math.Max(1, elapsed.TotalMilliseconds);
-        var speed = distance / elapsedMs;
-
-        var previewDirection = GetDirection(totalX, totalY, MinPreviewDistance);
-        var swipeDirection = GetDirection(totalX, totalY, MinSwipeDistance);
-
         return new SwipePanEventArgs
         {
             Status = status,
             TotalX = totalX,
             TotalY = totalY,
-            PreviewDirection = previewDirection,
-            SwipeDirection = swipeDirection,
+            PreviewDirection = SwipeDirectionDetector.GetPreviewDirection(totalX, totalY),
+            SwipeDirection = SwipeDirectionDetector.GetSwipeDirection(totalX, totalY),
             Elapsed = elapsed,
-            IsFast = speed >= FastSwipeSpeedThreshold,
+            IsFast = SwipeDirectionDetector.IsFastSwipe(totalX, totalY, elapsed.TotalMilliseconds),
         };
-    }
-
-    private static Direction? GetDirection(double deltaX, double deltaY, double threshold)
-    {
-        Direction? direction = null;
-
-        if (Math.Abs(deltaX) > Math.Abs(deltaY))
-        {
-            if (Math.Abs(deltaX) > threshold)
-            {
-                direction = deltaX > 0 ? Direction.Right : Direction.Left;
-            }
-        }
-        else
-        {
-            if (Math.Abs(deltaY) > threshold)
-            {
-                direction = deltaY > 0 ? Direction.Down : Direction.Up;
-            }
-        }
-
-        return direction;
     }
 
     private void ProcessSwipe(double deltaX, double deltaY)
     {
-        Direction? direction = GetDirection(deltaX, deltaY, MinSwipeDistance);
+        Direction? direction = SwipeDirectionDetector.GetSwipeDirection(deltaX, deltaY);
 
         if (direction.HasValue)
         {

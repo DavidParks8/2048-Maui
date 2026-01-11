@@ -5,9 +5,9 @@ using TwentyFortyEight.ViewModels.Messages;
 namespace TwentyFortyEight.ViewModels.Services;
 
 /// <summary>
-/// Default implementation that uses WeakReferenceMessenger to request size changes.
+/// Default implementation that uses IMessenger to request size changes.
 /// </summary>
-internal sealed class BoardSizeChangeService : IBoardSizeChangeService
+internal sealed class BoardSizeChangeService(IMessenger messenger) : IBoardSizeChangeService
 {
     public void RequestBoardSizeChange(int newSize)
     {
@@ -16,6 +16,6 @@ internal sealed class BoardSizeChangeService : IBoardSizeChangeService
             throw new ArgumentOutOfRangeException(nameof(newSize));
         }
 
-        WeakReferenceMessenger.Default.Send(new BoardSizeChangeRequestedMessage(newSize));
+        messenger.Send(new BoardSizeChangeRequestedMessage(newSize));
     }
 }

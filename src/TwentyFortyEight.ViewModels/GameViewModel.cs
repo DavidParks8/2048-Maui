@@ -34,6 +34,7 @@ public partial class GameViewModel : ObservableObject
     private readonly ICoachNudgeService _coachNudgeService;
     private readonly ICoachSuggestionService _coachSuggestionService;
     private readonly IMoveAdvisor _moveAdvisor;
+    private readonly IMessenger _messenger;
     private Game2048Engine _engine;
 
     /// <summary>
@@ -180,7 +181,8 @@ public partial class GameViewModel : ObservableObject
         VictoryViewModel victoryViewModel,
         ICoachNudgeService coachNudgeService,
         ICoachSuggestionService coachSuggestionService,
-        IMoveAdvisor moveAdvisor
+        IMoveAdvisor moveAdvisor,
+        IMessenger messenger
     )
     {
         _logger = logger;
@@ -196,11 +198,12 @@ public partial class GameViewModel : ObservableObject
         _victoryViewModel = victoryViewModel;
         _coachNudgeService = coachNudgeService;
         _coachSuggestionService = coachSuggestionService;
+        _messenger = messenger;
 
         IsCoachEnabled = _settingsService.CoachEnabled;
         IsUndoButtonVisible = _settingsService.UndoButtonVisible;
 
-        WeakReferenceMessenger.Default.Register<BoardSizeChangeRequestedMessage>(
+        _messenger.Register<BoardSizeChangeRequestedMessage>(
             this,
             static (recipient, message) =>
             {
@@ -211,7 +214,7 @@ public partial class GameViewModel : ObservableObject
             }
         );
 
-        WeakReferenceMessenger.Default.Register<CoachEnabledChangedMessage>(
+        _messenger.Register<CoachEnabledChangedMessage>(
             this,
             static (recipient, message) =>
             {
@@ -223,7 +226,7 @@ public partial class GameViewModel : ObservableObject
             }
         );
 
-        WeakReferenceMessenger.Default.Register<UndoButtonVisibilityChangedMessage>(
+        _messenger.Register<UndoButtonVisibilityChangedMessage>(
             this,
             static (recipient, message) =>
             {
@@ -1126,7 +1129,7 @@ public partial class GameViewModel : ObservableObject
             UpdateUI();
             BoardReset?.Invoke(this, EventArgs.Empty);
 
-            WeakReferenceMessenger.Default.Send(
+            _messenger.Send(
                 new RulesetChangedMessage(oldRulesetId, _config.RulesetId, oldSize, _config.Size)
             );
         }

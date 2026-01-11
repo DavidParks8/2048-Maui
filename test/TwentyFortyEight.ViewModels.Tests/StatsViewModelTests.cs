@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Moq;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Services;
@@ -14,6 +15,7 @@ public class StatsViewModelTests
     private Mock<IAlertService> _alertServiceMock = null!;
     private Mock<ILocalizationService> _localizationServiceMock = null!;
     private Mock<ISettingsService> _settingsServiceMock = null!;
+    private IMessenger _messenger = null!;
 
     [TestInitialize]
     public void Setup()
@@ -22,6 +24,7 @@ public class StatsViewModelTests
         _alertServiceMock = new Mock<IAlertService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
         _settingsServiceMock = new Mock<ISettingsService>();
+        _messenger = new WeakReferenceMessenger();
 
         // Setup default statistics
         _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(new GameStatistics());
@@ -38,7 +41,8 @@ public class StatsViewModelTests
             _statisticsTrackerMock.Object,
             _alertServiceMock.Object,
             _localizationServiceMock.Object,
-            _settingsServiceMock.Object
+            _settingsServiceMock.Object,
+            _messenger
         );
     }
 

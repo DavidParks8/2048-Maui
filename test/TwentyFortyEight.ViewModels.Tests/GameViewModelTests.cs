@@ -1,4 +1,5 @@
 using System.Reflection;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TwentyFortyEight.Core;
@@ -28,6 +29,7 @@ public class GameViewModelTests
     private Mock<ICoachNudgeService> _coachNudgeServiceMock = null!;
     private Mock<ICoachSuggestionService> _coachSuggestionServiceMock = null!;
     private VictoryViewModel _victoryViewModel = null!;
+    private IMessenger _messenger = null!;
 
     [TestInitialize]
     public void Setup()
@@ -43,6 +45,7 @@ public class GameViewModelTests
         _feedbackServiceMock = new Mock<IUserFeedbackService>();
         _coachNudgeServiceMock = new Mock<ICoachNudgeService>();
         _coachSuggestionServiceMock = new Mock<ICoachSuggestionService>();
+        _messenger = new WeakReferenceMessenger();
 
         // Create real VictoryViewModel instance for testing
         var accessibilitySettingsMock = new Mock<IAccessibilitySettingsService>();
@@ -120,7 +123,8 @@ public class GameViewModelTests
             _victoryViewModel,
             _coachNudgeServiceMock.Object,
             _coachSuggestionServiceMock.Object,
-            _moveAdvisorMock.Object
+            _moveAdvisorMock.Object,
+            _messenger
         );
     }
 
