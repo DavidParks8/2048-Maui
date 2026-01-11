@@ -41,6 +41,8 @@ public partial class BottomSheetOverlay : ContentView
     private const double BaseBottomPadding = 16;
     private const double DetentSnapTolerance = 24;
     private const double DismissVelocityThreshold = 800; // pixels per second
+    private const double MaxVelocityTimeDeltaSeconds = 0.5; // Maximum time since last update to calculate velocity
+    private const double MinVelocityTimeDeltaSeconds = 0.001; // Minimum time delta to avoid extreme velocity values
 
     private double _windowHeight;
     private double _windowWidth;
@@ -152,7 +154,7 @@ public partial class BottomSheetOverlay : ContentView
             case GestureStatus.Completed:
                 try
                 {
-                    await SnapToNearestDetentAsync(e);
+                    await SnapToNearestDetentAsync(TryCalculateVelocity(e));
                 }
                 finally
                 {
@@ -168,7 +170,28 @@ public partial class BottomSheetOverlay : ContentView
         }
     }
 
-    private async Task SnapToNearestDetentAsync(PanUpdatedEventArgs? panEventArgs = null)
+    private double TryCalculateVelocity(PanUpdatedEventArgs panEventArgs)
+    {
+        var now = DateTime.UtcNow;
+        var timeDelta = (now - _lastPanUpdateTime).TotalSeconds;
+
+        // Only calculate velocity if we have a reasonable time delta
+        // Avoid very small time deltas that could cause unrealistic velocity values
+        if (timeDelta >= MinVelocityTimeDeltaSeconds && timeDelta < MaxVelocityTimeDeltaSeconds)
+        {
+            var distanceDelta = panEventArgs.TotalY - _lastPanY;
+            return distanceDelta / timeDelta;
+        }
+
+        return 0.0;
+    }
+
+    private Task SnapToNearestDetentAsync()
+    {
+        return SnapToNearestDetentAsync(velocity: 0.0);
+    }
+
+    private async Task SnapToNearestDetentAsync(double velocity)
     {
         if (SheetContainer == null || _windowHeight <= 0)
         {
@@ -180,21 +203,6 @@ public partial class BottomSheetOverlay : ContentView
         try
         {
             var currentTranslation = SheetContainer.TranslationY;
-
-            // Calculate velocity if we have pan event data
-            var velocity = 0.0;
-            if (panEventArgs != null)
-            {
-                var now = DateTime.UtcNow;
-                var timeDelta = (now - _lastPanUpdateTime).TotalSeconds;
-                
-                // Only calculate velocity if we have a reasonable time delta
-                if (timeDelta > 0 && timeDelta < 0.5) // Less than 500ms since last update
-                {
-                    var distanceDelta = panEventArgs.TotalY - _lastPanY;
-                    velocity = distanceDelta / timeDelta;
-                }
-            }
 
             // Check if fast swipe down (positive velocity = downward)
             if (velocity > DismissVelocityThreshold)
