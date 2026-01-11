@@ -76,7 +76,6 @@ public static class MauiProgram
         >();
 
         builder.Services.AddSingleton<TileAnimationService>();
-        builder.Services.AddSingleton<BoardRippleService>();
 
         // Register achievement ID mapper - uses partial class pattern for platform-specific IDs
         builder.Services.AddSingleton<IAchievementIdMapper, AchievementIdMapper>();

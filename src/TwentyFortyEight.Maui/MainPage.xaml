@@ -170,7 +170,6 @@
                     SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}">
 
                 <Border.Behaviors>
-                    <behaviors:RippleBehavior />
                     <behaviors:VictoryOverlayBehavior />
                 </Border.Behaviors>
 
