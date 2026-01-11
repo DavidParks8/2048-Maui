@@ -125,8 +125,38 @@
         <Grid Grid.Row="2"
               HorizontalOptions="Center"
               VerticalOptions="Center">
-            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Game Mode Chip - positioned above board, left-aligned -->
+            <Border Grid.Row="0"
+                    HorizontalOptions="Start"
+                    VerticalOptions="End"
+                    Margin="0,0,0,8"
+                    Padding="10,4"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12"
+                    Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                    Background="Transparent"
+                    AutomationProperties.IsInAccessibleTree="True"
+                    SemanticProperties.Description="{x:Static strings:AppStrings.ModeTitle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnModeClicked" />
+                </Border.GestureRecognizers>
+                <Label Text="{Binding GameMode, Converter={StaticResource GameModeToDisplayNameConverter}}"
+                       FontSize="14"
+                       FontAttributes="None"
+                       LineBreakMode="NoWrap"
+                       MaxLines="1"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+            </Border>
+
             <Border x:Name="BoardContainer"
+                    Grid.Row="1"
                     Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
                     Stroke="Transparent"
                     StrokeThickness="0"
@@ -176,56 +206,6 @@
                         ZIndex="10" />
                 </Grid>
             </Border>
-
-            <!-- Mode indicator pill attached to top of board -->
-            <Grid x:Name="GameModeIndicator"
-                  InputTransparent="True"
-                  ZIndex="20"
-                  HorizontalOptions="Center"
-                  VerticalOptions="Start"
-                  TranslationY="-36">
-                
-                <!-- Main pill body -->
-                <Border Padding="24,8,24,8"
-                        Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                        Stroke="Transparent"
-                        StrokeShape="RoundRectangle 20,20,0,0"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Start">
-                    <Label Text="{Binding GameMode, Converter={StaticResource GameModeToDisplayNameConverter}}"
-                           FontSize="16"
-                           HorizontalTextAlignment="Center"
-                           VerticalTextAlignment="Center" />
-                </Border>
-                
-                <!-- Left inverted corner: gray square with black curve on top -->
-                <Grid WidthRequest="10" HeightRequest="10"
-                      HorizontalOptions="Start" VerticalOptions="End"
-                      TranslationX="-9"
-                      TranslationY="-1">
-                    <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                            Stroke="Transparent"
-                            StrokeThickness="0" />
-                    <Border Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
-                            Stroke="Transparent"
-                            StrokeThickness="0"
-                            StrokeShape="RoundRectangle 0,0,0,10" />
-                </Grid>
-                
-                <!-- Right inverted corner: gray square with black curve on top -->
-                <Grid WidthRequest="10" HeightRequest="10"
-                      HorizontalOptions="End" VerticalOptions="End"
-                      TranslationX="9"
-                      TranslationY="-1">
-                    <Border Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-                            Stroke="Transparent"
-                            StrokeThickness="0" />
-                    <Border Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
-                            Stroke="Transparent"
-                            StrokeThickness="0"
-                            StrokeShape="RoundRectangle 0,0,10,0" />
-                </Grid>
-            </Grid>
         </Grid>
         <Grid Grid.Row="3">
             <!-- Movement buttons (centered with board) -->
