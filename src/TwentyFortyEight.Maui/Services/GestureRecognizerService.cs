@@ -153,8 +153,7 @@ public class GestureRecognizerService : IGestureRecognizerService
 
         var endPoint = e.GetPosition(view);
         
-        // If the pointer ended outside the view bounds, use the last known valid position
-        // This ensures fast swipes that start inside and end outside the view are still processed
+        // Use last known position if pointer ended outside view bounds to handle fast swipes
         if (endPoint is null)
         {
             if (_pointerLastKnownPoint is null)
