@@ -8,6 +8,7 @@ internal sealed class AdversarialSwipeTracker : IAdversarialSwipeTracker
 {
     private const int SwipeAttemptsBeforeHint = 2;
     private const int CooldownMilliseconds = 3000; // 3 seconds cooldown between toasts
+    private static readonly long CooldownTicks = TimeSpan.FromMilliseconds(CooldownMilliseconds).Ticks;
     
     private int _consecutiveSwipeAttempts = 0;
     private long _lastHintShownTicks = 0;
@@ -24,9 +25,8 @@ internal sealed class AdversarialSwipeTracker : IAdversarialSwipeTracker
             long currentTicks = DateTime.UtcNow.Ticks;
             long lastShown = Interlocked.Read(ref _lastHintShownTicks);
             long ticksSinceLastHint = currentTicks - lastShown;
-            long cooldownTicks = TimeSpan.FromMilliseconds(CooldownMilliseconds).Ticks;
 
-            if (ticksSinceLastHint >= cooldownTicks)
+            if (ticksSinceLastHint >= CooldownTicks)
             {
                 // Update last shown time atomically
                 Interlocked.Exchange(ref _lastHintShownTicks, currentTicks);
