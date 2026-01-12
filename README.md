@@ -1,10 +1,19 @@
 # 2048-Maui
 
-The classic 2048 game built with .NET MAUI.
+The classic 2048 game with multiple implementations sharing the same core logic.
+
+## Implementations
+
+This repository contains two implementations of the 2048 game:
+
+1. **.NET MAUI** (`src/TwentyFortyEight.Maui/`) - Cross-platform mobile and desktop app for Android, iOS, Mac Catalyst, and Windows
+2. **Unity** (`src/TwentyFortyEight.Unity/`) - Unity-based implementation for desktop and WebGL
+
+Both implementations share the same core game logic (`TwentyFortyEight.Core`) ensuring consistent gameplay across all platforms.
 
 ## Overview
 
-This is a fully-featured implementation of the classic 2048 puzzle game, built with .NET MAUI for cross-platform support (Android, iOS, Mac Catalyst, Windows). The project follows a clean architecture with a testable core engine and MVVM pattern for the UI.
+This is a fully-featured implementation of the classic 2048 puzzle game. The MAUI version is built with .NET MAUI for cross-platform support (Android, iOS, Mac Catalyst, Windows). The Unity version provides WebGL and additional platform support. The project follows a clean architecture with a testable core engine and modern UI patterns.
 
 ## Features
 
@@ -229,14 +238,26 @@ Comprehensive test suite using MSTest covering:
 - Move analysis / coach heuristics
 - Ruleset identifiers (board size + mode)
 
+### 4. Unity Implementation (TwentyFortyEight.Unity)
+
+A Unity-based implementation of 2048 that reuses the core game logic:
+
+- Built with Unity 2022.3.57f1 LTS
+- Universal Render Pipeline (URP) for modern rendering
+- Cross-platform support (Desktop, WebGL, Mobile)
+- Same core logic as MAUI version for consistent gameplay
+- Touch and keyboard input support
+- See [Unity README](src/TwentyFortyEight.Unity/README.md) for details
+
 ## Project Structure
 
 - slnx format: New XML-based solution file format for .NET 10
 - Central Package Management (CPM): package versions in `Directory.Packages.props`
 - Consolidated props: common build properties in `Directory.Build.props`
 - src/
-  - TwentyFortyEight.Core
-  - TwentyFortyEight.Maui
+  - TwentyFortyEight.Core (shared game logic)
+  - TwentyFortyEight.Maui (.NET MAUI app)
+  - TwentyFortyEight.Unity (Unity implementation)
   - TwentyFortyEight.ViewModels
 - test/
   - TwentyFortyEight.Core.Tests
@@ -246,6 +267,8 @@ Comprehensive test suite using MSTest covering:
 
 - .NET 10
 - .NET MAUI
+- Unity 2022.3.57f1 LTS (for Unity implementation)
+- Universal Render Pipeline (URP)
 - MSTest
 - CommunityToolkit.Mvvm
 
