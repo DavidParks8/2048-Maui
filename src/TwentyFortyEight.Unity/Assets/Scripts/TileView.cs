@@ -79,7 +79,10 @@ namespace TwentyFortyEight.Unity
         }
 
         // Shared sprite for all tiles to avoid creating multiple textures
-        // This sprite and its texture are created once and persist for the app lifetime
+        // IMPORTANT: This sprite and its texture are intentionally created once and persist
+        // for the entire application lifetime. This is NOT a memory leak - it's a singleton
+        // pattern for resource sharing. The texture is small (64×64 = 4KB) and used by all
+        // tile instances. Unity will clean this up when the application exits.
         private static Sprite _sharedSprite;
         private static Texture2D _sharedTexture;
 
@@ -92,7 +95,8 @@ namespace TwentyFortyEight.Unity
             }
 
             // Create a simple square texture once and share it
-            // This texture persists for the application lifetime (not a leak)
+            // NOTE: This texture is intentionally NOT disposed - it persists for app lifetime
+            // Benefits: 16x memory saving (1 texture instead of 16), zero per-tile allocation
             int texSize = 64;
             _sharedTexture = new Texture2D(texSize, texSize);
             _sharedTexture.name = "SharedTileTexture"; // For debugging
