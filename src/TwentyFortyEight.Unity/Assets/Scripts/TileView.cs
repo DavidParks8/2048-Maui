@@ -78,9 +78,18 @@ namespace TwentyFortyEight.Unity
             return Color.white;
         }
 
+        // Shared sprite for all tiles to avoid creating multiple textures
+        private static Sprite _sharedSprite;
+
         private Sprite CreateSquareSprite()
         {
-            // Create a simple square texture
+            // Reuse shared sprite if already created
+            if (_sharedSprite != null)
+            {
+                return _sharedSprite;
+            }
+
+            // Create a simple square texture once and share it
             int texSize = 64;
             Texture2D texture = new Texture2D(texSize, texSize);
             Color[] pixels = new Color[texSize * texSize];
@@ -93,7 +102,8 @@ namespace TwentyFortyEight.Unity
             texture.SetPixels(pixels);
             texture.Apply();
 
-            return Sprite.Create(texture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), texSize / _size);
+            _sharedSprite = Sprite.Create(texture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), texSize / _size);
+            return _sharedSprite;
         }
     }
 }
