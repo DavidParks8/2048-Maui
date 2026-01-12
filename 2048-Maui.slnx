@@ -7,5 +7,6 @@
   <Folder Name="/test/">
     <Project Path="test\TwentyFortyEight.Core.Tests\TwentyFortyEight.Core.Tests.csproj" />
     <Project Path="test\TwentyFortyEight.ViewModels.Tests\TwentyFortyEight.ViewModels.Tests.csproj" />
+    <Project Path="test\TwentyFortyEight.Appium.Tests\TwentyFortyEight.Appium.Tests.csproj" />
   </Folder>
 </Solution>

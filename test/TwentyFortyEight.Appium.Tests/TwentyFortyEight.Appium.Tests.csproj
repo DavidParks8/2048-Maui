@@ -1,0 +1,14 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Appium WebDriver Client -->
+    <PackageReference Include="Appium.WebDriver" />
+    
+    <!-- Selenium for WebDriver support -->
+    <PackageReference Include="Selenium.WebDriver" />
+  </ItemGroup>
+</Project>

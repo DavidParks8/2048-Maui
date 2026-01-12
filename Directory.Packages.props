@@ -22,6 +22,8 @@
     <PackageVersion Include="SkiaSharp.Views.Maui.Controls" Version="3.119.1" />
     <!-- Testing Dependencies -->
     <PackageVersion Include="Moq" Version="4.18.4" />
+    <PackageVersion Include="Appium.WebDriver" Version="5.0.0" />
+    <PackageVersion Include="Selenium.WebDriver" Version="4.21.0" />
     <!-- Code Formatting -->
     <PackageVersion Include="CSharpier.MsBuild" Version="0.30.6" />
   </ItemGroup>
