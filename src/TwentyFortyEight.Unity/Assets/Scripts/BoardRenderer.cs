@@ -50,6 +50,13 @@ namespace TwentyFortyEight.Unity
                     GameObject tileObj = Instantiate(tilePrefab, boardParent);
                     tileObj.transform.localPosition = position;
                     
+                    // Scale the tile to match the desired size
+                    // Since sprite is 64 pixels at 100 pixels-per-unit, it's 0.64 Unity units by default
+                    // We want it to be tileSize units, so scale = tileSize / 0.64
+                    float spriteNaturalSize = 0.64f; // 64 pixels / 100 pixels-per-unit
+                    float scale = tileSize / spriteNaturalSize;
+                    tileObj.transform.localScale = new Vector3(scale, scale, 1f);
+                    
                     var tileView = tileObj.GetComponent<TileView>();
                     if (tileView == null)
                     {

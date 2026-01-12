@@ -102,7 +102,10 @@ namespace TwentyFortyEight.Unity
             texture.SetPixels(pixels);
             texture.Apply();
 
-            _sharedSprite = Sprite.Create(texture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), texSize / _size);
+            // Use fixed pixels-per-unit for consistent sprite sizing
+            // Unity default is 100 pixels per unit which works well for 2D games
+            float pixelsPerUnit = 100f;
+            _sharedSprite = Sprite.Create(texture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), pixelsPerUnit);
             return _sharedSprite;
         }
     }
