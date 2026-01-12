@@ -116,4 +116,14 @@ internal sealed class UserFeedbackService(
             localizationService.GotIt
         );
     }
+
+    public async Task ShowAdversarialModeTapHintAsync()
+    {
+        var toast = CommunityToolkit.Maui.Alerts.Toast.Make(
+            localizationService.AdversarialModeTapHint,
+            CommunityToolkit.Maui.Core.ToastDuration.Short,
+            14
+        );
+        await toast.Show();
+    }
 }

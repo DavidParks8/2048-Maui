@@ -73,4 +73,9 @@ public interface IUserFeedbackService
     /// Shows the how to play instructions.
     /// </summary>
     Task ShowHowToPlayAsync();
+
+    /// <summary>
+    /// Shows a toast message to inform the user about adversarial mode tap controls.
+    /// </summary>
+    Task ShowAdversarialModeTapHintAsync();
 }

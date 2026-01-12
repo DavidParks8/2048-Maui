@@ -31,6 +31,7 @@ public partial class MainPage : ContentPage
     private readonly ILogger<MainPage> _logger;
     private readonly IToolbarIconService _toolbarIconService;
     private readonly IMessenger _messenger;
+    private readonly IAdversarialSwipeTracker _adversarialSwipeTracker;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
     private readonly Dictionary<TileViewModel, Border> _emptyCells = [];
@@ -57,7 +58,8 @@ public partial class MainPage : ContentPage
         IAccessibilitySettingsService accessibilitySettingsService,
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService,
-        IMessenger messenger
+        IMessenger messenger,
+        IAdversarialSwipeTracker adversarialSwipeTracker
     )
     {
         InitializeComponent();
@@ -75,6 +77,7 @@ public partial class MainPage : ContentPage
         _logger = logger;
         _toolbarIconService = toolbarIconService;
         _messenger = messenger;
+        _adversarialSwipeTracker = adversarialSwipeTracker;
         BindingContext = _viewModel;
 
         // Wire up ViewModel victory event to VictoryViewModel
@@ -324,8 +327,20 @@ public partial class MainPage : ContentPage
     {
         if (_viewModel.IsAdversarialMode)
         {
+            // Track swipe attempts in adversarial mode
+            // Only count completed swipes with a recognized direction (not just taps or short touches)
+            if (e.Status == GestureStatus.Completed && e.SwipeDirection.HasValue)
+            {
+                if (_adversarialSwipeTracker.RecordSwipeAttempt())
+                {
+                    await _userFeedbackService.ShowAdversarialModeTapHintAsync();
+                }
+            }
             return;
         }
+
+        // Reset counter when not in adversarial mode
+        _adversarialSwipeTracker.Reset();
 
         await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
             e,
@@ -668,6 +683,8 @@ public partial class MainPage : ContentPage
             UpdateSwipeRecognizersForMode();
             UpdateVoiceControlMoveButtonsVisibility();
             UpdateTileCellsAccessibilityForMode();
+            // Reset swipe attempt counter when mode changes
+            _adversarialSwipeTracker.Reset();
         }
     }
 
