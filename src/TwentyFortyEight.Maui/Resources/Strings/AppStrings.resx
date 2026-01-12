@@ -473,4 +473,7 @@ Keep combining tiles to reach the 2048 tile and win the game!
   <data name="OK" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="AdversarialModeTapHint" xml:space="preserve">
+    <value>Tap empty cells to spawn tiles in this mode</value>
+  </data>
 </root>

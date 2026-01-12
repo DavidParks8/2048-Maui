@@ -119,4 +119,9 @@ public interface ILocalizationService
     /// <param name="isAdversarialMode">True if the victory was in Adversarial mode.</param>
     /// <returns>"You blocked 2048!" for Adversarial, "You reached 2048!" otherwise.</returns>
     string GetVictorySubtitle(bool isAdversarialMode);
+
+    /// <summary>
+    /// Gets the localized adversarial mode tap hint message.
+    /// </summary>
+    string AdversarialModeTapHint { get; }
 }
