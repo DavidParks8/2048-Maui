@@ -167,7 +167,7 @@ public class AdversarialSwipeTrackerTests
 
         // Assert - Should have triggered at least once without crashes
         Assert.IsGreaterThan(triggerCount, 0, "Should have triggered at least once");
-        Assert.IsLessThanOrEqual(triggerCount, (threadCount * attemptsPerThread) / 2, 
+        Assert.IsLessThanOrEqualTo((threadCount * attemptsPerThread) / 2, triggerCount, 
             "Should not trigger more than expected given the threshold and cooldown");
     }
 }
