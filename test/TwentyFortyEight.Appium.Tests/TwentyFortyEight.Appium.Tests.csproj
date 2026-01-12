@@ -1,0 +1,18 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Appium WebDriver Client -->
+    <PackageReference Include="Appium.WebDriver" />
+    
+    <!-- Selenium for WebDriver support -->
+    <PackageReference Include="Selenium.WebDriver" />
+  </ItemGroup>
+</Project>

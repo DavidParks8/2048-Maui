@@ -4,6 +4,19 @@
 
 This folder contains unit tests for the 2048 MAUI application. Tests are written using MSTest and run in parallel for efficiency.
 
+## Running Tests
+
+**Always specify a project when running `dotnet test`**. Never run `dotnet test` without the `--project` argument, as this will attempt to run all test projects including Appium tests which require a running simulator.
+
+```bash
+# Correct - specify the project
+dotnet test --project test/TwentyFortyEight.Core.Tests
+dotnet test --project test/TwentyFortyEight.ViewModels.Tests
+
+# Wrong - do not do this
+dotnet test
+```
+
 ## Test Framework
 
 - **MSTest SDK**: Tests use the MSTest.Sdk project style for simplified configuration
