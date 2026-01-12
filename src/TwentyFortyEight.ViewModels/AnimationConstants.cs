@@ -10,20 +10,20 @@ public static class AnimationConstants
     /// <summary>
     /// Base duration of the slide animation in milliseconds.
     /// </summary>
-    public const uint BaseSlideAnimationDuration = 120;
+    public const uint BaseSlideAnimationDuration = 100;
 
     /// <summary>
     /// Base duration of the scale-up animation for merged tiles in milliseconds.
     /// </summary>
-    public const uint BaseMergePulseUpDuration = 100;
+    public const uint BaseMergePulseUpDuration = 90;
 
     /// <summary>
     /// Base duration of the scale-down animation for merged tiles in milliseconds.
     /// </summary>
-    public const uint BaseMergePulseDownDuration = 75;
+    public const uint BaseMergePulseDownDuration = 70;
 
     /// <summary>
     /// Base duration of the scale animation for new tiles in milliseconds.
     /// </summary>
-    public const uint BaseNewTileScaleDuration = 100;
+    public const uint BaseNewTileScaleDuration = 90;
 }

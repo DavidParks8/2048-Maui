@@ -275,11 +275,13 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
         _gestureRecognizerService.SwipePanUpdated -= OnSwipePanUpdated;
+        _swipeAttemptDetector.SwipeAttempted -= OnSwipeAttempted;
 
         _viewModel.TilesUpdated += OnTilesUpdated;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived += OnDirectionInputReceived;
         _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
+        _swipeAttemptDetector.SwipeAttempted += OnSwipeAttempted;
 
         // Ensure swipe recognizers match the active mode when returning to the page.
         UpdateSwipeRecognizersForMode();
