@@ -198,6 +198,6 @@ jobs:
         MAUI_TARGET_PLATFORM: windows
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$env:APP_VERSION_CODE -p:RuntimeIdentifier=win-x64
+      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$env:APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: windows
