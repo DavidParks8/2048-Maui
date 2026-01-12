@@ -42,8 +42,6 @@ public partial class BottomSheetOverlay : ContentView
     private const double BaseBottomPadding = 16;
     private const double DetentSnapTolerance = 24;
     private const double DismissVelocityThreshold = 800; // pixels per second
-    private const double MaxVelocityTimeDeltaSeconds = 0.5; // Maximum time since last update to calculate velocity
-    private const double MinVelocityTimeDeltaSeconds = 0.001; // Minimum time delta to avoid extreme velocity values
 
     private double _windowHeight;
     private double _windowWidth;
@@ -54,9 +52,7 @@ public partial class BottomSheetOverlay : ContentView
     private bool _isDragging;
     private bool _isInitialized;
     private bool _showAnimationStarted;
-    private DateTime _lastPanUpdateTime;
-    private double _lastPanY;
-    private double _lastPanX;
+    private readonly PanVelocityTracker _velocityTracker = new();
 
     public BottomSheetOverlay()
     {
@@ -135,9 +131,8 @@ public partial class BottomSheetOverlay : ContentView
             case GestureStatus.Started:
                 _isDragging = true;
                 _dragStartTranslation = SheetContainer.TranslationY;
-                _lastPanUpdateTime = DateTime.UtcNow;
-                _lastPanY = e.TotalY;
-                _lastPanX = e.TotalX;
+                _velocityTracker.Reset();
+                _velocityTracker.RecordSample(e.TotalX, e.TotalY, DateTime.UtcNow);
                 break;
 
             case GestureStatus.Running:
@@ -150,15 +145,13 @@ public partial class BottomSheetOverlay : ContentView
                 SheetContainer.TranslationY = newTranslationY;
 
                 // Track for velocity calculation
-                _lastPanUpdateTime = DateTime.UtcNow;
-                _lastPanY = e.TotalY;
-                _lastPanX = e.TotalX;
+                _velocityTracker.RecordSample(e.TotalX, e.TotalY, DateTime.UtcNow);
                 break;
 
             case GestureStatus.Completed:
                 try
                 {
-                    await SnapToNearestDetentAsync(TryCalculateVelocity(e));
+                    await SnapToNearestDetentAsync(_velocityTracker.GetVelocity());
                 }
                 finally
                 {
@@ -172,23 +165,6 @@ public partial class BottomSheetOverlay : ContentView
                 _isDragging = false;
                 break;
         }
-    }
-
-    private double TryCalculateVelocity(PanUpdatedEventArgs panEventArgs)
-    {
-        var now = DateTime.UtcNow;
-        var timeDelta = (now - _lastPanUpdateTime).TotalSeconds;
-
-        var distanceDeltaY = panEventArgs.TotalY - _lastPanY;
-        var distanceDeltaX = panEventArgs.TotalX - _lastPanX;
-
-        return BottomSheetGestureHelper.CalculateSwipeVelocity(
-            distanceDeltaX,
-            distanceDeltaY,
-            timeDelta,
-            MinVelocityTimeDeltaSeconds,
-            MaxVelocityTimeDeltaSeconds
-        );
     }
 
     private Task SnapToNearestDetentAsync()
