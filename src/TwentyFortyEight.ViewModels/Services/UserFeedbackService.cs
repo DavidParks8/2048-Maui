@@ -8,7 +8,8 @@ internal sealed class UserFeedbackService(
     IHapticService hapticService,
     IAlertService alertService,
     ILocalizationService localizationService,
-    ISettingsService settingsService
+    ISettingsService settingsService,
+    IToastService toastService
 ) : IUserFeedbackService
 {
     // Minimum score change before announcing (prevents spam)
@@ -117,13 +118,9 @@ internal sealed class UserFeedbackService(
         );
     }
 
-    public async Task ShowAdversarialModeTapHintAsync()
+    public Task ShowAdversarialModeTapHintAsync()
     {
-        var toast = CommunityToolkit.Maui.Alerts.Toast.Make(
-            localizationService.AdversarialModeTapHint,
-            CommunityToolkit.Maui.Core.ToastDuration.Short,
-            14
-        );
-        await toast.Show();
+        // Use the glass toast service for native liquid glass styling
+        return toastService.ShowAsync(localizationService.AdversarialModeTapHint);
     }
 }

@@ -58,6 +58,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPreferencesService, MauiPreferencesService>();
         builder.Services.AddSingleton<IAlertService, MauiAlertService>();
         builder.Services.AddSingleton<ILocalizationService, MauiLocalizationService>();
+        builder.Services.AddSingleton<IToastService, GlassToastService>();
         builder.Services.AddSingleton<IScreenReaderService, MauiScreenReaderService>();
 
         // Accessibility and feedback services
@@ -69,6 +70,7 @@ public static class MauiProgram
         // Input and gesture services
         builder.Services.AddSingleton<IInputCoordinationService, InputCoordinationService>();
         builder.Services.AddSingleton<IGestureRecognizerService, GestureRecognizerService>();
+        builder.Services.AddSingleton<ISwipeAttemptDetector, SwipeAttemptDetector>();
 
         // Swipe preview interaction orchestration (page-level)
         builder.Services.AddTransient<

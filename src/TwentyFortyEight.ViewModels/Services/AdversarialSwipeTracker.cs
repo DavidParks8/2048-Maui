@@ -8,8 +8,10 @@ internal sealed class AdversarialSwipeTracker : IAdversarialSwipeTracker
 {
     private const int SwipeAttemptsBeforeHint = 2;
     private const int CooldownMilliseconds = 3000; // 3 seconds cooldown between toasts
-    private static readonly long CooldownTicks = TimeSpan.FromMilliseconds(CooldownMilliseconds).Ticks;
-    
+    private static readonly long CooldownTicks = TimeSpan
+        .FromMilliseconds(CooldownMilliseconds)
+        .Ticks;
+
     private int _consecutiveSwipeAttempts = 0;
     private long _lastHintShownTicks = 0;
 

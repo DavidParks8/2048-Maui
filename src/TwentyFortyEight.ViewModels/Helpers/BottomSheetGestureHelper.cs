@@ -49,7 +49,8 @@ public static class BottomSheetGestureHelper
         double deltaY,
         double timeDeltaSeconds,
         double minTimeDelta = 0.001,
-        double maxTimeDelta = 0.5)
+        double maxTimeDelta = 0.5
+    )
     {
         // Only calculate velocity if we have a reasonable time delta
         // Avoid very small time deltas that could cause unrealistic velocity values

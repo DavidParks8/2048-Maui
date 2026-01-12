@@ -32,6 +32,7 @@ public partial class MainPage : ContentPage
     private readonly IToolbarIconService _toolbarIconService;
     private readonly IMessenger _messenger;
     private readonly IAdversarialSwipeTracker _adversarialSwipeTracker;
+    private readonly ISwipeAttemptDetector _swipeAttemptDetector;
     private readonly Dictionary<TileViewModel, Border> _tileBorders = [];
     private readonly Dictionary<TileViewModel, Label> _tileLabels = [];
     private readonly Dictionary<TileViewModel, Border> _emptyCells = [];
@@ -59,7 +60,8 @@ public partial class MainPage : ContentPage
         ILogger<MainPage> logger,
         IToolbarIconService toolbarIconService,
         IMessenger messenger,
-        IAdversarialSwipeTracker adversarialSwipeTracker
+        IAdversarialSwipeTracker adversarialSwipeTracker,
+        ISwipeAttemptDetector swipeAttemptDetector
     )
     {
         InitializeComponent();
@@ -78,6 +80,7 @@ public partial class MainPage : ContentPage
         _toolbarIconService = toolbarIconService;
         _messenger = messenger;
         _adversarialSwipeTracker = adversarialSwipeTracker;
+        _swipeAttemptDetector = swipeAttemptDetector;
         BindingContext = _viewModel;
 
         // Wire up ViewModel victory event to VictoryViewModel
@@ -131,6 +134,7 @@ public partial class MainPage : ContentPage
         // long-running UIGestureRecognizer blocking warnings on iOS), so disable them there.
         UpdateSwipeRecognizersForMode();
         _gestureRecognizerService.SwipePanUpdated += OnSwipePanUpdated;
+        _swipeAttemptDetector.SwipeAttempted += OnSwipeAttempted;
 
         // Subscribe to bottom sheet dismissal to sync ViewModel state
         _windowOverlayService.BottomSheetDismissed += OnBottomSheetDismissed;
@@ -321,26 +325,26 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _inputCoordinationService.DirectionInputReceived -= OnDirectionInputReceived;
         _gestureRecognizerService.SwipePanUpdated -= OnSwipePanUpdated;
+        _swipeAttemptDetector.SwipeAttempted -= OnSwipeAttempted;
+    }
+
+    private async void OnSwipeAttempted(object? sender, EventArgs e)
+    {
+        // Track swipe attempts in adversarial mode and show toast hint after threshold
+        if (_adversarialSwipeTracker.RecordSwipeAttempt())
+        {
+            await _userFeedbackService.ShowAdversarialModeTapHintAsync();
+        }
     }
 
     private async void OnSwipePanUpdated(object? sender, SwipePanEventArgs e)
     {
+        // Swipe events in adversarial mode are handled by the lightweight SwipeAttemptDetector,
+        // which is separate from the main gesture recognizer to avoid tap interference.
         if (_viewModel.IsAdversarialMode)
         {
-            // Track swipe attempts in adversarial mode
-            // Only count completed swipes with a recognized direction (not just taps or short touches)
-            if (e.Status == GestureStatus.Completed && e.SwipeDirection.HasValue)
-            {
-                if (_adversarialSwipeTracker.RecordSwipeAttempt())
-                {
-                    await _userFeedbackService.ShowAdversarialModeTapHintAsync();
-                }
-            }
             return;
         }
-
-        // Reset counter when not in adversarial mode
-        _adversarialSwipeTracker.Reset();
 
         await _swipePreviewInteractionService.HandleSwipePanUpdatedAsync(
             e,
@@ -352,11 +356,17 @@ public partial class MainPage : ContentPage
     {
         if (_viewModel.IsAdversarialMode)
         {
+            // Adversarial mode uses tap-to-spawn. Detach the full gesture recognizers
+            // (which can interfere with taps on iOS) and use a lightweight detector instead.
             _gestureRecognizerService.DetachSwipeRecognizers(RootLayout);
             _swipePreviewInteractionService.Reset();
+            _swipeAttemptDetector.Attach(RootLayout);
         }
         else
         {
+            // Normal mode: use full gesture recognizers for swipe preview and detection
+            _swipeAttemptDetector.Detach(RootLayout);
+            _adversarialSwipeTracker.Reset();
             _gestureRecognizerService.AttachSwipeRecognizers(RootLayout);
         }
     }
@@ -683,8 +693,6 @@ public partial class MainPage : ContentPage
             UpdateSwipeRecognizersForMode();
             UpdateVoiceControlMoveButtonsVisibility();
             UpdateTileCellsAccessibilityForMode();
-            // Reset swipe attempt counter when mode changes
-            _adversarialSwipeTracker.Reset();
         }
     }
 

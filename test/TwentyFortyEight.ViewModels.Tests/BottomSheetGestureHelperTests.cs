@@ -46,7 +46,10 @@ public class BottomSheetGestureHelperTests
         var result = BottomSheetGestureHelper.IsSwipeMostlyVertical(deltaX, deltaY);
 
         // Assert
-        Assert.IsTrue(result, "Swipe with vertical/horizontal ratio of 2.0 should be considered vertical");
+        Assert.IsTrue(
+            result,
+            "Swipe with vertical/horizontal ratio of 2.0 should be considered vertical"
+        );
     }
 
     [TestMethod]
@@ -162,27 +165,31 @@ public class BottomSheetGestureHelperTests
     }
 
     [TestMethod]
-    [DataRow(0, 100, true)]      // Pure vertical
-    [DataRow(10, 100, true)]     // Mostly vertical (ratio 10)
-    [DataRow(30, 60, true)]      // Mostly vertical (ratio 2)
-    [DataRow(40, 61, true)]      // Just above threshold (ratio 1.525)
-    [DataRow(50, 50, false)]     // Diagonal (ratio 1)
-    [DataRow(60, 30, false)]     // Mostly horizontal (ratio 0.5)
-    [DataRow(100, 10, false)]    // Mostly horizontal (ratio 0.1)
-    [DataRow(-30, -60, true)]    // Negative vertical
-    [DataRow(25, -50, true)]     // Mixed signs vertical
-    [DataRow(-50, 25, false)]    // Mixed signs horizontal
+    [DataRow(0, 100, true)] // Pure vertical
+    [DataRow(10, 100, true)] // Mostly vertical (ratio 10)
+    [DataRow(30, 60, true)] // Mostly vertical (ratio 2)
+    [DataRow(40, 61, true)] // Just above threshold (ratio 1.525)
+    [DataRow(50, 50, false)] // Diagonal (ratio 1)
+    [DataRow(60, 30, false)] // Mostly horizontal (ratio 0.5)
+    [DataRow(100, 10, false)] // Mostly horizontal (ratio 0.1)
+    [DataRow(-30, -60, true)] // Negative vertical
+    [DataRow(25, -50, true)] // Mixed signs vertical
+    [DataRow(-50, 25, false)] // Mixed signs horizontal
     public void IsSwipeMostlyVertical_DataDriven_ReturnsExpected(
         double deltaX,
         double deltaY,
-        bool expected)
+        bool expected
+    )
     {
         // Act
         var result = BottomSheetGestureHelper.IsSwipeMostlyVertical(deltaX, deltaY);
 
         // Assert
-        Assert.AreEqual(expected, result,
-            $"For deltaX={deltaX}, deltaY={deltaY}, expected {expected} but got {result}");
+        Assert.AreEqual(
+            expected,
+            result,
+            $"For deltaX={deltaX}, deltaY={deltaY}, expected {expected} but got {result}"
+        );
     }
 
     #endregion
@@ -306,7 +313,12 @@ public class BottomSheetGestureHelperTests
 
         // Act - should work because 20ms is within [10ms, 30ms]
         var result = BottomSheetGestureHelper.CalculateSwipeVelocity(
-            deltaX, deltaY, timeDelta, minTime, maxTime);
+            deltaX,
+            deltaY,
+            timeDelta,
+            minTime,
+            maxTime
+        );
 
         // Assert
         Assert.AreEqual(5000.0, result, 0.01);
@@ -324,7 +336,12 @@ public class BottomSheetGestureHelperTests
 
         // Act
         var result = BottomSheetGestureHelper.CalculateSwipeVelocity(
-            deltaX, deltaY, timeDelta, minTime, maxTime);
+            deltaX,
+            deltaY,
+            timeDelta,
+            minTime,
+            maxTime
+        );
 
         // Assert
         Assert.AreEqual(0.0, result, "Below custom minimum should return 0");
@@ -342,33 +359,43 @@ public class BottomSheetGestureHelperTests
 
         // Act
         var result = BottomSheetGestureHelper.CalculateSwipeVelocity(
-            deltaX, deltaY, timeDelta, minTime, maxTime);
+            deltaX,
+            deltaY,
+            timeDelta,
+            minTime,
+            maxTime
+        );
 
         // Assert
         Assert.AreEqual(0.0, result, "Above custom maximum should return 0");
     }
 
     [TestMethod]
-    [DataRow(0, 100, 0.1, 1000.0)]      // Pure vertical, moderate speed
-    [DataRow(10, 100, 0.1, 1000.0)]     // Mostly vertical, moderate speed
-    [DataRow(5, 200, 0.1, 2000.0)]      // Mostly vertical, fast
-    [DataRow(5, 50, 0.4, 125.0)]        // Mostly vertical, slow
-    [DataRow(50, 50, 0.1, 0.0)]         // Diagonal - should be ignored
-    [DataRow(100, 30, 0.1, 0.0)]        // Mostly horizontal - should be ignored
-    [DataRow(5, -100, 0.1, -1000.0)]    // Upward swipe
+    [DataRow(0, 100, 0.1, 1000.0)] // Pure vertical, moderate speed
+    [DataRow(10, 100, 0.1, 1000.0)] // Mostly vertical, moderate speed
+    [DataRow(5, 200, 0.1, 2000.0)] // Mostly vertical, fast
+    [DataRow(5, 50, 0.4, 125.0)] // Mostly vertical, slow
+    [DataRow(50, 50, 0.1, 0.0)] // Diagonal - should be ignored
+    [DataRow(100, 30, 0.1, 0.0)] // Mostly horizontal - should be ignored
+    [DataRow(5, -100, 0.1, -1000.0)] // Upward swipe
     public void CalculateSwipeVelocity_VariousScenarios_ReturnsExpected(
         double deltaX,
         double deltaY,
         double timeDelta,
-        double expectedVelocity)
+        double expectedVelocity
+    )
     {
         // Act
         var result = BottomSheetGestureHelper.CalculateSwipeVelocity(deltaX, deltaY, timeDelta);
 
         // Assert
-        Assert.AreEqual(expectedVelocity, result, 0.01,
-            $"For deltaX={deltaX}, deltaY={deltaY}, timeDelta={timeDelta}, " +
-            $"expected {expectedVelocity} but got {result}");
+        Assert.AreEqual(
+            expectedVelocity,
+            result,
+            0.01,
+            $"For deltaX={deltaX}, deltaY={deltaY}, timeDelta={timeDelta}, "
+                + $"expected {expectedVelocity} but got {result}"
+        );
     }
 
     #endregion

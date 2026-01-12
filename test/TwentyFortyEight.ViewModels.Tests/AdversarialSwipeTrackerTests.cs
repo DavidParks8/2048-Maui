@@ -97,7 +97,10 @@ public class AdversarialSwipeTrackerTests
         bool shouldShowHint = _tracker.RecordSwipeAttempt(); // First attempt after reset
 
         // Assert
-        Assert.IsFalse(shouldShowHint, "First swipe attempt after manual reset should not trigger hint");
+        Assert.IsFalse(
+            shouldShowHint,
+            "First swipe attempt after manual reset should not trigger hint"
+        );
     }
 
     [TestMethod]
@@ -135,7 +138,10 @@ public class AdversarialSwipeTrackerTests
         Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 1 should not trigger");
         Assert.IsTrue(_tracker.RecordSwipeAttempt(), "Attempt 2 should trigger");
         Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 3 should not trigger");
-        Assert.IsFalse(_tracker.RecordSwipeAttempt(), "Attempt 4 should not trigger (within cooldown)");
+        Assert.IsFalse(
+            _tracker.RecordSwipeAttempt(),
+            "Attempt 4 should not trigger (within cooldown)"
+        );
     }
 
     [TestMethod]
@@ -150,24 +156,29 @@ public class AdversarialSwipeTrackerTests
         // Act - Multiple threads calling RecordSwipeAttempt concurrently
         for (int i = 0; i < threadCount; i++)
         {
-            tasks.Add(Task.Run(() =>
-            {
-                for (int j = 0; j < attemptsPerThread; j++)
+            tasks.Add(
+                Task.Run(() =>
                 {
-                    if (_tracker.RecordSwipeAttempt())
+                    for (int j = 0; j < attemptsPerThread; j++)
                     {
-                        Interlocked.Increment(ref triggerCount);
+                        if (_tracker.RecordSwipeAttempt())
+                        {
+                            Interlocked.Increment(ref triggerCount);
+                        }
+                        Thread.Sleep(10); // Small delay between attempts
                     }
-                    Thread.Sleep(10); // Small delay between attempts
-                }
-            }));
+                })
+            );
         }
 
         await Task.WhenAll(tasks);
 
         // Assert - Should have triggered at least once without crashes
         Assert.IsGreaterThan(0, triggerCount, "Should have triggered at least once");
-        Assert.IsLessThanOrEqualTo((threadCount * attemptsPerThread) / 2, triggerCount, 
-            "Should not trigger more than expected given the threshold and cooldown");
+        Assert.IsLessThanOrEqualTo(
+            (threadCount * attemptsPerThread) / 2,
+            triggerCount,
+            "Should not trigger more than expected given the threshold and cooldown"
+        );
     }
 }
