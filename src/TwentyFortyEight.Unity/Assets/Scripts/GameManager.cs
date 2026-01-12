@@ -12,6 +12,7 @@ namespace TwentyFortyEight.Unity
         private BoardRenderer _boardRenderer;
         private InputHandler _inputHandler;
         private UIManager _uiManager;
+        private IRandomSource _randomSource;
 
         [Header("Game Configuration")]
         [SerializeField] private int boardSize = 4;
@@ -19,6 +20,8 @@ namespace TwentyFortyEight.Unity
 
         void Start()
         {
+            // Create random source once and reuse it
+            _randomSource = new SystemRandomSource();
             InitializeGame();
         }
 
@@ -34,10 +37,9 @@ namespace TwentyFortyEight.Unity
         {
             // Create game configuration
             var config = new GameConfig(boardSize, winTile, GameMode.Modern);
-            var randomSource = new SystemRandomSource();
             
-            // Initialize the core engine
-            _engine = Game2048EngineFactory.CreateNewGame(config, randomSource);
+            // Initialize the core engine (reuses the random source)
+            _engine = Game2048EngineFactory.CreateNewGame(config, _randomSource);
             
             // Get references to other components
             _boardRenderer = GetComponent<BoardRenderer>();

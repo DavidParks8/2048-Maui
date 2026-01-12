@@ -79,7 +79,9 @@ namespace TwentyFortyEight.Unity
         }
 
         // Shared sprite for all tiles to avoid creating multiple textures
+        // This sprite and its texture are created once and persist for the app lifetime
         private static Sprite _sharedSprite;
+        private static Texture2D _sharedTexture;
 
         private Sprite CreateSquareSprite()
         {
@@ -90,8 +92,10 @@ namespace TwentyFortyEight.Unity
             }
 
             // Create a simple square texture once and share it
+            // This texture persists for the application lifetime (not a leak)
             int texSize = 64;
-            Texture2D texture = new Texture2D(texSize, texSize);
+            _sharedTexture = new Texture2D(texSize, texSize);
+            _sharedTexture.name = "SharedTileTexture"; // For debugging
             Color[] pixels = new Color[texSize * texSize];
             
             for (int i = 0; i < pixels.Length; i++)
@@ -99,13 +103,15 @@ namespace TwentyFortyEight.Unity
                 pixels[i] = Color.white;
             }
             
-            texture.SetPixels(pixels);
-            texture.Apply();
+            _sharedTexture.SetPixels(pixels);
+            _sharedTexture.Apply();
 
             // Use fixed pixels-per-unit for consistent sprite sizing
             // Unity default is 100 pixels per unit which works well for 2D games
             float pixelsPerUnit = 100f;
-            _sharedSprite = Sprite.Create(texture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), pixelsPerUnit);
+            _sharedSprite = Sprite.Create(_sharedTexture, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f), pixelsPerUnit);
+            _sharedSprite.name = "SharedTileSprite"; // For debugging
+            
             return _sharedSprite;
         }
     }

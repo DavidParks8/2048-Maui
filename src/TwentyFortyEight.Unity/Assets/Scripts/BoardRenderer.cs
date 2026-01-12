@@ -10,7 +10,6 @@ namespace TwentyFortyEight.Unity
     public class BoardRenderer : MonoBehaviour
     {
         [Header("Visual Settings")]
-        [SerializeField] private GameObject tilePrefab;
         [SerializeField] private Transform boardParent;
         [SerializeField] private float tileSize = 100f;
         [SerializeField] private float tileSpacing = 10f;
@@ -41,13 +40,16 @@ namespace TwentyFortyEight.Unity
             _boardSize = boardSize;
             _tileViews = new TileView[boardSize, boardSize];
 
-            // Create tile views
+            // Create tile views programmatically (no prefab needed)
             for (int row = 0; row < boardSize; row++)
             {
                 for (int col = 0; col < boardSize; col++)
                 {
                     Vector3 position = CalculateTilePosition(row, col);
-                    GameObject tileObj = Instantiate(tilePrefab, boardParent);
+                    
+                    // Create tile GameObject programmatically
+                    GameObject tileObj = new GameObject($"Tile_{row}_{col}");
+                    tileObj.transform.SetParent(boardParent);
                     tileObj.transform.localPosition = position;
                     
                     // Scale the tile to match the desired size
@@ -57,12 +59,8 @@ namespace TwentyFortyEight.Unity
                     float scale = tileSize / spriteNaturalSize;
                     tileObj.transform.localScale = new Vector3(scale, scale, 1f);
                     
-                    var tileView = tileObj.GetComponent<TileView>();
-                    if (tileView == null)
-                    {
-                        tileView = tileObj.AddComponent<TileView>();
-                    }
-                    
+                    // Add TileView component
+                    var tileView = tileObj.AddComponent<TileView>();
                     tileView.Initialize(tileSize);
                     _tileViews[row, col] = tileView;
                 }
