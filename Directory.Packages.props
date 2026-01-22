@@ -26,5 +26,9 @@
     <PackageVersion Include="Selenium.WebDriver" Version="4.21.0" />
     <!-- Code Formatting -->
     <PackageVersion Include="CSharpier.MsBuild" Version="0.30.6" />
+    <!-- Godot Dependencies -->
+    <PackageVersion Include="Godot.SourceGenerators" Version="4.4.1" />
+    <PackageVersion Include="GodotSharp" Version="4.4.1" />
+    <PackageVersion Include="GodotSharpEditor" Version="4.4.1" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@
     <Project Path="src\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
     <Project Path="src\TwentyFortyEight.Maui\TwentyFortyEight.Maui.csproj" />
     <Project Path="src\TwentyFortyEight.ViewModels\TwentyFortyEight.ViewModels.csproj" />
+    <Project Path="src\TwentyFortyEight.Godot\TwentyFortyEight.Godot.csproj" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test\TwentyFortyEight.Core.Tests\TwentyFortyEight.Core.Tests.csproj" />

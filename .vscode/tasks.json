@@ -2,6 +2,17 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "build: Godot",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "build",
+        "src/TwentyFortyEight.Godot/TwentyFortyEight.Godot.csproj"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
       "label": "build: TwentyFortyEight.Maui (windows)",
       "command": "dotnet",
       "type": "shell",

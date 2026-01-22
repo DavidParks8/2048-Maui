@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>TwentyFortyEight.Godot</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Set GodotProjectDir for source generators -->
+    <GodotProjectDir>$(MSBuildProjectDirectory)</GodotProjectDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" />
+    <PackageReference Include="Godot.SourceGenerators" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
+  </ItemGroup>
+</Project>

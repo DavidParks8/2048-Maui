@@ -2,6 +2,26 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Godot: Launch",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: Godot",
+      "program": "/Applications/Godot_mono.app/Contents/MacOS/Godot",
+      "args": [
+        "--path",
+        "${workspaceFolder}/src/TwentyFortyEight.Godot"
+      ],
+      "cwd": "${workspaceFolder}/src/TwentyFortyEight.Godot",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    },
+    {
+      "name": "Godot: Attach",
+      "type": "coreclr",
+      "request": "attach",
+      "processName": "Godot"
+    },
+    {
       "name": ".NET Meteor Debugger",
       "type": "dotnet-meteor.debugger",
       "request": "launch",

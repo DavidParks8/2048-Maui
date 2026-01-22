@@ -1,0 +1,23 @@
+<Project Sdk="Godot.NET.Sdk/4.4.1">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>TwentyFortyEight.Godot</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Disable CPM for this project since Godot SDK manages its own packages -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!-- Prevent duplicate assembly attributes when building outside Godot editor -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- CSharpier from Directory.Build.props needs explicit version since CPM is disabled -->
+    <PackageReference Update="CSharpier.MsBuild" Version="0.30.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TwentyFortyEight.Core\TwentyFortyEight.Core.csproj" />
+  </ItemGroup>
+</Project>
