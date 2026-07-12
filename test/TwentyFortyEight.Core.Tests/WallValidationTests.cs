@@ -20,32 +20,32 @@ public class WallValidationTests
     [TestMethod]
     public void WallSegment_InvalidOrientation_Throws()
     {
-        AssertThrows<ArgumentOutOfRangeException>(
-            () => new WallSegment((WallOrientation)123, divider: 0, start: 0, length: 1)
+        AssertThrows<ArgumentOutOfRangeException>(() =>
+            new WallSegment((WallOrientation)123, divider: 0, start: 0, length: 1)
         );
     }
 
     [TestMethod]
     public void WallSegment_NegativeDivider_Throws()
     {
-        AssertThrows<ArgumentOutOfRangeException>(
-            () => new WallSegment(WallOrientation.Vertical, divider: -1, start: 0, length: 1)
+        AssertThrows<ArgumentOutOfRangeException>(() =>
+            new WallSegment(WallOrientation.Vertical, divider: -1, start: 0, length: 1)
         );
     }
 
     [TestMethod]
     public void WallSegment_NegativeStart_Throws()
     {
-        AssertThrows<ArgumentOutOfRangeException>(
-            () => new WallSegment(WallOrientation.Vertical, divider: 0, start: -1, length: 1)
+        AssertThrows<ArgumentOutOfRangeException>(() =>
+            new WallSegment(WallOrientation.Vertical, divider: 0, start: -1, length: 1)
         );
     }
 
     [TestMethod]
     public void WallSegment_NonPositiveLength_Throws()
     {
-        AssertThrows<ArgumentOutOfRangeException>(
-            () => new WallSegment(WallOrientation.Vertical, divider: 0, start: 0, length: 0)
+        AssertThrows<ArgumentOutOfRangeException>(() =>
+            new WallSegment(WallOrientation.Vertical, divider: 0, start: 0, length: 0)
         );
     }
 
