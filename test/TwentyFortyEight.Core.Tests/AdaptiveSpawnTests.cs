@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 
 namespace TwentyFortyEight.Core.Tests;
 
@@ -90,9 +90,9 @@ public class AdaptiveSpawnTests
         GameConfig config = new() { Size = 4 };
 
         // Create a mock random that always returns 0.5 (should spawn common value)
-        Mock<IRandomSource> mockRandom = new();
-        mockRandom.Setup(r => r.NextDouble()).Returns(0.5); // 0.5 < 0.9, so common value
-        mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0); // Always pick first empty cell
+        IRandomSource mockRandom = Substitute.For<IRandomSource>();
+        mockRandom.NextDouble().Returns(0.5); // 0.5 < 0.9, so common value
+        mockRandom.Next(Arg.Any<int>()).Returns(0); // Always pick first empty cell
 
         // Create board with 2048 tile and empty space
         var data = new int[16];
@@ -105,10 +105,10 @@ public class AdaptiveSpawnTests
         Game2048Engine engine = new(
             state,
             config,
-            mockRandom.Object,
+            mockRandom,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom)
         );
 
         // Act
@@ -137,9 +137,9 @@ public class AdaptiveSpawnTests
         GameConfig config = new() { Size = 4 };
 
         // Create a mock random that always returns 0.5 (should spawn common value = 2)
-        Mock<IRandomSource> mockRandom = new();
-        mockRandom.Setup(r => r.NextDouble()).Returns(0.5);
-        mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
+        IRandomSource mockRandom = Substitute.For<IRandomSource>();
+        mockRandom.NextDouble().Returns(0.5);
+        mockRandom.Next(Arg.Any<int>()).Returns(0);
 
         // Create board with low value tiles
         var data = new int[16];
@@ -151,10 +151,10 @@ public class AdaptiveSpawnTests
         Game2048Engine engine = new(
             state,
             config,
-            mockRandom.Object,
+            mockRandom,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom)
         );
 
         // Act

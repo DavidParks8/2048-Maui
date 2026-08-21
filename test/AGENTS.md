@@ -20,7 +20,7 @@ dotnet test
 ## Test Framework
 
 - **MSTest SDK**: Tests use the MSTest.Sdk project style for simplified configuration
-- **Moq**: Available for mocking interfaces and dependencies
+- **NSubstitute**: Available for substituting interfaces and dependencies
 - **Parallel Execution**: Tests run in parallel at the method level with `[Parallelize(Scope = ExecutionScope.MethodLevel, Workers = 0)]`
 
 ## SDK-Style Test Projects
@@ -34,7 +34,7 @@ New test projects should use the `MSTest.Sdk` project style for minimal configur
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Moq" />
+    <PackageReference Include="NSubstitute" />
   </ItemGroup>
 
 </Project>
@@ -80,19 +80,19 @@ public void ExampleTest()
 }
 ```
 
-### Using Mocks
+### Using Substitutes
 
-Use `SystemRandomSource(seed)` for deterministic tests or `Mock<IRandomSource>` for precise control:
+Use `SystemRandomSource(seed)` for deterministic tests or NSubstitute for precise control:
 
 ```csharp
 // Seeded random for deterministic tests
 var random = new SystemRandomSource(42);
 Game2048Engine engine = new(config, random);
 
-// Or use Moq for precise control
-Mock<IRandomSource> randomMock = new();
-randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
-randomMock.Setup(r => r.NextDouble()).Returns(0.5);
+// Or use NSubstitute for precise control
+IRandomSource randomSubstitute = Substitute.For<IRandomSource>();
+randomSubstitute.Next(Arg.Any<int>()).Returns(0);
+randomSubstitute.NextDouble().Returns(0.5);
 
-Game2048Engine engine = new(config, randomMock.Object);
+Game2048Engine substitutedEngine = new(config, randomSubstitute);
 ```

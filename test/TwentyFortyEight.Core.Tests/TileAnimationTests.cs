@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 
 namespace TwentyFortyEight.Core.Tests;
 
@@ -10,27 +10,31 @@ public class AnimationDetectionTests
     {
         // Arrange
         GameConfig config = new();
-        Mock<IRandomSource> randomMock = new();
+        IRandomSource randomMock = Substitute.For<IRandomSource>();
 
         // Setup random to return predictable values
         randomMock
-            .SetupSequence(r => r.Next(It.IsAny<int>()))
-            .Returns(0) // First spawn position
-            .Returns(1) // Second spawn position
-            .Returns(5); // Third spawn position after move (position that will be empty)
+            .Next(Arg.Any<int>())
+            .Returns(
+                0, // First spawn position
+                1, // Second spawn position
+                5 // Third spawn position after move (position that will be empty)
+            );
 
         randomMock
-            .SetupSequence(r => r.NextDouble())
-            .Returns(0.5) // First spawn value (2)
-            .Returns(0.5) // Second spawn value (2)
-            .Returns(0.5); // Third spawn value (2) - new tile
+            .NextDouble()
+            .Returns(
+                0.5, // First spawn value (2)
+                0.5, // Second spawn value (2)
+                0.5 // Third spawn value (2) - new tile
+            );
 
         Game2048Engine engine = new(
             config,
-            randomMock.Object,
+            randomMock,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
+            TestHelpers.CreateSpawnStrategyFactory(randomMock)
         );
         var initialBoardSnapshot = engine.CurrentState.Board.ToArray();
 
@@ -55,7 +59,7 @@ public class AnimationDetectionTests
     {
         // Arrange - Create a board with two 2's that can merge
         GameConfig config = new();
-        Mock<IRandomSource> randomMock = new();
+        IRandomSource randomMock = Substitute.For<IRandomSource>();
 
         // Create initial state with two 2's in the same row
         var initialBoard = new int[16];
@@ -66,15 +70,15 @@ public class AnimationDetectionTests
         Game2048Engine engine = new(
             initialState,
             config,
-            randomMock.Object,
+            randomMock,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
+            TestHelpers.CreateSpawnStrategyFactory(randomMock)
         );
 
         // Setup random for the new tile spawn after merge
-        randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
-        randomMock.Setup(r => r.NextDouble()).Returns(0.5);
+        randomMock.Next(Arg.Any<int>()).Returns(2);
+        randomMock.NextDouble().Returns(0.5);
 
         // Act
         var moved = engine.Move(Direction.Left);
@@ -95,7 +99,7 @@ public class AnimationDetectionTests
     {
         // Arrange - Create a board with a tile that needs to slide
         GameConfig config = new();
-        Mock<IRandomSource> randomMock = new();
+        IRandomSource randomMock = Substitute.For<IRandomSource>();
 
         // Create initial state with a single tile not at the edge
         var initialBoard = new int[16];
@@ -105,15 +109,15 @@ public class AnimationDetectionTests
         Game2048Engine engine = new(
             initialState,
             config,
-            randomMock.Object,
+            randomMock,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
+            TestHelpers.CreateSpawnStrategyFactory(randomMock)
         );
 
         // Setup random for the new tile spawn after slide
-        randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(2);
-        randomMock.Setup(r => r.NextDouble()).Returns(0.5);
+        randomMock.Next(Arg.Any<int>()).Returns(2);
+        randomMock.NextDouble().Returns(0.5);
 
         // Act
         var moved = engine.Move(Direction.Left);
@@ -129,17 +133,17 @@ public class AnimationDetectionTests
     {
         // Arrange
         GameConfig config = new();
-        Mock<IRandomSource> randomMock = new();
+        IRandomSource randomMock = Substitute.For<IRandomSource>();
 
-        randomMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
-        randomMock.Setup(r => r.NextDouble()).Returns(0.5);
+        randomMock.Next(Arg.Any<int>()).Returns(0);
+        randomMock.NextDouble().Returns(0.5);
 
         Game2048Engine engine = new(
             config,
-            randomMock.Object,
+            randomMock,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(randomMock.Object)
+            TestHelpers.CreateSpawnStrategyFactory(randomMock)
         );
 
         // Act & Assert for each direction

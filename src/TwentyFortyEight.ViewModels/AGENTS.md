@@ -24,23 +24,23 @@ The ViewModels in this library use dependency injection for all platform-specifi
 
 ### Writing Tests
 
-Use Moq to mock the service interfaces:
+Use NSubstitute to substitute the service interfaces:
 
 ```csharp
 [TestMethod]
 public void Constructor_InitializesTilesCollection()
 {
-    // Arrange - mock all dependencies
-    var loggerMock = new Mock<ILogger<GameViewModel>>();
-    var preferencesServiceMock = new Mock<IPreferencesService>();
-    var alertServiceMock = new Mock<IAlertService>();
-    // ... setup mocks
+    // Arrange - substitute all dependencies
+    var logger = Substitute.For<ILogger<GameViewModel>>();
+    var preferencesService = Substitute.For<IPreferencesService>();
+    var alertService = Substitute.For<IAlertService>();
+    // ... configure substitutes
 
     // Act
     var viewModel = new GameViewModel(
-        loggerMock.Object,
-        moveAnalyzerMock.Object,
-        // ... other mocks
+        logger,
+        moveAnalyzer,
+        // ... other substitutes
     );
 
     // Assert

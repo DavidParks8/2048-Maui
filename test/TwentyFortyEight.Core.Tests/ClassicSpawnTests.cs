@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 
 namespace TwentyFortyEight.Core.Tests;
 
@@ -11,9 +11,9 @@ public class ClassicSpawnTests
         // Arrange
         GameConfig config = new() { Size = 4, Mode = GameMode.Classic };
 
-        Mock<IRandomSource> mockRandom = new();
-        mockRandom.Setup(r => r.NextDouble()).Returns(0.5); // common value
-        mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0); // first empty cell
+        IRandomSource mockRandom = Substitute.For<IRandomSource>();
+        mockRandom.NextDouble().Returns(0.5); // common value
+        mockRandom.Next(Arg.Any<int>()).Returns(0); // first empty cell
 
         // Create board with high max tile; classic spawn should still be 2/4.
         var data = new int[16];
@@ -24,10 +24,10 @@ public class ClassicSpawnTests
         Game2048Engine engine = new(
             state,
             config,
-            mockRandom.Object,
+            mockRandom,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom)
         );
 
         // Act
@@ -47,9 +47,9 @@ public class ClassicSpawnTests
         // Arrange
         GameConfig config = new() { Size = 4, Mode = GameMode.Classic };
 
-        Mock<IRandomSource> mockRandom = new();
-        mockRandom.Setup(r => r.NextDouble()).Returns(0.95); // rare value
-        mockRandom.Setup(r => r.Next(It.IsAny<int>())).Returns(0); // first empty cell
+        IRandomSource mockRandom = Substitute.For<IRandomSource>();
+        mockRandom.NextDouble().Returns(0.95); // rare value
+        mockRandom.Next(Arg.Any<int>()).Returns(0); // first empty cell
 
         var data = new int[16];
         data[0] = 8;
@@ -59,10 +59,10 @@ public class ClassicSpawnTests
         Game2048Engine engine = new(
             state,
             config,
-            mockRandom.Object,
+            mockRandom,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(mockRandom.Object)
+            TestHelpers.CreateSpawnStrategyFactory(mockRandom)
         );
 
         // Act
