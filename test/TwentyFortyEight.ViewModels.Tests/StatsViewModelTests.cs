@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
-using Moq;
+using NSubstitute;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -11,37 +11,37 @@ namespace TwentyFortyEight.ViewModels.Tests;
 [TestClass]
 public class StatsViewModelTests
 {
-    private Mock<IStatisticsTracker> _statisticsTrackerMock = null!;
-    private Mock<IAlertService> _alertServiceMock = null!;
-    private Mock<ILocalizationService> _localizationServiceMock = null!;
-    private Mock<ISettingsService> _settingsServiceMock = null!;
+    private IStatisticsTracker _statisticsTrackerMock = null!;
+    private IAlertService _alertServiceMock = null!;
+    private ILocalizationService _localizationServiceMock = null!;
+    private ISettingsService _settingsServiceMock = null!;
     private IMessenger _messenger = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _statisticsTrackerMock = new Mock<IStatisticsTracker>();
-        _alertServiceMock = new Mock<IAlertService>();
-        _localizationServiceMock = new Mock<ILocalizationService>();
-        _settingsServiceMock = new Mock<ISettingsService>();
+        _statisticsTrackerMock = Substitute.For<IStatisticsTracker>();
+        _alertServiceMock = Substitute.For<IAlertService>();
+        _localizationServiceMock = Substitute.For<ILocalizationService>();
+        _settingsServiceMock = Substitute.For<ISettingsService>();
         _messenger = new WeakReferenceMessenger();
 
         // Setup default statistics
-        _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(new GameStatistics());
+        _statisticsTrackerMock.GetStatistics().Returns(new GameStatistics());
 
         // Default mode/scope
-        _settingsServiceMock
-            .SetupGet(s => s.LastActiveGameConfig)
-            .Returns(new GameConfig { Size = 4, WinTile = 2048 });
+        _settingsServiceMock.LastActiveGameConfig.Returns(
+            new GameConfig { Size = 4, WinTile = 2048 }
+        );
     }
 
     private StatsViewModel CreateViewModel()
     {
         return new StatsViewModel(
-            _statisticsTrackerMock.Object,
-            _alertServiceMock.Object,
-            _localizationServiceMock.Object,
-            _settingsServiceMock.Object,
+            _statisticsTrackerMock,
+            _alertServiceMock,
+            _localizationServiceMock,
+            _settingsServiceMock,
             _messenger
         );
     }
@@ -49,9 +49,9 @@ public class StatsViewModelTests
     [TestMethod]
     public void Constructor_SetsBoardSizeDisplay_FromSettings()
     {
-        _settingsServiceMock
-            .SetupGet(s => s.LastActiveGameConfig)
-            .Returns(new GameConfig { Size = 5, WinTile = 2048 });
+        _settingsServiceMock.LastActiveGameConfig.Returns(
+            new GameConfig { Size = 5, WinTile = 2048 }
+        );
 
         var viewModel = CreateViewModel();
 
@@ -72,7 +72,7 @@ public class StatsViewModelTests
             CurrentStreak = 2,
             BestStreak = 3,
         };
-        _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(stats);
+        _statisticsTrackerMock.GetStatistics().Returns(stats);
 
         // Act
         var viewModel = CreateViewModel();
@@ -93,10 +93,10 @@ public class StatsViewModelTests
         // Arrange
         GameStatistics initialStats = new() { GamesPlayed = 5 };
         GameStatistics updatedStats = new() { GamesPlayed = 10 };
-        _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(initialStats);
+        _statisticsTrackerMock.GetStatistics().Returns(initialStats);
         var viewModel = CreateViewModel();
 
-        _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(updatedStats);
+        _statisticsTrackerMock.GetStatistics().Returns(updatedStats);
 
         // Act
         viewModel.RefreshStatistics();
@@ -110,15 +110,13 @@ public class StatsViewModelTests
     {
         // Arrange
         _alertServiceMock
-            .Setup(a =>
-                a.ShowConfirmationAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>()
-                )
+            .ShowConfirmationAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>()
             )
-            .ReturnsAsync(true);
+            .Returns(Task.FromResult(true));
 
         var viewModel = CreateViewModel();
 
@@ -126,7 +124,7 @@ public class StatsViewModelTests
         await viewModel.ResetStatisticsCommand.ExecuteAsync(null);
 
         // Assert
-        _statisticsTrackerMock.Verify(s => s.Reset(), Times.Once);
+        _statisticsTrackerMock.Received(1).Reset();
     }
 
     [TestMethod]
@@ -134,15 +132,13 @@ public class StatsViewModelTests
     {
         // Arrange
         _alertServiceMock
-            .Setup(a =>
-                a.ShowConfirmationAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>()
-                )
+            .ShowConfirmationAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>()
             )
-            .ReturnsAsync(false);
+            .Returns(Task.FromResult(false));
 
         var viewModel = CreateViewModel();
 
@@ -150,7 +146,7 @@ public class StatsViewModelTests
         await viewModel.ResetStatisticsCommand.ExecuteAsync(null);
 
         // Assert
-        _statisticsTrackerMock.Verify(s => s.Reset(), Times.Never);
+        _statisticsTrackerMock.DidNotReceive().Reset();
     }
 
     [TestMethod]
@@ -158,7 +154,7 @@ public class StatsViewModelTests
     {
         // Arrange
         GameStatistics stats = new() { GamesPlayed = 10, GamesWon = 3 }; // 30% win rate
-        _statisticsTrackerMock.Setup(s => s.GetStatistics()).Returns(stats);
+        _statisticsTrackerMock.GetStatistics().Returns(stats);
 
         // Act
         var viewModel = CreateViewModel();

@@ -1,7 +1,7 @@
 using System.Reflection;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Services;
 
@@ -15,70 +15,67 @@ namespace TwentyFortyEight.ViewModels.Tests;
 [TestClass]
 public class GameViewModelTests
 {
-    private Mock<ILogger<GameViewModel>> _loggerMock = null!;
-    private Mock<IMoveAnalyzer> _moveAnalyzerMock = null!;
-    private Mock<IMoveAdvisor> _moveAdvisorMock = null!;
-    private Mock<ISettingsService> _settingsServiceMock = null!;
-    private Mock<IStatisticsTracker> _statisticsTrackerMock = null!;
-    private Mock<IRandomSource> _randomSourceMock = null!;
+    private ILogger<GameViewModel> _loggerMock = null!;
+    private IMoveAnalyzer _moveAnalyzerMock = null!;
+    private IMoveAdvisor _moveAdvisorMock = null!;
+    private ISettingsService _settingsServiceMock = null!;
+    private IStatisticsTracker _statisticsTrackerMock = null!;
+    private IRandomSource _randomSourceMock = null!;
     private IGame2048EngineFactory _engineFactory = null!;
-    private Mock<IGameStateRepository> _repositoryMock = null!;
-    private Mock<IGameSessionCoordinator> _sessionCoordinatorMock = null!;
-    private Mock<IUserFeedbackService> _feedbackServiceMock = null!;
+    private IGameStateRepository _repositoryMock = null!;
+    private IGameSessionCoordinator _sessionCoordinatorMock = null!;
+    private IUserFeedbackService _feedbackServiceMock = null!;
     private IBoardSimulator _boardSimulator = null!;
-    private Mock<ICoachNudgeService> _coachNudgeServiceMock = null!;
-    private Mock<ICoachSuggestionService> _coachSuggestionServiceMock = null!;
+    private ICoachNudgeService _coachNudgeServiceMock = null!;
+    private ICoachSuggestionService _coachSuggestionServiceMock = null!;
     private VictoryViewModel _victoryViewModel = null!;
     private IMessenger _messenger = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _loggerMock = new Mock<ILogger<GameViewModel>>();
-        _moveAnalyzerMock = new Mock<IMoveAnalyzer>();
-        _moveAdvisorMock = new Mock<IMoveAdvisor>();
-        _settingsServiceMock = new Mock<ISettingsService>();
-        _statisticsTrackerMock = new Mock<IStatisticsTracker>();
-        _randomSourceMock = new Mock<IRandomSource>();
-        _repositoryMock = new Mock<IGameStateRepository>();
-        _sessionCoordinatorMock = new Mock<IGameSessionCoordinator>();
-        _feedbackServiceMock = new Mock<IUserFeedbackService>();
-        _coachNudgeServiceMock = new Mock<ICoachNudgeService>();
-        _coachSuggestionServiceMock = new Mock<ICoachSuggestionService>();
+        _loggerMock = Substitute.For<ILogger<GameViewModel>>();
+        _moveAnalyzerMock = Substitute.For<IMoveAnalyzer>();
+        _moveAdvisorMock = Substitute.For<IMoveAdvisor>();
+        _settingsServiceMock = Substitute.For<ISettingsService>();
+        _statisticsTrackerMock = Substitute.For<IStatisticsTracker>();
+        _randomSourceMock = Substitute.For<IRandomSource>();
+        _repositoryMock = Substitute.For<IGameStateRepository>();
+        _sessionCoordinatorMock = Substitute.For<IGameSessionCoordinator>();
+        _feedbackServiceMock = Substitute.For<IUserFeedbackService>();
+        _coachNudgeServiceMock = Substitute.For<ICoachNudgeService>();
+        _coachSuggestionServiceMock = Substitute.For<ICoachSuggestionService>();
         _messenger = new WeakReferenceMessenger();
 
         // Create real VictoryViewModel instance for testing
-        var accessibilitySettingsMock = new Mock<IAccessibilitySettingsService>();
-        var victoryFeedbackMock = new Mock<IUserFeedbackService>();
-        var localizationMock = new Mock<ILocalizationService>();
-        localizationMock
-            .Setup(x => x.FormatScore(It.IsAny<int>()))
-            .Returns((int score) => $"{score}");
+        var accessibilitySettingsMock = Substitute.For<IAccessibilitySettingsService>();
+        var victoryFeedbackMock = Substitute.For<IUserFeedbackService>();
+        var localizationMock = Substitute.For<ILocalizationService>();
+        localizationMock.FormatScore(Arg.Any<int>()).Returns(callInfo => $"{callInfo.Arg<int>()}");
         _victoryViewModel = new VictoryViewModel(
-            accessibilitySettingsMock.Object,
-            victoryFeedbackMock.Object,
-            localizationMock.Object
+            accessibilitySettingsMock,
+            victoryFeedbackMock,
+            localizationMock
         );
 
         // Setup default behavior
-        _settingsServiceMock.SetupGet(s => s.HapticsEnabled).Returns(true);
-        _settingsServiceMock.SetupGet(s => s.CoachEnabled).Returns(false);
-        _settingsServiceMock.SetupGet(s => s.CoachNudgesEnabled).Returns(true);
-        _settingsServiceMock.SetupSet<bool>(s => s.CoachEnabled = It.IsAny<bool>());
-        _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(new GameConfig());
-        _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(0);
-        _repositoryMock.Setup(r => r.LoadGame(It.IsAny<GameConfig>())).Returns((GameSave?)null);
-        _sessionCoordinatorMock.Setup(s => s.IsSocialGamingAvailable).Returns(false);
+        _settingsServiceMock.HapticsEnabled.Returns(true);
+        _settingsServiceMock.CoachEnabled.Returns(false);
+        _settingsServiceMock.CoachNudgesEnabled.Returns(true);
+        _settingsServiceMock.LastActiveGameConfig.Returns(new GameConfig());
+        _repositoryMock.GetBestScore(Arg.Any<GameConfig>()).Returns(0);
+        _repositoryMock.LoadGame(Arg.Any<GameConfig>()).Returns((GameSave?)null);
+        _sessionCoordinatorMock.IsSocialGamingAvailable.Returns(false);
 
         // Setup random source for deterministic tile spawning
-        _randomSourceMock.Setup(r => r.Next(It.IsAny<int>())).Returns(0);
-        _randomSourceMock.Setup(r => r.NextDouble()).Returns(0.5);
+        _randomSourceMock.Next(Arg.Any<int>()).Returns(0);
+        _randomSourceMock.NextDouble().Returns(0.5);
 
-        var spawnStrategyFactory = CreateSpawnStrategyFactory(_randomSourceMock.Object);
+        var spawnStrategyFactory = CreateSpawnStrategyFactory(_randomSourceMock);
 
         _engineFactory = new Game2048EngineFactory(
-            _randomSourceMock.Object,
-            _statisticsTrackerMock.Object,
+            _randomSourceMock,
+            _statisticsTrackerMock,
             new BoardMoveSimulator(),
             spawnStrategyFactory
         );
@@ -111,19 +108,19 @@ public class GameViewModelTests
     private GameViewModel CreateViewModel()
     {
         return new GameViewModel(
-            _loggerMock.Object,
-            _moveAnalyzerMock.Object,
+            _loggerMock,
+            _moveAnalyzerMock,
             _boardSimulator,
-            _settingsServiceMock.Object,
-            _statisticsTrackerMock.Object,
+            _settingsServiceMock,
+            _statisticsTrackerMock,
             _engineFactory,
-            _repositoryMock.Object,
-            _sessionCoordinatorMock.Object,
-            _feedbackServiceMock.Object,
+            _repositoryMock,
+            _sessionCoordinatorMock,
+            _feedbackServiceMock,
             _victoryViewModel,
-            _coachNudgeServiceMock.Object,
-            _coachSuggestionServiceMock.Object,
-            _moveAdvisorMock.Object,
+            _coachNudgeServiceMock,
+            _coachSuggestionServiceMock,
+            _moveAdvisorMock,
             _messenger
         );
     }
@@ -153,8 +150,8 @@ public class GameViewModelTests
     public async Task MoveCommand_WhenMoveAlreadyInProgress_QueuesSecondMove()
     {
         _moveAnalyzerMock
-            .Setup(m => m.Analyze(It.IsAny<MoveAnalysisRequest>()))
-            .Returns(() => new MoveAnalysisResult(boardSize: 4));
+            .Analyze(Arg.Any<MoveAnalysisRequest>())
+            .Returns(_ => new MoveAnalysisResult(boardSize: 4));
 
         var viewModel = CreateViewModel();
 
@@ -174,7 +171,7 @@ public class GameViewModelTests
     {
         // Arrange
         _coachSuggestionServiceMock
-            .Setup(s => s.GetSuggestion(It.IsAny<CoachSuggestionRequest>()))
+            .GetSuggestion(Arg.Any<CoachSuggestionRequest>())
             .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
 
         var viewModel = CreateViewModel();
@@ -194,7 +191,7 @@ public class GameViewModelTests
     {
         // Arrange
         _coachSuggestionServiceMock
-            .Setup(s => s.GetSuggestion(It.IsAny<CoachSuggestionRequest>()))
+            .GetSuggestion(Arg.Any<CoachSuggestionRequest>())
             .Returns(new MoveRecommendation(Direction.Left, 123, MoveCoachReason.CreateSpace));
 
         var viewModel = CreateViewModel();
@@ -219,7 +216,7 @@ public class GameViewModelTests
         var viewModel = CreateViewModel();
 
         // Simulate the nudge being shown
-        _coachNudgeServiceMock.Setup(s => s.IsNudgeVisible).Returns(true);
+        _coachNudgeServiceMock.IsNudgeVisible.Returns(true);
 
         // Act
         viewModel.DismissCoachNudgeCommand.Execute(null);
@@ -227,7 +224,7 @@ public class GameViewModelTests
         // Assert
         Assert.IsFalse(viewModel.IsCoachNudgeVisible);
         Assert.IsFalse(viewModel.IsCoachEnabled);
-        _coachNudgeServiceMock.Verify(s => s.Dismiss(), Times.Once);
+        _coachNudgeServiceMock.Received(1).Dismiss();
     }
 
     [TestMethod]
@@ -244,9 +241,7 @@ public class GameViewModelTests
     public void Constructor_WhenLastActiveBoardSizeSet_RestoresMode()
     {
         // Arrange
-        _settingsServiceMock
-            .Setup(s => s.LastActiveGameConfig)
-            .Returns(new GameConfig { Size = 5 });
+        _settingsServiceMock.LastActiveGameConfig.Returns(new GameConfig { Size = 5 });
 
         // Act
         var viewModel = CreateViewModel();
@@ -254,11 +249,8 @@ public class GameViewModelTests
         // Assert
         Assert.AreEqual(5, viewModel.BoardSize);
         Assert.HasCount(25, viewModel.Tiles); // 5x5 board
-        _repositoryMock.Verify(
-            r => r.GetBestScore(It.Is<GameConfig>(c => c.Size == 5)),
-            Times.Once
-        );
-        _repositoryMock.Verify(r => r.LoadGame(It.Is<GameConfig>(c => c.Size == 5)), Times.Once);
+        _repositoryMock.Received(1).GetBestScore(Arg.Is<GameConfig>(c => c.Size == 5));
+        _repositoryMock.Received(1).LoadGame(Arg.Is<GameConfig>(c => c.Size == 5));
     }
 
     [TestMethod]
@@ -271,7 +263,7 @@ public class GameViewModelTests
         await viewModel.ShowHowToPlayCommand.ExecuteAsync(null);
 
         // Assert
-        _feedbackServiceMock.Verify(f => f.ShowHowToPlayAsync(), Times.Once);
+        await _feedbackServiceMock.Received(1).ShowHowToPlayAsync();
     }
 
     [TestMethod]
@@ -326,18 +318,17 @@ public class GameViewModelTests
         await viewModel.NewGameCommand.ExecuteAsync(null);
 
         // Assert - Should not show confirmation dialog
-        _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Never);
-        _repositoryMock.Verify(
-            r => r.SaveGame(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameSave>()),
-            Times.Once
-        );
+        await _feedbackServiceMock.DidNotReceive().ConfirmNewGameAsync();
+        _repositoryMock
+            .Received(1)
+            .SaveGame(Arg.Is<GameConfig>(c => c.Size == 4), Arg.Any<GameSave>());
     }
 
     [TestMethod]
     public async Task NewGameAsync_WhenMovesGreaterThanZeroAndUserCancels_DoesNotStartNewGame()
     {
         // Arrange
-        _feedbackServiceMock.Setup(f => f.ConfirmNewGameAsync()).ReturnsAsync(false);
+        _feedbackServiceMock.ConfirmNewGameAsync().Returns(Task.FromResult(false));
         var viewModel = CreateViewModel();
         viewModel.Moves = 1;
 
@@ -345,18 +336,15 @@ public class GameViewModelTests
         await viewModel.NewGameCommand.ExecuteAsync(null);
 
         // Assert
-        _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
-        _repositoryMock.Verify(
-            r => r.SaveGame(It.IsAny<GameConfig>(), It.IsAny<GameSave>()),
-            Times.Never
-        );
+        await _feedbackServiceMock.Received(1).ConfirmNewGameAsync();
+        _repositoryMock.DidNotReceive().SaveGame(Arg.Any<GameConfig>(), Arg.Any<GameSave>());
     }
 
     [TestMethod]
     public async Task NewGameAsync_WhenMovesGreaterThanZeroAndUserConfirms_StartsNewGame()
     {
         // Arrange
-        _feedbackServiceMock.Setup(f => f.ConfirmNewGameAsync()).ReturnsAsync(true);
+        _feedbackServiceMock.ConfirmNewGameAsync().Returns(Task.FromResult(true));
         var viewModel = CreateViewModel();
         viewModel.Moves = 1;
 
@@ -364,11 +352,10 @@ public class GameViewModelTests
         await viewModel.NewGameCommand.ExecuteAsync(null);
 
         // Assert
-        _feedbackServiceMock.Verify(f => f.ConfirmNewGameAsync(), Times.Once);
-        _repositoryMock.Verify(
-            r => r.SaveGame(It.Is<GameConfig>(c => c.Size == 4), It.IsAny<GameSave>()),
-            Times.Once
-        );
+        await _feedbackServiceMock.Received(1).ConfirmNewGameAsync();
+        _repositoryMock
+            .Received(1)
+            .SaveGame(Arg.Is<GameConfig>(c => c.Size == 4), Arg.Any<GameSave>());
     }
 
     [TestMethod]
@@ -426,9 +413,7 @@ public class GameViewModelTests
     {
         // Arrange
         var viewModel = CreateViewModel();
-        _repositoryMock
-            .Setup(r => r.FlushAsync(It.IsAny<GameConfig>()))
-            .Returns(Task.CompletedTask);
+        _repositoryMock.FlushAsync(Arg.Any<GameConfig>()).Returns(Task.CompletedTask);
 
         var oldRulesetId = new GameConfig { Size = 4, WinTile = 2048 }.RulesetId;
         var newRulesetId = new GameConfig { Size = 5, WinTile = 2048 }.RulesetId;
@@ -439,25 +424,15 @@ public class GameViewModelTests
         await viewModel.PlaySelectedModeCommand.ExecuteAsync(null);
 
         // Assert
-        _repositoryMock.Verify(
-            r =>
-                r.SaveGame(
-                    It.Is<GameConfig>(c => c.RulesetId == oldRulesetId),
-                    It.IsAny<GameSave>()
-                ),
-            Times.AtLeastOnce
-        );
+        _repositoryMock
+            .Received()
+            .SaveGame(Arg.Is<GameConfig>(c => c.RulesetId == oldRulesetId), Arg.Any<GameSave>());
 
-        _repositoryMock.Verify(
-            r =>
-                r.SaveGame(
-                    It.Is<GameConfig>(c => c.RulesetId == newRulesetId),
-                    It.IsAny<GameSave>()
-                ),
-            Times.AtLeastOnce
-        );
+        _repositoryMock
+            .Received()
+            .SaveGame(Arg.Is<GameConfig>(c => c.RulesetId == newRulesetId), Arg.Any<GameSave>());
 
-        _repositoryMock.Verify(r => r.ClearSavedGame(It.IsAny<GameConfig>()), Times.Never);
+        _repositoryMock.DidNotReceive().ClearSavedGame(Arg.Any<GameConfig>());
     }
 
     [TestMethod]
@@ -465,9 +440,7 @@ public class GameViewModelTests
     {
         // Arrange
         var viewModel = CreateViewModel();
-        _repositoryMock
-            .Setup(r => r.FlushAsync(It.IsAny<GameConfig>()))
-            .Returns(Task.CompletedTask);
+        _repositoryMock.FlushAsync(Arg.Any<GameConfig>()).Returns(Task.CompletedTask);
 
         var newRulesetId = new GameConfig { Size = 5, WinTile = 2048 }.RulesetId;
         viewModel.PendingBoardSize = 5;
@@ -476,10 +449,9 @@ public class GameViewModelTests
         await viewModel.StartNewSelectedModeCommand.ExecuteAsync(null);
 
         // Assert
-        _repositoryMock.Verify(
-            r => r.ClearSavedGame(It.Is<GameConfig>(c => c.RulesetId == newRulesetId)),
-            Times.Once
-        );
+        _repositoryMock
+            .Received(1)
+            .ClearSavedGame(Arg.Is<GameConfig>(c => c.RulesetId == newRulesetId));
     }
 
     [TestMethod]
@@ -525,7 +497,7 @@ public class GameViewModelTests
     public async Task MoveCommand_WhenThreeConsecutiveInvalidMovesAndCoachDisabled_ShowsCoachNudge()
     {
         // Arrange
-        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(true);
+        _coachNudgeServiceMock.ShouldShowNudge().Returns(true);
 
         var viewModel = CreateViewModel();
         Assert.IsFalse(viewModel.IsCoachEnabled);
@@ -537,16 +509,16 @@ public class GameViewModelTests
         await viewModel.MoveCommand.ExecuteAsync(Direction.Up);
 
         // Assert
-        _coachNudgeServiceMock.Verify(s => s.TrackInvalidMove(), Times.Exactly(3));
-        _coachNudgeServiceMock.Verify(s => s.ShouldShowNudge(), Times.Exactly(3));
+        _coachNudgeServiceMock.Received(3).TrackInvalidMove();
+        _coachNudgeServiceMock.Received(3).ShouldShowNudge();
     }
 
     [TestMethod]
     public async Task MoveCommand_WhenCoachNudgesDisabled_DoesNotShowCoachNudge()
     {
         // Arrange
-        _settingsServiceMock.Setup(s => s.CoachNudgesEnabled).Returns(false);
-        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(false);
+        _settingsServiceMock.CoachNudgesEnabled.Returns(false);
+        _coachNudgeServiceMock.ShouldShowNudge().Returns(false);
 
         var viewModel = CreateViewModel();
         Assert.IsFalse(viewModel.IsCoachEnabled);
@@ -558,7 +530,7 @@ public class GameViewModelTests
 
         // Assert
         Assert.IsFalse(viewModel.IsCoachNudgeVisible);
-        _feedbackServiceMock.Verify(f => f.AnnounceCoachNudge(), Times.Never);
+        _feedbackServiceMock.DidNotReceive().AnnounceCoachNudge();
     }
 
     [TestMethod]
@@ -566,9 +538,9 @@ public class GameViewModelTests
     {
         // Arrange
         _moveAdvisorMock
-            .Setup(a => a.Recommend(It.IsAny<MoveAdvisorRequest>()))
+            .Recommend(Arg.Any<MoveAdvisorRequest>())
             .Returns((MoveRecommendation?)null);
-        _coachNudgeServiceMock.Setup(s => s.ShouldShowNudge()).Returns(false);
+        _coachNudgeServiceMock.ShouldShowNudge().Returns(false);
 
         var viewModel = CreateViewModel();
 
@@ -590,7 +562,7 @@ public class GameViewModelTests
     {
         // Arrange
         _moveAdvisorMock
-            .Setup(a => a.Recommend(It.IsAny<MoveAdvisorRequest>()))
+            .Recommend(Arg.Any<MoveAdvisorRequest>())
             .Returns((MoveRecommendation?)null);
 
         var viewModel = CreateViewModel();
@@ -601,8 +573,8 @@ public class GameViewModelTests
         // Assert
         Assert.IsTrue(viewModel.IsCoachEnabled);
         Assert.IsFalse(viewModel.IsCoachNudgeVisible);
-        _settingsServiceMock.VerifySet(s => s.CoachEnabled = true, Times.AtLeastOnce);
-        _coachNudgeServiceMock.Verify(s => s.Dismiss(), Times.Once);
+        _settingsServiceMock.Received().CoachEnabled = true;
+        _coachNudgeServiceMock.Received(1).Dismiss();
     }
 
     private static void InvokePrivateEngineVictoryHandler(GameViewModel viewModel, EventArgs args)
@@ -620,7 +592,7 @@ public class GameViewModelTests
     public void UndoButtonVisible_DefaultsToTrue()
     {
         // Arrange
-        _settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(true);
+        _settingsServiceMock.UndoButtonVisible.Returns(true);
 
         // Act
         var viewModel = CreateViewModel();
@@ -633,7 +605,7 @@ public class GameViewModelTests
     public void UndoButtonVisible_UpdatesFromSettingsService()
     {
         // Arrange
-        _settingsServiceMock.Setup(s => s.UndoButtonVisible).Returns(false);
+        _settingsServiceMock.UndoButtonVisible.Returns(false);
 
         // Act
         var viewModel = CreateViewModel();
@@ -657,10 +629,8 @@ public class GameViewModelTests
     private GameViewModel CreateAdversarialViewModel(int initialBestScore = 0)
     {
         var adversarialConfig = new GameConfig { Mode = GameMode.Adversarial };
-        _settingsServiceMock.Setup(s => s.LastActiveGameConfig).Returns(adversarialConfig);
-        _repositoryMock
-            .Setup(r => r.GetBestScore(It.IsAny<GameConfig>()))
-            .Returns(initialBestScore);
+        _settingsServiceMock.LastActiveGameConfig.Returns(adversarialConfig);
+        _repositoryMock.GetBestScore(Arg.Any<GameConfig>()).Returns(initialBestScore);
 
         return CreateViewModel();
     }
@@ -681,10 +651,7 @@ public class GameViewModelTests
 
         // Assert - Best score should update since BestScore was 0 (first win)
         Assert.AreEqual(256, viewModel.BestScore);
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), 256),
-            Times.Once
-        );
+        _repositoryMock.Received(1).UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), 256);
     }
 
     [TestMethod]
@@ -703,10 +670,7 @@ public class GameViewModelTests
 
         // Assert - Best score should update since Score < BestScore
         Assert.AreEqual(200, viewModel.BestScore);
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), 200),
-            Times.Once
-        );
+        _repositoryMock.Received(1).UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), 200);
     }
 
     [TestMethod]
@@ -725,10 +689,9 @@ public class GameViewModelTests
 
         // Assert - Best score should NOT update since Score > BestScore
         Assert.AreEqual(100, viewModel.BestScore);
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
-            Times.Never
-        );
+        _repositoryMock
+            .DidNotReceive()
+            .UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), Arg.Any<int>());
     }
 
     [TestMethod]
@@ -747,17 +710,16 @@ public class GameViewModelTests
 
         // Assert - Best score should NOT update since Score == BestScore (not strictly better)
         Assert.AreEqual(150, viewModel.BestScore);
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
-            Times.Never
-        );
+        _repositoryMock
+            .DidNotReceive()
+            .UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), Arg.Any<int>());
     }
 
     [TestMethod]
     public void NonAdversarialMode_OnVictory_DoesNotUpdateBestScoreInVictoryHandler()
     {
         // Arrange - Normal mode (best score update happens in Move, not victory handler)
-        _repositoryMock.Setup(r => r.GetBestScore(It.IsAny<GameConfig>())).Returns(100);
+        _repositoryMock.GetBestScore(Arg.Any<GameConfig>()).Returns(100);
         var viewModel = CreateViewModel();
         Assert.IsFalse(viewModel.IsAdversarialMode);
 
@@ -774,10 +736,9 @@ public class GameViewModelTests
         // Assert - Victory handler should NOT update best score in non-adversarial mode
         // (best score is updated during Move() in non-adversarial mode)
         Assert.AreEqual(100, viewModel.BestScore);
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
-            Times.Never
-        );
+        _repositoryMock
+            .DidNotReceive()
+            .UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), Arg.Any<int>());
     }
 
     [TestMethod]
@@ -800,10 +761,9 @@ public class GameViewModelTests
         // Note: UpdateUI() in victory handler resets Score to engine score (0),
         // so we verify the repository call was made with 0 (the engine's score after UpdateUI)
         // This test verifies the adversarial code path is executed.
-        _repositoryMock.Verify(
-            r => r.UpdateBestScoreIfHigher(It.IsAny<GameConfig>(), It.IsAny<int>()),
-            Times.Once
-        );
+        _repositoryMock
+            .Received(1)
+            .UpdateBestScoreIfHigher(Arg.Any<GameConfig>(), Arg.Any<int>());
     }
 
     #endregion

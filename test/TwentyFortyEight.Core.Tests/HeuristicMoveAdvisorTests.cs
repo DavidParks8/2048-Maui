@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 
 namespace TwentyFortyEight.Core.Tests;
 
@@ -8,14 +8,14 @@ namespace TwentyFortyEight.Core.Tests;
 [TestClass]
 public class HeuristicMoveAdvisorTests
 {
-    private Mock<IBoardSimulator> _simulatorMock = null!;
+    private IBoardSimulator _simulatorMock = null!;
     private HeuristicMoveAdvisor _advisor = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _simulatorMock = new Mock<IBoardSimulator>();
-        _advisor = new HeuristicMoveAdvisor(_simulatorMock.Object);
+        _simulatorMock = Substitute.For<IBoardSimulator>();
+        _advisor = new HeuristicMoveAdvisor(_simulatorMock);
     }
 
     [TestMethod]
@@ -27,9 +27,7 @@ public class HeuristicMoveAdvisorTests
         var config = new GameConfig { Size = 2 };
 
         // All moves return no change (no tiles to move)
-        _simulatorMock
-            .Setup(s => s.SimulateMove(It.IsAny<BoardMoveRequest>()))
-            .Returns((board, 0, false, 0));
+        _simulatorMock.SimulateMove(Arg.Any<BoardMoveRequest>()).Returns((board, 0, false, 0));
 
         // Act
         var result = _advisor.Recommend(
@@ -50,8 +48,12 @@ public class HeuristicMoveAdvisorTests
 
         // Setup simulator to return no moves
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.IsAny<BoardMoveRequest>()))
-            .Returns((BoardMoveRequest r) => (r.Playfield.Board, 0, false, 0));
+            .SimulateMove(Arg.Any<BoardMoveRequest>())
+            .Returns(callInfo =>
+            {
+                var request = callInfo.Arg<BoardMoveRequest>();
+                return (request.Playfield.Board, 0, false, 0);
+            });
 
         // Act
         var result = _advisor.Recommend(
@@ -72,21 +74,19 @@ public class HeuristicMoveAdvisorTests
 
         // Only left move is valid (for this test scenario)
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
 
         int[] movedData = [2, 0, 0, 0];
         var movedBoard = new Board(movedData, 2);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((movedBoard, 0, true, 0));
 
         // Act
@@ -129,24 +129,22 @@ public class HeuristicMoveAdvisorTests
         int[] leftData = [4, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var leftBoard = new Board(leftData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((leftBoard, 4, true, 4));
 
         // Up: Just shifts (no merge in this scenario)
         int[] upData = [2, 2, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var upBoard = new Board(upData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((upBoard, 0, true, 0));
 
         // Right/Down: no move
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act
@@ -190,20 +188,18 @@ public class HeuristicMoveAdvisorTests
         int[] leftData = [4, 4, 8, 0, 4, 8, 16, 32, 8, 16, 32, 64, 16, 32, 64, 0];
         var leftBoard = new Board(leftData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((leftBoard, 4, true, 4));
 
         // Other directions: no move
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act
@@ -230,24 +226,22 @@ public class HeuristicMoveAdvisorTests
         int[] upData = [2, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var upBoard = new Board(upData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((upBoard, 0, true, 0));
 
         // Left: Moves max to corner!
         int[] leftData = [128, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var leftBoard = new Board(leftData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((leftBoard, 0, true, 0));
 
         // Other directions
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act
@@ -273,19 +267,17 @@ public class HeuristicMoveAdvisorTests
         int[] leftData = [2, 4, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var leftBoard = new Board(leftData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((leftBoard, 0, true, 0));
 
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act: Call twice
@@ -315,39 +307,31 @@ public class HeuristicMoveAdvisorTests
         int[] movedData3x3 = [4, 0, 0, 0, 0, 0, 0, 0, 0];
         var movedBoard3x3 = new Board(movedData3x3, 3);
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(
-                    It.Is<BoardMoveRequest>(r =>
-                        r.Playfield.Board == board3x3 && r.Direction == Direction.Left
-                    )
+            .SimulateMove(
+                Arg.Is<BoardMoveRequest>(r =>
+                    r.Playfield.Board == board3x3 && r.Direction == Direction.Left
                 )
             )
             .Returns((movedBoard3x3, 4, true, 4));
 
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(
-                    It.Is<BoardMoveRequest>(r =>
-                        r.Playfield.Board == board3x3 && r.Direction == Direction.Up
-                    )
+            .SimulateMove(
+                Arg.Is<BoardMoveRequest>(r =>
+                    r.Playfield.Board == board3x3 && r.Direction == Direction.Up
                 )
             )
             .Returns((board3x3, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(
-                    It.Is<BoardMoveRequest>(r =>
-                        r.Playfield.Board == board3x3 && r.Direction == Direction.Right
-                    )
+            .SimulateMove(
+                Arg.Is<BoardMoveRequest>(r =>
+                    r.Playfield.Board == board3x3 && r.Direction == Direction.Right
                 )
             )
             .Returns((board3x3, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(
-                    It.Is<BoardMoveRequest>(r =>
-                        r.Playfield.Board == board3x3 && r.Direction == Direction.Down
-                    )
+            .SimulateMove(
+                Arg.Is<BoardMoveRequest>(r =>
+                    r.Playfield.Board == board3x3 && r.Direction == Direction.Down
                 )
             )
             .Returns((board3x3, 0, false, 0));
@@ -371,9 +355,7 @@ public class HeuristicMoveAdvisorTests
         var config = new GameConfig { Size = 2 };
 
         // All moves return no change
-        _simulatorMock
-            .Setup(s => s.SimulateMove(It.IsAny<BoardMoveRequest>()))
-            .Returns((board, 0, false, 0));
+        _simulatorMock.SimulateMove(Arg.Any<BoardMoveRequest>()).Returns((board, 0, false, 0));
 
         // Act
         var result = _advisor.Recommend(
@@ -395,19 +377,17 @@ public class HeuristicMoveAdvisorTests
         int[] movedData = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var movedBoard = new Board(movedData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((movedBoard, 0, true, 0));
 
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act
@@ -433,23 +413,21 @@ public class HeuristicMoveAdvisorTests
         int[] goodData = [4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var goodBoard = new Board(goodData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Left)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Left))
             .Returns((goodBoard, 8, true, 4));
 
         // Move that creates less space
         int[] okData = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0];
         var okBoard = new Board(okData, 4);
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Up)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Up))
             .Returns((okBoard, 0, true, 0));
 
         _simulatorMock
-            .Setup(s =>
-                s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
-            )
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Right))
             .Returns((board, 0, false, 0));
         _simulatorMock
-            .Setup(s => s.SimulateMove(It.Is<BoardMoveRequest>(r => r.Direction == Direction.Down)))
+            .SimulateMove(Arg.Is<BoardMoveRequest>(r => r.Direction == Direction.Down))
             .Returns((board, 0, false, 0));
 
         // Act

@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 
 namespace TwentyFortyEight.Core.Tests;
 
@@ -14,16 +14,16 @@ public class AdversarialModeTests
         board[0] = 2; // (0,0) has a tile
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
-        random.Setup(r => r.NextDouble()).Returns(0.0); // Will spawn a 2
+        IRandomSource random = Substitute.For<IRandomSource>();
+        random.NextDouble().Returns(0.0); // Will spawn a 2
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -34,6 +34,7 @@ public class AdversarialModeTests
         Assert.IsTrue(success);
         Assert.AreEqual(2, spawnedValue);
         Assert.AreEqual(2, engine.CurrentState.Board[5]);
+        random.DidNotReceive().Next(Arg.Any<int>());
     }
 
     [TestMethod]
@@ -45,15 +46,15 @@ public class AdversarialModeTests
         board[0] = 2; // (0,0) has a tile
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
+        IRandomSource random = Substitute.For<IRandomSource>();
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act
@@ -63,6 +64,8 @@ public class AdversarialModeTests
         // Assert
         Assert.IsFalse(success);
         Assert.AreEqual(0, spawnedValue);
+        random.DidNotReceive().Next(Arg.Any<int>());
+        random.DidNotReceive().NextDouble();
     }
 
     [TestMethod]
@@ -75,16 +78,16 @@ public class AdversarialModeTests
         board[1] = 2; // (0,1) - will merge with (0,0) on move left
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
-        random.Setup(r => r.NextDouble()).Returns(0.0); // Spawn a 2
+        IRandomSource random = Substitute.For<IRandomSource>();
+        random.NextDouble().Returns(0.0); // Spawn a 2
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // In adversarial mode, must spawn first before AI can move
@@ -95,6 +98,7 @@ public class AdversarialModeTests
 
         // Assert - merge of two 2s gives 4 points
         Assert.AreEqual(4, engine.CurrentState.Score);
+        random.DidNotReceive().Next(Arg.Any<int>());
     }
 
     [TestMethod]
@@ -118,15 +122,15 @@ public class AdversarialModeTests
         var board = new int[4] { 2, 4, 4, 2 };
         var state = TestHelpers.CreateGameState(board, 2);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
+        IRandomSource random = Substitute.For<IRandomSource>();
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Act - attempt to move (should fail since no moves possible)
@@ -138,6 +142,8 @@ public class AdversarialModeTests
         // or needs to be triggered by external spawn. For this test, verify the IsGameOver helper.
         // Note: The game won't mark IsWon just from a failed move; it happens when Move succeeds
         // but then no further moves are possible.
+        random.DidNotReceive().Next(Arg.Any<int>());
+        random.DidNotReceive().NextDouble();
     }
 
     [TestMethod]
@@ -148,15 +154,15 @@ public class AdversarialModeTests
         var board = new int[4] { 2, 4, 4, 2 };
         var state = TestHelpers.CreateGameState(board, 2);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
+        IRandomSource random = Substitute.For<IRandomSource>();
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         var victoryEvents = 0;
@@ -170,6 +176,8 @@ public class AdversarialModeTests
         Assert.IsTrue(engine.CurrentState.IsGameOver);
         Assert.IsTrue(engine.CurrentState.IsWon);
         Assert.AreEqual(1, victoryEvents);
+        random.DidNotReceive().Next(Arg.Any<int>());
+        random.DidNotReceive().NextDouble();
     }
 
     [TestMethod]
@@ -187,16 +195,16 @@ public class AdversarialModeTests
         board[1] = 1024; // (0,1) - will merge to 2048 on move left
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
-        random.Setup(r => r.NextDouble()).Returns(0.0); // Spawn a 2
+        IRandomSource random = Substitute.For<IRandomSource>();
+        random.NextDouble().Returns(0.0); // Spawn a 2
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // In adversarial mode, must spawn first before AI can move
@@ -208,6 +216,7 @@ public class AdversarialModeTests
         // Assert - when AI reaches 2048 (through merge), player loses
         Assert.IsTrue(engine.CurrentState.IsGameOver);
         Assert.IsFalse(engine.CurrentState.IsWon);
+        random.DidNotReceive().Next(Arg.Any<int>());
     }
 
     [TestMethod]
@@ -219,16 +228,16 @@ public class AdversarialModeTests
         board[0] = 2;
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
-        random.Setup(r => r.NextDouble()).Returns(0.0); // Spawn 2
+        IRandomSource random = Substitute.For<IRandomSource>();
+        random.NextDouble().Returns(0.0); // Spawn 2
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // Capture initial state
@@ -247,6 +256,7 @@ public class AdversarialModeTests
         Assert.IsTrue(undone);
         // Board should be back to initial state (no external spawn)
         CollectionAssert.AreEqual(initialBoard.ToArray(), engine.CurrentState.Board.ToArray());
+        random.DidNotReceive().Next(Arg.Any<int>());
     }
 
     [TestMethod]
@@ -258,17 +268,17 @@ public class AdversarialModeTests
         board[0] = 2;
         var state = TestHelpers.CreateGameState(board, 4);
 
-        var random = new Mock<IRandomSource>(MockBehavior.Strict);
-        random.Setup(r => r.NextDouble()).Returns(0.0); // Spawn 2
-        random.Setup(r => r.Next(It.IsAny<int>())).Returns(14);
+        IRandomSource random = Substitute.For<IRandomSource>();
+        random.NextDouble().Returns(0.0); // Spawn 2
+        random.Next(Arg.Any<int>()).Returns(14);
 
         Game2048Engine engine = new(
             state,
             config,
-            random.Object,
+            random,
             NullStatisticsTracker.Instance,
             new BoardMoveSimulator(),
-            TestHelpers.CreateSpawnStrategyFactory(random.Object)
+            TestHelpers.CreateSpawnStrategyFactory(random)
         );
 
         // External spawn at index 5 (row=1, col=1)

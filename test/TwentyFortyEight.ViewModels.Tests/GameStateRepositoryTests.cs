@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using TwentyFortyEight.Core;
 using TwentyFortyEight.ViewModels.Serialization;
 using TwentyFortyEight.ViewModels.Services;
@@ -64,7 +64,7 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
 
         GameState legacyState = new(4);
         var dto = GameStateDto.FromGameState(legacyState);
@@ -73,7 +73,7 @@ public class GameStateRepositoryTests
         preferences.SetString("SavedGame", json);
         preferences.SetInt("BestScore", 1234);
 
-        var repository = new GameStateRepository(preferences, logger.Object);
+        var repository = new GameStateRepository(preferences, logger);
 
         var config4 = new GameConfig { Size = 4 };
         Assert.AreEqual(string.Empty, config4.RulesetId);
@@ -97,7 +97,7 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
 
         GameState state4 = new(4);
         var dto = GameStateDto.FromGameState(state4);
@@ -108,7 +108,7 @@ public class GameStateRepositoryTests
         preferences.SetString($"SavedGame.{config5.RulesetId}", json);
         preferences.SetBool("Migration.RulesetScopedPersistenceV1Complete", true);
 
-        var repository = new GameStateRepository(preferences, logger.Object);
+        var repository = new GameStateRepository(preferences, logger);
 
         // Act
         var loaded = repository.LoadGame(config5);
@@ -122,8 +122,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Classic };
 
         // Act & Assert - first score sets the baseline
@@ -144,8 +144,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
 
         // Act & Assert - first score sets the baseline
@@ -166,8 +166,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
 
         // Set initial score
@@ -184,8 +184,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
 
         // Initial best score is 0 (unset)
@@ -201,8 +201,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Classic };
 
         repository.UpdateBestScoreIfHigher(config, 500);
@@ -217,8 +217,8 @@ public class GameStateRepositoryTests
     {
         // Arrange
         var preferences = new InMemoryPreferencesService();
-        var logger = new Mock<ILogger<GameStateRepository>>();
-        var repository = new GameStateRepository(preferences, logger.Object);
+        ILogger<GameStateRepository> logger = Substitute.For<ILogger<GameStateRepository>>();
+        var repository = new GameStateRepository(preferences, logger);
         var config = new GameConfig { Size = 4, Mode = GameMode.Adversarial };
 
         // Initial best score is 0 (unset sentinel)
