@@ -6,11 +6,14 @@ using GoodMovies.Maui.Resources.Strings;
 using GoodMovies.Maui.Services;
 using GoodMovies.ViewModels;
 using Microsoft.Maui.ApplicationModel;
+using UIKit;
 
 namespace GoodMovies.Maui;
 
 public partial class MainPage : ContentPage
 {
+    private const string ShimmerAnimationName = "GoodMoviesSkeletonShimmer";
+
     private readonly CatalogViewModel _viewModel;
     private readonly IScreenReaderService _screenReaderService;
     private readonly GridItemsLayout _movieItemsLayout;
@@ -21,6 +24,7 @@ public partial class MainPage : ContentPage
     private bool _hasStartedInitialization;
     private bool _loadingWasAnnounced;
     private bool _refreshWasAnnounced;
+    private bool _shimmerRunning;
 
     public MainPage(
         CatalogViewModel viewModel,
@@ -61,6 +65,7 @@ public partial class MainPage : ContentPage
         base.OnAppearing();
         _isAppeared = true;
         UpdateNavigationState();
+        UpdateShimmer();
         if (!_hasStartedInitialization)
         {
             _hasStartedInitialization = true;
@@ -71,7 +76,104 @@ public partial class MainPage : ContentPage
     protected override void OnDisappearing()
     {
         _isAppeared = false;
+        StopShimmer();
         base.OnDisappearing();
+    }
+
+    private void UpdateShimmer()
+    {
+        if (_viewModel.IsLoading && _isAppeared)
+        {
+            StartShimmer();
+        }
+        else
+        {
+            StopShimmer();
+        }
+    }
+
+    private void StartShimmer()
+    {
+        if (_shimmerRunning || UIAccessibility.IsReduceMotionEnabled)
+        {
+            return;
+        }
+
+        View[] targets = SkeletonBlocks().ToArray();
+        if (targets.Length == 0)
+        {
+            return;
+        }
+
+        _shimmerRunning = true;
+        Animation shimmer = [];
+        for (int index = 0; index < targets.Length; index++)
+        {
+            View target = targets[index];
+            double start = Math.Min(0.45, index * 0.05);
+            double middle = start + 0.25;
+            double end = middle + 0.25;
+            shimmer.Add(
+                start,
+                middle,
+                new Animation(value => target.Opacity = value, 1d, 0.35d, Easing.SinInOut)
+            );
+            shimmer.Add(
+                middle,
+                end,
+                new Animation(value => target.Opacity = value, 0.35d, 1d, Easing.SinInOut)
+            );
+        }
+
+        shimmer.Commit(this, ShimmerAnimationName, 16, 1500, null, null, () => _shimmerRunning);
+    }
+
+    private void StopShimmer()
+    {
+        if (!_shimmerRunning)
+        {
+            return;
+        }
+
+        _shimmerRunning = false;
+        this.AbortAnimation(ShimmerAnimationName);
+        foreach (View target in SkeletonBlocks())
+        {
+            target.Opacity = 1d;
+        }
+    }
+
+    private IEnumerable<View> SkeletonBlocks()
+    {
+        foreach (
+            Layout host in new Layout[] { RailSkeleton, SkeletonSurface, CompactNavigationSkeleton }
+        )
+        {
+            foreach (Border block in FindBorders(host))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    private static IEnumerable<Border> FindBorders(IView view)
+    {
+        switch (view)
+        {
+            case Border border:
+                yield return border;
+                break;
+            case Layout layout:
+                foreach (IView child in layout.Children)
+                {
+                    foreach (Border border in FindBorders(child))
+                    {
+                        yield return border;
+                    }
+                }
+
+                break;
+        }
     }
 
     private async Task InitializeCatalogAsync()
@@ -132,6 +234,7 @@ public partial class MainPage : ContentPage
 
         if (e.PropertyName == nameof(CatalogViewModel.IsLoading))
         {
+            UpdateShimmer();
             if (_viewModel.IsLoading && !_loadingWasAnnounced)
             {
                 _screenReaderService.Announce(AppStrings.LoadingAnnouncement);

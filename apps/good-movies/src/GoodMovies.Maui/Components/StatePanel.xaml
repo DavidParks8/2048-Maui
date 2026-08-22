@@ -13,10 +13,13 @@
     Margin="8,18"
     Padding="28,32"
     Background="{StaticResource Surface}"
+    HorizontalOptions="Fill"
+    MaximumWidthRequest="620"
     SemanticProperties.Description="{Binding MessageKey, Converter={StaticResource MessageAccessibilityConverter}, Source={x:Reference Root}}"
     Stroke="Transparent"
     StrokeShape="RoundRectangle 26"
     StrokeThickness="0"
+    VerticalOptions="Center"
   >
     <VerticalStackLayout
       HorizontalOptions="Center"

@@ -17,7 +17,6 @@ public partial class MovieCardView : ContentView
     public MovieCardView()
     {
         InitializeComponent();
-        SizeChanged += OnSizeChanged;
     }
 
     public string FavoriteAccessibilityLabel =>
@@ -32,42 +31,18 @@ public partial class MovieCardView : ContentView
                 : AppStrings.AddFavorite
             : AppStrings.AddFavorite;
 
-    private void OnOpenClicked(object? sender, EventArgs e) =>
-        OpenRequested?.Invoke(this, EventArgs.Empty);
-
-    private void OnOpenPressed(object? sender, EventArgs e) => CardBorder.TranslationY = 4;
-
-    private void OnOpenReleased(object? sender, EventArgs e) => CardBorder.TranslationY = 0;
-
-    private void OnSizeChanged(object? sender, EventArgs e)
+    private async void OnOpenTapped(object? sender, TappedEventArgs e)
     {
-        double posterWidth;
-        double posterHeight;
-        double spacing;
-
-        if (Width > 0 && Width < 430)
+        try
         {
-            posterWidth = 88;
-            posterHeight = 132;
-            spacing = 10;
+            await CardRoot.TranslateToAsync(0, 4, 60, Easing.CubicOut);
+            OpenRequested?.Invoke(this, EventArgs.Empty);
+            await CardRoot.TranslateToAsync(0, 0, 110, Easing.CubicIn);
         }
-        else if (Width >= 650)
+        catch (TaskCanceledException)
         {
-            posterWidth = 130;
-            posterHeight = 195;
-            spacing = 16;
+            CardRoot.TranslationY = 0;
         }
-        else
-        {
-            posterWidth = 104;
-            posterHeight = 156;
-            spacing = 14;
-        }
-
-        CardGrid.ColumnDefinitions[0].Width = posterWidth;
-        CardGrid.ColumnSpacing = spacing;
-        PosterBorder.WidthRequest = posterWidth;
-        PosterBorder.HeightRequest = posterHeight;
     }
 
     private void OnCardChanged(MovieCardViewModel? oldCard, MovieCardViewModel? newCard)
@@ -82,6 +57,7 @@ public partial class MovieCardView : ContentView
             newCard.PropertyChanged += OnCardPropertyChanged;
         }
 
+        CardRoot.TranslationY = 0;
         OnPropertyChanged(nameof(FavoriteAccessibilityLabel));
         OnPropertyChanged(nameof(FavoriteAccessibilityHint));
     }

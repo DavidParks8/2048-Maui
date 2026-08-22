@@ -9,6 +9,7 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     private int? _requestedMovieId;
     private bool _isWide;
     private bool _layoutInitialized;
+    private double _compactPosterWidth;
 
     public MovieDetailPage(CatalogViewModel catalogViewModel)
     {
@@ -77,10 +78,10 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         }
     }
 
-    private void OnWordClicked(object? sender, EventArgs e)
+    private void OnWordTapped(object? sender, TappedEventArgs e)
     {
         if (
-            sender is Button { BindingContext: WordTokenViewModel token }
+            sender is Border { BindingContext: WordTokenViewModel token }
             && BindingContext is MovieDetailViewModel detail
         )
         {
@@ -91,13 +92,15 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     private void OnSizeChanged(object? sender, EventArgs e)
     {
         bool isWide = Width >= 900 && Width > Height;
-        if (_layoutInitialized && isWide == _isWide)
+        double compactPosterWidth = Width >= 600 ? 230 : 150;
+        if (_layoutInitialized && isWide == _isWide && compactPosterWidth == _compactPosterWidth)
         {
             return;
         }
 
         _layoutInitialized = true;
         _isWide = isWide;
+        _compactPosterWidth = compactPosterWidth;
         if (isWide)
         {
             DetailContent.ColumnDefinitions = new ColumnDefinitionCollection
@@ -130,10 +133,10 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
             Grid.SetRow(PosterColumn, 0);
             Grid.SetColumn(DetailInfo, 0);
             Grid.SetRow(DetailInfo, 1);
-            PosterColumn.WidthRequest = 176;
+            PosterColumn.WidthRequest = compactPosterWidth + 90;
             PosterColumn.HorizontalOptions = LayoutOptions.Center;
-            DetailPosterBorder.WidthRequest = 150;
-            DetailPosterBorder.HeightRequest = 225;
+            DetailPosterBorder.WidthRequest = compactPosterWidth;
+            DetailPosterBorder.HeightRequest = compactPosterWidth * 1.5;
         }
     }
 }

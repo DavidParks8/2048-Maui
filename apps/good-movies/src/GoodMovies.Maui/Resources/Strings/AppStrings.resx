@@ -50,6 +50,7 @@
   <data name="OneSleepStatus" xml:space="preserve"><value>1 sleep to go</value></data>
   <data name="ManySleepsStatus" xml:space="preserve"><value>{0} sleeps to go</value></data>
   <data name="MovieCardAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
+  <data name="OpenMovieHint" xml:space="preserve"><value>Opens this movie</value></data>
   <data name="AddFavoriteHint" xml:space="preserve"><value>Save {0} to my favorites</value></data>
   <data name="RemoveFavoriteHint" xml:space="preserve"><value>Remove {0} from my favorites</value></data>
   <data name="AddFavorite" xml:space="preserve"><value>Add to favorites</value></data>

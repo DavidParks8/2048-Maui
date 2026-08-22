@@ -9,7 +9,8 @@
   AutomationId="MovieDetailPage"
   Background="{StaticResource PageBackground}"
   SafeAreaEdges="All"
-  Shell.ForegroundColor="{StaticResource White}"
+  Shell.BackgroundColor="{StaticResource PageBackground}"
+  Shell.ForegroundColor="{StaticResource Accent}"
   Shell.NavBarIsVisible="True"
   Shell.NavBarHasShadow="False"
   Shell.TitleColor="{StaticResource White}"
@@ -49,18 +50,20 @@
             StrokeThickness="0"
             WidthRequest="250"
           >
-            <Grid RowDefinitions="*">
+            <Grid RowDefinitions="*,Auto">
               <Label
+                Grid.Row="0"
+                AutomationProperties.IsInAccessibleTree="False"
                 FontAutoScalingEnabled="True"
                 FontSize="56"
                 HorizontalOptions="Center"
-                AutomationProperties.IsInAccessibleTree="False"
                 Text="{x:Static strings:AppStrings.MovieIcon}"
                 TextColor="{StaticResource Accent}"
                 VerticalOptions="Center"
               />
               <Label
-                Margin="16"
+                Grid.Row="1"
+                Margin="12,0,12,16"
                 FontAutoScalingEnabled="True"
                 FontAttributes="Bold"
                 FontSize="18"
@@ -69,9 +72,10 @@
                 MaxLines="3"
                 Text="{Binding Title}"
                 TextColor="{StaticResource White}"
-                VerticalOptions="End"
               />
               <Image
+                Grid.Row="0"
+                Grid.RowSpan="2"
                 Aspect="AspectFill"
                 IsVisible="{Binding PosterSource, Converter={StaticResource StringVisibilityConverter}}"
                 Source="{Binding PosterSource, Converter={StaticResource PosterImageSourceConverter}}"
@@ -204,18 +208,23 @@
             </Button>
             <Button
               Grid.Column="1"
+              Padding="0"
               AutomationId="MovieDetailFavoriteButton"
               Background="{StaticResource Surface2}"
               Command="{Binding ToggleFavoriteCommand}"
-              FontAutoScalingEnabled="True"
+              CornerRadius="20"
               FontAttributes="Bold"
-              FontSize="31"
-              MinimumHeightRequest="60"
-              MinimumWidthRequest="60"
+              FontAutoScalingEnabled="False"
+              FontSize="30"
+              HeightRequest="68"
+              MinimumHeightRequest="68"
+              MinimumWidthRequest="68"
               SemanticProperties.Description="{Binding IsFavorite, Converter={StaticResource FavoriteButtonDescriptionConverter}}"
               SemanticProperties.Hint="{Binding IsFavorite, Converter={StaticResource FavoriteButtonDescriptionConverter}}"
               Text="{Binding IsFavorite, Converter={StaticResource HeartGlyphConverter}}"
               TextColor="{StaticResource Accent}"
+              VerticalOptions="Center"
+              WidthRequest="68"
             >
               <Button.Triggers>
                 <DataTrigger Binding="{Binding IsFavorite}" TargetType="Button" Value="True">
@@ -270,18 +279,31 @@
           >
             <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="vm:WordTokenViewModel">
-                <Button
+                <Border
+                  Margin="0,2,4,2"
+                  Padding="10,9"
                   AutomationId="MovieDetailWordButton"
                   Background="{Binding IsHighlighted, Converter={StaticResource TokenHighlightBackgroundConverter}}"
-                  Clicked="OnWordClicked"
-                  FontAutoScalingEnabled="True"
-                  FontSize="21"
-                  Margin="0,2,4,2"
                   MinimumHeightRequest="60"
-                  Padding="8,9"
-                  Text="{Binding Text}"
-                  TextColor="{Binding IsHighlighted, Converter={StaticResource TokenTextColorConverter}}"
-                />
+                  SemanticProperties.Description="{Binding Text}"
+                  Stroke="Transparent"
+                  StrokeShape="RoundRectangle 16"
+                  StrokeThickness="0"
+                >
+                  <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnWordTapped" />
+                  </Border.GestureRecognizers>
+                  <Label
+                    FontAutoScalingEnabled="True"
+                    FontAttributes="Bold"
+                    FontSize="21"
+                    HorizontalOptions="Center"
+                    InputTransparent="True"
+                    Text="{Binding Text}"
+                    TextColor="{Binding IsHighlighted, Converter={StaticResource TokenTextColorConverter}}"
+                    VerticalOptions="Center"
+                  />
+                </Border>
               </DataTemplate>
             </BindableLayout.ItemTemplate>
           </FlexLayout>

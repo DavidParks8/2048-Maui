@@ -77,6 +77,7 @@ internal static class AppStrings
     internal static string OneSleepStatus => Get(nameof(OneSleepStatus));
     internal static string ManySleepsStatus => Get(nameof(ManySleepsStatus));
     internal static string MovieCardAccessibility => Get(nameof(MovieCardAccessibility));
+    internal static string OpenMovieHint => Get(nameof(OpenMovieHint));
     internal static string AddFavoriteHint => Get(nameof(AddFavoriteHint));
     internal static string RemoveFavoriteHint => Get(nameof(RemoveFavoriteHint));
     internal static string AddFavorite => Get(nameof(AddFavorite));

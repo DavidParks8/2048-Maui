@@ -7,13 +7,13 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   x:DataType="local:GroupHeaderView"
   x:Name="Root"
-  HeightRequest="70"
-  MinimumHeightRequest="70"
+  HeightRequest="90"
+  MinimumHeightRequest="90"
 >
   <Border
     AutomationId="MovieGroupHeader"
-    HeightRequest="70"
-    Margin="0,14,0,4"
+    HeightRequest="64"
+    Margin="0,14,0,12"
     Padding="16,12"
     Background="{StaticResource Surface2}"
     SemanticProperties.Description="{Binding Group, Converter={StaticResource GroupAccessibilityConverter}, Source={x:Reference Root}}"
