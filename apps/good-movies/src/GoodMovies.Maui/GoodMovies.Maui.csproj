@@ -109,9 +109,12 @@
 
   <ItemGroup>
     <MauiImage
-      Include="Resources\Images\**\*"
+      Include="Resources\Images\sample_poster_*.png"
       Condition="'$(Configuration)' == 'Debug' and '$(GoodMoviesUseSampleData)' == 'true'"
     />
+    <MauiImage Include="Resources\Images\play.svg" BaseSize="24,24" />
+    <MauiImage Include="Resources\Images\read_aloud.svg" BaseSize="24,24" />
+    <MauiImage Include="Resources\Images\stop_reading.svg" BaseSize="24,24" />
     <MauiIcon
       Include="Resources\AppIcon\appicon.svg"
       ForegroundFile="Resources\AppIcon\appiconfg.svg"

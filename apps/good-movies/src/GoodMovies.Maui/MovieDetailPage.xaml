@@ -125,9 +125,11 @@
             AutomationId="MovieDetailTrailerButton"
             Background="{StaticResource Accent}"
             Command="{Binding PlayTrailerCommand}"
+            ContentLayout="Left,12"
             FontAutoScalingEnabled="True"
             FontAttributes="Bold"
             FontSize="21"
+            ImageSource="play.png"
             IsEnabled="{Binding IsTrailerLoading, Converter={StaticResource InverseBooleanConverter}}"
             IsVisible="{Binding TrailerState, Converter={StaticResource TrailerButtonVisibilityConverter}}"
             SemanticProperties.Description="{x:Static strings:AppStrings.PlayTrailer}"
@@ -230,9 +232,11 @@
               AutomationId="MovieDetailReadAloudButton"
               Background="{StaticResource Surface2}"
               Command="{Binding PlayReadAloudCommand}"
+              ContentLayout="Left,12"
               FontAutoScalingEnabled="True"
               FontAttributes="Bold"
               FontSize="21"
+              ImageSource="read_aloud.png"
               SemanticProperties.Description="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
               Text="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
               TextColor="{StaticResource White}"
@@ -240,6 +244,7 @@
               <Button.Triggers>
                 <DataTrigger Binding="{Binding IsReading}" TargetType="Button" Value="True">
                   <Setter Property="Command" Value="{Binding StopReadAloudCommand}" />
+                  <Setter Property="ImageSource" Value="stop_reading.png" />
                 </DataTrigger>
               </Button.Triggers>
             </Button>
