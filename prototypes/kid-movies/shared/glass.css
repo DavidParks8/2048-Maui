@@ -1,0 +1,428 @@
+/*
+ * Shared "liquid glass" foundation for the Kid Movies prototypes.
+ * Each prototype layers its own personality on top of this.
+ */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --radius-card: 22px;
+  --radius-sheet: 34px;
+  --radius-pill: 999px;
+  --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --text: rgba(255, 255, 255, 0.98);
+  --text-2: rgba(255, 255, 255, 0.68);
+  --text-3: rgba(255, 255, 255, 0.42);
+  --accent: #5ac8fa;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--text);
+}
+
+/* ---------------- phone frame ---------------- */
+
+.stage {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+  background:
+    radial-gradient(90% 70% at 15% 0%, #2b3350 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, #3a2547 0%, transparent 55%),
+    #14161f;
+}
+
+.phone {
+  position: relative;
+  width: 402px;
+  height: 874px;
+  border-radius: 56px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 11px #1c1d24,
+    0 0 0 12.5px #45464f,
+    0 42px 90px rgba(0, 0, 0, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Wallpaper the glass refracts. Prototypes override the gradient. */
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background 700ms var(--ease-glass);
+}
+
+.wallpaper::after {
+  /* film grain so the blur has something to chew on */
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------------- status bar ---------------- */
+
+.status-bar {
+  position: relative;
+  z-index: 40;
+  height: 54px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* Signal bars and battery drawn in CSS so they render on any platform. */
+.sig {
+  display: inline-block;
+  width: 18px;
+  height: 11px;
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 3px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) 5px 100% / 3px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 10px 100% / 3px 9px no-repeat,
+    linear-gradient(currentColor, currentColor) 15px 100% / 3px 11px no-repeat;
+}
+
+.batt {
+  position: relative;
+  display: inline-block;
+  width: 23px;
+  height: 12px;
+  border-radius: 3.5px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+.batt::before {
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  border-radius: 1.5px;
+  background: currentColor;
+}
+
+.batt::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 3.5px;
+  width: 2px;
+  height: 5px;
+  border-radius: 0 2px 2px 0;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.notch {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 124px;
+  height: 34px;
+  border-radius: 999px;
+  background: #05060a;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* ---------------- liquid glass primitives ---------------- */
+
+.glass {
+  position: relative;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.06) 46%,
+      rgba(255, 255, 255, 0.11) 100%);
+  backdrop-filter: blur(30px) saturate(190%) brightness(1.06);
+  -webkit-backdrop-filter: blur(30px) saturate(190%) brightness(1.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.10),
+    inset 0 0 26px rgba(255, 255, 255, 0.05),
+    0 12px 34px rgba(0, 0, 0, 0.34);
+}
+
+/* Moving specular highlight — the "liquid" part of liquid glass. */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 24%,
+    rgba(255, 255, 255, 0.30) 44%,
+    rgba(255, 255, 255, 0.06) 55%,
+    transparent 72%
+  );
+  background-size: 260% 260%;
+  opacity: 0.75;
+  animation: sheen 9s var(--ease-glass) infinite;
+}
+
+@keyframes sheen {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.glass-thin {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 0.5px solid rgba(255, 255, 255, 0.20);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+/* ---------------- poster art ---------------- */
+
+.poster {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.30),
+    0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.poster-emoji {
+  font-size: 2.4em;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  transform: translateY(-6%);
+}
+
+.poster-title {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 7px;
+  z-index: 2;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------------- rating + favorite chips ---------------- */
+
+.rating {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  border: 0.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.rating.g {
+  background: rgba(52, 199, 89, 0.28);
+  color: #b9f6ca;
+}
+
+.rating.pg {
+  background: rgba(255, 214, 10, 0.24);
+  color: #ffeaa0;
+}
+
+.fav-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 17px;
+  cursor: pointer;
+  transition: transform 320ms var(--ease-glass), color 220ms, background 220ms;
+}
+
+.fav-btn:active {
+  transform: scale(0.86);
+}
+
+.fav-btn.on {
+  color: #ff375f;
+  background: rgba(255, 55, 95, 0.2);
+  border-color: rgba(255, 120, 150, 0.55);
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.32); }
+  100% { transform: scale(1); }
+}
+
+.fav-btn.pop {
+  animation: pop 460ms var(--ease-glass);
+}
+
+/* ---------------- scrolling ---------------- */
+
+.scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------- home indicator ---------------- */
+
+.home-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ---------------- shared entrance animation ---------------- */
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: riseIn 520ms var(--ease-glass) both;
+}
+
+/* ---------------- empty state ---------------- */
+
+.empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 70px 40px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.empty-emoji {
+  font-size: 46px;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.empty-sub {
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* ---------------- prototype label under the phone ---------------- */
+
+/* When shown inside the chooser page (?embed) the phone stands alone. */
+.embed .stage {
+  padding: 0;
+  background: transparent;
+  min-height: auto;
+}
+
+.embed .caption {
+  display: none;
+}
+
+.caption {
+  margin-top: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.caption b {
+  display: block;
+  font-size: 19px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.caption a {
+  color: #7fd7ff;
+  text-decoration: none;
+  font-weight: 600;
+}

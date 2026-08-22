@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype B — Cinema Wall</title>
+<link rel="stylesheet" href="shared/glass.css">
+<style>
+  body { background: #0d0f16; }
+
+  /* The wallpaper adapts to whatever movie is featured — the glass picks up its colour. */
+  .wallpaper { background: linear-gradient(175deg, #2a2f52 0%, #0b0d15 62%); }
+
+  .screen { padding-bottom: 0; }
+
+  /* ---------- floating top bar ---------- */
+  .topbar {
+    position: absolute;
+    z-index: 45;
+    top: 54px; left: 14px; right: 14px;
+    height: 46px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px;
+    border-radius: var(--radius-pill);
+  }
+  .seg {
+    flex: 1; position: relative; z-index: 2;
+    display: grid; place-items: center;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    font-size: 13px; font-weight: 700; letter-spacing: -.1px;
+    color: var(--text-2); cursor: pointer;
+    transition: color 300ms var(--ease-glass);
+  }
+  .seg.on { color: #0c0e16; }
+  .seg-pill {
+    position: absolute; z-index: 1; top: 5px; bottom: 5px; left: 0;
+    border-radius: var(--radius-pill);
+    background: rgba(255,255,255,.95);
+    box-shadow: 0 4px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.9);
+    transition: transform 540ms var(--ease-glass);
+  }
+
+  .feed { padding: 112px 0 0; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    margin: 0 16px 8px;
+    height: 322px;
+    border-radius: 30px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 22px 50px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(255,255,255,.22);
+  }
+  .hero-art { position: absolute; inset: 0; }
+  .hero-art::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(190deg, transparent 30%, rgba(0,0,0,.72) 100%);
+  }
+  .hero-emoji {
+    position: absolute; top: 46px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 92px;
+    filter: drop-shadow(0 10px 26px rgba(0,0,0,.5));
+  }
+  .hero-flag {
+    position: absolute; top: 16px; left: 16px; z-index: 3;
+    padding: 6px 12px; border-radius: var(--radius-pill);
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    background: rgba(255,255,255,.18);
+    border: .5px solid rgba(255,255,255,.35);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+  }
+  .hero-panel {
+    position: absolute; z-index: 3; left: 12px; right: 12px; bottom: 12px;
+    padding: 14px 15px;
+    border-radius: 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-panel > * { position: relative; z-index: 2; }
+  .hero-name { font-size: 20px; font-weight: 800; letter-spacing: -.6px; line-height: 1.15; }
+  .hero-sub { margin-top: 5px; font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 7px; }
+
+  /* ---------- section ---------- */
+  .sec-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 22px 22px 12px;
+  }
+  .sec-head h2 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.6px; }
+  .sec-head span { font-size: 12.5px; color: var(--text-3); font-weight: 650; }
+
+  /* ---------- date rail ---------- */
+  .rail { display: flex; gap: 8px; padding: 0 16px 6px; overflow-x: auto; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail-item {
+    flex: 0 0 auto; width: 56px; padding: 9px 0 8px;
+    border-radius: 18px; text-align: center; cursor: pointer;
+    background: rgba(255,255,255,.08);
+    border: .5px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    transition: all 320ms var(--ease-glass);
+  }
+  .rail-item .mo { font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--text-3); }
+  .rail-item .dy { font-size: 20px; font-weight: 800; letter-spacing: -.6px; margin-top: 1px; }
+  .rail-item .ct { font-size: 9.5px; font-weight: 700; color: var(--text-3); margin-top: 2px; }
+  .rail-item.on {
+    background: rgba(255,255,255,.93);
+    border-color: rgba(255,255,255,.9);
+    box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  }
+  .rail-item.on .mo, .rail-item.on .dy, .rail-item.on .ct { color: #0c0e16; }
+
+  /* ---------- poster grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 14px 16px 0;
+  }
+  .tile { cursor: pointer; transition: transform 380ms var(--ease-glass); }
+  .tile:active { transform: scale(.94); }
+  .tile .poster { width: 100%; aspect-ratio: 2 / 3; font-size: 13px; }
+  .tile-name {
+    margin-top: 7px; font-size: 11.5px; font-weight: 700; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tile-date { margin-top: 2px; font-size: 10.5px; color: var(--text-3); font-weight: 650; }
+  .tile-heart {
+    position: absolute; z-index: 3; top: 6px; right: 6px;
+    width: 27px; height: 27px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px;
+    background: rgba(0,0,0,.32);
+    border: .5px solid rgba(255,255,255,.28);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(255,255,255,.8);
+    transition: transform 320ms var(--ease-glass), color 220ms;
+  }
+  .tile-heart.on { color: #ff375f; background: rgba(255,55,95,.28); }
+  .tile-badge {
+    position: absolute; z-index: 3; top: 6px; left: 6px;
+    padding: 3px 7px; border-radius: 7px;
+    font-size: 9px; font-weight: 800; letter-spacing: .4px;
+    background: rgba(0,0,0,.45);
+    border: .5px solid rgba(255,255,255,.24);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* ---------- search field ---------- */
+  .searchbar {
+    margin: 0 16px 4px;
+    display: flex; align-items: center; gap: 10px;
+    height: 44px; padding: 0 15px;
+    border-radius: var(--radius-pill);
+  }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: var(--text); font-size: 16px; font-family: inherit;
+  }
+  .searchbar input::placeholder { color: var(--text-3); }
+
+  /* ---------- floating dock ---------- */
+  .dock {
+    position: absolute; z-index: 46;
+    bottom: 26px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 5px; padding: 6px;
+    border-radius: var(--radius-pill);
+  }
+  .dock-btn {
+    position: relative; z-index: 2;
+    width: 60px; height: 46px; border-radius: var(--radius-pill);
+    display: grid; place-items: center; font-size: 19px;
+    cursor: pointer; color: var(--text-3);
+    transition: color 300ms var(--ease-glass), transform 320ms var(--ease-glass);
+  }
+  .dock-btn:active { transform: scale(.9); }
+  .dock-btn.on { color: #fff; }
+  .dock-pill {
+    position: absolute; z-index: 1; top: 6px; bottom: 6px; left: 6px;
+    width: 60px; border-radius: var(--radius-pill);
+    background: rgba(255,255,255,.22);
+    border: .5px solid rgba(255,255,255,.34);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+    transition: transform 520ms var(--ease-glass);
+  }
+
+  /* ---------- full-screen detail ---------- */
+  .detail {
+    position: absolute; inset: 0; z-index: 90;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 540ms var(--ease-glass);
+  }
+  .detail.on { transform: none; }
+  .detail-bg { position: absolute; inset: 0; }
+  .detail-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(185deg, rgba(0,0,0,.18) 0%, rgba(6,7,12,.86) 46%, #06070c 100%);
+  }
+  .back {
+    position: absolute; z-index: 5; top: 58px; left: 16px;
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 17px; cursor: pointer;
+    background: rgba(255,255,255,.15);
+    border: .5px solid rgba(255,255,255,.3);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+  }
+  .detail .scroll { position: relative; z-index: 4; }
+  .detail-top { height: 288px; display: grid; place-items: center; }
+  .detail-emoji { font-size: 108px; filter: drop-shadow(0 14px 30px rgba(0,0,0,.55)); }
+  .detail-body { padding: 0 22px 130px; }
+  .detail-title { font-size: 30px; font-weight: 850; letter-spacing: -1px; line-height: 1.1; }
+  .detail-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 10px; font-size: 13px; color: var(--text-2);
+  }
+  .stat-row { display: flex; gap: 9px; margin: 18px 0; }
+  .stat {
+    flex: 1; padding: 12px 10px; border-radius: 18px; text-align: center;
+  }
+  .stat > * { position: relative; z-index: 2; }
+  .stat-v { font-size: 19px; font-weight: 800; letter-spacing: -.5px; }
+  .stat-l { font-size: 10px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--text-3); margin-top: 3px; }
+  .detail-text { font-size: 15.5px; line-height: 1.58; color: rgba(255,255,255,.85); }
+  .trailer-card {
+    position: relative; height: 168px; border-radius: 22px; overflow: hidden;
+    display: grid; place-items: center; cursor: pointer; margin: 20px 0;
+  }
+  .trailer-card .pl {
+    position: relative; z-index: 3;
+    width: 62px; height: 62px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px; padding-left: 4px;
+    background: rgba(255,255,255,.2);
+    border: .5px solid rgba(255,255,255,.45);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 10px 28px rgba(0,0,0,.4);
+    transition: transform 400ms var(--ease-glass);
+  }
+  .trailer-card:active .pl { transform: scale(.9); }
+  .trailer-card .cap {
+    position: absolute; z-index: 3; bottom: 13px; left: 15px;
+    font-size: 12px; font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,.6);
+  }
+  .big-fav {
+    height: 54px; border-radius: 18px;
+    display: grid; place-items: center;
+    font-size: 16px; font-weight: 750; cursor: pointer;
+    background: rgba(255,55,95,.9);
+    border: .5px solid rgba(255,140,165,.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 8px 20px rgba(0,0,0,.38);
+    transition: transform 320ms var(--ease-glass);
+  }
+  .big-fav:active { transform: scale(.97); }
+  .big-fav.off {
+    background: rgba(255,255,255,.13);
+    border-color: rgba(255,255,255,.28);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.32);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+<div>
+  <div class="phone">
+    <div class="wallpaper" id="wall"></div>
+    <div class="notch"></div>
+
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span></div>
+
+      <div class="topbar glass" id="topbar">
+        <div class="seg-pill" id="segPill"></div>
+      </div>
+
+      <div class="scroll"><div class="feed" id="feed"></div></div>
+    </div>
+
+    <div class="dock glass" id="dock">
+      <div class="dock-pill" id="dockPill"></div>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="detail-bg" id="detailBg"></div>
+      <div class="back" id="back">‹</div>
+      <div class="scroll" id="detailScroll"></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>Prototype B · Cinema Wall</b>
+    Poster-first and cinematic. A big “next up” hero, a scrollable date rail, and a
+    3-across poster wall. The whole background tints to the movie you’re looking at.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const SEGS = [
+    { id: 'all', lb: 'All' },
+    { id: 'G', lb: 'G' },
+    { id: 'PG', lb: 'PG' },
+    { id: 'anim', lb: 'Animation' },
+  ];
+  const DOCK = [
+    { id: 'soon', ic: '🎬' },
+    { id: 'search', ic: '🔍' },
+    { id: 'favs', ic: '♥' },
+  ];
+
+  const state = { tab: 'soon', seg: 'all', query: '', date: null };
+
+  const el = {
+    wall: document.getElementById('wall'),
+    topbar: document.getElementById('topbar'),
+    segPill: document.getElementById('segPill'),
+    dock: document.getElementById('dock'),
+    dockPill: document.getElementById('dockPill'),
+    feed: document.getElementById('feed'),
+    detail: document.getElementById('detail'),
+    detailBg: document.getElementById('detailBg'),
+    detailScroll: document.getElementById('detailScroll'),
+  };
+
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  /* ---------- chrome ---------- */
+  for (const s of SEGS) {
+    const n = document.createElement('div');
+    n.className = 'seg';
+    n.dataset.seg = s.id;
+    n.textContent = s.lb;
+    n.addEventListener('click', () => {
+      state.seg = s.id;
+      state.date = null;
+      syncSeg();
+      render();
+    });
+    el.topbar.appendChild(n);
+  }
+  function syncSeg() {
+    for (const n of el.topbar.querySelectorAll('.seg')) n.classList.toggle('on', n.dataset.seg === state.seg);
+    const a = el.topbar.querySelector('.seg.on');
+    if (!a) return;
+    el.segPill.style.width = a.offsetWidth + 'px';
+    el.segPill.style.transform = `translateX(${a.offsetLeft}px)`;
+  }
+
+  for (const d of DOCK) {
+    const n = document.createElement('div');
+    n.className = 'dock-btn';
+    n.dataset.tab = d.id;
+    n.textContent = d.ic;
+    n.addEventListener('click', () => {
+      state.tab = d.id;
+      state.date = null;
+      syncDock();
+      render();
+    });
+    el.dock.appendChild(n);
+  }
+  function syncDock() {
+    let i = 0;
+    for (const n of el.dock.querySelectorAll('.dock-btn')) {
+      const on = n.dataset.tab === state.tab;
+      n.classList.toggle('on', on);
+      if (on) el.dockPill.style.transform = `translateX(${i * 65}px)`;
+      i++;
+    }
+    el.topbar.style.display = state.tab === 'soon' ? 'flex' : 'none';
+  }
+
+  /* ---------- data ---------- */
+  function pool() {
+    let list = sorted;
+    if (state.tab === 'favs') list = list.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return list.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query) ||
+        m.studio.toLowerCase().includes(state.query));
+    }
+    if (state.seg === 'G') list = list.filter((m) => m.rating === 'G');
+    if (state.seg === 'PG') list = list.filter((m) => m.rating === 'PG');
+    if (state.seg === 'anim') list = list.filter((m) => m.genres.includes('Animation'));
+    if (state.date) list = list.filter((m) => m.date === state.date);
+    return list;
+  }
+
+  function tintFor(m) {
+    return `radial-gradient(85% 60% at 20% 0%, ${m.c1}bb 0%, transparent 62%),
+            radial-gradient(90% 65% at 95% 26%, ${m.c2}bb 0%, transparent 64%),
+            linear-gradient(178deg, #1b1f38 0%, #08090f 72%)`;
+  }
+
+  /* ---------- tiles ---------- */
+  function tileNode(m, delay) {
+    const n = document.createElement('div');
+    n.className = 'tile rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+        <div class="tile-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>
+        <div class="tile-badge">${m.rating}</div>
+      </div>
+      <div class="tile-name">${m.title}</div>
+      <div class="tile-date">${formatDate(m.date)}</div>`;
+
+    const h = n.querySelector('.tile-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      if (state.tab === 'favs') setTimeout(render, 320);
+    });
+    n.addEventListener('click', () => openDetail(m));
+    return n;
+  }
+
+  function emptyNode(emoji, title, sub) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.innerHTML = `<div class="empty-emoji">${emoji}</div>
+      <div class="empty-title">${title}</div><div class="empty-sub">${sub}</div>`;
+    return e;
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    el.feed.innerHTML = '';
+    el.feed.style.paddingTop = state.tab === 'soon' ? '112px' : '112px';
+
+    if (state.tab === 'search') {
+      const bar = document.createElement('div');
+      bar.className = 'searchbar glass-thin';
+      bar.innerHTML = `<span>🔍</span><input placeholder="Search kid-safe movies" autocomplete="off">`;
+      el.feed.appendChild(bar);
+      const input = bar.querySelector('input');
+      input.value = state.query;
+      input.addEventListener('input', (e) => {
+        state.query = e.target.value.trim().toLowerCase();
+        renderResults();
+      });
+      const results = document.createElement('div');
+      results.id = 'results';
+      el.feed.appendChild(results);
+      renderResults();
+      input.focus();
+      return;
+    }
+
+    const list = pool();
+
+    if (!list.length) {
+      el.feed.appendChild(emptyNode('♡', 'No favorites yet',
+        'Tap the heart on any poster to save it here.'));
+      el.feed.appendChild(pad());
+      return;
+    }
+
+    if (state.tab === 'soon') {
+      const hero = list[0];
+      el.wall.style.background = tintFor(hero);
+
+      const h = document.createElement('div');
+      h.className = 'hero rise';
+      h.innerHTML = `
+        <div class="hero-art" style="${posterStyle(hero)}"></div>
+        <div class="hero-emoji">${hero.emoji}</div>
+        <div class="hero-flag">Next in theaters</div>
+        <div class="hero-panel glass">
+          <div style="flex:1;min-width:0">
+            <div class="hero-name">${hero.title}</div>
+            <div class="hero-sub">
+              <span class="rating ${hero.rating.toLowerCase()}">${hero.rating}</span>
+              <span>${formatDate(hero.date)}</span><span class="dot"></span>
+              <span>in ${countdownLabel(hero.date)}</span>
+            </div>
+          </div>
+          <div class="fav-btn ${Favorites.has(hero.id) ? 'on' : ''}">${Favorites.has(hero.id) ? '♥' : '♡'}</div>
+        </div>`;
+      const hf = h.querySelector('.fav-btn');
+      hf.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const on = Favorites.toggle(hero.id);
+        hf.classList.toggle('on', on);
+        hf.textContent = on ? '♥' : '♡';
+        hf.classList.remove('pop'); void hf.offsetWidth; hf.classList.add('pop');
+      });
+      h.addEventListener('click', () => openDetail(hero));
+      el.feed.appendChild(h);
+
+      /* date rail */
+      const railHead = document.createElement('div');
+      railHead.className = 'sec-head';
+      railHead.innerHTML = `<h2>By release date</h2><span>${state.date ? 'Tap to clear' : 'Tap a date'}</span>`;
+      railHead.addEventListener('click', () => { if (state.date) { state.date = null; render(); } });
+      el.feed.appendChild(railHead);
+
+      const rail = document.createElement('div');
+      rail.className = 'rail';
+      for (const g of groupByDate(applySeg(sorted))) {
+        const d = parseDate(g.key);
+        const item = document.createElement('div');
+        item.className = 'rail-item' + (state.date === g.key ? ' on' : '');
+        item.innerHTML = `<div class="mo">${MONTHS[d.getMonth()].slice(0, 3)}</div>
+          <div class="dy">${d.getDate()}</div>
+          <div class="ct">${g.items.length} film${g.items.length > 1 ? 's' : ''}</div>`;
+        item.addEventListener('click', () => {
+          state.date = state.date === g.key ? null : g.key;
+          render();
+        });
+        rail.appendChild(item);
+      }
+      el.feed.appendChild(rail);
+    }
+
+    const head = document.createElement('div');
+    head.className = 'sec-head';
+    head.innerHTML = state.tab === 'favs'
+      ? `<h2>Your favorites</h2><span>${list.length} saved</span>`
+      : `<h2>${state.date ? formatDate(state.date) : 'All upcoming'}</h2>
+         <span>${list.length} film${list.length === 1 ? '' : 's'}</span>`;
+    el.feed.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    let i = 0;
+    for (const m of list) grid.appendChild(tileNode(m, i++ * 30));
+    el.feed.appendChild(grid);
+    el.feed.appendChild(pad());
+  }
+
+  function applySeg(list) {
+    if (state.seg === 'G') return list.filter((m) => m.rating === 'G');
+    if (state.seg === 'PG') return list.filter((m) => m.rating === 'PG');
+    if (state.seg === 'anim') return list.filter((m) => m.genres.includes('Animation'));
+    return list;
+  }
+
+  function renderResults() {
+    const box = document.getElementById('results');
+    if (!box) return;
+    box.innerHTML = '';
+    const list = pool();
+    if (!list.length) {
+      box.appendChild(emptyNode('🔍', state.query ? 'No matches' : 'Search for a movie',
+        state.query ? 'Try another title or genre.' : 'Try “dragon”, “animation”, or a studio.'));
+      return;
+    }
+    const head = document.createElement('div');
+    head.className = 'sec-head';
+    head.innerHTML = `<h2>Results</h2><span>${list.length} film${list.length === 1 ? '' : 's'}</span>`;
+    box.appendChild(head);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    let i = 0;
+    for (const m of list) grid.appendChild(tileNode(m, i++ * 30));
+    box.appendChild(grid);
+    box.appendChild(pad());
+  }
+
+  function pad() {
+    const s = document.createElement('div');
+    s.style.height = '104px';
+    return s;
+  }
+
+  /* ---------- detail ---------- */
+  function openDetail(m) {
+    el.detailBg.style.background = tintFor(m);
+    const on = Favorites.has(m.id);
+    el.detailScroll.innerHTML = `
+      <div class="detail-top"><div class="detail-emoji">${m.emoji}</div></div>
+      <div class="detail-body">
+        <div class="detail-title">${m.title}</div>
+        <div class="detail-meta">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span>${m.genres.join(' · ')}</span><span class="dot"></span>
+          <span>${m.studio}</span>
+        </div>
+        <div class="stat-row">
+          <div class="stat glass-thin"><div class="stat-v">${countdownLabel(m.date)}</div><div class="stat-l">Until release</div></div>
+          <div class="stat glass-thin"><div class="stat-v">${m.runtime}m</div><div class="stat-l">Runtime</div></div>
+          <div class="stat glass-thin"><div class="stat-v">${(m.score / 10).toFixed(1)}</div><div class="stat-l">Buzz</div></div>
+        </div>
+        <div class="trailer-card" style="${posterStyle(m)}">
+          <div class="pl">▶</div>
+          <div class="cap">Official Trailer · 2:14</div>
+        </div>
+        <div class="detail-text">${m.overview}</div>
+        <div style="height:18px"></div>
+        <div class="big-fav ${on ? '' : 'off'}" id="bigFav">${on ? '♥  In your favorites' : '♡  Add to favorites'}</div>
+      </div>`;
+
+    el.detailScroll.querySelector('#bigFav').addEventListener('click', (e) => {
+      const nowOn = Favorites.toggle(m.id);
+      e.currentTarget.classList.toggle('off', !nowOn);
+      e.currentTarget.textContent = nowOn ? '♥  In your favorites' : '♡  Add to favorites';
+      render();
+    });
+    el.detailScroll.querySelector('.trailer-card').addEventListener('click', (e) => {
+      e.currentTarget.querySelector('.cap').textContent = 'Playing trailer… (YouTube in the real app)';
+    });
+
+    el.detailScroll.scrollTop = 0;
+    el.detail.classList.add('on');
+  }
+  document.getElementById('back').addEventListener('click', () => el.detail.classList.remove('on'));
+
+  syncSeg();
+  syncDock();
+  render();
+  window.addEventListener('resize', syncSeg);
+})();
+</script>
+</body>
+</html>

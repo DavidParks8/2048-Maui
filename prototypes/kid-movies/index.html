@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kid Movies — pick a look</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #eef0f7;
+    background: #14161f;
+    padding: 46px 24px 70px;
+  }
+
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 40px; }
+  h1 { margin: 0; font-size: 40px; font-weight: 850; letter-spacing: -1.4px; }
+  .lede {
+    margin: 12px auto 0;
+    max-width: 620px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(255,255,255,.6);
+  }
+  .kicker {
+    display: inline-block;
+    margin-bottom: 14px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.66);
+    background: rgba(255,255,255,.07);
+    border: .5px solid rgba(255,255,255,.14);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(288px, 1fr));
+    gap: 26px;
+    align-items: start;
+  }
+
+  .opt {
+    background: rgba(255,255,255,.045);
+    border: .5px solid rgba(255,255,255,.12);
+    border-radius: 26px;
+    padding: 22px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: border-color 260ms ease, background 260ms ease;
+  }
+  .opt:hover { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.07); }
+
+  .frame {
+    width: 273px;
+    height: 578px;
+    overflow: hidden;
+    border-radius: 36px;
+    flex: 0 0 auto;
+  }
+  .frame iframe {
+    width: 440px;
+    height: 932px;
+    border: 0;
+    transform: scale(.62);
+    transform-origin: top left;
+    display: block;
+  }
+
+  .tag {
+    margin-top: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.36);
+  }
+  h2 { margin: 6px 0 0; font-size: 22px; font-weight: 800; letter-spacing: -.6px; }
+  .desc {
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.58;
+    color: rgba(255,255,255,.58);
+    text-align: center;
+  }
+  .bullets {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    line-height: 1.85;
+    color: rgba(255,255,255,.5);
+    align-self: stretch;
+  }
+  .bullets li::before { content: '›  '; color: rgba(255,255,255,.3); }
+
+  .open {
+    margin-top: 18px;
+    align-self: stretch;
+    text-align: center;
+    padding: 12px 0;
+    border-radius: 14px;
+    font-size: 14.5px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #14161f;
+    background: rgba(255,255,255,.92);
+    transition: transform 200ms ease;
+  }
+  .open:hover { transform: translateY(-1px); }
+
+  .note {
+    margin: 46px auto 0;
+    max-width: 760px;
+    padding: 22px 26px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.045);
+    border: .5px solid rgba(255,255,255,.1);
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(255,255,255,.58);
+  }
+  .note b { color: rgba(255,255,255,.9); display: block; margin-bottom: 6px; font-size: 15px; }
+  .note code {
+    font-size: 12.5px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,.08);
+  }
+  .note a { color: #7fd7ff; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Pick your favorite</div>
+    <h1>Movies Coming Soon — for kids</h1>
+    <p class="lede">
+      Three takes on the same app: upcoming G and PG movies only, sorted by release date,
+      with favorites, search, posters and trailers. All three are live — tap around inside
+      them. Pick the one you like best and that's the one we build.
+    </p>
+  </header>
+
+  <div class="row">
+    <div class="opt">
+      <div class="frame">
+        <iframe src="proto-a-glass-timeline.html?embed" title="Prototype A" loading="lazy"></iframe>
+      </div>
+      <div class="tag">Prototype A</div>
+      <h2>Glass Timeline</h2>
+      <p class="desc">Calm and list-first. Feels like a really polished iOS app.</p>
+      <ul class="bullets">
+        <li>Sticky glass month + date headers</li>
+        <li>Filter chips: G only, PG, Animation, next 30 days</li>
+        <li>Bottom tab bar, sliding glass pill</li>
+        <li>Detail opens as a bottom sheet</li>
+      </ul>
+      <a class="open" href="proto-a-glass-timeline.html">Open full size</a>
+    </div>
+
+    <div class="opt">
+      <div class="frame">
+        <iframe src="proto-b-cinema-wall.html?embed" title="Prototype B" loading="lazy"></iframe>
+      </div>
+      <div class="tag">Prototype B</div>
+      <h2>Cinema Wall</h2>
+      <p class="desc">Poster-first and cinematic. The most “movie theater” of the three.</p>
+      <ul class="bullets">
+        <li>Big “next up” hero with adaptive background tint</li>
+        <li>Swipeable date rail, tap a date to filter</li>
+        <li>3-across poster wall with heart overlays</li>
+        <li>Full-screen detail page</li>
+      </ul>
+      <a class="open" href="proto-b-cinema-wall.html">Open full size</a>
+    </div>
+
+    <div class="opt">
+      <div class="frame">
+        <iframe src="proto-c-countdown.html?embed" title="Prototype C" loading="lazy"></iframe>
+      </div>
+      <div class="tag">Prototype C</div>
+      <h2>Countdown Calendar</h2>
+      <p class="desc">Light frosted glass, built for a kid. Big numbers, big buttons.</p>
+      <ul class="bullets">
+        <li>Giant “how many sleeps” countdown</li>
+        <li>Real calendar with a dot on every release day</li>
+        <li>Star instead of heart, “My List” tab</li>
+        <li>Bright light theme, large touch targets</li>
+      </ul>
+      <a class="open" href="proto-c-countdown.html">Open full size</a>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Where the real data comes from</b>
+    All three use the same plan: <a href="https://developer.themoviedb.org/reference/intro/getting-started">TMDB</a>,
+    which is free for non-commercial apps and is the only free source that covers all four things we need.
+    Upcoming films filtered to kid ratings via
+    <code>/discover/movie?certification_country=US&amp;certification.lte=PG</code>,
+    posters from <code>image.tmdb.org</code>, and YouTube trailer keys from
+    <code>/movie/{id}/videos</code>. Attribution to TMDB is required.
+    <br><br>
+    Titles and poster art in these prototypes are made-up placeholders so nothing here uses
+    copyrighted artwork — the real app swaps in live TMDB data.
+  </div>
+</div>
+</body>
+</html>
