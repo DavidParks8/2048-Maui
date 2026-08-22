@@ -18,9 +18,16 @@ public sealed class IosWordLevelSpeechService
         IWordLevelSpeech,
         IDisposable
 {
+    private const float ReadAloudRate = 0.44f;
+    private const float SingleWordRate = 0.4f;
+    private const float FriendlyPitch = 1.02f;
+    private const double ReadAloudStartDelay = 0.06;
+    private const double ReadAloudEndDelay = 0.04;
+
     private readonly object _sync = new();
     private AVSpeechSynthesizer? _synthesizer;
     private SpeechSynthesizerDelegate? _synthesizerDelegate;
+    private AVSpeechSynthesisVoice? _voice;
     private SpeechOperation? _activeOperation;
     private bool _disposed;
 
@@ -125,7 +132,12 @@ public sealed class IosWordLevelSpeechService
             ObjectDisposedException.ThrowIf(_disposed, this);
 
             synthesizer = _synthesizer ??= CreateSynthesizer();
-            operation = new(this, new AVSpeechUtterance(text), reportRanges, cancellationToken);
+            operation = new(
+                this,
+                CreateUtterance(text, reportRanges),
+                reportRanges,
+                cancellationToken
+            );
             _activeOperation = operation;
             operation.CancellationRegistration = cancellationToken.Register(
                 static state =>
@@ -162,7 +174,50 @@ public sealed class IosWordLevelSpeechService
         AVSpeechSynthesizer synthesizer = new();
         _synthesizerDelegate = new SpeechSynthesizerDelegate(this);
         synthesizer.Delegate = _synthesizerDelegate;
+        _voice = SelectVoice();
         return synthesizer;
+    }
+
+    private AVSpeechUtterance CreateUtterance(string text, bool reportRanges) =>
+        new(text)
+        {
+            Voice = _voice,
+            Rate = reportRanges ? ReadAloudRate : SingleWordRate,
+            PitchMultiplier = FriendlyPitch,
+            PreUtteranceDelay = reportRanges ? ReadAloudStartDelay : 0,
+            PostUtteranceDelay = reportRanges ? ReadAloudEndDelay : 0,
+            PrefersAssistiveTechnologySettings = false,
+        };
+
+    private static AVSpeechSynthesisVoice? SelectVoice()
+    {
+        AVSpeechSynthesisVoice? languageDefault = AVSpeechSynthesisVoice.FromLanguage(
+            SpeechVoiceSelectionPolicy.PreferredLanguage
+        );
+        AVSpeechSynthesisVoice[] voices = AVSpeechSynthesisVoice.GetSpeechVoices();
+        SpeechVoiceCandidate[] candidates = new SpeechVoiceCandidate[voices.Length];
+
+        for (int index = 0; index < voices.Length; index++)
+        {
+            AVSpeechSynthesisVoice voice = voices[index];
+            AVSpeechSynthesisVoiceTraits traits = voice.VoiceTraits;
+            candidates[index] = new SpeechVoiceCandidate(
+                voice.Identifier,
+                voice.Name,
+                voice.Language,
+                checked((int)voice.Quality),
+                string.Equals(
+                    voice.Identifier,
+                    languageDefault?.Identifier,
+                    StringComparison.Ordinal
+                ),
+                (traits & AVSpeechSynthesisVoiceTraits.IsNoveltyVoice) != 0,
+                (traits & AVSpeechSynthesisVoiceTraits.IsPersonalVoice) != 0
+            );
+        }
+
+        int selectedIndex = SpeechVoiceSelectionPolicy.SelectBestIndex(candidates);
+        return selectedIndex >= 0 ? voices[selectedIndex] : languageDefault;
     }
 
     private void CancelFromToken(SpeechOperation operation)
@@ -230,6 +285,7 @@ public sealed class IosWordLevelSpeechService
             _synthesizer?.Dispose();
             _synthesizer = null;
             _synthesizerDelegate = null;
+            _voice = null;
         }
     }
 

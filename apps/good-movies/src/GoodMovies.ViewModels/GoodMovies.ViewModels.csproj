@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="GoodMovies.Maui" />
     <InternalsVisibleTo Include="GoodMovies.ViewModels.Tests" />
   </ItemGroup>
 </Project>
