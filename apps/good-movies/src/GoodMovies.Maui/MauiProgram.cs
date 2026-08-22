@@ -24,6 +24,19 @@ public static class MauiProgram
 
         builder.UseMauiApp<App>().ConfigureFonts(_ => { });
 
+#if IOS
+        // The .NET 10 grouped CollectionView handler can index a section after
+        // its group is removed. The compatibility handler does not have that
+        // crash and is safer for the favorites feed.
+        builder.ConfigureMauiHandlers(handlers =>
+        {
+            handlers.AddHandler<
+                Microsoft.Maui.Controls.CollectionView,
+                Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler
+            >();
+        });
+#endif
+
 #if DEBUG
         builder.Logging.AddDebug();
 #endif

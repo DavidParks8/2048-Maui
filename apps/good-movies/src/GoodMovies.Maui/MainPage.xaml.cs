@@ -195,7 +195,23 @@ public partial class MainPage : ContentPage
 
         _layoutInitialized = true;
         _isWide = isWide;
-        _movieItemsLayout.Span = isWide ? 2 : 1;
+
+        if (Handler is IPlatformViewHandler { ViewController: { View: { } view } })
+        {
+            UIView.PerformWithoutAnimation(() =>
+            {
+                ApplyLayout(isWide);
+                view.SetNeedsLayout();
+                view.LayoutIfNeeded();
+            });
+            return;
+        }
+
+        ApplyLayout(isWide);
+    }
+
+    private void ApplyLayout(bool isWide)
+    {
         if (isWide)
         {
             RootLayout.ColumnDefinitions = new ColumnDefinitionCollection
@@ -222,6 +238,10 @@ public partial class MainPage : ContentPage
             MainContent.Padding = new Thickness(14, 14, 14, 0);
             MainTitle.FontSize = Width >= 700 ? 44 : 32;
         }
+
+        // Change the CollectionView layout only after its surrounding grid has
+        // reached the matching shape, avoiding a stretched intermediate frame.
+        _movieItemsLayout.Span = isWide ? 2 : 1;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

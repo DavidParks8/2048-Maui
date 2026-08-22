@@ -1,4 +1,5 @@
 using GoodMovies.ViewModels;
+using UIKit;
 
 namespace GoodMovies.Maui;
 
@@ -118,6 +119,23 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         _layoutInitialized = true;
         _isWide = isWide;
         _compactPosterWidth = compactPosterWidth;
+
+        if (Handler is IPlatformViewHandler { ViewController: { View: { } view } })
+        {
+            UIView.PerformWithoutAnimation(() =>
+            {
+                ApplyLayout(isWide, compactPosterWidth);
+                view.SetNeedsLayout();
+                view.LayoutIfNeeded();
+            });
+            return;
+        }
+
+        ApplyLayout(isWide, compactPosterWidth);
+    }
+
+    private void ApplyLayout(bool isWide, double compactPosterWidth)
+    {
         if (isWide)
         {
             DetailContent.ColumnDefinitions = new ColumnDefinitionCollection

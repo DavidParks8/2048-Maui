@@ -4,10 +4,55 @@
     width="456"
     height="456"
     viewBox="0 0 456 456">
-    <path
-        d="M110 136h236v54H110zM136 190h184v126H136zM164 96h28v40h-28zM216 96h28v40h-28zM268 96h28v40h-28z"
-        fill="#D8B4FE" />
-    <path
-        d="M164 218h28v70h-28zM216 218h28v70h-28zM268 218h28v70h-28z"
-        fill="#190A3A" />
+    <g stroke="#13071F" stroke-linecap="round" stroke-linejoin="round">
+        <path
+            d="M114 278c0-92 49-151 126-151 76 0 125 59 125 151 0 72-43 105-125 105-83 0-126-33-126-105z"
+            fill="#13071F"
+            opacity=".28"
+            stroke="none"
+            transform="translate(0 11)" />
+        <path
+            d="M176 130V91c0-10 8-18 18-18h87c10 0 18 8 18 18v39"
+            fill="#FF4FA3"
+            stroke-width="18" />
+        <path
+            d="M93 267c0-94 55-155 145-155s145 61 145 155c0 79-49 116-145 116S93 346 93 267z"
+            fill="#FF4FA3"
+            stroke-width="18" />
+
+        <path
+            d="M380 246h25c13 0 23 10 23 23v88"
+            fill="none"
+            stroke-width="32" />
+        <path
+            d="M380 246h25c13 0 23 10 23 23v88"
+            fill="none"
+            stroke="#FF4FA3"
+            stroke-width="14" />
+        <path
+            d="M393 343h70v39c0 22-16 40-35 40s-35-18-35-40z"
+            fill="#1266F6"
+            stroke-width="16"
+            transform="translate(-35 -16)" />
+        <path
+            d="M382 400h35l12 34h-59z"
+            fill="#FFE21A"
+            stroke-width="14"
+            transform="translate(0 -24)" />
+        <circle cx="400" cy="394" r="6" fill="#13071F" stroke="none" />
+
+        <g stroke-width="14">
+            <circle cx="176" cy="267" r="48" fill="#FFE21A" />
+            <path d="M145 236l62 62M207 236l-62 62" fill="none" />
+
+            <circle cx="245" cy="184" r="35" fill="#FFE21A" />
+            <path d="M222 161l46 46M268 161l-46 46" fill="none" />
+
+            <circle cx="307" cy="239" r="38" fill="#00CE3A" />
+            <path d="M282 214l50 50M332 214l-50 50" fill="none" />
+
+            <circle cx="250" cy="299" r="25" fill="#00CE3A" />
+            <path d="M234 283l32 32M266 283l-32 32" fill="none" />
+        </g>
+    </g>
 </svg>
