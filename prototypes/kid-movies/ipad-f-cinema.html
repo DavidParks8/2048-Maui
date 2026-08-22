@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad F — Cinema</title>
+<link rel="stylesheet" href="shared/flat.css">
+<style>
+  /* Flat matte dark. No blur, no translucency, no gloss. Posters do the talking. */
+  .tablet {
+    --page: #0d0819;
+    --surface: #1b1233;
+    --surface-2: #271a49;
+    --line: #392a5e;
+    --text: #ffffff;
+    --text-2: rgba(255,255,255,.7);
+    --text-3: rgba(255,255,255,.46);
+    --accent: #a855f7;
+    background: var(--page);
+  }
+  .tablet .home-bar { background: rgba(255,255,255,.4); }
+
+  .body { flex: 1; min-height: 0; display: flex; }
+
+  /* ---------- left rail ---------- */
+  .rail {
+    flex: 0 0 232px; padding: 6px 12px 16px 18px;
+    display: flex; flex-direction: column; gap: 6px;
+    border-right: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 11px; padding: 8px 12px 18px; }
+  .brand .m { font-size: 30px; }
+  .brand b { font-size: var(--t-title); font-weight: 820; letter-spacing: -.6px; }
+
+  .nav {
+    display: flex; align-items: center; gap: 14px;
+    height: 66px; padding: 0 16px; border-radius: 14px;
+    font-size: var(--t-label); font-weight: 700; color: var(--text-2);
+    cursor: pointer; user-select: none;
+    transition: background 220ms var(--ease), color 220ms var(--ease);
+  }
+  .nav .ico { font-size: 26px; line-height: 1; width: 30px; text-align: center; }
+  .nav:hover { background: var(--surface); color: #fff; }
+  .nav.on { background: var(--accent); color: #fff; }
+  .nav .badge {
+    margin-left: auto; min-width: 30px; height: 28px; padding: 0 9px;
+    border-radius: 9px; background: rgba(255,255,255,.15);
+    display: grid; place-items: center; font-size: var(--t-small); font-weight: 780;
+  }
+
+  .rail-foot { margin-top: auto; padding: 14px 14px 0; border-top: 1px solid var(--line); }
+  .rail-foot .lb { font-size: var(--t-small); color: var(--text-3); line-height: 1.5; }
+  .safe {
+    margin-top: 9px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 13px; border-radius: 9px; background: #143d24; color: #7ee2a4;
+    font-size: var(--t-small); font-weight: 740;
+  }
+
+  /* ---------- main ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  .mhead { display: flex; align-items: center; gap: 18px; padding: 8px 26px 14px; }
+  .mhead h1 { margin: 0; font-size: var(--t-hero); font-weight: 850; letter-spacing: -1.6px; }
+  .mhead .n { font-size: var(--t-body); color: var(--text-3); font-weight: 640; }
+
+  .searchbar {
+    display: flex; align-items: center; gap: 14px;
+    height: 66px; margin: 0 26px 16px; padding: 0 22px;
+    border-radius: 14px; background: var(--surface); border: 1px solid var(--line);
+  }
+  .searchbar .mg { font-size: var(--t-title); }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: #fff; font-size: var(--t-body); font-family: inherit; font-weight: 620;
+  }
+  .searchbar input::placeholder { color: var(--text-3); font-weight: 520; }
+
+  .feed { padding: 0 26px 26px; }
+
+  .shelf-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin: 24px 0 14px;
+  }
+  .feed > .shelf-head:first-child { margin-top: 0; }
+  .shelf-head h2 { margin: 0; font-size: var(--t-title); font-weight: 800; letter-spacing: -.5px; }
+  .shelf-head .n { font-size: var(--t-body); font-weight: 750; color: var(--accent); }
+
+  .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+  .tile { cursor: pointer; }
+  .tile .pwrap { position: relative; border-radius: 12px; overflow: hidden; }
+  .tile .poster { width: 100%; aspect-ratio: 2 / 3; font-size: 32px; border-radius: 12px; }
+  .tile .pwrap::after {
+    content: ''; position: absolute; inset: 0; border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+    pointer-events: none;
+  }
+  .tile:hover .poster { transform: scale(1.03); }
+  .tile .poster { transition: transform 300ms var(--ease); }
+  .tile-name {
+    margin-top: 11px; font-size: var(--t-body); font-weight: 720; line-height: 1.28;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tile-when { margin-top: 4px; font-size: var(--t-small); font-weight: 700; color: var(--accent); }
+  .tile-heart {
+    position: absolute; z-index: 3; top: 9px; right: 9px;
+    width: 46px; height: 46px; border-radius: 12px;
+    display: grid; place-items: center; font-size: 21px;
+    background: rgba(13,8,25,.82); color: rgba(255,255,255,.8);
+    transition: transform 200ms var(--ease), background 200ms, color 200ms;
+  }
+  .tile-heart:active { transform: scale(.86); }
+  .tile-heart.on { background: var(--accent); color: #fff; }
+  .tile-badge {
+    position: absolute; z-index: 3; top: 9px; left: 9px;
+    min-width: 40px; height: 28px; padding: 0 10px; border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: var(--t-small); font-weight: 800;
+    background: rgba(13,8,25,.82); color: #fff;
+  }
+
+  /* ---------- detail ---------- */
+  .detail {
+    position: absolute; inset: 0; z-index: 90; background: var(--page);
+    transform: translateX(100%);
+    transition: transform 440ms var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .detail.on { transform: none; }
+
+  .d-banner { position: relative; height: 244px; flex: 0 0 auto; overflow: hidden; }
+  .d-banner .art { position: absolute; inset: 0; }
+  .d-banner::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(13,8,25,.3) 0%, rgba(13,8,25,.86) 66%, var(--page) 100%);
+  }
+  .d-emoji {
+    position: absolute; right: 70px; top: 44%; transform: translateY(-50%);
+    font-size: 128px; z-index: 2;
+  }
+  .back {
+    position: absolute; z-index: 6; top: 20px; left: 22px;
+    display: flex; align-items: center; gap: 10px;
+    height: 58px; padding: 0 22px 0 16px; border-radius: 14px;
+    background: rgba(13,8,25,.8);
+    font-size: var(--t-label); font-weight: 740; cursor: pointer; user-select: none;
+  }
+  .back:active { transform: scale(.96); }
+  .back .ar { font-size: 25px; line-height: 1; }
+
+  .d-wrap { flex: 1; min-height: 0; display: flex; gap: 32px; padding: 0 34px 28px; margin-top: -110px; }
+  .d-left { flex: 0 0 216px; display: flex; flex-direction: column; gap: 14px; z-index: 4; }
+  .d-left .poster { width: 216px; height: 324px; font-size: 42px; }
+  .d-right { flex: 1; min-width: 0; display: flex; flex-direction: column; z-index: 4; padding-top: 116px; }
+  .d-title { font-size: var(--t-hero); font-weight: 860; letter-spacing: -1.5px; line-height: 1.06; }
+  .d-when { margin-top: 14px; font-size: 34px; font-weight: 840; color: var(--accent); letter-spacing: -.8px; }
+  .d-date { margin-top: 4px; font-size: var(--t-body); color: var(--text-2); }
+  .d-tags { margin-top: 16px; display: flex; gap: 10px; }
+  .d-shead { display: flex; align-items: center; gap: 14px; margin: 22px 0 12px; }
+  .d-hint { font-size: var(--t-small); color: var(--text-3); line-height: 1.4; }
+  .d-story { color: rgba(255,255,255,.9); max-width: 640px; overflow-y: auto; scrollbar-width: none; }
+  .d-story::-webkit-scrollbar { display: none; }
+  .d-actions { margin-top: auto; padding-top: 18px; display: flex; align-items: center; gap: 15px; }
+  .d-favword { font-size: var(--t-body); font-weight: 730; }
+
+  .tablet .speak { border-radius: 14px; }
+  .tablet .play-big { border-radius: 14px; }
+  .tablet .big-heart { border-radius: 16px; }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+
+      <div class="body">
+        <div class="rail">
+          <div class="brand"><span class="m">🎥</span><b>Movie Days</b></div>
+          <div id="nav"></div>
+          <div class="rail-foot">
+            <div class="lb">Only movies that are<br>okay for kids.</div>
+            <div class="safe"><span>✓</span>G and PG only</div>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="mhead"><h1 id="mTitle">Coming soon</h1><span class="n" id="mCount"></span></div>
+          <div id="searchWrap"></div>
+          <div class="scroll"><div class="feed" id="feed"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="d-banner">
+        <div class="art" id="dArt"></div>
+        <div class="d-emoji" id="dEmoji"></div>
+        <div class="back" id="back"><span class="ar">←</span>Go back</div>
+      </div>
+      <div class="d-wrap" id="detailWrap"></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad F · Cinema</b>
+    No glass. Flat matte dark, like the grown-up movie apps he already knows,
+    but with kid-sized text, a read-aloud button and a shelf of big posters.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const NAV = [
+    { id: 'soon', ic: '🎬', lb: 'Coming soon' },
+    { id: 'favs', ic: '❤️', lb: 'Favorites', badge: true },
+    { id: 'search', ic: '🔍', lb: 'Search' },
+  ];
+  const state = { tab: 'soon', query: '' };
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  const el = {
+    nav: document.getElementById('nav'),
+    feed: document.getElementById('feed'),
+    searchWrap: document.getElementById('searchWrap'),
+    mTitle: document.getElementById('mTitle'),
+    mCount: document.getElementById('mCount'),
+    detail: document.getElementById('detail'),
+    detailWrap: document.getElementById('detailWrap'),
+    dArt: document.getElementById('dArt'),
+    dEmoji: document.getElementById('dEmoji'),
+  };
+
+  for (const n of NAV) {
+    const d = document.createElement('div');
+    d.className = 'nav';
+    d.dataset.tab = n.id;
+    d.innerHTML = `<span class="ico">${n.ic}</span><span>${n.lb}</span>` +
+      (n.badge ? '<span class="badge" id="favBadge"></span>' : '');
+    d.addEventListener('click', () => { state.tab = n.id; state.query = ''; sync(); render(); });
+    el.nav.appendChild(d);
+  }
+  function sync() {
+    for (const d of el.nav.querySelectorAll('.nav')) d.classList.toggle('on', d.dataset.tab === state.tab);
+    const b = document.getElementById('favBadge');
+    if (b) b.textContent = sorted.filter((m) => Favorites.has(m.id)).length;
+  }
+
+  function pool() {
+    if (state.tab === 'favs') return sorted.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return sorted.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.kind.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query));
+    }
+    return sorted;
+  }
+
+  function tileNode(m, delay) {
+    const n = document.createElement('div');
+    n.className = 'tile rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="pwrap">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div class="tile-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>
+        <div class="tile-badge">${m.rating}</div>
+      </div>
+      <div class="tile-name">${m.title}</div>
+      <div class="tile-when">${sleepsLabel(m.date)}</div>`;
+
+    const h = n.querySelector('.tile-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      sync();
+      if (state.tab === 'favs') setTimeout(paint, 320);
+    });
+    n.addEventListener('click', () => openDetail(m));
+    return n;
+  }
+
+  function emptyNode(a, b, c) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.innerHTML = `<div class="empty-emoji">${a}</div><div class="empty-title">${b}</div><div class="empty-sub">${c}</div>`;
+    return e;
+  }
+
+  function render() {
+    el.searchWrap.innerHTML = '';
+    if (state.tab === 'search') {
+      const bar = document.createElement('div');
+      bar.className = 'searchbar';
+      bar.innerHTML = `<span class="mg">🔍</span><input placeholder="Type a movie name" autocomplete="off">`;
+      el.searchWrap.appendChild(bar);
+      const input = bar.querySelector('input');
+      input.value = state.query;
+      input.addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); paint(); });
+      setTimeout(() => input.focus(), 60);
+    }
+    paint();
+  }
+
+  function paint() {
+    el.feed.innerHTML = '';
+    const list = pool();
+
+    el.mTitle.textContent =
+      state.tab === 'favs' ? 'My favorites' : state.tab === 'search' ? 'Search' : 'Coming soon';
+    el.mCount.textContent = list.length ? `${list.length} movie${list.length === 1 ? '' : 's'}` : '';
+
+    if (!list.length) {
+      el.feed.appendChild(
+        state.tab === 'favs'
+          ? emptyNode('♡', 'No favorites yet', 'Tap a heart on a poster to save it here.')
+          : state.query
+            ? emptyNode('🔍', 'No movies found', 'Try another word.')
+            : emptyNode('🔍', 'What do you want to watch?', 'Try typing dragon, space, or funny.'));
+      return;
+    }
+
+    let i = 0;
+    if (state.tab !== 'soon') {
+      const s = document.createElement('div');
+      s.className = 'shelf';
+      for (const m of list) s.appendChild(tileNode(m, i++ * 26));
+      el.feed.appendChild(s);
+      return;
+    }
+
+    for (const g of groupByMonth(list)) {
+      const h = document.createElement('div');
+      h.className = 'shelf-head';
+      h.innerHTML = `<h2>${g.label}</h2><span class="n">${g.items.length} movie${g.items.length === 1 ? '' : 's'}</span>`;
+      el.feed.appendChild(h);
+      const s = document.createElement('div');
+      s.className = 'shelf';
+      for (const m of g.items) s.appendChild(tileNode(m, i++ * 26));
+      el.feed.appendChild(s);
+    }
+  }
+
+  /* ---------- detail ---------- */
+  function openDetail(m) {
+    ReadAloud.stop();
+    const on = Favorites.has(m.id);
+
+    el.dArt.style.cssText = posterStyle(m);
+    el.dEmoji.textContent = m.emoji;
+
+    el.detailWrap.innerHTML = `
+      <div class="d-left">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div class="play-big" id="playBtn" style="justify-content:center">
+          <span style="font-size:21px">▶</span>Play trailer
+        </div>
+      </div>
+      <div class="d-right">
+        <div class="d-title">${m.title}</div>
+        <div class="d-when">${sleepsLabel(m.date)}</div>
+        <div class="d-date">${formatDateLong(m.date)}</div>
+        <div class="d-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+        <div class="d-shead">
+          <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+          <div class="d-hint">Tap any word<br>to hear it</div>
+        </div>
+        <p class="d-story reading" id="story"></p>
+        <div class="d-actions">
+          <div class="big-heart ${on ? 'on' : ''}" id="dHeart">${on ? '♥' : '♡'}</div>
+          <div class="d-favword" id="favWord" style="color:${on ? '#ff8296' : 'var(--text-3)'}">
+            ${on ? 'Saved to my favorites' : 'Tap the heart to save it'}
+          </div>
+        </div>
+      </div>`;
+
+    ReadAloud.prepare(el.detailWrap.querySelector('#story'), m.simple);
+
+    const speak = el.detailWrap.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) { ReadAloud.stop(); stopReading(); return; }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const heart = el.detailWrap.querySelector('#dHeart');
+    const word = el.detailWrap.querySelector('#favWord');
+    heart.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      heart.classList.toggle('on', nowOn);
+      heart.textContent = nowOn ? '♥' : '♡';
+      heart.classList.remove('pop'); void heart.offsetWidth; heart.classList.add('pop');
+      word.textContent = nowOn ? 'Saved to my favorites' : 'Tap the heart to save it';
+      word.style.color = nowOn ? '#ff8296' : 'var(--text-3)';
+      sync();
+      paint();
+    });
+
+    const play = el.detailWrap.querySelector('#playBtn');
+    play.addEventListener('click', () => {
+      play.innerHTML = '<span style="font-size:21px">⏸</span>Playing trailer…';
+    });
+
+    el.detail.classList.add('on');
+  }
+
+  document.getElementById('back').addEventListener('click', () => {
+    ReadAloud.stop();
+    el.detail.classList.remove('on');
+  });
+
+  sync();
+  render();
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

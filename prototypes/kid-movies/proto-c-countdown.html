@@ -6,20 +6,20 @@
 <title>Prototype C — Countdown Calendar</title>
 <link rel="stylesheet" href="shared/glass.css">
 <style>
-  body { background: #101018; }
+  body { background: #17092e; }
 
   /* Light "frosted" liquid glass over a bright wallpaper. */
   .wallpaper {
     background:
-      radial-gradient(70% 55% at 8% 2%, #ffd9a8 0%, transparent 60%),
-      radial-gradient(75% 55% at 96% 12%, #b9d4ff 0%, transparent 62%),
-      radial-gradient(85% 60% at 50% 102%, #ffc2dd 0%, transparent 60%),
-      linear-gradient(172deg, #fdf3ff 0%, #e8eeff 55%, #fef0f4 100%);
+      radial-gradient(70% 55% at 8% 2%, #d8c2ff 0%, transparent 60%),
+      radial-gradient(75% 55% at 96% 12%, #c4b0ff 0%, transparent 62%),
+      radial-gradient(85% 60% at 50% 102%, #e9d5ff 0%, transparent 60%),
+      linear-gradient(172deg, #faf5ff 0%, #ece2fd 55%, #f6efff 100%);
   }
   .wallpaper::after { opacity: .10; }
 
-  .screen { color: #191a2c; }
-  .status-bar { color: #191a2c; }
+  .screen { color: #2e1065; }
+  .status-bar { color: #2e1065; }
   .home-bar { background: rgba(25,26,44,.42); }
 
   .glass {
@@ -105,7 +105,7 @@
     font-size: 13px; font-weight: 650; color: rgba(25,26,44,.75);
   }
   .cal-day.blank { visibility: hidden; }
-  .cal-day.has { cursor: pointer; font-weight: 800; color: #191a2c; }
+  .cal-day.has { cursor: pointer; font-weight: 800; color: #2e1065; }
   .cal-day.has::after {
     content: ''; position: absolute; bottom: 5px; left: 50%;
     transform: translateX(-50%);
@@ -113,7 +113,7 @@
     background: #ff4f7d;
   }
   .cal-day.on {
-    background: #191a2c; color: #fff;
+    background: #2e1065; color: #fff;
   }
   .cal-day.on::after { background: #ffd479; }
 
@@ -157,7 +157,7 @@
   }
   .searchbar input {
     flex: 1; border: 0; outline: 0; background: transparent;
-    color: #191a2c; font-size: 16px; font-family: inherit; font-weight: 600;
+    color: #2e1065; font-size: 16px; font-family: inherit; font-weight: 600;
   }
   .searchbar input::placeholder { color: rgba(25,26,44,.38); font-weight: 500; }
 
@@ -179,7 +179,7 @@
   .tab.on { color: #fff; }
   .tab-pill {
     position: absolute; z-index: 1; top: 6px; bottom: 6px;
-    border-radius: 21px; background: #191a2c;
+    border-radius: 21px; background: #2e1065;
     box-shadow: 0 6px 16px rgba(25,26,44,.28);
     transition: transform 520ms var(--ease-glass);
   }
@@ -199,7 +199,7 @@
     transform: translateY(105%);
     transition: transform 560ms var(--ease-glass);
     display: flex; flex-direction: column; overflow: hidden;
-    color: #191a2c;
+    color: #2e1065;
   }
   .sheet.on { transform: none; }
   .grabber {
@@ -253,7 +253,7 @@
   .sheet-fav.off {
     background: rgba(255,255,255,.6);
     border: .5px solid rgba(255,255,255,.9);
-    color: #191a2c;
+    color: #2e1065;
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 16px rgba(32,30,45,.12);
   }
 </style>

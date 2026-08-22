@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad E — Big Buttons</title>
+<link rel="stylesheet" href="shared/flat.css">
+<style>
+  /* Solid colour blocks. Nothing see-through. Huge targets, few words. */
+  .tablet {
+    --page: #190a3a;
+    --surface: #341c86;
+    --surface-2: #4527a8;
+    --line: rgba(255,255,255,.16);
+    --text: #ffffff;
+    --text-2: rgba(255,255,255,.78);
+    --text-3: rgba(255,255,255,.56);
+    --accent: #c084fc;
+    background: var(--page);
+  }
+
+  .tablet .kind { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.2); color: #fff; }
+  .tablet .home-bar { background: rgba(255,255,255,.42); }
+
+  .body { flex: 1; min-height: 0; display: flex; }
+
+  /* ---------- left: three enormous buttons ---------- */
+  .rail {
+    flex: 0 0 262px; padding: 10px 16px 16px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 6px 4px 14px; }
+  .brand .m { font-size: 34px; }
+  .brand b { font-size: var(--t-title); font-weight: 850; letter-spacing: -.7px; }
+
+  .bigbtn {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    border-radius: 26px; cursor: pointer; user-select: none; text-align: center;
+    background: var(--surface);
+    box-shadow: 0 7px 0 rgba(0,0,0,.32);
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  }
+  .bigbtn:active { transform: translateY(5px); box-shadow: 0 2px 0 rgba(0,0,0,.32); }
+  .bigbtn .ico { font-size: 52px; line-height: 1; }
+  .bigbtn .lb { font-size: var(--t-title); font-weight: 830; letter-spacing: -.5px; line-height: 1.15; }
+  .bigbtn .sub { font-size: var(--t-small); font-weight: 650; color: var(--text-3); }
+  .bigbtn.on { background: #d8b4fe; color: #190a3a; border-bottom-color: rgba(0,0,0,.28); }
+  .bigbtn.on .sub { color: rgba(26,20,64,.68); }
+
+  /* ---------- right ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 6px 22px 0 8px; }
+  .mhead { display: flex; align-items: center; gap: 16px; padding: 4px 6px 14px; }
+  .mhead h1 { margin: 0; font-size: var(--t-hero); font-weight: 870; letter-spacing: -1.6px; }
+  .mhead .n {
+    padding: 7px 15px; border-radius: 12px; background: var(--surface);
+    font-size: var(--t-small); font-weight: 780; color: var(--text-2);
+  }
+
+  .searchbar {
+    display: flex; align-items: center; gap: 14px;
+    height: 70px; padding: 0 24px; border-radius: 20px;
+    background: var(--surface); margin: 0 6px 19px;
+    box-shadow: 0 5px 0 rgba(0,0,0,.3);
+  }
+  .searchbar .mg { font-size: var(--t-title); }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: #fff; font-size: var(--t-body); font-family: inherit; font-weight: 640;
+  }
+  .searchbar input::placeholder { color: var(--text-3); font-weight: 550; }
+
+  .feed { padding: 0 6px 24px; }
+
+  .day {
+    display: flex; align-items: center; gap: 14px;
+    margin: 20px 0 12px; padding: 12px 20px; border-radius: 18px;
+    background: var(--surface-2);
+  }
+  .feed > .day:first-child { margin-top: 2px; }
+  .day .em { font-size: 26px; }
+  .day .d { font-size: var(--t-title); font-weight: 830; letter-spacing: -.5px; }
+  .day .n {
+    margin-left: auto; padding: 6px 14px; border-radius: 11px;
+    background: #d8b4fe; color: #190a3a; font-size: var(--t-small); font-weight: 820;
+  }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card {
+    display: flex; align-items: center; gap: 18px;
+    padding: 14px 16px; border-radius: 24px;
+    background: var(--surface); cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,.3);
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  }
+  .card:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+  .card .poster { width: 104px; height: 156px; font-size: 22px; }
+  .c-info { flex: 1; min-width: 0; }
+  .c-title {
+    font-size: var(--t-title); font-weight: 820; letter-spacing: -.5px; line-height: 1.22;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .c-when { margin-top: 10px; font-size: var(--t-body); font-weight: 800; color: #d8b4fe; }
+  .c-tags { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .card .big-heart { width: 58px; height: 58px; font-size: 26px; }
+
+  /* ---------- full-screen detail ---------- */
+  .detail {
+    position: absolute; inset: 0; z-index: 90;
+    background: var(--page);
+    transform: translateY(100%);
+    transition: transform 440ms var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .detail.on { transform: none; }
+  .d-head { display: flex; align-items: center; gap: 16px; padding: 22px 26px 14px; }
+  .back {
+    display: flex; align-items: center; gap: 11px;
+    height: 62px; padding: 0 24px 0 18px; border-radius: 18px;
+    background: var(--surface); box-shadow: 0 5px 0 rgba(0,0,0,.3);
+    font-size: var(--t-label); font-weight: 780; cursor: pointer; user-select: none;
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  }
+  .back:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+  .back .ar { font-size: 26px; line-height: 1; }
+  .d-wrap { flex: 1; min-height: 0; display: flex; gap: 34px; padding: 6px 34px 30px; }
+  .d-left { flex: 0 0 250px; display: flex; flex-direction: column; gap: 16px; }
+  .d-left .poster { width: 250px; height: 375px; font-size: 46px; }
+  .d-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .d-title { font-size: var(--t-hero); font-weight: 870; letter-spacing: -1.5px; line-height: 1.06; }
+  .d-count {
+    margin-top: 16px; display: inline-flex; align-items: center; gap: 12px; align-self: flex-start;
+    padding: 12px 22px; border-radius: 18px; background: #d8b4fe; color: #190a3a;
+  }
+  .d-count b { font-size: 34px; font-weight: 870; letter-spacing: -1px; }
+  .d-count span { font-size: var(--t-body); font-weight: 780; }
+  .d-date { margin-top: 10px; font-size: var(--t-body); color: var(--text-2); }
+  .d-tags { margin-top: 14px; display: flex; gap: 10px; }
+  .d-shead { display: flex; align-items: center; gap: 14px; margin: 22px 0 12px; }
+  .d-hint { font-size: var(--t-small); color: var(--text-3); line-height: 1.4; }
+  .d-story { color: #fff; overflow-y: auto; scrollbar-width: none; }
+  .d-story::-webkit-scrollbar { display: none; }
+  .d-actions { margin-top: auto; padding-top: 18px; display: flex; align-items: center; gap: 15px; }
+  .d-favword { font-size: var(--t-body); font-weight: 760; }
+
+  .tablet .speak, .tablet .play-big {
+    border: 0; box-shadow: 0 5px 0 rgba(0,0,0,.32);
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), background 200ms;
+  }
+  .tablet .speak:active, .tablet .play-big:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.32); }
+  .tablet .big-heart {
+    border: 0; box-shadow: 0 5px 0 rgba(0,0,0,.3);
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), background 200ms, color 200ms;
+  }
+  .tablet .big-heart:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+
+      <div class="body">
+        <div class="rail">
+          <div class="brand"><span class="m">🍿</span><b>Movie Days</b></div>
+          <div class="bigbtn" data-tab="soon">
+            <span class="ico">🎬</span><span class="lb">Coming<br>soon</span>
+            <span class="sub" id="cSoon"></span>
+          </div>
+          <div class="bigbtn" data-tab="favs">
+            <span class="ico">❤️</span><span class="lb">My<br>favorites</span>
+            <span class="sub" id="cFavs"></span>
+          </div>
+          <div class="bigbtn" data-tab="search">
+            <span class="ico">🔍</span><span class="lb">Find a<br>movie</span>
+            <span class="sub">type a name</span>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="mhead"><h1 id="mTitle">Coming soon</h1><span class="n" id="mCount"></span></div>
+          <div id="searchWrap"></div>
+          <div class="scroll"><div class="feed" id="feed"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="d-head">
+        <div class="back" id="back"><span class="ar">←</span>Go back</div>
+      </div>
+      <div class="d-wrap" id="detailWrap"></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad E · Big Buttons</b>
+    No glass, no clutter. Three giant buttons down the side, solid colour blocks and
+    very few words. Every button has a thick bottom edge that presses in when tapped.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const state = { tab: 'soon', query: '' };
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  const el = {
+    feed: document.getElementById('feed'),
+    searchWrap: document.getElementById('searchWrap'),
+    mTitle: document.getElementById('mTitle'),
+    mCount: document.getElementById('mCount'),
+    detail: document.getElementById('detail'),
+    detailWrap: document.getElementById('detailWrap'),
+  };
+
+  for (const b of document.querySelectorAll('.bigbtn')) {
+    b.addEventListener('click', () => {
+      state.tab = b.dataset.tab;
+      state.query = '';
+      sync();
+      render();
+    });
+  }
+  function sync() {
+    for (const b of document.querySelectorAll('.bigbtn')) b.classList.toggle('on', b.dataset.tab === state.tab);
+    document.getElementById('cSoon').textContent = `${sorted.length} movies`;
+    const f = sorted.filter((m) => Favorites.has(m.id)).length;
+    document.getElementById('cFavs').textContent = `${f} saved`;
+  }
+
+  function pool() {
+    if (state.tab === 'favs') return sorted.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return sorted.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.kind.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query));
+    }
+    return sorted;
+  }
+
+  function cardNode(m, delay, showWhen) {
+    const n = document.createElement('div');
+    n.className = 'card rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+      </div>
+      <div class="c-info">
+        <div class="c-title">${m.title}</div>
+        ${showWhen ? `<div class="c-when">${sleepsLabel(m.date)}</div>` : ''}
+        <div class="c-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+      </div>
+      <div class="big-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>`;
+
+    const h = n.querySelector('.big-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop');
+      sync();
+      if (state.tab === 'favs') setTimeout(render, 380);
+    });
+    n.addEventListener('click', () => openDetail(m));
+    return n;
+  }
+
+  function emptyNode(a, b, c) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.innerHTML = `<div class="empty-emoji">${a}</div><div class="empty-title">${b}</div><div class="empty-sub">${c}</div>`;
+    return e;
+  }
+
+  function render() {
+    el.searchWrap.innerHTML = '';
+    if (state.tab === 'search') {
+      const bar = document.createElement('div');
+      bar.className = 'searchbar';
+      bar.innerHTML = `<span class="mg">🔍</span><input placeholder="Type a movie name" autocomplete="off">`;
+      el.searchWrap.appendChild(bar);
+      const input = bar.querySelector('input');
+      input.value = state.query;
+      input.addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); paint(); });
+      setTimeout(() => input.focus(), 60);
+    }
+    paint();
+  }
+
+  function paint() {
+    el.feed.innerHTML = '';
+    const list = pool();
+
+    el.mTitle.textContent =
+      state.tab === 'favs' ? 'My favorites' : state.tab === 'search' ? 'Find a movie' : 'Coming soon';
+    el.mCount.textContent = list.length ? `${list.length} movie${list.length === 1 ? '' : 's'}` : '';
+
+    if (!list.length) {
+      el.feed.appendChild(
+        state.tab === 'favs'
+          ? emptyNode('♡', 'No favorites yet', 'Tap a heart to save a movie here.')
+          : state.query
+            ? emptyNode('🔍', 'No movies found', 'Try another word.')
+            : emptyNode('🔍', 'What do you want to watch?', 'Try typing dragon, space, or funny.'));
+      return;
+    }
+
+    let i = 0;
+    if (state.tab !== 'soon') {
+      const g = document.createElement('div');
+      g.className = 'cards';
+      for (const m of list) g.appendChild(cardNode(m, i++ * 28, true));
+      el.feed.appendChild(g);
+      return;
+    }
+
+    for (const day of groupByDate(list)) {
+      const h = document.createElement('div');
+      h.className = 'day';
+      h.innerHTML = `<span class="em">📅</span>
+        <span class="d">${formatDateLong(day.key)}</span>
+        <span class="n">${sleepsLabel(day.key)}</span>`;
+      el.feed.appendChild(h);
+      const g = document.createElement('div');
+      g.className = 'cards';
+      for (const m of day.items) g.appendChild(cardNode(m, i++ * 28, false));
+      el.feed.appendChild(g);
+    }
+  }
+
+  /* ---------- detail ---------- */
+  function openDetail(m) {
+    ReadAloud.stop();
+    const on = Favorites.has(m.id);
+    const d = daysUntil(m.date);
+
+    el.detailWrap.innerHTML = `
+      <div class="d-left">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div class="play-big" id="playBtn" style="justify-content:center">
+          <span style="font-size:21px">▶</span>Play trailer
+        </div>
+      </div>
+      <div class="d-right">
+        <div class="d-title">${m.title}</div>
+        <div class="d-count"><b>${d}</b><span>${d === 1 ? 'sleep' : 'sleeps'} to go</span></div>
+        <div class="d-date">${formatDateLong(m.date)}</div>
+        <div class="d-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+        <div class="d-shead">
+          <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+          <div class="d-hint">Tap any word<br>to hear it</div>
+        </div>
+        <p class="d-story reading" id="story"></p>
+        <div class="d-actions">
+          <div class="big-heart ${on ? 'on' : ''}" id="dHeart">${on ? '♥' : '♡'}</div>
+          <div class="d-favword" id="favWord" style="color:${on ? '#e9d5ff' : 'var(--text-3)'}">
+            ${on ? 'Saved to my favorites' : 'Tap the heart to save it'}
+          </div>
+        </div>
+      </div>`;
+
+    ReadAloud.prepare(el.detailWrap.querySelector('#story'), m.simple);
+
+    const speak = el.detailWrap.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) { ReadAloud.stop(); stopReading(); return; }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const heart = el.detailWrap.querySelector('#dHeart');
+    const word = el.detailWrap.querySelector('#favWord');
+    heart.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      heart.classList.toggle('on', nowOn);
+      heart.textContent = nowOn ? '♥' : '♡';
+      heart.classList.remove('pop'); void heart.offsetWidth; heart.classList.add('pop');
+      word.textContent = nowOn ? 'Saved to my favorites' : 'Tap the heart to save it';
+      word.style.color = nowOn ? '#e9d5ff' : 'var(--text-3)';
+      sync();
+      paint();
+    });
+
+    const play = el.detailWrap.querySelector('#playBtn');
+    play.addEventListener('click', () => {
+      play.innerHTML = '<span style="font-size:21px">⏸</span>Playing trailer…';
+    });
+
+    el.detail.classList.add('on');
+  }
+
+  document.getElementById('back').addEventListener('click', () => {
+    ReadAloud.stop();
+    el.detail.classList.remove('on');
+  });
+
+  sync();
+  render();
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

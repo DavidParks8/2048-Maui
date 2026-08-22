@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad C — Countdown Calendar</title>
+<link rel="stylesheet" href="shared/glass.css">
+<link rel="stylesheet" href="shared/tablet.css">
+<style>
+  body { background: #ece4fa; }
+
+  .tablet-stage { background: #1b0f33; }
+
+  .wallpaper {
+    background:
+      radial-gradient(70% 60% at 12% 4%, #c4b0ff 0%, transparent 62%),
+      radial-gradient(70% 60% at 92% 96%, #e9d5ff 0%, transparent 60%),
+      linear-gradient(160deg, #f8f4ff 0%, #e9dffb 100%);
+  }
+
+  /* Light theme: everything on this one reads dark-on-light. */
+  .tablet {
+    --text: #2e1065;
+    --text-2: rgba(46, 16, 101, .66);
+    --text-3: rgba(46, 16, 101, .44);
+    color: var(--text);
+  }
+  .tablet .glass {
+    background: linear-gradient(150deg, rgba(255,255,255,.86), rgba(255,255,255,.62));
+    border: .5px solid rgba(255,255,255,.9);
+    box-shadow: 0 10px 30px rgba(34,18,64,.13), inset 0 1px 0 rgba(255,255,255,.95);
+  }
+  .tablet .rating.g { background: rgba(28,150,80,.18); color: #12703f; border-color: rgba(28,150,80,.34); }
+  .tablet .rating.pg { background: rgba(200,130,0,.18); color: #8a5a00; border-color: rgba(200,130,0,.32); }
+  .tablet .kind { background: rgba(46,16,101,.06); border-color: rgba(46,16,101,.1); color: var(--text-2); }
+  .tablet .big-heart { background: rgba(255,255,255,.8); border-color: rgba(46,16,101,.1); color: rgba(46,16,101,.34); }
+  .tablet .big-heart.on { background: rgba(255,55,95,.16); border-color: rgba(255,55,95,.4); color: #ff2d55; }
+  .tablet .speak { background: rgba(255,255,255,.84); border-color: rgba(46,16,101,.1); color: var(--text); }
+  .tablet .speak.playing { background: #ffd84d; border-color: #e6bb1f; color: #1a1608; }
+  .tablet .nav-item { color: var(--text-2); }
+  .tablet .nav-item.on { background: #2e1065; color: #fff; box-shadow: 0 8px 20px rgba(46,16,101,.24); }
+  .tablet .home-bar { background: rgba(46,16,101,.3); }
+  .tablet .w:hover { background: rgba(255,190,60,.28); }
+  .tablet .empty { color: var(--text-3); }
+  .tablet .empty-title { color: var(--text-2); }
+
+  .body { flex: 1; display: flex; min-height: 0; gap: 18px; padding: 8px 22px 20px; }
+
+  /* ---------- left: countdown + calendar ---------- */
+  .left { flex: 0 0 400px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+  .count {
+    flex: 0 0 auto; padding: 18px 22px; border-radius: 30px;
+    display: flex; align-items: center; gap: 20px; cursor: pointer;
+  }
+  .count-big { flex: 0 0 auto; text-align: center; line-height: 1; }
+  .count-num { font-size: 72px; font-weight: 860; letter-spacing: -3px; }
+  .count-word { margin-top: 2px; font-size: var(--t-title); font-weight: 800; letter-spacing: -.5px; }
+  .count-side {
+    flex: 1; min-width: 0; text-align: left;
+    padding-left: 20px; border-left: 1px solid rgba(46,16,101,.12);
+  }
+  .count-lead { font-size: var(--t-small); font-weight: 720; color: var(--text-2); }
+  .count-nm { margin-top: 5px; font-size: var(--t-body); font-weight: 820; line-height: 1.26; }
+  .count-dt { margin-top: 5px; font-size: var(--t-small); color: var(--text-2); }
+
+  .cal { flex: 1 1 auto; min-height: 0; padding: 16px 20px 18px; border-radius: 30px; display: flex; flex-direction: column; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-head h3 { margin: 0; font-size: var(--t-title); font-weight: 810; letter-spacing: -.5px; }
+  .cal-nav { display: flex; gap: 8px; }
+  .cal-nav div {
+    width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+    background: rgba(46,16,101,.06); font-size: var(--t-body); cursor: pointer; user-select: none;
+  }
+  .cal-nav div:active { transform: scale(.92); }
+  .dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; }
+  .dow span { text-align: center; font-size: var(--t-small); font-weight: 700; color: var(--text-3); }
+  .grid {
+    flex: 1 1 auto; min-height: 0;
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(0, 1fr); gap: 6px;
+  }
+  .cell {
+    border-radius: 13px; display: grid; place-items: center;
+    font-size: var(--t-body); font-weight: 640; color: var(--text-3); position: relative;
+  }
+  .cell.in { color: var(--text); }
+  .cell.has { background: rgba(46,16,101,.08); font-weight: 800; cursor: pointer; }
+  .cell.has::after {
+    content: ''; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    width: 7px; height: 7px; border-radius: 50%; background: #ff2d55;
+  }
+  .cell.has:active { transform: scale(.9); }
+  .cell.sel { background: #2e1065; color: #fff; }
+  .cell.sel::after { background: #ffd84d; }
+  .cell.today { box-shadow: inset 0 0 0 2.5px #ff2d55; }
+
+  /* ---------- right ---------- */
+  .right { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  .rhead { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 12px; }
+  .rhead h2 { margin: 0; font-size: 30px; font-weight: 830; letter-spacing: -.8px; }
+  .rhead .n { font-size: var(--t-label); color: var(--text-2); font-weight: 650; }
+
+  .searchbar {
+    display: flex; align-items: center; gap: 14px;
+    height: 66px; padding: 0 24px; border-radius: 22px; margin-bottom: 12px;
+  }
+  .searchbar .mg { font-size: 24px; }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: var(--text); font-size: 22px; font-family: inherit; font-weight: 600;
+  }
+  .searchbar input::placeholder { color: var(--text-3); font-weight: 500; }
+
+  .rows { display: flex; flex-direction: column; gap: 11px; padding-bottom: 16px; }
+  .row {
+    display: flex; align-items: center; gap: 20px;
+    padding: 14px 18px; border-radius: 26px; cursor: pointer;
+    transition: transform 320ms var(--ease-glass);
+  }
+  .row:active { transform: scale(.99); }
+  .row .poster { width: 104px; height: 156px; font-size: 22px; }
+  .r-info { flex: 1; min-width: 0; }
+  .r-title { font-size: 28px; font-weight: 790; letter-spacing: -.5px; line-height: 1.2;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .r-when { margin-top: 8px; display: flex; align-items: baseline; gap: 8px; }
+  .r-sleeps { font-size: 22px; font-weight: 820; color: #c0392f; }
+  .r-date { font-size: var(--t-small); color: var(--text-2); }
+  .r-tags { margin-top: 12px; display: flex; gap: 9px; flex-wrap: wrap; }
+
+  /* ---------- big bottom tabs ---------- */
+  .tabs {
+    flex: 0 0 auto; display: flex; gap: 8px; padding: 8px; margin: 0 22px 14px;
+    border-radius: var(--radius-pill); position: relative;
+  }
+  .tab {
+    position: relative; z-index: 2; flex: 1;
+    height: 64px; border-radius: var(--radius-pill);
+    display: flex; align-items: center; justify-content: center; gap: 11px;
+    font-size: var(--t-label); font-weight: 730; color: var(--text-2);
+    cursor: pointer; user-select: none;
+    transition: color 300ms var(--ease-glass), transform 300ms var(--ease-glass);
+  }
+  .tab .ico { font-size: 26px; line-height: 1; }
+  .tab:active { transform: scale(.97); }
+  .tab.on { color: #fff; }
+  .tab-pill {
+    position: absolute; z-index: 1; top: 8px; bottom: 8px; left: 8px;
+    border-radius: var(--radius-pill); background: #2e1065;
+    box-shadow: 0 8px 20px rgba(46,16,101,.26);
+    transition: transform 520ms var(--ease-glass);
+  }
+
+  /* ---------- centered modal detail ---------- */
+  .scrim {
+    position: absolute; inset: 0; z-index: 80;
+    background: rgba(20,26,48,.42);
+    backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+    opacity: 0; pointer-events: none; transition: opacity 420ms var(--ease-glass);
+  }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+
+  .modal {
+    position: absolute; z-index: 82;
+    left: 50%; top: 50%;
+    width: 860px; max-height: 660px;
+    transform: translate(-50%, -50%) scale(.94);
+    opacity: 0; pointer-events: none;
+    border-radius: 38px; padding: 34px 36px;
+    display: flex; gap: 32px; overflow: hidden;
+    transition: opacity 380ms var(--ease-glass), transform 480ms var(--ease-glass);
+  }
+  .modal.on { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  .m-close {
+    position: absolute; top: 22px; right: 22px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(46,16,101,.07); display: grid; place-items: center;
+    font-size: 24px; cursor: pointer; z-index: 4;
+  }
+  .m-close:active { transform: scale(.9); }
+  .m-left { flex: 0 0 236px; display: flex; flex-direction: column; gap: 16px; }
+  .m-left .poster { width: 236px; height: 354px; font-size: 46px; }
+  .m-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .m-title { font-size: 38px; font-weight: 850; letter-spacing: -1.2px; line-height: 1.08; padding-right: 56px; }
+  .m-count { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; }
+  .m-count b { font-size: 34px; font-weight: 860; color: #c0392f; letter-spacing: -1px; }
+  .m-date { margin-top: 4px; font-size: var(--t-label); color: var(--text-2); }
+  .m-tags { margin-top: 16px; display: flex; gap: 10px; }
+  .m-shead { display: flex; align-items: center; gap: 14px; margin: 22px 0 12px; }
+  .m-hint { font-size: var(--t-small); color: var(--text-3); line-height: 1.4; }
+  .m-story { color: rgba(46,16,101,.86); overflow-y: auto; scrollbar-width: none; }
+  .m-story::-webkit-scrollbar { display: none; }
+  .m-actions { margin-top: auto; padding-top: 20px; display: flex; align-items: center; gap: 14px; }
+  .m-favword { font-size: 19px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="wallpaper"></div>
+
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+
+      <div class="body">
+        <div class="left">
+          <div class="count glass" id="count"></div>
+          <div class="cal glass">
+            <div class="cal-head">
+              <h3 id="calTitle">September</h3>
+              <div class="cal-nav"><div id="prev">‹</div><div id="next">›</div></div>
+            </div>
+            <div class="dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+            <div class="grid" id="grid"></div>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="rhead"><h2 id="rTitle">Coming soon</h2><span class="n" id="rCount"></span></div>
+          <div id="searchWrap"></div>
+          <div class="scroll"><div class="rows" id="rows"></div></div>
+        </div>
+      </div>
+
+      <div class="tabs glass" id="tabs"><div class="tab-pill" id="tabPill"></div></div>
+    </div>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="modal glass" id="modal"></div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad C · Countdown Calendar</b>
+    Bright and calm. A giant "how many sleeps" number, a real calendar you can tap,
+    and big movie rows next to it. Everything reads dark-on-light.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const TABS = [
+    { id: 'soon', ic: '🎬', lb: 'Coming soon' },
+    { id: 'search', ic: '🔍', lb: 'Find a movie' },
+    { id: 'favs', ic: '❤️', lb: 'My favorites' },
+  ];
+
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const state = {
+    tab: 'soon',
+    query: '',
+    date: null,
+    month: parseDate(sorted[0].date).getMonth(),
+    year: parseDate(sorted[0].date).getFullYear(),
+  };
+
+  const el = {
+    count: document.getElementById('count'),
+    calTitle: document.getElementById('calTitle'),
+    grid: document.getElementById('grid'),
+    rTitle: document.getElementById('rTitle'),
+    rCount: document.getElementById('rCount'),
+    searchWrap: document.getElementById('searchWrap'),
+    rows: document.getElementById('rows'),
+    tabs: document.getElementById('tabs'),
+    tabPill: document.getElementById('tabPill'),
+    scrim: document.getElementById('scrim'),
+    modal: document.getElementById('modal'),
+  };
+
+  /* ---------- tabs ---------- */
+  for (const t of TABS) {
+    const n = document.createElement('div');
+    n.className = 'tab';
+    n.dataset.tab = t.id;
+    n.innerHTML = `<span class="ico">${t.ic}</span><span>${t.lb}</span>`;
+    n.addEventListener('click', () => { state.tab = t.id; state.date = null; syncTabs(); render(); });
+    el.tabs.appendChild(n);
+  }
+  function syncTabs() {
+    for (const n of el.tabs.querySelectorAll('.tab')) n.classList.toggle('on', n.dataset.tab === state.tab);
+    const a = el.tabs.querySelector('.tab.on');
+    if (!a) return;
+    el.tabPill.style.width = a.offsetWidth + 'px';
+    el.tabPill.style.transform = `translateX(${a.offsetLeft - 8}px)`;
+  }
+
+  /* ---------- countdown card ---------- */
+  function renderCount() {
+    const next = sorted[0];
+    const d = daysUntil(next.date);
+    el.count.innerHTML = `
+      <div class="count-big">
+        <div class="count-num">${d}</div>
+        <div class="count-word">${d === 1 ? 'sleep' : 'sleeps'}</div>
+      </div>
+      <div class="count-side">
+        <div class="count-lead">Next movie in</div>
+        <div class="count-nm">${next.emoji} ${next.title}</div>
+        <div class="count-dt">${formatDateLong(next.date)}</div>
+      </div>`;
+    el.count.addEventListener('click', () => openModal(next));
+  }
+
+  /* ---------- calendar ---------- */
+  function renderCal() {
+    el.calTitle.textContent = MONTHS[state.month] + ' ' + state.year;
+    el.grid.innerHTML = '';
+
+    const first = new Date(state.year, state.month, 1);
+    const start = new Date(state.year, state.month, 1 - first.getDay());
+    const byDate = {};
+    for (const m of MOVIES) (byDate[m.date] = byDate[m.date] || []).push(m);
+
+    const daysInMonth = new Date(state.year, state.month + 1, 0).getDate();
+    const cells = Math.ceil((first.getDay() + daysInMonth) / 7) * 7;
+
+    for (let i = 0; i < cells; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const c = document.createElement('div');
+      c.className = 'cell';
+      if (d.getMonth() === state.month) c.classList.add('in');
+      if (byDate[key]) c.classList.add('has');
+      if (state.date === key) c.classList.add('sel');
+      if (key === `${TODAY.getFullYear()}-${String(TODAY.getMonth() + 1).padStart(2, '0')}-${String(TODAY.getDate()).padStart(2, '0')}`) c.classList.add('today');
+      c.textContent = d.getDate();
+      if (byDate[key]) {
+        c.addEventListener('click', () => {
+          state.date = state.date === key ? null : key;
+          state.tab = 'soon';
+          syncTabs();
+          renderCal();
+          render();
+        });
+      }
+      el.grid.appendChild(c);
+    }
+  }
+
+  document.getElementById('prev').addEventListener('click', () => {
+    const d = new Date(state.year, state.month - 1, 1);
+    state.month = d.getMonth(); state.year = d.getFullYear(); renderCal();
+  });
+  document.getElementById('next').addEventListener('click', () => {
+    const d = new Date(state.year, state.month + 1, 1);
+    state.month = d.getMonth(); state.year = d.getFullYear(); renderCal();
+  });
+
+  /* ---------- list ---------- */
+  function pool() {
+    if (state.tab === 'favs') return sorted.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return sorted.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.kind.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query));
+    }
+    if (state.date) return sorted.filter((m) => m.date === state.date);
+    return sorted;
+  }
+
+  function rowNode(m, delay) {
+    const n = document.createElement('div');
+    n.className = 'row glass rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+      </div>
+      <div class="r-info">
+        <div class="r-title">${m.title}</div>
+        <div class="r-when">
+          <span class="r-sleeps">${sleepsLabel(m.date)}</span>
+          <span class="r-date">${formatDateLong(m.date)}</span>
+        </div>
+        <div class="r-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+      </div>
+      <div class="big-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>`;
+
+    const h = n.querySelector('.big-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop');
+      if (state.tab === 'favs') setTimeout(render, 380);
+    });
+    n.addEventListener('click', () => openModal(m));
+    return n;
+  }
+
+  function render() {
+    el.searchWrap.innerHTML = '';
+    el.rows.innerHTML = '';
+
+    if (state.tab === 'search') {
+      const bar = document.createElement('div');
+      bar.className = 'searchbar glass';
+      bar.innerHTML = `<span class="mg">🔍</span><input placeholder="Type a movie name" autocomplete="off">`;
+      el.searchWrap.appendChild(bar);
+      const input = bar.querySelector('input');
+      input.value = state.query;
+      input.addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); paint(); });
+      setTimeout(() => input.focus(), 60);
+    }
+    paint();
+  }
+
+  function paint() {
+    el.rows.innerHTML = '';
+    const list = pool();
+
+    el.rTitle.textContent =
+      state.tab === 'favs' ? 'My favorites'
+      : state.tab === 'search' ? 'Find a movie'
+      : state.date ? formatDateLong(state.date)
+      : 'Coming soon';
+    el.rCount.textContent = list.length ? `${list.length} movie${list.length === 1 ? '' : 's'}` : '';
+
+    if (!list.length) {
+      const e = document.createElement('div');
+      e.className = 'empty';
+      const [a, b, c] =
+        state.tab === 'favs' ? ['♡', 'No favorites yet', 'Tap a heart to save a movie here.']
+        : state.query ? ['🔍', 'No movies found', 'Try another word.']
+        : ['🔍', 'What do you want to watch?', 'Try typing dragon, space, or funny.'];
+      e.innerHTML = `<div class="empty-emoji">${a}</div><div class="empty-title">${b}</div><div class="empty-sub">${c}</div>`;
+      el.rows.appendChild(e);
+      return;
+    }
+
+    let i = 0;
+    for (const m of list) el.rows.appendChild(rowNode(m, i++ * 34));
+  }
+
+  /* ---------- modal ---------- */
+  function openModal(m) {
+    ReadAloud.stop();
+    const on = Favorites.has(m.id);
+    const d = daysUntil(m.date);
+
+    el.modal.innerHTML = `
+      <div class="m-close" id="mClose">✕</div>
+      <div class="m-left">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div class="play-big" id="playBtn" style="justify-content:center">
+          <span style="font-size:21px">▶</span>Play trailer
+        </div>
+      </div>
+      <div class="m-right">
+        <div class="m-title">${m.title}</div>
+        <div class="m-count"><b>${d}</b><span style="font-size:22px;font-weight:750">${d === 1 ? 'sleep' : 'sleeps'} to go</span></div>
+        <div class="m-date">${formatDateLong(m.date)}</div>
+        <div class="m-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+        <div class="m-shead">
+          <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+          <div class="m-hint">Tap any word<br>to hear it</div>
+        </div>
+        <p class="m-story reading" id="story"></p>
+        <div class="m-actions">
+          <div class="big-heart ${on ? 'on' : ''}" id="mHeart">${on ? '♥' : '♡'}</div>
+          <div class="m-favword" id="favWord" style="color:${on ? '#ff2d55' : 'rgba(46,16,101,.55)'}">
+            ${on ? 'Saved to my favorites' : 'Tap the heart to save it'}
+          </div>
+        </div>
+      </div>`;
+
+    ReadAloud.prepare(el.modal.querySelector('#story'), m.simple);
+
+    const speak = el.modal.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) { ReadAloud.stop(); stopReading(); return; }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const heart = el.modal.querySelector('#mHeart');
+    const word = el.modal.querySelector('#favWord');
+    heart.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      heart.classList.toggle('on', nowOn);
+      heart.textContent = nowOn ? '♥' : '♡';
+      heart.classList.remove('pop'); void heart.offsetWidth; heart.classList.add('pop');
+      word.textContent = nowOn ? 'Saved to my favorites' : 'Tap the heart to save it';
+      word.style.color = nowOn ? '#ff2d55' : 'rgba(46,16,101,.55)';
+      paint();
+    });
+
+    const play = el.modal.querySelector('#playBtn');
+    play.addEventListener('click', () => {
+      play.innerHTML = '<span style="font-size:21px">⏸</span>Playing trailer…';
+    });
+
+    el.modal.querySelector('#mClose').addEventListener('click', closeModal);
+    el.scrim.classList.add('on');
+    el.modal.classList.add('on');
+  }
+
+  function closeModal() {
+    ReadAloud.stop();
+    el.scrim.classList.remove('on');
+    el.modal.classList.remove('on');
+  }
+  el.scrim.addEventListener('click', closeModal);
+
+  renderCount();
+  renderCal();
+  syncTabs();
+  render();
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

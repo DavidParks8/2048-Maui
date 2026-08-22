@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad G — Big Screen</title>
+<link rel="stylesheet" href="shared/flat.css">
+<style>
+  /*
+   * No cards. Nothing is in a box.
+   * One movie fills the whole screen; the artwork IS the page. Text sits
+   * straight on the picture. You move between movies with a filmstrip along
+   * the bottom, so there is only ever one thing to read at a time.
+   */
+  .tablet {
+    --page: #0d0720;
+    --text: #ffffff;
+    --text-2: rgba(255,255,255,.76);
+    --text-3: rgba(255,255,255,.54);
+    --accent: #a855f7;
+    background: var(--page);
+  }
+  .tablet .home-bar { background: rgba(255,255,255,.45); }
+  .tablet .rating { border-radius: 10px; }
+  .tablet .kind { background: rgba(0,0,0,.42); border-color: rgba(255,255,255,.24); color: #fff; }
+
+  .screen { overflow: hidden; }
+
+  /* ---------- the picture behind everything ---------- */
+  .art {
+    position: absolute; inset: 0; z-index: 0;
+    transition: opacity 520ms var(--ease);
+  }
+  .art::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      linear-gradient(100deg, rgba(11,6,26,.94) 0%, rgba(11,6,26,.7) 38%, rgba(11,6,26,.12) 68%),
+      linear-gradient(0deg, rgba(11,6,26,.92) 0%, transparent 34%);
+  }
+  .art-emoji {
+    position: absolute; z-index: 1; right: 112px; top: 40%;
+    transform: translateY(-50%);
+    font-size: 210px;
+    filter: drop-shadow(0 20px 44px rgba(0,0,0,.6));
+    transition: transform 620ms var(--ease), opacity 420ms var(--ease);
+  }
+
+  /* ---------- top: plain word links, no pills ---------- */
+  .top {
+    position: relative; z-index: 6; flex: 0 0 auto;
+    display: flex; align-items: center; gap: 34px;
+    padding: 2px 34px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
+  .brand .m { font-size: 28px; }
+  .brand b { font-size: var(--t-body); font-weight: 800; letter-spacing: -.4px; }
+
+  .link {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    height: 62px; font-size: var(--t-label); font-weight: 700;
+    color: var(--text-3); cursor: pointer; user-select: none;
+    transition: color 260ms var(--ease);
+  }
+  .link .ico { font-size: 25px; line-height: 1; }
+  .link::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 12px; height: 4px;
+    border-radius: 3px; background: var(--accent);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 340ms var(--ease);
+  }
+  .link.on { color: #fff; }
+  .link.on::after { transform: scaleX(1); }
+  .link .num { font-size: var(--t-small); color: var(--text-3); font-weight: 700; }
+
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .counter { font-size: var(--t-small); color: var(--text-3); font-weight: 680; }
+
+  /* ---------- the one movie ---------- */
+  .stageview {
+    position: relative; z-index: 5; flex: 1 1 auto; min-height: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 34px 0 40px;
+    max-width: 660px;
+  }
+  .when {
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: 36px; font-weight: 860; letter-spacing: -1.1px; color: #ffd24a;
+  }
+  .when .on-date { font-size: var(--t-body); font-weight: 700; color: var(--text-2); letter-spacing: 0; }
+  .stageview > * { flex: 0 0 auto; }
+  .name {
+    margin-top: 10px;
+    font-size: 48px; font-weight: 870; letter-spacing: -1.6px; line-height: 1.05;
+  }
+  .facts { margin-top: 12px; display: flex; align-items: center; gap: 12px; }
+  .story {
+    margin-top: 12px; max-width: 560px;
+    color: rgba(255,255,255,.92);
+    max-height: 72px; overflow: hidden;
+  }
+  .controls { margin-top: 16px; display: flex; align-items: center; gap: 14px; }
+  .hint { margin-top: 8px; font-size: var(--t-small); color: var(--text-3); }
+
+  /* ---------- bottom filmstrip: bare posters, no card chrome ---------- */
+  .strip-lb {
+    position: relative; z-index: 6; flex: 0 0 auto;
+    padding: 0 40px 8px; font-size: var(--t-small); font-weight: 700; color: var(--text-3);
+  }
+  .strip {
+    position: relative; z-index: 6; flex: 0 0 auto;
+    display: flex; gap: 16px; align-items: flex-end;
+    padding: 0 40px 16px; overflow-x: auto; scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .frame {
+    flex: 0 0 auto; width: 96px; cursor: pointer; text-align: center;
+    opacity: .5;
+    transition: opacity 320ms var(--ease), transform 320ms var(--ease);
+  }
+  .frame .poster { width: 96px; height: 144px; font-size: 22px; border-radius: 10px; }
+  .frame .poster .poster-title { display: none; }
+  .frame .lb {
+    margin-top: 8px; font-size: var(--t-small); font-weight: 700;
+    color: var(--text-3); line-height: 1.3; height: 2.6em;
+    overflow-wrap: normal; word-break: normal; hyphens: none; overflow: hidden;
+  }
+  .frame:hover { opacity: .8; }
+  .frame.on { opacity: 1; transform: translateY(-8px); }
+  .frame.on .poster { box-shadow: 0 0 0 3px var(--accent); }
+  .frame.on .lb { color: #fff; }
+  .frame .fav { font-size: var(--t-small); color: var(--accent); }
+
+  /* ---------- search overlay: still no cards ---------- */
+  .find {
+    position: absolute; inset: 0; z-index: 40; background: rgba(11,6,26,.97);
+    display: flex; flex-direction: column; padding: 46px 44px 30px;
+    opacity: 0; pointer-events: none; transition: opacity 300ms var(--ease);
+  }
+  .find.on { opacity: 1; pointer-events: auto; }
+  .find-lb { font-size: var(--t-body); color: var(--text-3); font-weight: 680; }
+  .find input {
+    margin-top: 10px; width: 100%; border: 0; outline: 0; background: transparent;
+    border-bottom: 3px solid rgba(255,255,255,.16);
+    color: #fff; font-family: inherit;
+    font-size: 46px; font-weight: 820; letter-spacing: -1.4px;
+    padding: 4px 0 16px;
+  }
+  .find input::placeholder { color: rgba(255,255,255,.24); }
+  .find-count { margin-top: 20px; font-size: var(--t-body); color: var(--text-3); font-weight: 700; }
+  .find-strip { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; overflow-y: auto; scrollbar-width: none; }
+  .find-strip::-webkit-scrollbar { display: none; }
+  .find-close {
+    position: absolute; top: 34px; right: 36px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: var(--t-label); font-weight: 720; color: var(--text-2); cursor: pointer;
+  }
+  .find-close .x { font-size: 26px; }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="art" id="art"></div>
+    <div class="art-emoji" id="artEmoji"></div>
+
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+
+      <div class="top">
+        <div class="brand"><span class="m">🍿</span><b>Movie Days</b></div>
+        <div class="link" data-tab="soon"><span class="ico">🎬</span>Coming soon</div>
+        <div class="link" data-tab="favs"><span class="ico">❤️</span>My favorites<span class="num" id="favNum"></span></div>
+        <div class="link" data-tab="find"><span class="ico">🔍</span>Find a movie</div>
+        <div class="top-right"><span class="counter" id="counter"></span></div>
+      </div>
+
+      <div class="stageview" id="view"></div>
+
+      <div class="strip-lb" id="stripLb">Tap a poster to see it</div>
+      <div class="strip" id="strip"></div>
+    </div>
+
+    <div class="find" id="find">
+      <div class="find-close" id="findClose"><span class="x">✕</span>Close</div>
+      <div class="find-lb">Type a movie name</div>
+      <input id="findInput" placeholder="dragon" autocomplete="off">
+      <div class="find-count" id="findCount"></div>
+      <div class="find-strip" id="findStrip"></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad G · Big Screen</b>
+    No cards, no boxes, no lists. One movie fills the whole screen and the words sit
+    straight on the picture. The filmstrip along the bottom is how you move between them.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const state = { tab: 'soon', index: 0, query: '' };
+
+  const el = {
+    art: document.getElementById('art'),
+    artEmoji: document.getElementById('artEmoji'),
+    view: document.getElementById('view'),
+    strip: document.getElementById('strip'),
+    stripLb: document.getElementById('stripLb'),
+    counter: document.getElementById('counter'),
+    favNum: document.getElementById('favNum'),
+    find: document.getElementById('find'),
+    findInput: document.getElementById('findInput'),
+    findCount: document.getElementById('findCount'),
+    findStrip: document.getElementById('findStrip'),
+  };
+
+  function list() {
+    return state.tab === 'favs' ? sorted.filter((m) => Favorites.has(m.id)) : sorted;
+  }
+
+  for (const n of document.querySelectorAll('.link')) {
+    n.addEventListener('click', () => {
+      if (n.dataset.tab === 'find') { openFind(); return; }
+      state.tab = n.dataset.tab;
+      state.index = 0;
+      syncLinks();
+      render();
+    });
+  }
+  function syncLinks() {
+    for (const n of document.querySelectorAll('.link')) {
+      n.classList.toggle('on', n.dataset.tab === state.tab);
+    }
+    el.favNum.textContent = sorted.filter((m) => Favorites.has(m.id)).length;
+  }
+
+  function frameNode(m, active, onPick) {
+    const n = document.createElement('div');
+    n.className = 'frame' + (active ? ' on' : '');
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+      </div>
+      <div class="lb">${Favorites.has(m.id) ? '<span class="fav">♥</span> ' : ''}${m.title}</div>`;
+    n.addEventListener('click', onPick);
+    return n;
+  }
+
+  function render() {
+    const l = list();
+    syncLinks();
+
+    if (!l.length) {
+      el.art.style.background = '#0c0d12';
+      el.artEmoji.textContent = '';
+      el.strip.innerHTML = '';
+      el.stripLb.textContent = '';
+      el.counter.textContent = '';
+      el.view.innerHTML = `
+        <div class="empty" style="place-items:start;text-align:left;padding:0">
+          <div class="empty-emoji">♡</div>
+          <div class="empty-title">No favorites yet</div>
+          <div class="empty-sub">Tap the big heart on a movie<br>to keep it here.</div>
+        </div>`;
+      return;
+    }
+
+    if (state.index >= l.length) state.index = 0;
+    const m = l[state.index];
+
+    el.art.style.cssText = posterStyle(m);
+    el.artEmoji.textContent = m.emoji;
+    el.artEmoji.style.transform = 'translateY(-50%) scale(1)';
+    el.counter.textContent = `${state.index + 1} of ${l.length}`;
+    el.stripLb.textContent = state.tab === 'favs' ? 'My favorite movies' : 'Tap a poster to see it';
+
+    const on = Favorites.has(m.id);
+    el.view.innerHTML = `
+      <div class="when">
+        ${sleepsLabel(m.date)}
+        <span class="on-date">${formatDateLong(m.date)}</span>
+      </div>
+      <div class="name">${m.title}</div>
+      <div class="facts">
+        <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+        <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+      </div>
+      <p class="story reading" id="story"></p>
+      <div class="hint">Tap any word to hear it</div>
+      <div class="controls">
+        <div class="play-big" id="playBtn"><span style="font-size:21px">▶</span>Play trailer</div>
+        <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+        <div class="big-heart ${on ? 'on' : ''}" id="heart">${on ? '♥' : '♡'}</div>
+      </div>`;
+
+    ReadAloud.stop();
+    ReadAloud.prepare(el.view.querySelector('#story'), m.simple);
+
+    const speak = el.view.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) { ReadAloud.stop(); stopReading(); return; }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const play = el.view.querySelector('#playBtn');
+    play.addEventListener('click', () => {
+      play.innerHTML = '<span style="font-size:21px">⏸</span>Playing trailer…';
+    });
+
+    const heart = el.view.querySelector('#heart');
+    heart.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      heart.classList.toggle('on', nowOn);
+      heart.textContent = nowOn ? '♥' : '♡';
+      heart.classList.remove('pop'); void heart.offsetWidth; heart.classList.add('pop');
+      if (state.tab === 'favs' && !nowOn) { setTimeout(render, 380); return; }
+      syncLinks();
+      buildStrip();
+    });
+
+    buildStrip();
+  }
+
+  function buildStrip() {
+    const l = list();
+    el.strip.innerHTML = '';
+    let i = 0;
+    for (const m of l) {
+      const idx = i++;
+      el.strip.appendChild(frameNode(m, idx === state.index, () => {
+        state.index = idx;
+        render();
+      }));
+    }
+    const act = el.strip.querySelector('.frame.on');
+    // Centre the strip by hand — scrollIntoView() would also scroll any page
+    // embedding this prototype in an iframe.
+    if (act) {
+      el.strip.scrollLeft = act.offsetLeft - (el.strip.clientWidth - act.offsetWidth) / 2;
+    }
+  }
+
+  /* ---------- find ---------- */
+  function openFind() {
+    el.find.classList.add('on');
+    el.findInput.value = state.query;
+    runFind();
+    setTimeout(() => el.findInput.focus(), 80);
+  }
+  function closeFind() {
+    el.find.classList.remove('on');
+  }
+  document.getElementById('findClose').addEventListener('click', closeFind);
+
+  el.findInput.addEventListener('input', (e) => {
+    state.query = e.target.value.trim().toLowerCase();
+    runFind();
+  });
+
+  function runFind() {
+    el.findStrip.innerHTML = '';
+    if (!state.query) {
+      el.findCount.textContent = 'Try dragon, space, or funny.';
+      return;
+    }
+    const hits = sorted.filter((m) =>
+      m.title.toLowerCase().includes(state.query) ||
+      m.kind.toLowerCase().includes(state.query) ||
+      m.genres.join(' ').toLowerCase().includes(state.query));
+
+    el.findCount.textContent = hits.length
+      ? `Found ${hits.length} movie${hits.length === 1 ? '' : 's'}`
+      : 'No movies found. Try another word.';
+
+    for (const m of hits) {
+      const n = frameNode(m, false, () => {
+        state.tab = 'soon';
+        state.index = sorted.indexOf(m);
+        closeFind();
+        syncLinks();
+        render();
+      });
+      n.style.opacity = 1;
+      el.findStrip.appendChild(n);
+    }
+  }
+
+  syncLinks();
+  render();
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

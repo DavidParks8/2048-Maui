@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad B — Cinema Wall</title>
+<link rel="stylesheet" href="shared/glass.css">
+<link rel="stylesheet" href="shared/tablet.css">
+<style>
+  body { background: #0f0722; }
+
+  .wallpaper { background: linear-gradient(172deg, #3b1f6e 0%, #0e0620 62%); transition: background 800ms var(--ease-glass); }
+
+  .feed { padding: 8px 0 130px; }
+
+  /* ---------- top segmented ---------- */
+  .topbar {
+    position: absolute; z-index: 45;
+    top: 40px; right: 26px;
+    height: 58px; display: flex; gap: 5px; padding: 6px;
+    border-radius: var(--radius-pill);
+  }
+  .seg {
+    position: relative; z-index: 2;
+    min-width: 116px; padding: 0 22px;
+    display: grid; place-items: center;
+    border-radius: var(--radius-pill);
+    font-size: var(--t-label); font-weight: 700;
+    color: var(--text-2); cursor: pointer;
+    transition: color 300ms var(--ease-glass);
+    user-select: none;
+  }
+  .seg.on { color: #0c0e16; }
+  .seg-pill {
+    position: absolute; z-index: 1; top: 6px; bottom: 6px; left: 0;
+    border-radius: var(--radius-pill);
+    background: rgba(255,255,255,.95);
+    box-shadow: 0 5px 16px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.9);
+    transition: transform 540ms var(--ease-glass);
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    margin: 0 26px 10px;
+    height: 248px;
+    border-radius: 30px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 24px 54px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(255,255,255,.22);
+  }
+  .hero-art { position: absolute; inset: 0; }
+  .hero-art::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(96deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.28) 46%, transparent 72%);
+  }
+  .hero-emoji {
+    position: absolute; right: 96px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 130px;
+    filter: drop-shadow(0 14px 34px rgba(0,0,0,.5));
+  }
+  .hero-in {
+    position: absolute; z-index: 3; left: 38px; top: 50%;
+    transform: translateY(-50%);
+    max-width: 480px;
+  }
+  .hero-flag {
+    display: inline-block; margin-bottom: 10px;
+    padding: 6px 15px; border-radius: var(--radius-pill);
+    font-size: var(--t-small); font-weight: 750;
+    background: rgba(255,255,255,.2);
+    border: .5px solid rgba(255,255,255,.36);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+  }
+  .hero-name { font-size: 38px; font-weight: 850; letter-spacing: -1.1px; line-height: 1.06; }
+  .hero-when { margin-top: 10px; font-size: 22px; font-weight: 780; color: #ffd479; }
+  .hero-date { margin-top: 5px; font-size: var(--t-label); color: rgba(255,255,255,.72); }
+  .hero-row { margin-top: 14px; display: flex; align-items: center; gap: 14px; }
+
+  /* ---------- day rail ---------- */
+  .sec {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 30px 10px;
+  }
+  .sec h2 { margin: 0; font-size: 26px; font-weight: 820; letter-spacing: -.7px; }
+  .sec .hint { font-size: var(--t-label); color: var(--text-3); font-weight: 650; }
+
+  .rail { display: flex; gap: 11px; padding: 0 26px 4px; overflow-x: auto; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail-item {
+    flex: 0 0 auto; width: 134px; padding: 9px 0 9px;
+    border-radius: 20px; text-align: center; cursor: pointer;
+    background: rgba(255,255,255,.09);
+    border: .5px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    transition: all 320ms var(--ease-glass);
+    user-select: none;
+  }
+  .rail-item:active { transform: scale(.95); }
+  .rail-item .mo { font-size: var(--t-small); font-weight: 700; color: var(--text-3); }
+  .rail-item .dy { font-size: 26px; font-weight: 830; letter-spacing: -1px; margin-top: 1px; }
+  .rail-item .ct { font-size: var(--t-small); font-weight: 650; color: var(--text-3); margin-top: 3px; }
+  .rail-item.on { background: rgba(255,255,255,.94); border-color: rgba(255,255,255,.9); box-shadow: 0 6px 18px rgba(0,0,0,.34); }
+  .rail-item.on .mo, .rail-item.on .dy, .rail-item.on .ct { color: #0c0e16; }
+
+  /* ---------- poster wall ---------- */
+  .wall {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    /* room at the bottom so the last row can scroll clear of the floating dock */
+    padding: 16px 26px 120px;
+  }
+  .tile { cursor: pointer; transition: transform 380ms var(--ease-glass); }
+  .tile:active { transform: scale(.955); }
+  .tile .poster { width: 100%; aspect-ratio: 2 / 3; font-size: 34px; }
+  .tile-name {
+    margin-top: 12px; font-size: 20px; font-weight: 750; line-height: 1.24;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tile-when { margin-top: 5px; font-size: var(--t-small); font-weight: 700; color: #ffcf6b; }
+  .tile-heart {
+    position: absolute; z-index: 3; top: 11px; right: 11px;
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 21px;
+    background: rgba(0,0,0,.36);
+    border: .5px solid rgba(255,255,255,.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(255,255,255,.82);
+    transition: transform 320ms var(--ease-glass), color 220ms, background 220ms;
+  }
+  .tile-heart:active { transform: scale(.85); }
+  .tile-heart.on { color: #ff375f; background: rgba(255,55,95,.3); }
+  .tile-badge {
+    position: absolute; z-index: 3; top: 11px; left: 11px;
+    padding: 5px 11px; border-radius: 9px;
+    font-size: var(--t-small); font-weight: 800;
+    background: rgba(0,0,0,.48);
+    border: .5px solid rgba(255,255,255,.26);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* ---------- search ---------- */
+  .searchbar {
+    margin: 0 26px 8px;
+    display: flex; align-items: center; gap: 15px;
+    height: 68px; padding: 0 26px; border-radius: 24px;
+  }
+  .searchbar .mg { font-size: 26px; }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: var(--text); font-size: 23px; font-family: inherit; font-weight: 600;
+  }
+  .searchbar input::placeholder { color: var(--text-3); font-weight: 500; }
+
+  /* ---------- dock ---------- */
+  .dock {
+    position: absolute; z-index: 46;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 7px;
+    border-radius: var(--radius-pill);
+  }
+  /* A dark violet base under the glass so the dock stays readable no matter
+     which poster is scrolling behind it, and less saturation so it doesn't
+     take on a poster's colour wholesale. */
+  .dock {
+    background:
+      linear-gradient(150deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.05) 46%,
+        rgba(255,255,255,.10) 100%),
+      rgba(24, 10, 52, .66);
+    backdrop-filter: blur(30px) saturate(115%) brightness(.9);
+    -webkit-backdrop-filter: blur(30px) saturate(115%) brightness(.9);
+  }
+  .dock-btn {
+    position: relative; z-index: 2;
+    width: 168px; height: 62px; border-radius: var(--radius-pill);
+    display: flex; align-items: center; justify-content: center; gap: 11px;
+    font-size: var(--t-label); font-weight: 720;
+    cursor: pointer; color: var(--text-3);
+    transition: color 300ms var(--ease-glass), transform 320ms var(--ease-glass);
+    user-select: none;
+  }
+  .dock-btn .ico { font-size: 25px; line-height: 1; }
+  .dock-btn:active { transform: scale(.95); }
+  .dock-btn.on { color: #fff; }
+  .dock-pill {
+    position: absolute; z-index: 1; top: 7px; bottom: 7px; left: 7px;
+    width: 168px; border-radius: var(--radius-pill);
+    background: rgba(255,255,255,.22);
+    border: .5px solid rgba(255,255,255,.34);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+    transition: transform 520ms var(--ease-glass);
+  }
+
+  /* ---------- full-screen detail ---------- */
+  .detail {
+    position: absolute; inset: 0; z-index: 90;
+    transform: translateX(100%);
+    transition: transform 540ms var(--ease-glass);
+  }
+  .detail.on { transform: none; }
+  .detail-bg { position: absolute; inset: 0; }
+  .detail-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(96deg, rgba(11,5,26,.92) 0%, rgba(11,5,26,.72) 46%, rgba(11,5,26,.34) 100%);
+  }
+  .back {
+    position: absolute; z-index: 6; top: 40px; left: 26px;
+    width: 58px; height: 58px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 26px; cursor: pointer;
+    background: rgba(255,255,255,.16);
+    border: .5px solid rgba(255,255,255,.3);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+  }
+  .back:active { transform: scale(.9); }
+  .d-wrap {
+    position: relative; z-index: 4; height: 100%;
+    display: flex; gap: 40px; padding: 106px 44px 40px;
+  }
+  .d-left { flex: 0 0 300px; display: flex; flex-direction: column; gap: 20px; }
+  .d-left .poster { width: 300px; height: 450px; font-size: 56px; }
+  .d-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .d-title { font-size: 46px; font-weight: 860; letter-spacing: -1.5px; line-height: 1.05; }
+  .d-when { margin-top: 16px; font-size: 26px; font-weight: 800; color: #ffd479; }
+  .d-date { margin-top: 6px; font-size: 20px; color: var(--text-2); }
+  .d-tags { margin-top: 18px; display: flex; gap: 10px; }
+  .story-head { display: flex; align-items: center; gap: 16px; margin: 26px 0 14px; }
+  .story-hint { font-size: var(--t-small); color: var(--text-3); line-height: 1.4; }
+  .story { color: rgba(255,255,255,.9); max-width: 620px; }
+  .d-actions { margin-top: auto; display: flex; align-items: center; gap: 14px; }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="wallpaper" id="wall"></div>
+
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+      <div class="scroll"><div class="feed" id="feed"></div></div>
+    </div>
+
+    <div class="topbar glass" id="topbar">
+      <div class="seg-pill" id="segPill"></div>
+    </div>
+
+    <div class="dock glass" id="dock">
+      <div class="dock-pill" id="dockPill"></div>
+    </div>
+
+    <div class="detail" id="detail">
+      <div class="detail-bg" id="detailBg"></div>
+      <div class="back" id="back">‹</div>
+      <div class="d-wrap" id="detailWrap"></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad B · Cinema Wall</b>
+    Full-screen and cinematic. A huge hero, a row of big day buttons, and a wall of
+    five posters across. The background tints to whichever movie you're on.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const SEGS = [
+    { id: 'all', lb: 'All movies' },
+    { id: 'G', lb: 'G' },
+    { id: 'PG', lb: 'PG' },
+    { id: 'anim', lb: 'Cartoons' },
+  ];
+  const DOCK = [
+    { id: 'soon', ic: '🎬', lb: 'Coming soon' },
+    { id: 'search', ic: '🔍', lb: 'Find a movie' },
+    { id: 'favs', ic: '❤️', lb: 'My favorites' },
+  ];
+
+  const state = { tab: 'soon', seg: 'all', query: '', date: null };
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  const el = {
+    wall: document.getElementById('wall'),
+    topbar: document.getElementById('topbar'),
+    segPill: document.getElementById('segPill'),
+    dock: document.getElementById('dock'),
+    dockPill: document.getElementById('dockPill'),
+    feed: document.getElementById('feed'),
+    detail: document.getElementById('detail'),
+    detailBg: document.getElementById('detailBg'),
+    detailWrap: document.getElementById('detailWrap'),
+  };
+
+  for (const s of SEGS) {
+    const n = document.createElement('div');
+    n.className = 'seg';
+    n.dataset.seg = s.id;
+    n.textContent = s.lb;
+    n.addEventListener('click', () => { state.seg = s.id; state.date = null; syncSeg(); render(); });
+    el.topbar.appendChild(n);
+  }
+  function syncSeg() {
+    for (const n of el.topbar.querySelectorAll('.seg')) n.classList.toggle('on', n.dataset.seg === state.seg);
+    const a = el.topbar.querySelector('.seg.on');
+    if (!a) return;
+    el.segPill.style.width = a.offsetWidth + 'px';
+    el.segPill.style.transform = `translateX(${a.offsetLeft}px)`;
+  }
+
+  for (const d of DOCK) {
+    const n = document.createElement('div');
+    n.className = 'dock-btn';
+    n.dataset.tab = d.id;
+    n.innerHTML = `<span class="ico">${d.ic}</span><span>${d.lb}</span>`;
+    n.addEventListener('click', () => { state.tab = d.id; state.date = null; syncDock(); render(); });
+    el.dock.appendChild(n);
+  }
+  function syncDock() {
+    let i = 0;
+    for (const n of el.dock.querySelectorAll('.dock-btn')) {
+      const on = n.dataset.tab === state.tab;
+      n.classList.toggle('on', on);
+      if (on) el.dockPill.style.transform = `translateX(${i * 174}px)`;
+      i++;
+    }
+    el.topbar.style.display = state.tab === 'soon' ? 'flex' : 'none';
+  }
+
+  function applySeg(list) {
+    if (state.seg === 'G') return list.filter((m) => m.rating === 'G');
+    if (state.seg === 'PG') return list.filter((m) => m.rating === 'PG');
+    if (state.seg === 'anim') return list.filter((m) => m.genres.includes('Animation'));
+    return list;
+  }
+
+  function pool() {
+    if (state.tab === 'favs') return sorted.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return sorted.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.kind.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query));
+    }
+    let list = applySeg(sorted);
+    if (state.date) list = list.filter((m) => m.date === state.date);
+    return list;
+  }
+
+  function tintFor(m) {
+    return `radial-gradient(60% 80% at 78% 22%, ${m.c1}c0 0%, transparent 66%),
+            radial-gradient(60% 70% at 96% 88%, ${m.c2}c0 0%, transparent 64%),
+            linear-gradient(172deg, #1b1f38 0%, #08090f 76%)`;
+  }
+
+  function tileNode(m, delay) {
+    const n = document.createElement('div');
+    n.className = 'tile rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+        <div class="tile-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>
+        <div class="tile-badge">${m.rating}</div>
+      </div>
+      <div class="tile-name">${m.title}</div>
+      <div class="tile-when">${sleepsLabel(m.date)}</div>`;
+
+    const h = n.querySelector('.tile-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      if (state.tab === 'favs') setTimeout(render, 340);
+    });
+    n.addEventListener('click', () => openDetail(m));
+    return n;
+  }
+
+  function emptyNode(a, b, c) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.innerHTML = `<div class="empty-emoji" style="font-size:64px">${a}</div>
+      <div class="empty-title" style="font-size:26px">${b}</div>
+      <div class="empty-sub" style="font-size:20px">${c}</div>`;
+    return e;
+  }
+
+  function render() {
+    el.feed.innerHTML = '';
+
+    if (state.tab === 'search') {
+      const bar = document.createElement('div');
+      bar.className = 'searchbar glass-thin';
+      bar.innerHTML = `<span class="mg">🔍</span><input placeholder="Type a movie name" autocomplete="off">`;
+      el.feed.appendChild(bar);
+      const input = bar.querySelector('input');
+      input.value = state.query;
+      const box = document.createElement('div');
+      el.feed.appendChild(box);
+
+      const run = () => {
+        box.innerHTML = '';
+        const hits = pool();
+        if (!hits.length) {
+          box.appendChild(emptyNode('🔍', state.query ? 'No movies found' : 'What do you want to watch?',
+            state.query ? 'Try another word.' : 'Try typing dragon, space, or funny.'));
+          return;
+        }
+        const head = document.createElement('div');
+        head.className = 'sec';
+        head.innerHTML = `<h2>Found ${hits.length} movie${hits.length === 1 ? '' : 's'}</h2>`;
+        box.appendChild(head);
+        const w = document.createElement('div');
+        w.className = 'wall';
+        let i = 0;
+        for (const m of hits) w.appendChild(tileNode(m, i++ * 28));
+        box.appendChild(w);
+      };
+      input.addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); run(); });
+      run();
+      input.focus();
+      return;
+    }
+
+    const list = pool();
+
+    if (!list.length) {
+      el.feed.appendChild(emptyNode('♡', 'No favorites yet', 'Tap the heart on a poster to save it here.'));
+      return;
+    }
+
+    if (state.tab === 'soon') {
+      const hero = list[0];
+      el.wall.style.background = tintFor(hero);
+
+      const h = document.createElement('div');
+      h.className = 'hero rise';
+      h.innerHTML = `
+        <div class="hero-art" style="${posterStyle(hero)}"></div>
+        <div class="hero-emoji">${hero.emoji}</div>
+        <div class="hero-in">
+          <div class="hero-flag">Next in theaters</div>
+          <div class="hero-name">${hero.title}</div>
+          <div class="hero-when">${sleepsLabel(hero.date)}</div>
+          <div class="hero-date">${formatDateLong(hero.date)}</div>
+          <div class="hero-row">
+            <div class="rating ${hero.rating.toLowerCase()}">${hero.rating}</div>
+            <div class="kind"><span>${hero.kindIcon}</span>${hero.kind}</div>
+            <div class="big-heart ${Favorites.has(hero.id) ? 'on' : ''}">${Favorites.has(hero.id) ? '♥' : '♡'}</div>
+          </div>
+        </div>`;
+      const hf = h.querySelector('.big-heart');
+      hf.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const on = Favorites.toggle(hero.id);
+        hf.classList.toggle('on', on);
+        hf.textContent = on ? '♥' : '♡';
+        hf.classList.remove('pop'); void hf.offsetWidth; hf.classList.add('pop');
+      });
+      h.addEventListener('click', () => openDetail(hero));
+      el.feed.appendChild(h);
+
+      const sec = document.createElement('div');
+      sec.className = 'sec';
+      sec.innerHTML = `<h2>Pick a day</h2>
+        <span class="hint">${state.date ? 'Tap again to see them all' : 'Tap a day to see that day'}</span>`;
+      el.feed.appendChild(sec);
+
+      const rail = document.createElement('div');
+      rail.className = 'rail';
+      for (const g of groupByDate(applySeg(sorted))) {
+        const d = parseDate(g.key);
+        const item = document.createElement('div');
+        item.className = 'rail-item' + (state.date === g.key ? ' on' : '');
+        item.innerHTML = `<div class="mo">${MONTHS[d.getMonth()]}</div>
+          <div class="dy">${d.getDate()}</div>
+          <div class="ct">${g.items.length} movie${g.items.length === 1 ? '' : 's'}</div>`;
+        item.addEventListener('click', () => {
+          state.date = state.date === g.key ? null : g.key;
+          render();
+        });
+        rail.appendChild(item);
+      }
+      el.feed.appendChild(rail);
+    }
+
+    const head = document.createElement('div');
+    head.className = 'sec';
+    head.innerHTML = state.tab === 'favs'
+      ? `<h2>My favorites</h2><span class="hint">${list.length} saved</span>`
+      : `<h2>${state.date ? formatDateLong(state.date) : 'All the movies'}</h2>
+         <span class="hint">${list.length} movie${list.length === 1 ? '' : 's'}</span>`;
+    el.feed.appendChild(head);
+
+    const w = document.createElement('div');
+    w.className = 'wall';
+    let i = 0;
+    for (const m of list) w.appendChild(tileNode(m, i++ * 28));
+    el.feed.appendChild(w);
+  }
+
+  /* ---------- detail ---------- */
+  function openDetail(m) {
+    ReadAloud.stop();
+    el.detailBg.style.background = tintFor(m);
+    const on = Favorites.has(m.id);
+
+    el.detailWrap.innerHTML = `
+      <div class="d-left">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div class="play-big" id="playBtn" style="justify-content:center">
+          <span style="font-size:22px">▶</span>Play trailer
+        </div>
+      </div>
+      <div class="d-right">
+        <div class="d-title">${m.title}</div>
+        <div class="d-when">${sleepsLabel(m.date)}</div>
+        <div class="d-date">${formatDateLong(m.date)}</div>
+        <div class="d-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+        <div class="story-head">
+          <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+          <div class="story-hint">Tap any word<br>to hear it</div>
+        </div>
+        <p class="story reading" id="story"></p>
+        <div class="d-actions">
+          <div class="big-heart ${on ? 'on' : ''}" id="dHeart">${on ? '♥' : '♡'}</div>
+          <div id="favLabel" style="font-size:20px;font-weight:700;color:${on ? '#ff6b8b' : 'rgba(255,255,255,.6)'}">
+            ${on ? 'Saved to my favorites' : 'Tap the heart to save it'}
+          </div>
+        </div>
+      </div>`;
+
+    ReadAloud.prepare(el.detailWrap.querySelector('#story'), m.simple);
+
+    const speak = el.detailWrap.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) { ReadAloud.stop(); stopReading(); return; }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const heart = el.detailWrap.querySelector('#dHeart');
+    const label = el.detailWrap.querySelector('#favLabel');
+    heart.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      heart.classList.toggle('on', nowOn);
+      heart.textContent = nowOn ? '♥' : '♡';
+      heart.classList.remove('pop'); void heart.offsetWidth; heart.classList.add('pop');
+      label.textContent = nowOn ? 'Saved to my favorites' : 'Tap the heart to save it';
+      label.style.color = nowOn ? '#ff6b8b' : 'rgba(255,255,255,.6)';
+      render();
+    });
+
+    const play = el.detailWrap.querySelector('#playBtn');
+    play.addEventListener('click', () => {
+      play.innerHTML = '<span style="font-size:22px">⏸</span>Playing trailer…';
+    });
+
+    el.detail.classList.add('on');
+  }
+
+  document.getElementById('back').addEventListener('click', () => {
+    ReadAloud.stop();
+    el.detail.classList.remove('on');
+  });
+
+  syncSeg();
+  syncDock();
+  render();
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

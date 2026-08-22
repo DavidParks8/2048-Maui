@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPad A — Glass Timeline</title>
+<link rel="stylesheet" href="shared/glass.css">
+<link rel="stylesheet" href="shared/tablet.css">
+<style>
+  body { background: #150b2e; }
+
+  .wallpaper {
+    background:
+      radial-gradient(60% 70% at 8% 4%, #7c3aed 0%, transparent 58%),
+      radial-gradient(55% 75% at 94% 18%, #c026d3 0%, transparent 60%),
+      radial-gradient(60% 80% at 55% 106%, #8b5cf6 0%, transparent 58%),
+      linear-gradient(172deg, #251146 0%, #120626 100%);
+  }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+
+  /* ---------- left rail ---------- */
+  .rail {
+    flex: 0 0 272px;
+    margin: 6px 0 16px 16px;
+    padding: 20px 14px;
+    border-radius: 30px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail > * { position: relative; z-index: 2; }
+  .brand {
+    display: flex; align-items: center; gap: 11px;
+    padding: 4px 8px 18px;
+  }
+  .brand .logo { font-size: 32px; }
+  .brand .name { font-size: 21px; font-weight: 800; letter-spacing: -.4px; line-height: 1.15; }
+  .rail-gap { height: 14px; }
+  .rail-label {
+    font-size: var(--t-small);
+    font-weight: 700;
+    color: var(--text-3);
+    padding: 4px 10px 6px;
+  }
+
+  /* ---------- main ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .main-head { padding: 4px 26px 12px 24px; display: flex; align-items: flex-end; justify-content: space-between; }
+  .main-head h1 { margin: 0; font-size: 38px; font-weight: 850; letter-spacing: -1.1px; }
+  .main-head .cnt { font-size: var(--t-label); color: var(--text-3); font-weight: 650; }
+
+  .feed { padding: 0 22px 26px; }
+
+  .day {
+    position: sticky; top: 0; z-index: 20;
+    margin: 14px 2px 12px;
+    padding: 12px 20px;
+    border-radius: var(--radius-pill);
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(255,255,255,.12);
+    backdrop-filter: blur(26px) saturate(180%);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    border: .5px solid rgba(255,255,255,.2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 18px rgba(0,0,0,.3);
+  }
+  .day .d { font-size: 21px; font-weight: 780; letter-spacing: -.4px; }
+  .day .n {
+    font-size: var(--t-small); font-weight: 750; color: #ffd479;
+    padding: 5px 13px; border-radius: var(--radius-pill);
+    background: rgba(255,212,121,.14);
+    border: .5px solid rgba(255,212,121,.28);
+  }
+
+  .cards { display: flex; flex-direction: column; gap: 12px; }
+
+  .card {
+    display: flex; align-items: center; gap: 22px;
+    padding: 16px 20px;
+    border-radius: 28px;
+    cursor: pointer;
+    transition: transform 380ms var(--ease-glass);
+  }
+  .card:active { transform: scale(.988); }
+  .card > * { position: relative; z-index: 2; }
+  .card .poster { width: 118px; height: 177px; font-size: 24px; }
+  .c-info { flex: 1; min-width: 0; }
+  .c-title {
+    font-size: 30px; font-weight: 780; letter-spacing: -.6px;
+    line-height: 1.2;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .c-when { margin-top: 10px; font-size: var(--t-label); font-weight: 720; color: #ffcf6b; }
+  .c-tags { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* ---------- search ---------- */
+  .searchbar {
+    margin: 0 24px 14px;
+    display: flex; align-items: center; gap: 14px;
+    height: 64px; padding: 0 24px; border-radius: 22px;
+  }
+  .searchbar .mg { font-size: 24px; }
+  .searchbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: var(--text); font-size: 22px; font-family: inherit; font-weight: 600;
+  }
+  .searchbar input::placeholder { color: var(--text-3); font-weight: 500; }
+
+  /* ---------- detail sheet ---------- */
+  .scrim {
+    position: absolute; inset: 0; z-index: 70;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 460ms var(--ease-glass);
+  }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: absolute; z-index: 80; top: 0; bottom: 0; right: 0;
+    width: 566px;
+    border-radius: var(--radius-sheet) 0 0 var(--radius-sheet);
+    transform: translateX(101%);
+    transition: transform 560ms var(--ease-glass);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sheet.on { transform: none; }
+  .sheet-inner { position: relative; z-index: 3; padding: 22px 28px 30px; }
+  .close {
+    position: absolute; z-index: 6; top: 20px; right: 22px;
+    width: 52px; height: 52px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 24px; cursor: pointer;
+    background: rgba(255,255,255,.16);
+    border: .5px solid rgba(255,255,255,.3);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .close:active { transform: scale(.9); }
+  .d-top { display: flex; gap: 22px; padding-right: 60px; }
+  .d-top .poster { width: 168px; height: 252px; font-size: 30px; }
+  .d-title { font-size: 36px; font-weight: 850; letter-spacing: -1px; line-height: 1.1; }
+  .d-when { margin-top: 12px; font-size: 23px; font-weight: 780; color: #ffcf6b; }
+  .d-date { margin-top: 5px; font-size: var(--t-label); color: var(--text-2); }
+  .d-tags { margin-top: 15px; display: flex; gap: 9px; flex-wrap: wrap; }
+  .trailer {
+    position: relative; height: 178px; border-radius: 24px; overflow: hidden;
+    display: grid; place-items: center; cursor: pointer; margin: 22px 0 20px;
+  }
+  .trailer .pl {
+    position: relative; z-index: 3;
+    width: 78px; height: 78px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 28px; padding-left: 5px;
+    background: rgba(255,255,255,.22);
+    border: .5px solid rgba(255,255,255,.48);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 10px 26px rgba(0,0,0,.36);
+    transition: transform 400ms var(--ease-glass);
+  }
+  .trailer:active .pl { transform: scale(.9); }
+  .trailer .cap {
+    position: absolute; z-index: 3; bottom: 15px; left: 20px;
+    font-size: var(--t-label); font-weight: 720;
+    text-shadow: 0 1px 6px rgba(0,0,0,.65);
+  }
+  .story-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .story-hint { font-size: var(--t-small); color: var(--text-3); line-height: 1.4; }
+  .story { color: rgba(255,255,255,.9); margin-bottom: 24px; }
+  .d-fav {
+    height: 68px; border-radius: 21px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-size: 21px; font-weight: 780; cursor: pointer;
+    background: rgba(255,55,95,.92);
+    border: .5px solid rgba(255,140,165,.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 8px 20px rgba(0,0,0,.34);
+    transition: transform 320ms var(--ease-glass);
+    user-select: none;
+  }
+  .d-fav:active { transform: scale(.975); }
+  .d-fav.off {
+    background: rgba(255,255,255,.14);
+    border-color: rgba(255,255,255,.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+  }
+</style>
+</head>
+<body>
+<div class="tablet-stage">
+<div>
+  <div class="tablet">
+    <div class="wallpaper"></div>
+
+    <div class="screen">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span class="status-icons"><span class="sig"></span>100%<span class="batt"></span></span>
+      </div>
+
+      <div class="body">
+        <div class="rail glass">
+          <div class="brand">
+            <div class="logo">🍿</div>
+            <div class="name">Movies<br>coming soon</div>
+          </div>
+          <div id="nav"></div>
+          <div class="rail-gap"></div>
+          <div class="rail-label">Show me</div>
+          <div id="filters"></div>
+        </div>
+
+        <div class="main">
+          <div class="main-head">
+            <h1 id="hTitle">Coming soon</h1>
+            <div class="cnt" id="hCount"></div>
+          </div>
+          <div class="searchbar glass-thin" id="searchbar" style="display:none">
+            <span class="mg">🔍</span>
+            <input id="searchInput" placeholder="Type a movie name" autocomplete="off">
+          </div>
+          <div class="scroll"><div class="feed" id="feed"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet glass" id="sheet">
+      <div class="close" id="close">✕</div>
+      <div class="scroll"><div class="sheet-inner" id="sheetInner"></div></div>
+    </div>
+
+    <div class="home-bar"></div>
+  </div>
+
+  <div class="caption">
+    <b>iPad A · Glass Timeline</b>
+    Two panes: a big glass sidebar you navigate with pictures + words, and a wide
+    two-column list grouped by date. Tap a movie for the story panel.
+    <a href="index.html">← back to all prototypes</a>
+  </div>
+</div>
+</div>
+
+<script src="shared/data.js"></script>
+<script src="shared/reader.js"></script>
+<script>
+(() => {
+  Favorites.load();
+
+  const NAV = [
+    { id: 'soon', ic: '🎬', lb: 'Coming soon' },
+    { id: 'search', ic: '🔍', lb: 'Find a movie' },
+    { id: 'favs', ic: '❤️', lb: 'My favorites' },
+  ];
+  const FILTERS = [
+    { id: 'all', ic: '🍿', lb: 'All movies' },
+    { id: 'G', ic: '🟢', lb: 'G movies' },
+    { id: 'PG', ic: '🟡', lb: 'PG movies' },
+    { id: 'anim', ic: '🎨', lb: 'Cartoons' },
+  ];
+
+  const state = { tab: 'soon', filter: 'all', query: '' };
+  const sorted = MOVIES.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  const el = {
+    nav: document.getElementById('nav'),
+    filters: document.getElementById('filters'),
+    feed: document.getElementById('feed'),
+    hTitle: document.getElementById('hTitle'),
+    hCount: document.getElementById('hCount'),
+    searchbar: document.getElementById('searchbar'),
+    searchInput: document.getElementById('searchInput'),
+    scrim: document.getElementById('scrim'),
+    sheet: document.getElementById('sheet'),
+    sheetInner: document.getElementById('sheetInner'),
+  };
+
+  function navNode(item, group, onPick) {
+    const n = document.createElement('div');
+    n.className = 'nav-item';
+    n.dataset.id = item.id;
+    n.innerHTML = `<span class="ico">${item.ic}</span><span>${item.lb}</span>`;
+    n.addEventListener('click', () => {
+      for (const s of group.children) s.classList.toggle('on', s === n);
+      onPick(item.id);
+    });
+    group.appendChild(n);
+    return n;
+  }
+
+  for (const item of NAV) navNode(item, el.nav, setTab);
+  for (const item of FILTERS) navNode(item, el.filters, (id) => { state.filter = id; render(); });
+
+  el.searchInput.addEventListener('input', (e) => {
+    state.query = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  function setTab(id) {
+    state.tab = id;
+    el.searchbar.style.display = id === 'search' ? 'flex' : 'none';
+    el.filters.parentElement.querySelector('.rail-label').style.opacity = id === 'soon' ? '1' : '.35';
+    el.filters.style.pointerEvents = id === 'soon' ? 'auto' : 'none';
+    el.filters.style.opacity = id === 'soon' ? '1' : '.35';
+
+    if (id === 'soon') el.hTitle.textContent = 'Coming soon';
+    if (id === 'search') { el.hTitle.textContent = 'Find a movie'; el.searchInput.focus(); }
+    if (id === 'favs') el.hTitle.textContent = 'My favorites';
+    render();
+  }
+
+  function visible() {
+    let list = sorted;
+    if (state.tab === 'favs') return list.filter((m) => Favorites.has(m.id));
+    if (state.tab === 'search') {
+      if (!state.query) return [];
+      return list.filter((m) =>
+        m.title.toLowerCase().includes(state.query) ||
+        m.kind.toLowerCase().includes(state.query) ||
+        m.genres.join(' ').toLowerCase().includes(state.query));
+    }
+    if (state.filter === 'G') return list.filter((m) => m.rating === 'G');
+    if (state.filter === 'PG') return list.filter((m) => m.rating === 'PG');
+    if (state.filter === 'anim') return list.filter((m) => m.genres.includes('Animation'));
+    return list;
+  }
+
+  function cardNode(m, delay, showWhen) {
+    const n = document.createElement('div');
+    n.className = 'card glass rise';
+    n.style.animationDelay = delay + 'ms';
+    n.innerHTML = `
+      <div class="poster" style="${posterStyle(m)}">
+        <div class="poster-emoji">${m.emoji}</div>
+        <div class="poster-title">${m.title}</div>
+      </div>
+      <div class="c-info">
+        <div class="c-title">${m.title}</div>
+        ${showWhen ? `<div class="c-when">${sleepsLabel(m.date)} · ${formatDateLong(m.date)}</div>` : ''}
+        <div class="c-tags">
+          <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+          <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+        </div>
+      </div>
+      <div class="big-heart ${Favorites.has(m.id) ? 'on' : ''}">${Favorites.has(m.id) ? '♥' : '♡'}</div>`;
+
+    const h = n.querySelector('.big-heart');
+    h.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = Favorites.toggle(m.id);
+      h.classList.toggle('on', on);
+      h.textContent = on ? '♥' : '♡';
+      h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop');
+      if (state.tab === 'favs') setTimeout(render, 400); else updateCount();
+    });
+    n.addEventListener('click', () => openSheet(m));
+    return n;
+  }
+
+  function updateCount() {
+    const n = visible().length;
+    el.hCount.textContent = state.tab === 'favs'
+      ? `${n} saved`
+      : `${n} movie${n === 1 ? '' : 's'}`;
+  }
+
+  function render() {
+    const list = visible();
+    el.feed.innerHTML = '';
+    updateCount();
+
+    if (!list.length) {
+      const e = document.createElement('div');
+      e.className = 'empty';
+      const cfg = state.tab === 'favs'
+        ? ['♡', 'No favorites yet', 'Tap the heart on a movie to save it here.']
+        : state.tab === 'search' && !state.query
+          ? ['🔍', 'What do you want to watch?', 'Try typing dragon, space, or funny.']
+          : ['🍿', 'Nothing here', 'Try a different pick on the left.'];
+      e.innerHTML = `<div class="empty-emoji" style="font-size:60px">${cfg[0]}</div>
+        <div class="empty-title" style="font-size:24px">${cfg[1]}</div>
+        <div class="empty-sub" style="font-size:19px">${cfg[2]}</div>`;
+      el.feed.appendChild(e);
+      return;
+    }
+
+    let i = 0;
+    if (state.tab !== 'soon') {
+      const g = document.createElement('div');
+      g.className = 'cards';
+      g.style.paddingTop = '8px';
+      for (const m of list) g.appendChild(cardNode(m, i++ * 30, true));
+      el.feed.appendChild(g);
+      return;
+    }
+
+    for (const day of groupByDate(list)) {
+      const h = document.createElement('div');
+      h.className = 'day';
+      h.innerHTML = `<span class="d">${formatDateLong(day.key)}</span>
+        <span class="n">${sleepsLabel(day.key)}</span>`;
+      el.feed.appendChild(h);
+      const g = document.createElement('div');
+      g.className = 'cards';
+      for (const m of day.items) g.appendChild(cardNode(m, i++ * 30, false));
+      el.feed.appendChild(g);
+    }
+  }
+
+  /* ---------- detail ---------- */
+  function openSheet(m) {
+    ReadAloud.stop();
+    const on = Favorites.has(m.id);
+    el.sheetInner.innerHTML = `
+      <div class="d-top">
+        <div class="poster" style="${posterStyle(m)}">
+          <div class="poster-emoji">${m.emoji}</div>
+          <div class="poster-title">${m.title}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="d-title">${m.title}</div>
+          <div class="d-when">${sleepsLabel(m.date)}</div>
+          <div class="d-date">${formatDateLong(m.date)}</div>
+          <div class="d-tags">
+            <span class="rating ${m.rating.toLowerCase()}">${m.rating}</span>
+            <span class="kind"><span>${m.kindIcon}</span>${m.kind}</span>
+          </div>
+        </div>
+      </div>
+      <div class="trailer" style="${posterStyle(m)}">
+        <div class="pl">▶</div>
+        <div class="cap">Play trailer</div>
+      </div>
+      <div class="story-head">
+        <div class="speak" id="speakBtn"><span class="ico">🔊</span>Read it to me</div>
+        <div class="story-hint">Tap any word<br>to hear it</div>
+      </div>
+      <p class="story reading" id="story"></p>
+      <div class="d-fav ${on ? '' : 'off'}" id="dFav">
+        <span style="font-size:25px">${on ? '♥' : '♡'}</span>
+        <span>${on ? 'Saved to my favorites' : 'Save to my favorites'}</span>
+      </div>`;
+
+    const story = el.sheetInner.querySelector('#story');
+    ReadAloud.prepare(story, m.simple);
+
+    const speak = el.sheetInner.querySelector('#speakBtn');
+    const stopReading = () => {
+      speak.classList.remove('playing');
+      speak.innerHTML = '<span class="ico">🔊</span>Read it to me';
+    };
+    speak.addEventListener('click', () => {
+      if (speak.classList.contains('playing')) {
+        ReadAloud.stop();
+        stopReading();
+        return;
+      }
+      speak.classList.add('playing');
+      speak.innerHTML = '<span class="ico">⏸</span>Stop reading';
+      ReadAloud.speak(`${m.title}. ${m.simple}`, { onEnd: stopReading });
+    });
+
+    const fav = el.sheetInner.querySelector('#dFav');
+    fav.addEventListener('click', () => {
+      const nowOn = Favorites.toggle(m.id);
+      fav.classList.toggle('off', !nowOn);
+      fav.innerHTML = `<span style="font-size:25px">${nowOn ? '♥' : '♡'}</span>
+        <span>${nowOn ? 'Saved to my favorites' : 'Save to my favorites'}</span>`;
+      render();
+    });
+
+    el.sheetInner.querySelector('.trailer').addEventListener('click', (e) => {
+      e.currentTarget.querySelector('.cap').textContent = 'Playing trailer…';
+    });
+
+    el.scrim.classList.add('on');
+    el.sheet.classList.add('on');
+  }
+
+  function closeSheet() {
+    ReadAloud.stop();
+    el.scrim.classList.remove('on');
+    el.sheet.classList.remove('on');
+  }
+  el.scrim.addEventListener('click', closeSheet);
+  document.getElementById('close').addEventListener('click', closeSheet);
+
+  el.nav.firstChild.classList.add('on');
+  el.filters.firstChild.classList.add('on');
+  setTab('soon');
+  fitFrame('.tablet', 1180);
+})();
+</script>
+</body>
+</html>

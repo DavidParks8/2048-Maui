@@ -1,0 +1,268 @@
+/*
+ * iPad mini frame + early-reader design system.
+ *
+ * Design rules applied throughout, for a kid who is still decoding words:
+ *  - No text below 15px. Nothing is set in ALL CAPS (harder to decode than
+ *    lowercase word shapes). Sentence case everywhere.
+ *  - Generous line-height (1.6+) and word-spacing so words stay separate.
+ *  - One idea per line. Short sentences. No dense metadata rows.
+ *  - Every word is tappable to hear it; every passage can be read aloud with
+ *    the current word highlighted, like following along with a finger.
+ *  - Touch targets are 60px+ (Apple's minimum is 44px; young kids need more).
+ *  - Meaning is carried by pictures first, words second.
+ */
+
+/* ---------------- iPad mini frame (1133 x 744 pt, landscape) ---------------- */
+
+.tablet-stage {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26px 16px 34px;
+  background:
+    radial-gradient(80% 60% at 12% 0%, #2b3350 0%, transparent 55%),
+    radial-gradient(80% 70% at 100% 100%, #3a2547 0%, transparent 55%),
+    #14161f;
+}
+
+.tablet {
+  position: relative;
+  width: 1133px;
+  height: 744px;
+  flex: 0 0 auto;
+  border-radius: 40px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 13px #1c1d24,
+    0 0 0 14.5px #45464f,
+    0 40px 90px rgba(0, 0, 0, 0.6);
+}
+
+.tablet .status-bar {
+  height: 34px;
+  padding: 0 26px;
+  font-size: 15px;
+}
+
+.tablet .home-bar {
+  bottom: 7px;
+  width: 260px;
+}
+
+/* ---------------- early-reader type scale ---------------- */
+
+.tablet {
+  --t-hero: 46px;   /* the one thing on screen you can't miss */
+  --t-title: 27px;  /* movie titles */
+  --t-body: 21px;   /* sentences to read */
+  --t-label: 18px;  /* buttons and nav words */
+  --t-small: 16px;  /* the smallest text allowed anywhere */
+}
+
+.tablet .reading {
+  font-size: var(--t-body);
+  line-height: 1.62;
+  word-spacing: 0.12em;
+  letter-spacing: 0.006em;
+}
+
+/* Tappable words. Tap one to hear just that word. */
+.w {
+  border-radius: 7px;
+  padding: 1px 2px;
+  margin: 0 -1px;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.w:hover {
+  background: rgba(255, 220, 120, 0.18);
+}
+
+.w.on {
+  background: #ffd84d;
+  color: #1a1608;
+  font-weight: 700;
+}
+
+/* ---------------- read-aloud button ---------------- */
+
+.speak {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  height: 62px;
+  padding: 0 26px;
+  border-radius: 20px;
+  font-size: var(--t-label);
+  font-weight: 700;
+  cursor: pointer;
+  border: 0.5px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(22px) saturate(175%);
+  -webkit-backdrop-filter: blur(22px) saturate(175%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 320ms var(--ease-glass), background 260ms ease;
+  user-select: none;
+}
+
+.speak:active {
+  transform: scale(0.96);
+}
+
+.speak .ico {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.speak.playing {
+  background: #ffd84d;
+  color: #1a1608;
+  border-color: rgba(255, 216, 77, 0.9);
+}
+
+@keyframes bars {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1); }
+}
+
+.speak.playing .ico {
+  animation: bars 700ms ease-in-out infinite;
+}
+
+/* ---------------- big friendly controls ---------------- */
+
+.big-heart {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 29px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: transform 320ms var(--ease-glass), color 220ms, background 220ms;
+}
+
+.big-heart:active {
+  transform: scale(0.86);
+}
+
+.big-heart.on {
+  color: #ff375f;
+  background: rgba(255, 55, 95, 0.2);
+  border-color: rgba(255, 120, 150, 0.55);
+}
+
+.big-heart.pop {
+  animation: pop 460ms var(--ease-glass);
+}
+
+/* Rating badges stay readable: no 10px type, no all-caps cramming. */
+.tablet .rating {
+  min-width: 42px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 9px;
+  font-size: var(--t-small);
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+/* A single plain-word category with a picture, instead of a genre list. */
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 13px 0 10px;
+  border-radius: 9px;
+  font-size: var(--t-small);
+  font-weight: 650;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ---------------- big nav ---------------- */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  height: 66px;
+  padding: 0 18px;
+  border-radius: 19px;
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 320ms var(--ease-glass);
+  user-select: none;
+}
+
+.nav-item .ico {
+  font-size: 27px;
+  line-height: 1;
+  width: 32px;
+  text-align: center;
+}
+
+.nav-item:active {
+  transform: scale(0.97);
+}
+
+.nav-item.on {
+  color: #12141f;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------- poster titles on tablet ---------------- */
+
+/* Poster titles never break a word in half: a kid decoding "Unstoppable" must
+   not see "Unstoppab / le". Wrap between words only. */
+.tablet .poster-title {
+  left: 11px;
+  right: 11px;
+  bottom: 10px;
+  font-size: 12px;
+  letter-spacing: 0.1px;
+  line-height: 1.22;
+  text-transform: none;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  -webkit-line-clamp: 2;
+}
+
+/* ---------------- trailer button ---------------- */
+
+.play-big {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  height: 62px;
+  padding: 0 30px;
+  border-radius: 20px;
+  font-size: var(--t-label);
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(255, 55, 95, 0.92);
+  border: 0.5px solid rgba(255, 140, 165, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 20px rgba(0, 0, 0, 0.34);
+  transition: transform 320ms var(--ease-glass);
+  user-select: none;
+}
+
+.play-big:active {
+  transform: scale(0.96);
+}

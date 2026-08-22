@@ -20,8 +20,8 @@ const MOVIES = [
     genres: ['Animation', 'Adventure'],
     studio: 'Northlight Animation',
     emoji: '🚀',
-    c1: '#5B8CFF',
-    c2: '#B06BFF',
+    c1: '#9C67F3',
+    c2: '#6D0AC2',
     score: 92,
     overview:
       'When a homemade rocket actually works, two siblings pilot a cardboard ship across a kingdom of forgotten toys to bring their dog home before bedtime.',
@@ -35,8 +35,8 @@ const MOVIES = [
     genres: ['Animation', 'Comedy'],
     studio: 'Sunbeam Pictures',
     emoji: '🐹',
-    c1: '#FFB347',
-    c2: '#FF6B8B',
+    c1: '#EB55F1',
+    c2: '#910AC2',
     score: 88,
     overview:
       'The smallest hamster in the pet shop enters the world championship of wheel racing, and discovers that being tiny is a superpower.',
@@ -50,8 +50,8 @@ const MOVIES = [
     genres: ['Fantasy', 'Family'],
     studio: 'Emberhall Studios',
     emoji: '🐉',
-    c1: '#FF7A45',
-    c2: '#C2185B',
+    c1: '#E153F1',
+    c2: '#8716B6',
     score: 95,
     overview:
       'A shy girl inherits a library where every book hides a sleeping dragon, and only she can read them back to sleep before the town notices.',
@@ -65,8 +65,8 @@ const MOVIES = [
     genres: ['Animation', 'Mystery'],
     studio: 'Laundry Line Films',
     emoji: '🧦',
-    c1: '#37D5D6',
-    c2: '#2C7BE5',
+    c1: '#5D37D6',
+    c2: '#5716B6',
     score: 79,
     overview:
       'Every missing sock in the neighborhood leads to one dryer. Two puppet detectives take the case of the century.',
@@ -80,8 +80,8 @@ const MOVIES = [
     genres: ['Animation', 'Sci-Fi'],
     studio: 'Halcyon Lab',
     emoji: '🌙',
-    c1: '#7C4DFF',
-    c2: '#1A237E',
+    c1: '#A55AF2',
+    c2: '#471A7E',
     score: 90,
     overview:
       'A bakery on the moon runs out of flour, so the smallest baker rides a comet all the way to Earth for one more bag.',
@@ -95,8 +95,8 @@ const MOVIES = [
     genres: ['Family', 'Comedy'],
     studio: 'Copperfield Co.',
     emoji: '🤖',
-    c1: '#8D9EFF',
-    c2: '#4A5568',
+    c1: '#AD7BF4',
+    c2: '#50288A',
     score: 86,
     overview:
       'A boy rebuilds his grandfather’s old workshop robot and accidentally gives it every one of grandpa’s worst jokes.',
@@ -110,8 +110,8 @@ const MOVIES = [
     genres: ['Animation', 'Adventure'],
     studio: 'Saltwater Animation',
     emoji: '🐙',
-    c1: '#26C6DA',
-    c2: '#00695C',
+    c1: '#5526DA',
+    c2: '#24066B',
     score: 83,
     overview:
       'Two octopus siblings map every tide pool on the coast, until one pool turns out to be much, much deeper than the map allows.',
@@ -125,8 +125,8 @@ const MOVIES = [
     genres: ['Comedy', 'Family'],
     studio: 'Harvest Row',
     emoji: '🎃',
-    c1: '#FF9800',
-    c2: '#6A1B9A',
+    c1: '#E313EC',
+    c2: '#621B9A',
     score: 81,
     overview:
       'A team of very polite raccoons plans the most elaborate, least criminal heist in the history of the county fair.',
@@ -140,8 +140,8 @@ const MOVIES = [
     genres: ['Adventure', 'Family'],
     studio: 'Northlight Animation',
     emoji: '❄️',
-    c1: '#82CFFF',
-    c2: '#3949AB',
+    c1: '#A17BF4',
+    c2: '#602E9E',
     score: 89,
     overview:
       'Snowed in at a mountain lodge, a kid and a very stubborn husky discover a trail that only appears once every hundred winters.',
@@ -155,8 +155,8 @@ const MOVIES = [
     genres: ['Animation', 'Comedy'],
     studio: 'Bubblewrap Toons',
     emoji: '🫧',
-    c1: '#4DD0E1',
-    c2: '#7B1FA2',
+    c1: '#744DE1',
+    c2: '#6A1FA2',
     score: 77,
     overview:
       'A shy little blob wants to make one friend. Unfortunately, it duplicates every time it gets nervous.',
@@ -170,8 +170,8 @@ const MOVIES = [
     genres: ['Family', 'Adventure'],
     studio: 'Windward Films',
     emoji: '✈️',
-    c1: '#FFD54F',
-    c2: '#F4511E',
+    c1: '#F15CF2',
+    c2: '#9E0AC2',
     score: 87,
     overview:
       'A classroom paper airplane contest turns into a real flight across the city when one plane refuses to land.',
@@ -185,8 +185,8 @@ const MOVIES = [
     genres: ['Fantasy', 'Musical'],
     studio: 'Gilded Lantern',
     emoji: '🎄',
-    c1: '#E53935',
-    c2: '#1B5E20',
+    c1: '#CA35E5',
+    c2: '#271B5E',
     score: 91,
     overview:
       'The toy soldier in the neighbor’s window has been watching all year, and on Christmas Eve he finally knocks.',
@@ -200,8 +200,8 @@ const MOVIES = [
     genres: ['Adventure', 'Comedy'],
     studio: 'Big Fern Pictures',
     emoji: '🦕',
-    c1: '#66BB6A',
-    c2: '#00838F',
+    c1: '#6854CD',
+    c2: '#320788',
     score: 84,
     overview:
       'Summer camp gets complicated when the counselors turn out to be extremely friendly, extremely large dinosaurs.',
@@ -215,8 +215,8 @@ const MOVIES = [
     genres: ['Animation', 'Family'],
     studio: 'Halcyon Lab',
     emoji: '⭐',
-    c1: '#FFD180',
-    c2: '#512DA8',
+    c1: '#F07BF4',
+    c2: '#672BA1',
     score: 93,
     overview:
       'One package. One night. Every constellation between here and home. The galaxy’s smallest courier will not be late.',
@@ -230,8 +230,8 @@ const MOVIES = [
     genres: ['Fantasy', 'Comedy'],
     studio: 'Windward Films',
     emoji: '🪁',
-    c1: '#EC407A',
-    c2: '#283593',
+    c1: '#C540EC',
+    c2: '#582893',
     score: 80,
     overview:
       'A kite gets loose on a windy Tuesday and takes the whole day with it. Getting Tuesday back is going to take until Friday.',
@@ -245,8 +245,8 @@ const MOVIES = [
     genres: ['Family', 'Drama'],
     studio: 'Barnboard',
     emoji: '🐴',
-    c1: '#A1887F',
-    c2: '#33691E',
+    c1: '#C053CD',
+    c2: '#2A1E69',
     score: 88,
     overview:
       'A city kid spends the muddiest month of the year on a farm and meets a horse who trusts absolutely no one.',
@@ -260,8 +260,8 @@ const MOVIES = [
     genres: ['Animation', 'Comedy'],
     studio: 'Copperfield Co.',
     emoji: '⚙️',
-    c1: '#4FC3F7',
-    c2: '#F06292',
+    c1: '#8455F1',
+    c2: '#8B12BA',
     score: 76,
     overview:
       'The new playground equipment is a little too smart, and it really wants everyone to have fun. Right now. Forever.',
@@ -275,13 +275,48 @@ const MOVIES = [
     genres: ['Fantasy', 'Adventure'],
     studio: 'Emberhall Studios',
     emoji: '🦌',
-    c1: '#4DB6AC',
-    c2: '#1A237E',
+    c1: '#5B3CC7',
+    c2: '#471A7E',
     score: 94,
     overview:
       'A girl who can hum any sound she hears follows a melody into a forest that has been quiet for a hundred years.',
   },
 ];
+
+/* ---------- easy-reading versions, for kids still learning to read ---------- */
+/*
+ * Short sentences, common words, one idea at a time. The full `overview` is
+ * kept for the grown-up view; `simple` is what a 5-7 year old actually reads.
+ * `kind` is a single plain word instead of a genre list.
+ */
+
+const SIMPLE = {
+  1:  ['Two kids build a rocket out of boxes. It really flies! Now they must find their dog.', 'Space', '🚀'],
+  2:  ['Pip is the smallest hamster. He wants to win the big race. Being little can be super!', 'Funny', '😄'],
+  3:  ['Every book in this library has a dragon inside. One girl can read them back to sleep.', 'Dragons', '🐉'],
+  4:  ['Socks keep going missing. Two sock puppets look for clues and solve the case.', 'Mystery', '🔎'],
+  5:  ['A tiny baker on the moon runs out of flour. So she rides a comet down to Earth.', 'Space', '🌙'],
+  6:  ['A boy fixes up his grandpa\'s old robot. Now the robot tells all of grandpa\'s jokes.', 'Robots', '🤖'],
+  7:  ['Two baby octopus draw a map of the sea. Then they find a pool that goes way, way down.', 'Ocean', '🌊'],
+  8:  ['Some very polite raccoons make a plan. They want the biggest pumpkin at the fair.', 'Funny', '😄'],
+  9:  ['A kid and a big fluffy dog get snowed in. They find a path that only comes once.', 'Snow', '❄️'],
+  10: ['A little blob just wants one friend. But when he gets shy, he makes copies of himself!', 'Funny', '😄'],
+  11: ['A paper airplane will not land. It flies all over the city and the kids chase it.', 'Flying', '✈️'],
+  12: ['A toy soldier watches from the window all year. On Christmas Eve, he knocks.', 'Holiday', '🎄'],
+  13: ['Summer camp is fun. But all the camp helpers are very big, very friendly dinosaurs.', 'Dinosaurs', '🦕'],
+  14: ['One package. One night. The smallest space mail carrier will not be late.', 'Space', '⭐'],
+  15: ['A kite blows away and takes Tuesday with it. Now the kids must go get the day back.', 'Silly', '🪁'],
+  16: ['A city kid stays on a farm for a month. A horse there does not trust anyone yet.', 'Animals', '🐴'],
+  17: ['The new playground is a little too smart. It wants everyone to have fun. Right now!', 'Robots', '⚙️'],
+  18: ['A girl can hum any sound she hears. She follows a song into a very quiet forest.', 'Magic', '🌲'],
+};
+
+for (const m of MOVIES) {
+  const [simple, kind, icon] = SIMPLE[m.id];
+  m.simple = simple;
+  m.kind = kind;
+  m.kindIcon = icon;
+}
 
 /* ---------- shared helpers used by every prototype ---------- */
 
@@ -295,6 +330,9 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_LONG = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+];
 
 /** Parse 'YYYY-MM-DD' as a local date (avoids UTC off-by-one). */
 function parseDate(iso) {
@@ -312,6 +350,12 @@ function formatDate(iso) {
 function formatMonth(iso) {
   const d = parseDate(iso);
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** "Friday, September 4" — spelled out, because abbreviations are hard to decode. */
+function formatDateLong(iso) {
+  const d = parseDate(iso);
+  return `${DAYS_LONG[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
 /** Days from "today" (pinned so the prototype always looks the same). */
@@ -344,6 +388,14 @@ function groupByMonth(list) {
     map.get(key).items.push(m);
   }
   return [...map.values()];
+}
+
+/** Plain-language countdown a young reader can decode: "14 sleeps". */
+function sleepsLabel(iso) {
+  const n = daysUntil(iso);
+  if (n === 0) return 'Today!';
+  if (n === 1) return '1 more sleep';
+  return `${n} sleeps`;
 }
 
 /** Group movies into [{ key, label, sub, items }] by exact release date. */
