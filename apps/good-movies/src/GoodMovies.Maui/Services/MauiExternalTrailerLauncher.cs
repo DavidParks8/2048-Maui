@@ -29,10 +29,7 @@ public class MauiExternalTrailerLauncher
 
 internal sealed class MauiNativeUriLauncher : INativeUriLauncher
 {
-    public async Task<bool> CanOpenAsync(
-        Uri uri,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<bool> CanOpenAsync(Uri uri, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         Task<bool> availability = MainThread.InvokeOnMainThreadAsync(() =>
@@ -41,13 +38,12 @@ internal sealed class MauiNativeUriLauncher : INativeUriLauncher
         return await availability.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> OpenAsync(
-        Uri uri,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<bool> OpenAsync(Uri uri, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Task<bool> launch = MainThread.InvokeOnMainThreadAsync(() => Launcher.Default.OpenAsync(uri));
+        Task<bool> launch = MainThread.InvokeOnMainThreadAsync(() =>
+            Launcher.Default.OpenAsync(uri)
+        );
         return await launch.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 }
