@@ -7,7 +7,7 @@
       "type": "shell",
       "args": [
         "build",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
         "net10.0-windows10.0.19041.0"
       ],
@@ -20,7 +20,7 @@
       "type": "shell",
       "args": [
         "build",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
         "net10.0-maccatalyst",
         "-c",
@@ -35,7 +35,7 @@
       "type": "shell",
       "args": [
         "build",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
         "net10.0-android",
         "-c",
@@ -50,13 +50,71 @@
       "type": "shell",
       "args": [
         "build",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
         "net10.0-ios",
         "-c",
         "Debug"
       ],
       "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build: GoodMovies.Maui (ios Debug)",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "build",
+        "apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj",
+        "-f",
+        "net10.0-ios",
+        "-c",
+        "Debug",
+        "-p:GoodMoviesUseSampleData=true"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test: GoodMovies.Core",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "test",
+        "--project",
+        "apps/good-movies/test/GoodMovies.Core.Tests/GoodMovies.Core.Tests.csproj",
+        "-f",
+        "net10.0"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test: GoodMovies.Infrastructure",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "test",
+        "--project",
+        "apps/good-movies/test/GoodMovies.Infrastructure.Tests/GoodMovies.Infrastructure.Tests.csproj",
+        "-f",
+        "net10.0"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test: GoodMovies.ViewModels",
+      "command": "dotnet",
+      "type": "shell",
+      "args": [
+        "test",
+        "--project",
+        "apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj",
+        "-f",
+        "net10.0"
+      ],
+      "group": "test",
       "problemMatcher": "$msCompile"
     }
   ]

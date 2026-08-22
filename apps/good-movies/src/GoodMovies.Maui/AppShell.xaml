@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell
+  x:Class="GoodMovies.Maui.AppShell"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  Background="{StaticResource PageBackground}"
+  Shell.FlyoutBehavior="Disabled"
+  Shell.ForegroundColor="{StaticResource White}"
+  Shell.NavBarHasShadow="False"
+  Shell.TitleColor="{StaticResource White}"
+  Title="{x:Static strings:AppStrings.AppTitle}"
+>
+  <ShellContent
+    x:Name="MainShellContent"
+    Title="{x:Static strings:AppStrings.AppTitle}"
+    Route="MainPage"
+  />
+</Shell>

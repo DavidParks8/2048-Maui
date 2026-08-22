@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src\GoodMovies.Core\GoodMovies.Core.csproj" />
+    <Project Path="src\GoodMovies.Infrastructure\GoodMovies.Infrastructure.csproj" />
+    <Project Path="src\GoodMovies.ViewModels\GoodMovies.ViewModels.csproj" />
+    <Project Path="src\GoodMovies.Maui\GoodMovies.Maui.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test\GoodMovies.Core.Tests\GoodMovies.Core.Tests.csproj" />
+    <Project Path="test\GoodMovies.Infrastructure.Tests\GoodMovies.Infrastructure.Tests.csproj" />
+    <Project Path="test\GoodMovies.ViewModels.Tests\GoodMovies.ViewModels.Tests.csproj" />
+  </Folder>
+</Solution>

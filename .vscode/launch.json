@@ -21,7 +21,7 @@
         "args": [
           "run",
           "--project",
-          "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+          "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
           "--framework",
           "net10.0-maccatalyst",
           "--no-build"
@@ -32,7 +32,7 @@
         "args": [
           "run",
           "--project",
-          "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+          "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
           "--framework",
           "net10.0-windows10.0.19041.0",
           "--no-build"
@@ -50,7 +50,7 @@
       "args": [
         "run",
         "--project",
-        "src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
+        "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "--framework",
         "net10.0-android"
       ],

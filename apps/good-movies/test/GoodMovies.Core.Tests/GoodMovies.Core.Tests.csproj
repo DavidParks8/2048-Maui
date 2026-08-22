@@ -1,0 +1,11 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GoodMovies.Core.Tests</RootNamespace>
+    <AssemblyName>GoodMovies.Core.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GoodMovies.Core\GoodMovies.Core.csproj" />
+  </ItemGroup>
+</Project>

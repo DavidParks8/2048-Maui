@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+  x:Class="GoodMovies.Maui.Components.StatePanel"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:local="clr-namespace:GoodMovies.Maui.Components"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="local:StatePanel"
+  x:Name="Root"
+  AutomationId="CatalogStatePanel"
+>
+  <Border
+    Margin="8,18"
+    Padding="28,32"
+    Background="{StaticResource Surface}"
+    SemanticProperties.Description="{Binding MessageKey, Converter={StaticResource MessageAccessibilityConverter}, Source={x:Reference Root}}"
+    Stroke="Transparent"
+    StrokeShape="RoundRectangle 26"
+    StrokeThickness="0"
+  >
+    <VerticalStackLayout
+      HorizontalOptions="Center"
+      MaximumWidthRequest="560"
+      Spacing="14"
+      VerticalOptions="Center"
+    >
+      <Label
+        FontAutoScalingEnabled="True"
+        FontSize="58"
+        HorizontalOptions="Center"
+        AutomationProperties.IsInAccessibleTree="False"
+        Text="{Binding MessageKey, Converter={StaticResource MessageIconConverter}, Source={x:Reference Root}}"
+        TextColor="{StaticResource Accent}"
+        VerticalOptions="Center"
+      />
+      <Label
+        FontAutoScalingEnabled="True"
+        FontAttributes="Bold"
+        FontSize="27"
+        HorizontalTextAlignment="Center"
+        LineHeight="1.15"
+        Text="{Binding MessageKey, Converter={StaticResource MessageTitleConverter}, Source={x:Reference Root}}"
+        TextColor="{StaticResource White}"
+      />
+      <Label
+        FontAutoScalingEnabled="True"
+        FontSize="21"
+        HorizontalTextAlignment="Center"
+        LineHeight="1.6"
+        Text="{Binding MessageKey, Converter={StaticResource MessageBodyConverter}, Source={x:Reference Root}}"
+        TextColor="{StaticResource TextSecondary}"
+      />
+      <Button
+        AutomationId="CatalogRetryButton"
+        Background="{StaticResource Accent}"
+        Command="{Binding RetryCommand, Source={x:Reference Root}}"
+        FontAutoScalingEnabled="True"
+        FontAttributes="Bold"
+        FontSize="21"
+        IsVisible="{Binding State, Converter={StaticResource RetryVisibilityConverter}, Source={x:Reference Root}}"
+        SemanticProperties.Description="{x:Static strings:AppStrings.Retry}"
+        Text="{x:Static strings:AppStrings.Retry}"
+        TextColor="{StaticResource PageBackground}"
+      />
+    </VerticalStackLayout>
+  </Border>
+</ContentView>

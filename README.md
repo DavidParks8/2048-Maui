@@ -48,13 +48,13 @@ Platform notes:
 2. Restore dependencies:
 
    ```bash
-   dotnet restore
+   dotnet restore apps/twenty-forty-eight/TwentyFortyEight.slnx
    ```
 
 3. Build:
 
    ```bash
-   dotnet build
+   dotnet build apps/twenty-forty-eight/TwentyFortyEight.slnx
    ```
 
    Tip: MAUI builds can be slow if you build multiple platforms. For a faster loop, build a specific target framework (examples in the next section), or set `MAUI_TARGET_PLATFORM` when building the solution (this is what CI uses).
@@ -62,7 +62,8 @@ Platform notes:
 4. Run tests:
 
    ```bash
-   dotnet test
+   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests -f net10.0
+   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests -f net10.0 -p:TargetFrameworks=net10.0
    ```
 
 ## Running the App
@@ -80,22 +81,22 @@ See `.vscode/launch.json` and `.vscode/tasks.json`.
 ### Windows
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
-dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
 ```
 
 ### Android
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
-dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
 ```
 
 ### Mac Catalyst
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
-dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
 ```
 
 ### iOS
@@ -103,8 +104,8 @@ dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f n
 Note: Building for iOS requires a Mac with Xcode installed.
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
-dotnet run --project src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
 ```
 
 ## Game Center Setup (iOS / Mac Catalyst)

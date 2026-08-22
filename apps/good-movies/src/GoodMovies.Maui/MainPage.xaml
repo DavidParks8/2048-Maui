@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  x:Class="GoodMovies.Maui.MainPage"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:components="clr-namespace:GoodMovies.Maui.Components"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  xmlns:vm="clr-namespace:GoodMovies.ViewModels;assembly=GoodMovies.ViewModels"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="vm:CatalogViewModel"
+  x:Name="MainPageRoot"
+  AutomationId="GoodMoviesMainPage"
+  Background="{StaticResource PageBackground}"
+  SafeAreaEdges="Container"
+  Shell.NavBarIsVisible="False"
+>
+  <Grid x:Name="RootLayout" Padding="0,0,0,8" ColumnDefinitions="0,*" RowDefinitions="*,Auto">
+    <Grid
+      x:Name="Rail"
+      Grid.Column="0"
+      Padding="22,18,16,20"
+      RowDefinitions="Auto,*,*,*"
+      RowSpacing="14"
+    >
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="4,2,4,14">
+        <Label
+          Grid.Column="0"
+          FontAutoScalingEnabled="True"
+          FontSize="34"
+          AutomationProperties.IsInAccessibleTree="False"
+          Text="{x:Static strings:AppStrings.PopcornIcon}"
+          TextColor="{StaticResource Accent}"
+          VerticalOptions="Center"
+        />
+        <Label
+          Grid.Column="1"
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="27"
+          Text="{x:Static strings:AppStrings.AppTitle}"
+          TextColor="{StaticResource White}"
+          VerticalOptions="Center"
+        />
+      </Grid>
+      <components:NavigationTile
+        x:Name="ComingTile"
+        Grid.Row="1"
+        AccessibilityHint="{x:Static strings:AppStrings.NavComingAccessibility}"
+        AutomationId="ComingSoonNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.ComingSoon}"
+        Icon="{x:Static strings:AppStrings.MovieIcon}"
+        IsSelected="True"
+        Label="{x:Static strings:AppStrings.NavComingLabel}"
+      />
+      <components:NavigationTile
+        x:Name="FavoritesTile"
+        Grid.Row="2"
+        AccessibilityHint="{x:Static strings:AppStrings.NavFavoritesAccessibility}"
+        AutomationId="FavoritesNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.MyFavorites}"
+        Icon="{x:Static strings:AppStrings.HeartIcon}"
+        Label="{x:Static strings:AppStrings.NavFavoritesLabel}"
+      />
+      <components:NavigationTile
+        x:Name="SearchTile"
+        Grid.Row="3"
+        AccessibilityHint="{x:Static strings:AppStrings.NavSearchAccessibility}"
+        AutomationId="SearchNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.FindAMovie}"
+        Icon="{x:Static strings:AppStrings.SearchIcon}"
+        Label="{x:Static strings:AppStrings.NavSearchLabel}"
+        Subtext="{x:Static strings:AppStrings.NavSearchSubtext}"
+      />
+      <Grid
+        x:Name="RailSkeleton"
+        Grid.RowSpan="4"
+        IsVisible="{Binding IsLoading}"
+        InputTransparent="True"
+        Padding="4,2"
+        ZIndex="3"
+      >
+        <VerticalStackLayout Spacing="14">
+          <Border
+            HeightRequest="60"
+            Background="{StaticResource Skeleton}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 16"
+            StrokeThickness="0"
+          />
+          <Border
+            HeightRequest="180"
+            Background="{StaticResource Skeleton}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 24"
+            StrokeThickness="0"
+          />
+          <Border
+            HeightRequest="180"
+            Background="{StaticResource Skeleton}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 24"
+            StrokeThickness="0"
+          />
+          <Border
+            HeightRequest="180"
+            Background="{StaticResource Skeleton}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 24"
+            StrokeThickness="0"
+          />
+        </VerticalStackLayout>
+      </Grid>
+    </Grid>
+
+    <Grid
+      x:Name="MainContent"
+      Grid.Column="1"
+      Padding="8,18,22,0"
+      RowDefinitions="Auto,Auto,Auto,*"
+      RowSpacing="12"
+      SafeAreaEdges="SoftInput"
+    >
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="14" Padding="6,0">
+        <Label
+          x:Name="MainTitle"
+          Grid.Column="0"
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="44"
+          LineHeight="1.1"
+          Text="{Binding SelectedSection, Converter={StaticResource SectionTitleConverter}}"
+          TextColor="{StaticResource White}"
+          VerticalOptions="Center"
+        />
+        <Border
+          Grid.Column="1"
+          Padding="14,7"
+          Background="{StaticResource Surface}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 12"
+          StrokeThickness="0"
+          VerticalOptions="Center"
+        >
+          <Label
+            x:Name="MainCount"
+            FontAutoScalingEnabled="True"
+            FontAttributes="Bold"
+            FontSize="16"
+            Text="{Binding CurrentCount, Converter={StaticResource MovieCountConverter}}"
+            TextColor="{StaticResource TextSecondary}"
+          />
+        </Border>
+      </Grid>
+
+      <Grid
+        x:Name="SearchPanel"
+        Grid.Row="1"
+        IsVisible="{Binding SelectedSection, Converter={StaticResource SearchSectionVisibilityConverter}}"
+        Padding="6,0"
+      >
+        <Border
+          MinimumHeightRequest="76"
+          Background="{StaticResource Surface}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 20"
+          StrokeThickness="0"
+        >
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="18,0,8,0">
+            <Label
+              Grid.Column="0"
+              FontAutoScalingEnabled="True"
+              FontSize="27"
+              AutomationProperties.IsInAccessibleTree="False"
+              Text="{x:Static strings:AppStrings.SearchIcon}"
+              TextColor="{StaticResource Accent}"
+              VerticalOptions="Center"
+            />
+            <Entry
+              x:Name="SearchEntry"
+              Grid.Column="1"
+              AutomationId="MovieSearchEntry"
+              Background="Transparent"
+              Placeholder="{x:Static strings:AppStrings.SearchPlaceholder}"
+              SemanticProperties.Description="{x:Static strings:AppStrings.SearchAccessibility}"
+              Text="{Binding Query, Mode=TwoWay}"
+              TextColor="{StaticResource White}"
+              VerticalOptions="Center"
+            />
+            <Button
+              x:Name="ClearSearchButton"
+              Grid.Column="2"
+              AutomationId="ClearMovieSearch"
+              Background="{StaticResource Surface2}"
+              Clicked="OnClearSearchClicked"
+              FontAutoScalingEnabled="True"
+              FontSize="21"
+              MinimumHeightRequest="60"
+              MinimumWidthRequest="60"
+              IsVisible="{Binding Query, Converter={StaticResource StringVisibilityConverter}}"
+              Padding="12,4"
+              SemanticProperties.Description="{x:Static strings:AppStrings.ClearSearch}"
+              Text="{x:Static strings:AppStrings.ClearGlyph}"
+              TextColor="{StaticResource White}"
+            />
+          </Grid>
+        </Border>
+      </Grid>
+
+      <Border
+        x:Name="RefreshBanner"
+        Grid.Row="2"
+        IsVisible="{Binding ., Converter={StaticResource RefreshBannerVisibilityConverter}}"
+        Margin="6,0"
+        Padding="14,8"
+        Background="{StaticResource Surface2}"
+        Stroke="Transparent"
+        StrokeShape="RoundRectangle 16"
+        StrokeThickness="0"
+      >
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <Label
+            FontAutoScalingEnabled="True"
+            FontSize="16"
+            LineHeight="1.6"
+            Text="{Binding ., Converter={StaticResource RefreshBannerMessageConverter}}"
+            TextColor="{StaticResource TextSecondary}"
+            VerticalOptions="Center"
+          />
+          <Button
+            Grid.Column="1"
+            AutomationId="RefreshBannerRetry"
+            Background="{StaticResource Accent}"
+            Command="{Binding RetryCommand}"
+            FontAutoScalingEnabled="True"
+            FontSize="16"
+            Padding="14,5"
+            SemanticProperties.Description="{x:Static strings:AppStrings.Retry}"
+            Text="{x:Static strings:AppStrings.Retry}"
+            TextColor="{StaticResource PageBackground}"
+          />
+        </Grid>
+      </Border>
+
+      <Grid x:Name="FeedHost" Grid.Row="3" RowDefinitions="*">
+        <RefreshView
+          x:Name="MovieRefresh"
+          Grid.Row="0"
+          AutomationId="MovieRefreshView"
+          IsRefreshing="{Binding IsRefreshing, Mode=TwoWay}"
+          RefreshColor="{StaticResource Accent}"
+          Command="{Binding RefreshCommand}"
+        >
+          <CollectionView
+            x:Name="MovieCollection"
+            AutomationId="MovieFeed"
+            IsGrouped="True"
+            ItemsSource="{Binding MovieGroups}"
+            ItemSizingStrategy="MeasureAllItems"
+            SelectionMode="None"
+            VerticalScrollBarVisibility="Never"
+          >
+            <CollectionView.GroupHeaderTemplate>
+              <DataTemplate x:DataType="vm:MovieGroupViewModel">
+                <components:GroupHeaderView Group="{Binding .}" />
+              </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
+            <CollectionView.ItemTemplate>
+              <DataTemplate x:DataType="vm:MovieCardViewModel">
+                <components:MovieCardView Card="{Binding .}" OpenRequested="OnMovieRequested" />
+              </DataTemplate>
+            </CollectionView.ItemTemplate>
+          </CollectionView>
+        </RefreshView>
+
+        <Grid
+          x:Name="SkeletonSurface"
+          Grid.Row="0"
+          IsVisible="{Binding IsLoading}"
+          InputTransparent="True"
+          Padding="8,14"
+        >
+          <VerticalStackLayout Spacing="16">
+            <Border
+              HeightRequest="58"
+              Background="{StaticResource Skeleton}"
+              Stroke="Transparent"
+              StrokeShape="RoundRectangle 18"
+              StrokeThickness="0"
+            />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+              <Border
+                Grid.Column="0"
+                HeightRequest="190"
+                Background="{StaticResource Skeleton}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 24"
+                StrokeThickness="0"
+              />
+              <Border
+                Grid.Column="1"
+                HeightRequest="190"
+                Background="{StaticResource Skeleton}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 24"
+                StrokeThickness="0"
+              />
+            </Grid>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+              <Border
+                Grid.Column="0"
+                HeightRequest="190"
+                Background="{StaticResource Skeleton}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 24"
+                StrokeThickness="0"
+              />
+              <Border
+                Grid.Column="1"
+                HeightRequest="190"
+                Background="{StaticResource Skeleton}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 24"
+                StrokeThickness="0"
+              />
+            </Grid>
+          </VerticalStackLayout>
+        </Grid>
+
+        <components:StatePanel
+          Grid.Row="0"
+          IsVisible="{Binding State, Converter={StaticResource StatePanelVisibilityConverter}}"
+          MessageKey="{Binding MessageKey}"
+          RetryCommand="{Binding RetryCommand}"
+          State="{Binding State}"
+        />
+      </Grid>
+    </Grid>
+
+    <Grid
+      x:Name="BottomNavigation"
+      Grid.Row="1"
+      Grid.ColumnSpan="2"
+      Background="{StaticResource Surface}"
+      ColumnDefinitions="*,*,*"
+      ColumnSpacing="8"
+      Padding="8,8,8,0"
+    >
+      <components:NavigationTile
+        x:Name="CompactComingTile"
+        Grid.Column="0"
+        AccessibilityHint="{x:Static strings:AppStrings.NavComingAccessibility}"
+        AutomationId="CompactComingSoonNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.ComingSoon}"
+        Icon="{x:Static strings:AppStrings.MovieIcon}"
+        IsCompact="True"
+        IsSelected="True"
+        Label="{x:Static strings:AppStrings.ComingSoon}"
+      />
+      <components:NavigationTile
+        x:Name="CompactFavoritesTile"
+        Grid.Column="1"
+        AccessibilityHint="{x:Static strings:AppStrings.NavFavoritesAccessibility}"
+        AutomationId="CompactFavoritesNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.MyFavorites}"
+        Icon="{x:Static strings:AppStrings.HeartIcon}"
+        IsCompact="True"
+        Label="{x:Static strings:AppStrings.MyFavorites}"
+      />
+      <components:NavigationTile
+        x:Name="CompactSearchTile"
+        Grid.Column="2"
+        AccessibilityHint="{x:Static strings:AppStrings.NavSearchAccessibility}"
+        AutomationId="CompactSearchNavigation"
+        CommandParameter="{x:Static vm:CatalogSection.FindAMovie}"
+        Icon="{x:Static strings:AppStrings.SearchIcon}"
+        IsCompact="True"
+        Label="{x:Static strings:AppStrings.FindAMovie}"
+      />
+      <Grid
+        x:Name="CompactNavigationSkeleton"
+        Grid.ColumnSpan="3"
+        IsVisible="{Binding IsLoading}"
+        InputTransparent="True"
+        ColumnDefinitions="*,*,*"
+        ColumnSpacing="8"
+        ZIndex="3"
+      >
+        <Border
+          Grid.Column="0"
+          Background="{StaticResource Skeleton}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 18"
+          StrokeThickness="0"
+        />
+        <Border
+          Grid.Column="1"
+          Background="{StaticResource Skeleton}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 18"
+          StrokeThickness="0"
+        />
+        <Border
+          Grid.Column="2"
+          Background="{StaticResource Skeleton}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 18"
+          StrokeThickness="0"
+        />
+      </Grid>
+    </Grid>
+  </Grid>
+</ContentPage>

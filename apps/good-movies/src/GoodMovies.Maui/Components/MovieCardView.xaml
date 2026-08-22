@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+  x:Class="GoodMovies.Maui.Components.MovieCardView"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:local="clr-namespace:GoodMovies.Maui.Components"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="local:MovieCardView"
+  x:Name="Root"
+>
+  <Border
+    x:Name="CardBorder"
+    Padding="14"
+    Background="{StaticResource Surface}"
+    Stroke="Transparent"
+    StrokeShape="RoundRectangle 24"
+    StrokeThickness="0"
+  >
+    <Border.Shadow>
+      <Shadow Brush="#66000000" Offset="0,6" Opacity="0.45" Radius="0" />
+    </Border.Shadow>
+    <Grid
+      x:Name="CardGrid"
+      ColumnDefinitions="104,*,60"
+      ColumnSpacing="14"
+      RowDefinitions="*"
+      RowSpacing="0"
+    >
+      <Button
+        x:Name="OpenButton"
+        Grid.ColumnSpan="3"
+        AutomationId="{Binding Card, Converter={StaticResource CardAutomationIdConverter}, Source={x:Reference Root}}"
+        Background="{StaticResource Surface}"
+        BorderWidth="0"
+        Clicked="OnOpenClicked"
+        FontAutoScalingEnabled="True"
+        Pressed="OnOpenPressed"
+        Released="OnOpenReleased"
+        SemanticProperties.Description="{Binding Card, Converter={StaticResource CardAccessibilityConverter}, Source={x:Reference Root}}"
+        TextColor="Transparent"
+        ZIndex="0"
+      />
+
+      <Border
+        x:Name="PosterBorder"
+        Grid.Column="0"
+        AutomationProperties.IsInAccessibleTree="False"
+        Background="{StaticResource Surface2}"
+        HeightRequest="156"
+        InputTransparent="True"
+        Stroke="Transparent"
+        StrokeShape="RoundRectangle 16"
+        StrokeThickness="0"
+        WidthRequest="104"
+      >
+        <Grid InputTransparent="True" RowDefinitions="*" RowSpacing="0">
+          <Label
+            FontAutoScalingEnabled="True"
+            FontSize="32"
+            HorizontalOptions="Center"
+            InputTransparent="True"
+            AutomationProperties.IsInAccessibleTree="False"
+            Text="{x:Static strings:AppStrings.MovieIcon}"
+            TextColor="{StaticResource Accent}"
+            VerticalOptions="Center"
+            VerticalTextAlignment="Center"
+          />
+          <Label
+            Margin="8"
+            FontAutoScalingEnabled="True"
+            FontAttributes="Bold"
+            FontSize="16"
+            HorizontalTextAlignment="Center"
+            InputTransparent="True"
+            LineBreakMode="TailTruncation"
+            MaxLines="3"
+            Text="{Binding Card.Title, Source={x:Reference Root}}"
+            TextColor="{StaticResource White}"
+            VerticalOptions="End"
+          />
+          <Image
+            Aspect="AspectFill"
+            InputTransparent="True"
+            IsVisible="{Binding Card.PosterSource, Converter={StaticResource StringVisibilityConverter}, Source={x:Reference Root}}"
+            Source="{Binding Card.PosterSource, Converter={StaticResource PosterImageSourceConverter}, Source={x:Reference Root}}"
+          />
+        </Grid>
+      </Border>
+
+      <Grid
+        x:Name="InfoGrid"
+        Grid.Column="1"
+        AutomationProperties.IsInAccessibleTree="False"
+        InputTransparent="True"
+        RowDefinitions="Auto,Auto,Auto"
+        RowSpacing="9"
+        VerticalOptions="Center"
+      >
+        <Label
+          Grid.Row="0"
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="27"
+          LineBreakMode="TailTruncation"
+          MaxLines="3"
+          Text="{Binding Card.Title, Source={x:Reference Root}}"
+          TextColor="{StaticResource White}"
+        />
+        <Label
+          Grid.Row="1"
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="21"
+          LineBreakMode="WordWrap"
+          MaxLines="2"
+          Text="{Binding Card, Converter={StaticResource CardStatusConverter}, Source={x:Reference Root}}"
+          TextColor="{StaticResource Accent}"
+        />
+        <HorizontalStackLayout Grid.Row="2" InputTransparent="True" Spacing="8">
+          <Border
+            Background="{StaticResource Accent}"
+            Padding="10,4"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+          >
+            <Label
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="16"
+              Text="{Binding Card.Rating, Source={x:Reference Root}}"
+              TextColor="{StaticResource PageBackground}"
+            />
+          </Border>
+          <Border
+            Background="{StaticResource Surface2}"
+            Padding="10,4"
+            Stroke="{StaticResource AccentMuted}"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="1"
+          >
+            <HorizontalStackLayout Spacing="6">
+              <Label
+                AutomationProperties.IsInAccessibleTree="False"
+                FontAutoScalingEnabled="True"
+                FontSize="16"
+                Text="{Binding Card.KindIcon, Source={x:Reference Root}}"
+              />
+              <Label
+                FontAutoScalingEnabled="True"
+                FontSize="16"
+                LineBreakMode="TailTruncation"
+                MaxLines="1"
+                Text="{Binding Card.Kind, Converter={StaticResource KindLabelConverter}, Source={x:Reference Root}}"
+                TextColor="{StaticResource White}"
+              />
+            </HorizontalStackLayout>
+          </Border>
+        </HorizontalStackLayout>
+      </Grid>
+
+      <Button
+        x:Name="FavoriteButton"
+        Grid.Column="2"
+        AutomationId="{Binding Card, Converter={StaticResource CardFavoriteAutomationIdConverter}, Source={x:Reference Root}}"
+        Background="{StaticResource Surface2}"
+        BorderWidth="0"
+        Command="{Binding Card.ToggleFavoriteCommand, Source={x:Reference Root}}"
+        FontAutoScalingEnabled="True"
+        FontAttributes="Bold"
+        FontSize="31"
+        MinimumHeightRequest="60"
+        HorizontalOptions="Center"
+        MinimumWidthRequest="60"
+        SemanticProperties.Description="{Binding FavoriteAccessibilityLabel, Source={x:Reference Root}}"
+        SemanticProperties.Hint="{Binding FavoriteAccessibilityHint, Source={x:Reference Root}}"
+        Text="{Binding Card.IsFavorite, Converter={StaticResource HeartGlyphConverter}, Source={x:Reference Root}}"
+        TextColor="{StaticResource Accent}"
+        VerticalOptions="Center"
+        ZIndex="2"
+      >
+        <Button.Triggers>
+          <DataTrigger
+            Binding="{Binding Card.IsFavorite, Source={x:Reference Root}}"
+            TargetType="Button"
+            Value="True"
+          >
+            <Setter Property="Background" Value="{StaticResource Accent}" />
+            <Setter Property="TextColor" Value="{StaticResource PageBackground}" />
+          </DataTrigger>
+        </Button.Triggers>
+      </Button>
+    </Grid>
+  </Border>
+</ContentView>

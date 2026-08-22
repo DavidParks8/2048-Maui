@@ -1,0 +1,15 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GoodMovies.ViewModels.Tests</RootNamespace>
+    <AssemblyName>GoodMovies.ViewModels.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GoodMovies.ViewModels\GoodMovies.ViewModels.csproj" />
+  </ItemGroup>
+</Project>

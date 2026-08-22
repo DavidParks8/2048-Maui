@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  x:Class="GoodMovies.Maui.MovieDetailPage"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  xmlns:vm="clr-namespace:GoodMovies.ViewModels;assembly=GoodMovies.ViewModels"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="vm:MovieDetailViewModel"
+  AutomationId="MovieDetailPage"
+  Background="{StaticResource PageBackground}"
+  SafeAreaEdges="All"
+  Shell.ForegroundColor="{StaticResource White}"
+  Shell.NavBarIsVisible="True"
+  Shell.NavBarHasShadow="False"
+  Shell.TitleColor="{StaticResource White}"
+  Title="{Binding Title}"
+>
+  <Grid RowDefinitions="*">
+    <ScrollView
+      x:Name="DetailScroll"
+      Grid.Row="0"
+      AutomationId="MovieDetailScroll"
+      HorizontalScrollBarVisibility="Never"
+      VerticalScrollBarVisibility="Never"
+    >
+      <Grid
+        x:Name="DetailContent"
+        Padding="24,18,24,32"
+        ColumnDefinitions="250,*"
+        ColumnSpacing="30"
+        RowDefinitions="*"
+        RowSpacing="28"
+      >
+        <Grid
+          x:Name="PosterColumn"
+          Grid.Column="0"
+          RowDefinitions="Auto,Auto,Auto"
+          RowSpacing="16"
+          VerticalOptions="Start"
+        >
+          <Border
+            x:Name="DetailPosterBorder"
+            Grid.Row="0"
+            Background="{StaticResource Surface2}"
+            HeightRequest="375"
+            HorizontalOptions="Center"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 24"
+            StrokeThickness="0"
+            WidthRequest="250"
+          >
+            <Grid RowDefinitions="*">
+              <Label
+                FontAutoScalingEnabled="True"
+                FontSize="56"
+                HorizontalOptions="Center"
+                AutomationProperties.IsInAccessibleTree="False"
+                Text="{x:Static strings:AppStrings.MovieIcon}"
+                TextColor="{StaticResource Accent}"
+                VerticalOptions="Center"
+              />
+              <Label
+                Margin="16"
+                FontAutoScalingEnabled="True"
+                FontAttributes="Bold"
+                FontSize="18"
+                HorizontalTextAlignment="Center"
+                LineBreakMode="TailTruncation"
+                MaxLines="3"
+                Text="{Binding Title}"
+                TextColor="{StaticResource White}"
+                VerticalOptions="End"
+              />
+              <Image
+                Aspect="AspectFill"
+                IsVisible="{Binding PosterSource, Converter={StaticResource StringVisibilityConverter}}"
+                Source="{Binding PosterSource, Converter={StaticResource PosterImageSourceConverter}}"
+              />
+            </Grid>
+          </Border>
+          <Button
+            x:Name="TrailerButton"
+            Grid.Row="1"
+            AutomationId="MovieDetailTrailerButton"
+            Background="{StaticResource Accent}"
+            Command="{Binding PlayTrailerCommand}"
+            FontAutoScalingEnabled="True"
+            FontAttributes="Bold"
+            FontSize="21"
+            IsEnabled="{Binding IsTrailerLoading, Converter={StaticResource InverseBooleanConverter}}"
+            IsVisible="{Binding TrailerState, Converter={StaticResource TrailerButtonVisibilityConverter}}"
+            SemanticProperties.Description="{x:Static strings:AppStrings.PlayTrailer}"
+            Text="{Binding TrailerState, Converter={StaticResource TrailerButtonTextConverter}}"
+            TextColor="{StaticResource PageBackground}"
+          />
+          <Label
+            Grid.Row="2"
+            FontAutoScalingEnabled="True"
+            FontSize="16"
+            HorizontalTextAlignment="Center"
+            IsVisible="{Binding TrailerState, Converter={StaticResource TrailerMessageVisibilityConverter}}"
+            LineHeight="1.6"
+            Text="{Binding TrailerState, Converter={StaticResource TrailerStateMessageConverter}}"
+            TextColor="{StaticResource TextSecondary}"
+          />
+        </Grid>
+
+        <VerticalStackLayout
+          x:Name="DetailInfo"
+          Grid.Column="1"
+          Spacing="0"
+          VerticalOptions="Start"
+        >
+          <Label
+            FontAutoScalingEnabled="True"
+            FontAttributes="Bold"
+            FontSize="44"
+            LineHeight="1.1"
+            Text="{Binding Title}"
+            TextColor="{StaticResource White}"
+          />
+          <Border
+            Margin="0,18,0,0"
+            Padding="18,10"
+            Background="{StaticResource Accent}"
+            HorizontalOptions="Start"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 18"
+            StrokeThickness="0"
+          >
+            <Label
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="27"
+              Text="{Binding ., Converter={StaticResource DetailStatusConverter}}"
+              TextColor="{StaticResource PageBackground}"
+            />
+          </Border>
+          <Label
+            Margin="0,10,0,0"
+            FontAutoScalingEnabled="True"
+            FontSize="21"
+            Text="{Binding ReleaseDate, Converter={StaticResource DateOnlyConverter}}"
+            TextColor="{StaticResource TextSecondary}"
+          />
+          <HorizontalStackLayout Margin="0,14,0,0" Spacing="10">
+            <Border
+              Background="{StaticResource Accent}"
+              Padding="12,5"
+              Stroke="Transparent"
+              StrokeShape="RoundRectangle 11"
+              StrokeThickness="0"
+            >
+              <Label
+                FontAutoScalingEnabled="True"
+                FontAttributes="Bold"
+                FontSize="16"
+                Text="{Binding Rating}"
+                TextColor="{StaticResource PageBackground}"
+              />
+            </Border>
+            <Border
+              Background="{StaticResource Surface2}"
+              Padding="12,5"
+              Stroke="{StaticResource AccentMuted}"
+              StrokeShape="RoundRectangle 11"
+              StrokeThickness="1"
+            >
+              <HorizontalStackLayout Spacing="6">
+                <Label
+                  AutomationProperties.IsInAccessibleTree="False"
+                  FontAutoScalingEnabled="True"
+                  FontSize="16"
+                  Text="{Binding KindIcon}"
+                />
+                <Label
+                  FontAutoScalingEnabled="True"
+                  FontSize="16"
+                  Text="{Binding Kind, Converter={StaticResource KindLabelConverter}}"
+                  TextColor="{StaticResource White}"
+                />
+              </HorizontalStackLayout>
+            </Border>
+          </HorizontalStackLayout>
+
+          <Grid Margin="0,20,0,0" ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <Button
+              Grid.Column="0"
+              AutomationId="MovieDetailReadAloudButton"
+              Background="{StaticResource Surface2}"
+              Command="{Binding PlayReadAloudCommand}"
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="21"
+              SemanticProperties.Description="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
+              Text="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
+              TextColor="{StaticResource White}"
+            >
+              <Button.Triggers>
+                <DataTrigger Binding="{Binding IsReading}" TargetType="Button" Value="True">
+                  <Setter Property="Command" Value="{Binding StopReadAloudCommand}" />
+                </DataTrigger>
+              </Button.Triggers>
+            </Button>
+            <Button
+              Grid.Column="1"
+              AutomationId="MovieDetailFavoriteButton"
+              Background="{StaticResource Surface2}"
+              Command="{Binding ToggleFavoriteCommand}"
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="31"
+              MinimumHeightRequest="60"
+              MinimumWidthRequest="60"
+              SemanticProperties.Description="{Binding IsFavorite, Converter={StaticResource FavoriteButtonDescriptionConverter}}"
+              SemanticProperties.Hint="{Binding IsFavorite, Converter={StaticResource FavoriteButtonDescriptionConverter}}"
+              Text="{Binding IsFavorite, Converter={StaticResource HeartGlyphConverter}}"
+              TextColor="{StaticResource Accent}"
+            >
+              <Button.Triggers>
+                <DataTrigger Binding="{Binding IsFavorite}" TargetType="Button" Value="True">
+                  <Setter Property="Background" Value="{StaticResource Accent}" />
+                  <Setter Property="TextColor" Value="{StaticResource PageBackground}" />
+                </DataTrigger>
+              </Button.Triggers>
+            </Button>
+          </Grid>
+          <Label
+            Margin="0,8,0,0"
+            FontAutoScalingEnabled="True"
+            FontSize="18"
+            Text="{Binding IsFavorite, Converter={StaticResource FavoriteTextConverter}}"
+            TextColor="{StaticResource TextSecondary}"
+          />
+          <Label
+            Margin="0,8,0,0"
+            FontAutoScalingEnabled="True"
+            FontSize="16"
+            IsVisible="{Binding FavoriteMessageKey, Converter={StaticResource MessageKeyVisibilityConverter}}"
+            Text="{Binding FavoriteMessageKey, Converter={StaticResource MessageBodyConverter}}"
+            TextColor="{StaticResource ErrorText}"
+          />
+
+          <Grid Margin="0,20,0,8" ColumnDefinitions="Auto,*" ColumnSpacing="14">
+            <Label
+              Grid.Column="0"
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="27"
+              Text="{x:Static strings:AppStrings.Synopsis}"
+              TextColor="{StaticResource White}"
+            />
+            <Label
+              Grid.Column="1"
+              FontAutoScalingEnabled="True"
+              FontSize="16"
+              HorizontalTextAlignment="Start"
+              LineHeight="1.6"
+              Text="{x:Static strings:AppStrings.TapWordHint}"
+              TextColor="{StaticResource TextSecondary}"
+              VerticalOptions="Center"
+            />
+          </Grid>
+          <FlexLayout
+            x:Name="SynopsisWords"
+            BindableLayout.ItemsSource="{Binding WordTokens}"
+            Direction="Row"
+            JustifyContent="Start"
+            Wrap="Wrap"
+          >
+            <BindableLayout.ItemTemplate>
+              <DataTemplate x:DataType="vm:WordTokenViewModel">
+                <Button
+                  AutomationId="MovieDetailWordButton"
+                  Background="{Binding IsHighlighted, Converter={StaticResource TokenHighlightBackgroundConverter}}"
+                  Clicked="OnWordClicked"
+                  FontAutoScalingEnabled="True"
+                  FontSize="21"
+                  Margin="0,2,4,2"
+                  MinimumHeightRequest="60"
+                  Padding="8,9"
+                  Text="{Binding Text}"
+                  TextColor="{Binding IsHighlighted, Converter={StaticResource TokenTextColorConverter}}"
+                />
+              </DataTemplate>
+            </BindableLayout.ItemTemplate>
+          </FlexLayout>
+          <Label
+            FontAutoScalingEnabled="True"
+            FontSize="21"
+            IsVisible="{Binding Overview, Converter={StaticResource InverseStringVisibilityConverter}}"
+            LineHeight="1.6"
+            Text="{x:Static strings:AppStrings.NoSynopsis}"
+            TextColor="{StaticResource TextSecondary}"
+          />
+          <Label
+            x:Name="SpeechErrorLabel"
+            Margin="0,10,0,0"
+            FontAutoScalingEnabled="True"
+            FontSize="16"
+            IsVisible="{Binding SpeechMessageKey, Converter={StaticResource MessageKeyVisibilityConverter}}"
+            Text="{Binding SpeechMessageKey, Converter={StaticResource MessageBodyConverter}}"
+            TextColor="{StaticResource ErrorText}"
+          />
+        </VerticalStackLayout>
+      </Grid>
+    </ScrollView>
+  </Grid>
+</ContentPage>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application
+  x:Class="GoodMovies.Maui.App"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:converters="clr-namespace:GoodMovies.Maui.Converters"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+>
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+        <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <converters:SectionTitleConverter x:Key="SectionTitleConverter" />
+      <converters:SearchSectionVisibilityConverter x:Key="SearchSectionVisibilityConverter" />
+      <converters:RefreshBannerVisibilityConverter x:Key="RefreshBannerVisibilityConverter" />
+      <converters:RefreshBannerMessageConverter x:Key="RefreshBannerMessageConverter" />
+      <converters:MovieCountConverter x:Key="MovieCountConverter" />
+      <converters:SavedCountConverter x:Key="SavedCountConverter" />
+      <converters:KindLabelConverter x:Key="KindLabelConverter" />
+      <converters:CardStatusConverter x:Key="CardStatusConverter" />
+      <converters:DetailStatusConverter x:Key="DetailStatusConverter" />
+      <converters:GroupTitleConverter x:Key="GroupTitleConverter" />
+      <converters:GroupStatusConverter x:Key="GroupStatusConverter" />
+      <converters:GroupAccessibilityConverter x:Key="GroupAccessibilityConverter" />
+      <converters:DateOnlyConverter x:Key="DateOnlyConverter" />
+      <converters:MessageTitleConverter x:Key="MessageTitleConverter" />
+      <converters:MessageBodyConverter x:Key="MessageBodyConverter" />
+      <converters:MessageAccessibilityConverter x:Key="MessageAccessibilityConverter" />
+      <converters:MessageIconConverter x:Key="MessageIconConverter" />
+      <converters:StatePanelVisibilityConverter x:Key="StatePanelVisibilityConverter" />
+      <converters:RetryVisibilityConverter x:Key="RetryVisibilityConverter" />
+      <converters:HeartGlyphConverter x:Key="HeartGlyphConverter" />
+      <converters:FavoriteTextConverter x:Key="FavoriteTextConverter" />
+      <converters:FavoriteAccessibilityConverter x:Key="FavoriteAccessibilityConverter" />
+      <converters:FavoriteHintConverter x:Key="FavoriteHintConverter" />
+      <converters:FavoriteButtonDescriptionConverter x:Key="FavoriteButtonDescriptionConverter" />
+      <converters:CardAccessibilityConverter x:Key="CardAccessibilityConverter" />
+      <converters:PosterImageSourceConverter x:Key="PosterImageSourceConverter" />
+      <converters:CardAutomationIdConverter x:Key="CardAutomationIdConverter" />
+      <converters:CardFavoriteAutomationIdConverter x:Key="CardFavoriteAutomationIdConverter" />
+      <converters:StringVisibilityConverter x:Key="StringVisibilityConverter" />
+      <converters:InverseStringVisibilityConverter x:Key="InverseStringVisibilityConverter" />
+      <converters:MessageKeyVisibilityConverter x:Key="MessageKeyVisibilityConverter" />
+      <converters:TrailerMessageVisibilityConverter x:Key="TrailerMessageVisibilityConverter" />
+      <converters:TrailerButtonVisibilityConverter x:Key="TrailerButtonVisibilityConverter" />
+      <converters:ReadAloudButtonTextConverter x:Key="ReadAloudButtonTextConverter" />
+      <converters:SelectionBackgroundConverter x:Key="SelectionBackgroundConverter" />
+      <converters:SelectionTextColorConverter x:Key="SelectionTextColorConverter" />
+      <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+      <converters:TrailerStateMessageConverter x:Key="TrailerStateMessageConverter" />
+      <converters:TrailerButtonTextConverter x:Key="TrailerButtonTextConverter" />
+      <converters:TokenHighlightBackgroundConverter x:Key="TokenHighlightBackgroundConverter" />
+      <converters:TokenTextColorConverter x:Key="TokenTextColorConverter" />
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

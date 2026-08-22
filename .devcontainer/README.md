@@ -39,12 +39,12 @@ The Android emulator inside Docker on Windows **will be slow** because:
 ### Build for Android
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui -f net10.0-android
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net10.0-android
 ```
 
 The APK will be at:
 ```
-src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
+apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Start the emulator (optional, slow on Windows)
@@ -62,13 +62,13 @@ Then open http://localhost:6080 in your browser (password: `vscode`)
 adb devices
 
 # Install the APK
-adb install src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
+adb install apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Build and run directly
 
 ```bash
-dotnet build src/TwentyFortyEight.Maui -f net10.0-android -t:Run
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net10.0-android -t:Run
 ```
 
 ## Connecting Windows Emulator from Container

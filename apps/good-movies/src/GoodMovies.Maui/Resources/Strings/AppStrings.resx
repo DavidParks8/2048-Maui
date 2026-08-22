@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Good Movies</value></data>
+  <data name="PopcornIcon" xml:space="preserve"><value>🍿</value></data>
+  <data name="MovieIcon" xml:space="preserve"><value>🎬</value></data>
+  <data name="HeartIcon" xml:space="preserve"><value>❤️</value></data>
+  <data name="SearchIcon" xml:space="preserve"><value>🔍</value></data>
+  <data name="CalendarIcon" xml:space="preserve"><value>📅</value></data>
+  <data name="ClearGlyph" xml:space="preserve"><value>×</value></data>
+  <data name="FilledHeartGlyph" xml:space="preserve"><value>♥</value></data>
+  <data name="OutlineHeartGlyph" xml:space="preserve"><value>♡</value></data>
+  <data name="RefreshGlyph" xml:space="preserve"><value>↻</value></data>
+  <data name="QuestionGlyph" xml:space="preserve"><value>?</value></data>
+  <data name="ComingSoon" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="MyFavorites" xml:space="preserve"><value>My favorites</value></data>
+  <data name="FindAMovie" xml:space="preserve"><value>Find a movie</value></data>
+  <data name="NavComingLabel" xml:space="preserve"><value>Coming&#xA;soon</value></data>
+  <data name="NavFavoritesLabel" xml:space="preserve"><value>My&#xA;favorites</value></data>
+  <data name="NavSearchLabel" xml:space="preserve"><value>Find a&#xA;movie</value></data>
+  <data name="NavSearchSubtext" xml:space="preserve"><value>Type a name</value></data>
+  <data name="NavComingAccessibility" xml:space="preserve"><value>Coming soon movies</value></data>
+  <data name="NavFavoritesAccessibility" xml:space="preserve"><value>My favorite movies</value></data>
+  <data name="NavSearchAccessibility" xml:space="preserve"><value>Find a movie</value></data>
+  <data name="NavTileAccessibilityFormat" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="SelectedState" xml:space="preserve"><value>Selected</value></data>
+  <data name="SelectedAccessibilityFormat" xml:space="preserve"><value>{0}. {1}</value></data>
+  <data name="DateFormat" xml:space="preserve"><value>{0:dddd, MMMM d}</value></data>
+  <data name="CompactDateFormat" xml:space="preserve"><value>{0:MMMM d}</value></data>
+  <data name="MovieCountOne" xml:space="preserve"><value>{0} movie</value></data>
+  <data name="MovieCountMany" xml:space="preserve"><value>{0} movies</value></data>
+  <data name="MovieKindFallback" xml:space="preserve"><value>Movie</value></data>
+  <data name="SavedCountOne" xml:space="preserve"><value>{0} saved</value></data>
+  <data name="SavedCountMany" xml:space="preserve"><value>{0} saved</value></data>
+  <data name="OneMovieInGroup" xml:space="preserve"><value>1 movie</value></data>
+  <data name="ManyMoviesInGroup" xml:space="preserve"><value>{0} movies</value></data>
+  <data name="InTheatersNow" xml:space="preserve"><value>In theaters now</value></data>
+  <data name="InTheatersToday" xml:space="preserve"><value>In theaters today</value></data>
+  <data name="OneSleepStatus" xml:space="preserve"><value>1 sleep to go</value></data>
+  <data name="ManySleepsStatus" xml:space="preserve"><value>{0} sleeps to go</value></data>
+  <data name="MovieCardAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
+  <data name="AddFavoriteHint" xml:space="preserve"><value>Save {0} to my favorites</value></data>
+  <data name="RemoveFavoriteHint" xml:space="preserve"><value>Remove {0} from my favorites</value></data>
+  <data name="AddFavorite" xml:space="preserve"><value>Add to favorites</value></data>
+  <data name="RemoveFavorite" xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="SavedToFavorites" xml:space="preserve"><value>Saved to my favorites</value></data>
+  <data name="TapHeartToSave" xml:space="preserve"><value>Tap the heart to save it</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Type a movie name</value></data>
+  <data name="ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="SearchAccessibility" xml:space="preserve"><value>Search the safe movie catalog</value></data>
+  <data name="GroupAccessibility" xml:space="preserve"><value>{0}, {1}.</value></data>
+  <data name="LoadingTitle" xml:space="preserve"><value>Getting your movie days ready</value></data>
+  <data name="LoadingMessage" xml:space="preserve"><value>Your movie list will be here soon.</value></data>
+  <data name="LoadingAnnouncement" xml:space="preserve"><value>Loading movies.</value></data>
+  <data name="SearchPromptTitle" xml:space="preserve"><value>What do you want to watch?</value></data>
+  <data name="SearchPromptMessage" xml:space="preserve"><value>Try typing a movie name, kind, or story.</value></data>
+  <data name="NoSearchResultsTitle" xml:space="preserve"><value>No movies found</value></data>
+  <data name="NoSearchResultsMessage" xml:space="preserve"><value>Try another word in the safe movie list.</value></data>
+  <data name="NoFavoritesTitle" xml:space="preserve"><value>No favorites yet</value></data>
+  <data name="NoFavoritesMessage" xml:space="preserve"><value>Tap a heart on any movie to save it here.</value></data>
+  <data name="NoMoviesTitle" xml:space="preserve"><value>No movies right now</value></data>
+  <data name="NoMoviesMessage" xml:space="preserve"><value>Try again later to find a new movie day.</value></data>
+  <data name="MissingTokenTitle" xml:space="preserve"><value>Movie data is not configured</value></data>
+  <data name="MissingTokenMessage" xml:space="preserve"><value>Ask a grown up to add movie data, then try again.</value></data>
+  <data name="RefreshErrorTitle" xml:space="preserve"><value>Could not refresh</value></data>
+  <data name="RefreshErrorMessage" xml:space="preserve"><value>There are no saved movies yet. Try again.</value></data>
+  <data name="RefreshWarningTitle" xml:space="preserve"><value>Showing saved movies</value></data>
+  <data name="RefreshWarningMessage" xml:space="preserve"><value>We could not check for new movies. These saved movies may be old.</value></data>
+  <data name="OfflineWarningTitle" xml:space="preserve"><value>You are offline</value></data>
+  <data name="OfflineWarningMessage" xml:space="preserve"><value>Showing saved movies. Connect to the internet to check for new ones.</value></data>
+  <data name="OfflineErrorTitle" xml:space="preserve"><value>No internet connection</value></data>
+  <data name="OfflineErrorMessage" xml:space="preserve"><value>Connect to the internet, then try again.</value></data>
+  <data name="FavoritesErrorTitle" xml:space="preserve"><value>Favorites need another try</value></data>
+  <data name="FavoritesErrorMessage" xml:space="preserve"><value>Your movies are still here, but the favorite could not be saved.</value></data>
+  <data name="FavoriteSaveFailedTitle" xml:space="preserve"><value>Could not save that favorite</value></data>
+  <data name="FavoriteSaveFailedMessage" xml:space="preserve"><value>Check your connection or try the heart again.</value></data>
+  <data name="FavoriteNotAllowedTitle" xml:space="preserve"><value>This movie cannot be saved</value></data>
+  <data name="FavoriteNotAllowedMessage" xml:space="preserve"><value>Only movies with a safe theater date can be saved.</value></data>
+  <data name="SpeechFailedTitle" xml:space="preserve"><value>Reading aloud needs another try</value></data>
+  <data name="SpeechFailedMessage" xml:space="preserve"><value>The words could not be read aloud. Try again.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Refreshing" xml:space="preserve"><value>Refreshing saved movies</value></data>
+  <data name="PosterFallbackAccessibility" xml:space="preserve"><value>Poster placeholder for {0}</value></data>
+  <data name="ReadAloud" xml:space="preserve"><value>Read it to me</value></data>
+  <data name="StopReading" xml:space="preserve"><value>Stop reading</value></data>
+  <data name="GoBack" xml:space="preserve"><value>Go back</value></data>
+  <data name="TapWordHint" xml:space="preserve"><value>Tap any word to hear it</value></data>
+  <data name="Synopsis" xml:space="preserve"><value>Story</value></data>
+  <data name="PlayTrailer" xml:space="preserve"><value>Play trailer</value></data>
+  <data name="OpeningTrailer" xml:space="preserve"><value>Opening trailer</value></data>
+  <data name="TrailerUnavailableButton" xml:space="preserve"><value>No trailer yet</value></data>
+  <data name="TrailerLoading" xml:space="preserve"><value>Looking for the trailer</value></data>
+  <data name="TrailerNotFound" xml:space="preserve"><value>No trailer for this movie yet.</value></data>
+  <data name="TrailerMissingConfiguration" xml:space="preserve"><value>Movie data is not configured for trailers.</value></data>
+  <data name="TrailerLaunchFailed" xml:space="preserve"><value>The trailer could not be opened. Try again.</value></data>
+  <data name="TrailerOpened" xml:space="preserve"><value>Trailer opened outside Good Movies.</value></data>
+  <data name="NoSynopsis" xml:space="preserve"><value>This movie has no story yet.</value></data>
+  <data name="DetailAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
+  <data name="TodayStatus" xml:space="preserve"><value>Today</value></data>
+</root>

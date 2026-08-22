@@ -16,7 +16,7 @@
         "GitHub.copilot"
       ],
       "settings": {
-        "dotnet.defaultSolution": "2048-Maui.slnx"
+        "dotnet.defaultSolution": "apps/twenty-forty-eight/TwentyFortyEight.slnx"
       }
     }
   },

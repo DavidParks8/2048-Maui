@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+  x:Class="GoodMovies.Maui.Components.NavigationTile"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:local="clr-namespace:GoodMovies.Maui.Components"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="local:NavigationTile"
+  x:Name="Root"
+  MinimumHeightRequest="60"
+>
+  <ContentView.Triggers>
+    <DataTrigger
+      Binding="{Binding IsCompact, Source={x:Reference Root}}"
+      TargetType="ContentView"
+      Value="True"
+    >
+      <Setter Property="MinimumHeightRequest" Value="104" />
+    </DataTrigger>
+  </ContentView.Triggers>
+  <Border
+    x:Name="TileBorder"
+    Padding="14"
+    Background="{Binding IsSelected, Converter={StaticResource SelectionBackgroundConverter}, Source={x:Reference Root}}"
+    Stroke="Transparent"
+    StrokeShape="RoundRectangle 24"
+    StrokeThickness="0"
+  >
+    <Border.Shadow>
+      <Shadow Brush="#66000000" Offset="0,6" Opacity="0.45" Radius="0" />
+    </Border.Shadow>
+    <Border.Triggers>
+      <DataTrigger
+        Binding="{Binding IsCompact, Source={x:Reference Root}}"
+        TargetType="Border"
+        Value="True"
+      >
+        <Setter Property="Padding" Value="8,7" />
+      </DataTrigger>
+    </Border.Triggers>
+    <Grid>
+      <Button
+        x:Name="TapButton"
+        AutomationId="{Binding AutomationId, Source={x:Reference Root}}"
+        Background="{Binding IsSelected, Converter={StaticResource SelectionBackgroundConverter}, Source={x:Reference Root}}"
+        BorderWidth="0"
+        Command="{Binding Command, Source={x:Reference Root}}"
+        CommandParameter="{Binding CommandParameter, Source={x:Reference Root}}"
+        FontAutoScalingEnabled="True"
+        IsEnabled="{Binding IsButtonEnabled, Source={x:Reference Root}}"
+        Pressed="OnPressed"
+        Released="OnReleased"
+        SemanticProperties.Description="{Binding AccessibilityLabel, Source={x:Reference Root}}"
+        SemanticProperties.Hint="{Binding AccessibilityHint, Source={x:Reference Root}}"
+        TextColor="Transparent"
+      />
+      <VerticalStackLayout
+        InputTransparent="True"
+        HorizontalOptions="Center"
+        Spacing="7"
+        VerticalOptions="Center"
+      >
+        <VerticalStackLayout.Triggers>
+          <DataTrigger
+            Binding="{Binding IsCompact, Source={x:Reference Root}}"
+            TargetType="VerticalStackLayout"
+            Value="True"
+          >
+            <Setter Property="Spacing" Value="3" />
+          </DataTrigger>
+        </VerticalStackLayout.Triggers>
+        <Label
+          FontAutoScalingEnabled="True"
+          FontSize="42"
+          HorizontalOptions="Center"
+          AutomationProperties.IsInAccessibleTree="False"
+          Text="{Binding Icon, Source={x:Reference Root}}"
+          TextColor="{Binding IsSelected, Converter={StaticResource SelectionTextColorConverter}, Source={x:Reference Root}}"
+          VerticalTextAlignment="Center"
+        >
+          <Label.Triggers>
+            <DataTrigger
+              Binding="{Binding IsCompact, Source={x:Reference Root}}"
+              TargetType="Label"
+              Value="True"
+            >
+              <Setter Property="FontSize" Value="27" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
+        <Label
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="27"
+          HorizontalOptions="Center"
+          HorizontalTextAlignment="Center"
+          LineHeight="1.1"
+          LineBreakMode="WordWrap"
+          MaxLines="2"
+          Text="{Binding Label, Source={x:Reference Root}}"
+          TextColor="{Binding IsSelected, Converter={StaticResource SelectionTextColorConverter}, Source={x:Reference Root}}"
+        >
+          <Label.Triggers>
+            <DataTrigger
+              Binding="{Binding IsCompact, Source={x:Reference Root}}"
+              TargetType="Label"
+              Value="True"
+            >
+              <Setter Property="FontSize" Value="20" />
+              <Setter Property="LineHeight" Value="1.05" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
+        <Label
+          FontAutoScalingEnabled="True"
+          FontSize="16"
+          HorizontalOptions="Center"
+          HorizontalTextAlignment="Center"
+          Text="{Binding Subtext, Source={x:Reference Root}}"
+          TextColor="{Binding IsSelected, Converter={StaticResource SelectionTextColorConverter}, Source={x:Reference Root}}"
+        >
+          <Label.Triggers>
+            <DataTrigger
+              Binding="{Binding IsCompact, Source={x:Reference Root}}"
+              TargetType="Label"
+              Value="True"
+            >
+              <Setter Property="IsVisible" Value="False" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
+      </VerticalStackLayout>
+    </Grid>
+  </Border>
+</ContentView>

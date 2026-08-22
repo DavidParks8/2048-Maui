@@ -1,0 +1,146 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>GoodMovies.Maui</RootNamespace>
+    <AssemblyName>GoodMovies.Maui</AssemblyName>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+
+    <ApplicationTitle>Good Movies</ApplicationTitle>
+    <ApplicationId>com.dappermagna.goodmovies</ApplicationId>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+
+    <MauiStrictXamlCompilation>true</MauiStrictXamlCompilation>
+    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+    <EnableXamlCBindingDiagnostics>true</EnableXamlCBindingDiagnostics>
+    <!-- Explicit simulator-only opt-in: /p:GoodMoviesUseSampleData=true (Debug). -->
+    <GoodMoviesUseSampleData Condition="'$(GoodMoviesUseSampleData)' == ''"
+      >false</GoodMoviesUseSampleData>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GoodMoviesUseSampleData)' == 'true' and '$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);GOOD_MOVIES_SAMPLE_DATA</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="ValidateGoodMoviesSampleData" BeforeTargets="PrepareForBuild">
+    <Error
+      Condition="'$(Configuration)' == 'Release' and '$(GoodMoviesUseSampleData)' == 'true'"
+      Text="GoodMoviesUseSampleData=true is Debug-only and cannot be enabled in Release."
+    />
+  </Target>
+
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == ''">
+    <RuntimeIdentifier
+      Condition="$([MSBuild]::IsOSPlatform('osx')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'"
+      >iossimulator-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier
+      Condition="$([MSBuild]::IsOSPlatform('osx')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'"
+      >iossimulator-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">
+    <CodesignKey>-</CodesignKey>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Set from TMDB_READ_ACCESS_TOKEN in CI or /p:TmdbReadAccessToken=...
+      This keeps the token out of source control, but a token embedded in a shipped
+      mobile binary is recoverable. It must be treated as an app credential, not a
+      server-side secret.
+    -->
+    <RequireTmdbToken Condition="'$(RequireTmdbToken)' == '' and '$(BuildIpa)' == 'true'"
+      >true</RequireTmdbToken>
+    <RequireTmdbToken Condition="'$(RequireTmdbToken)' == ''">false</RequireTmdbToken>
+    <TmdbReadAccessToken
+      Condition="'$(TmdbReadAccessToken)' == '' and '$(TMDB_READ_ACCESS_TOKEN)' != ''"
+      >$(TMDB_READ_ACCESS_TOKEN)</TmdbReadAccessToken>
+    <_GoodMoviesTmdbToken>$([System.String]::Copy('$(TmdbReadAccessToken)').Trim())</_GoodMoviesTmdbToken>
+    <_GoodMoviesTmdbTokenValid Condition="'$(_GoodMoviesTmdbToken)' != ''"
+      >$([System.Text.RegularExpressions.Regex]::IsMatch('$(_GoodMoviesTmdbToken)', '^[A-Za-z0-9._~+\/=-]+$'))</_GoodMoviesTmdbTokenValid>
+    <_GoodMoviesTmdbTokenLiteral Condition="'$(_GoodMoviesTmdbToken)' == ''"
+      >null</_GoodMoviesTmdbTokenLiteral>
+    <_GoodMoviesTmdbTokenLiteral
+      Condition="'$(_GoodMoviesTmdbToken)' != '' and '$(_GoodMoviesTmdbTokenValid)' == 'True'"
+      >&quot;$(_GoodMoviesTmdbToken)&quot;</_GoodMoviesTmdbTokenLiteral>
+  </PropertyGroup>
+
+  <Target Name="ValidateGoodMoviesTmdbToken" BeforeTargets="PrepareForBuild">
+    <Error
+      Condition="'$(RequireTmdbToken)' == 'true' and '$(_GoodMoviesTmdbToken)' == ''"
+      Text="TMDB_READ_ACCESS_TOKEN is required when RequireTmdbToken=true. Set the environment variable or pass /p:TmdbReadAccessToken=..."
+    />
+  </Target>
+
+  <Target Name="GenerateGoodMoviesTmdbToken" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <GoodMoviesTmdbTokenGeneratedFile>$(IntermediateOutputPath)GoodMoviesTmdbToken.g.cs</GoodMoviesTmdbTokenGeneratedFile>
+    </PropertyGroup>
+    <Error
+      Condition="'$(RequireTmdbToken)' == 'true' and '$(_GoodMoviesTmdbToken)' == ''"
+      Text="TMDB_READ_ACCESS_TOKEN is required when RequireTmdbToken=true. Set the environment variable or pass /p:TmdbReadAccessToken=..."
+    />
+    <Error
+      Condition="'$(_GoodMoviesTmdbToken)' != '' and '$(_GoodMoviesTmdbTokenValid)' != 'True'"
+      Text="TMDB_READ_ACCESS_TOKEN contains unsupported characters. Use a URL-safe bearer token without whitespace or quotes."
+    />
+    <ItemGroup>
+      <_GoodMoviesTmdbSource Include="// &lt;auto-generated%3B do not edit /&gt;" />
+      <_GoodMoviesTmdbSource Include="#nullable enable" />
+      <_GoodMoviesTmdbSource Include="namespace GoodMovies.Maui%3B" />
+      <_GoodMoviesTmdbSource Include=" " />
+      <_GoodMoviesTmdbSource Include="internal static class TmdbBuildConfiguration" />
+      <_GoodMoviesTmdbSource Include="{" />
+      <_GoodMoviesTmdbSource Include="    internal const string%3F ReadAccessToken = $(_GoodMoviesTmdbTokenLiteral)%3B" />
+      <_GoodMoviesTmdbSource Include="}" />
+      <Compile Include="$(GoodMoviesTmdbTokenGeneratedFile)" Visible="false" />
+    </ItemGroup>
+    <WriteLinesToFile
+      File="$(GoodMoviesTmdbTokenGeneratedFile)"
+      Lines="@(_GoodMoviesTmdbSource)"
+      Overwrite="true"
+      Encoding="UTF-8"
+    />
+  </Target>
+
+  <ItemGroup>
+    <MauiImage
+      Include="Resources\Images\**\*"
+      Condition="'$(Configuration)' == 'Debug' and '$(GoodMoviesUseSampleData)' == 'true'"
+    />
+    <MauiIcon
+      Include="Resources\AppIcon\appicon.svg"
+      ForegroundFile="Resources\AppIcon\appiconfg.svg"
+      Color="#190A3A"
+    />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#190A3A" BaseSize="128,128" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Strings\AppStrings.resx">
+      <Generator></Generator>
+      <LastGenOutput>AppStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Resources\Strings\AppStrings.Designer.cs">
+      <DesignTime>False</DesignTime>
+      <AutoGen>False</AutoGen>
+      <DependentUpon>AppStrings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" />
+    <PackageReference Include="M.BindableProperty.Generator" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GoodMovies.Core\GoodMovies.Core.csproj" />
+    <ProjectReference Include="..\GoodMovies.Infrastructure\GoodMovies.Infrastructure.csproj" />
+    <ProjectReference Include="..\GoodMovies.ViewModels\GoodMovies.ViewModels.csproj" />
+  </ItemGroup>
+</Project>

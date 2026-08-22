@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+  x:Class="GoodMovies.Maui.Components.GroupHeaderView"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:local="clr-namespace:GoodMovies.Maui.Components"
+  xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:DataType="local:GroupHeaderView"
+  x:Name="Root"
+  HeightRequest="70"
+  MinimumHeightRequest="70"
+>
+  <Border
+    AutomationId="MovieGroupHeader"
+    HeightRequest="70"
+    Margin="0,14,0,4"
+    Padding="16,12"
+    Background="{StaticResource Surface2}"
+    SemanticProperties.Description="{Binding Group, Converter={StaticResource GroupAccessibilityConverter}, Source={x:Reference Root}}"
+    Stroke="Transparent"
+    StrokeShape="RoundRectangle 18"
+    StrokeThickness="0"
+  >
+    <Border.Shadow>
+      <Shadow Brush="#55000000" Offset="0,4" Opacity="0.35" Radius="0" />
+    </Border.Shadow>
+    <Grid
+      AutomationProperties.IsInAccessibleTree="False"
+      ColumnDefinitions="Auto,*,Auto"
+      ColumnSpacing="12"
+    >
+      <Label
+        Grid.Column="0"
+        FontAutoScalingEnabled="True"
+        FontSize="25"
+        AutomationProperties.IsInAccessibleTree="False"
+        Text="{x:Static strings:AppStrings.CalendarIcon}"
+        TextColor="{StaticResource Accent}"
+        VerticalOptions="Center"
+      />
+      <Label
+        x:Name="TitleLabel"
+        Grid.Column="1"
+        FontAutoScalingEnabled="True"
+        FontAttributes="Bold"
+        FontSize="27"
+        LineBreakMode="WordWrap"
+        MaxLines="2"
+        TextColor="{StaticResource White}"
+        VerticalOptions="Center"
+      />
+      <Border
+        Grid.Column="2"
+        Padding="12,6"
+        Background="{StaticResource Accent}"
+        Stroke="Transparent"
+        StrokeShape="RoundRectangle 12"
+        StrokeThickness="0"
+        VerticalOptions="Center"
+      >
+        <Label
+          FontAutoScalingEnabled="True"
+          FontAttributes="Bold"
+          FontSize="16"
+          Text="{Binding Group, Converter={StaticResource GroupStatusConverter}, Source={x:Reference Root}}"
+          TextColor="{StaticResource PageBackground}"
+        />
+      </Border>
+    </Grid>
+  </Border>
+</ContentView>

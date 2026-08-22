@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test-android:
+  twenty-forty-eight-android:
     runs-on: macos-latest
     permissions:
       contents: read
@@ -26,33 +26,50 @@ jobs:
       run: dotnet workload install maui
       
     - name: Restore dependencies
-      run: dotnet restore 2048-Maui.slnx
+      run: dotnet restore apps/twenty-forty-eight/TwentyFortyEight.slnx
       env:
         MAUI_TARGET_PLATFORM: android
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
+      run: dotnet build apps/twenty-forty-eight/TwentyFortyEight.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: android
-      
-    - name: Run tests
-      run: dotnet test --configuration Release --no-build --filter "FullyQualifiedName!~Appium" -- --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
-      
+
+  twenty-forty-eight-unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Test TwentyFortyEight.Core
+      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests/TwentyFortyEight.Core.Tests.csproj --configuration Release -f net10.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
+
+    - name: Test TwentyFortyEight.ViewModels
+      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests/TwentyFortyEight.ViewModels.Tests.csproj --configuration Release -f net10.0 -p:TargetFrameworks=net10.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-android
+        name: test-results-twenty-forty-eight
         path: 'TestResults/*.trx'
     
     - name: Upload coverage results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: coverage-results-android
+        name: coverage-results-twenty-forty-eight
         path: 'TestResults/*.cobertura.xml'
 
-  build-ios:
+  twenty-forty-eight-ios:
     runs-on: macos-26
     permissions:
       contents: read
@@ -131,12 +148,12 @@ jobs:
         echo "IOS_SIGNING_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
       
     - name: Restore dependencies
-      run: dotnet restore 2048-Maui.slnx
+      run: dotnet restore apps/twenty-forty-eight/TwentyFortyEight.slnx
       env:
         MAUI_TARGET_PLATFORM: ios
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
+      run: dotnet build apps/twenty-forty-eight/TwentyFortyEight.slnx --configuration Release --no-restore -p:ApplicationVersion=$APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: ios
 
@@ -145,7 +162,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        dotnet publish src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj \
+        dotnet publish apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj \
           -c Release \
           -f net10.0-ios \
           -p:RuntimeIdentifier=ios-arm64 \
@@ -161,19 +178,19 @@ jobs:
       with:
         name: ios-ipa
         path: |
-          src/TwentyFortyEight.Maui/bin/Release/**/publish/*.ipa
-          src/TwentyFortyEight.Maui/bin/Release/**/*.xcarchive
+          apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Release/**/publish/*.ipa
+          apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Release/**/*.xcarchive
 
     - name: Upload to App Store Connect
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       uses: apple-actions/upload-testflight-build@v5.2.1
       with:
-        app-path: src/TwentyFortyEight.Maui/bin/Release/net10.0-ios/ios-arm64/publish/TwentyFortyEight.Maui.ipa
+        app-path: apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Release/net10.0-ios/ios-arm64/publish/TwentyFortyEight.Maui.ipa
         issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
         api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
         api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
-  build-windows:
+  twenty-forty-eight-windows:
     if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     permissions:
@@ -194,11 +211,78 @@ jobs:
       run: dotnet workload install maui
       
     - name: Restore dependencies
-      run: dotnet restore 2048-Maui.slnx -r win-x64
+      run: dotnet restore apps/twenty-forty-eight/TwentyFortyEight.slnx -r win-x64
       env:
         MAUI_TARGET_PLATFORM: windows
       
     - name: Build solution
-      run: dotnet build 2048-Maui.slnx --configuration Release --no-restore -r win-x64 -p:ApplicationVersion=$env:APP_VERSION_CODE
+      run: dotnet build apps/twenty-forty-eight/TwentyFortyEight.slnx --configuration Release --no-restore -r win-x64 -p:ApplicationVersion=$env:APP_VERSION_CODE
       env:
         MAUI_TARGET_PLATFORM: windows
+
+  good-movies-unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Test GoodMovies.Core
+      run: dotnet test --project apps/good-movies/test/GoodMovies.Core.Tests/GoodMovies.Core.Tests.csproj --configuration Release -f net10.0
+
+    - name: Test GoodMovies.Infrastructure
+      run: dotnet test --project apps/good-movies/test/GoodMovies.Infrastructure.Tests/GoodMovies.Infrastructure.Tests.csproj --configuration Release -f net10.0
+
+    - name: Test GoodMovies.ViewModels
+      run: dotnet test --project apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj --configuration Release -f net10.0
+
+  good-movies-ios-simulator:
+    runs-on: macos-26
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Select Xcode version
+      uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '26.6.0'
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Install .NET MAUI iOS workload
+      run: dotnet workload install maui-ios
+
+    - name: Select iOS simulator RID
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "$(uname -m)" = "arm64" ]; then
+          echo "IOS_SIM_RID=iossimulator-arm64" >> "$GITHUB_ENV"
+        else
+          echo "IOS_SIM_RID=iossimulator-x64" >> "$GITHUB_ENV"
+        fi
+
+    - name: Restore Good Movies iOS project
+      run: dotnet restore apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj -p:RuntimeIdentifier=$IOS_SIM_RID
+
+    - name: Build Good Movies iOS simulator
+      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release --no-restore -f net10.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=false
+
+    - name: Validate configured Good Movies release
+      if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+      env:
+        TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release -f net10.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=true
