@@ -21,11 +21,17 @@ public sealed class SpeechVoiceSelectionPolicyTests
     }
 
     [TestMethod]
-    public void SelectBestIndex_PrefersEnhancedEnglishOverDefaultUsEnglish()
+    public void SelectBestIndex_PrefersEnhancedEnglishOverCompactDefaultUsEnglish()
     {
         SpeechVoiceCandidate[] voices =
         [
-            Voice("default-us", "Samantha", "en-US", quality: 1, isLanguageDefault: true),
+            Voice(
+                "com.apple.voice.super-compact.en-US.Samantha",
+                "Samantha",
+                "en-US",
+                quality: 1,
+                isLanguageDefault: true
+            ),
             Voice("enhanced-gb", "Serena", "en-GB", quality: 2),
         ];
 

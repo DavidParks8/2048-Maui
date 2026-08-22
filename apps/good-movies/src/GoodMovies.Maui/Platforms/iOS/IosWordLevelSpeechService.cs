@@ -18,9 +18,9 @@ public sealed class IosWordLevelSpeechService
         IWordLevelSpeech,
         IDisposable
 {
-    private const float ReadAloudRate = 0.44f;
-    private const float SingleWordRate = 0.4f;
-    private const float FriendlyPitch = 1.02f;
+    private const float ReadAloudRate = 0.47f;
+    private const float SingleWordRate = 0.44f;
+    private const float NaturalPitch = 1f;
     private const double ReadAloudStartDelay = 0.06;
     private const double ReadAloudEndDelay = 0.04;
 
@@ -183,10 +183,10 @@ public sealed class IosWordLevelSpeechService
         {
             Voice = _voice,
             Rate = reportRanges ? ReadAloudRate : SingleWordRate,
-            PitchMultiplier = FriendlyPitch,
+            PitchMultiplier = NaturalPitch,
             PreUtteranceDelay = reportRanges ? ReadAloudStartDelay : 0,
             PostUtteranceDelay = reportRanges ? ReadAloudEndDelay : 0,
-            PrefersAssistiveTechnologySettings = false,
+            PrefersAssistiveTechnologySettings = true,
         };
 
     private static AVSpeechSynthesisVoice? SelectVoice()
