@@ -68,6 +68,12 @@ internal static class AppStrings
     internal static string MovieCountOne => Get(nameof(MovieCountOne));
     internal static string MovieCountMany => Get(nameof(MovieCountMany));
     internal static string RatingComingSoon => Get(nameof(RatingComingSoon));
+    internal static string RatingFilterHeading => Get(nameof(RatingFilterHeading));
+    internal static string RatingFilterAll => Get(nameof(RatingFilterAll));
+    internal static string RatingFilterG => Get(nameof(RatingFilterG));
+    internal static string RatingFilterPG => Get(nameof(RatingFilterPG));
+    internal static string RatingFilterHint => Get(nameof(RatingFilterHint));
+    internal static string SelectedRatingFilterFormat => Get(nameof(SelectedRatingFilterFormat));
     internal static string MovieKindFallback => Get(nameof(MovieKindFallback));
     internal static string SavedCountOne => Get(nameof(SavedCountOne));
     internal static string SavedCountMany => Get(nameof(SavedCountMany));

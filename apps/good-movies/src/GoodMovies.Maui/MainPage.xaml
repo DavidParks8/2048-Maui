@@ -115,7 +115,7 @@
       x:Name="MainContent"
       Grid.Column="1"
       Padding="8,18,22,0"
-      RowDefinitions="Auto,Auto,Auto,*"
+      RowDefinitions="Auto,Auto,Auto,Auto,*"
       RowSpacing="12"
       SafeAreaEdges="SoftInput"
     >
@@ -205,9 +205,100 @@
         </Border>
       </Grid>
 
+      <Grid
+        x:Name="RatingFilterPanel"
+        Grid.Row="2"
+        IsVisible="False"
+        Padding="6,0"
+        RowDefinitions="Auto,Auto"
+        RowSpacing="8"
+      >
+        <Grid.Triggers>
+          <DataTrigger
+            Binding="{Binding SelectedSection}"
+            TargetType="Grid"
+            Value="{x:Static vm:CatalogSection.ComingSoon}"
+          >
+            <Setter Property="IsVisible" Value="True" />
+          </DataTrigger>
+        </Grid.Triggers>
+        <Label
+          Grid.Row="0"
+          FontAttributes="Bold"
+          FontAutoScalingEnabled="True"
+          FontSize="18"
+          SemanticProperties.HeadingLevel="Level2"
+          Text="{x:Static strings:AppStrings.RatingFilterHeading}"
+          TextColor="{StaticResource TextSecondary}"
+        />
+        <Grid
+          x:Name="RatingFilterOptions"
+          Grid.Row="1"
+          ColumnDefinitions="*,*,*,*"
+          ColumnSpacing="10"
+          RowDefinitions="Auto"
+          RowSpacing="10"
+        >
+          <Button
+            x:Name="AllRatingFilterButton"
+            Grid.Column="0"
+            AutomationId="RatingFilterAll"
+            Background="{StaticResource Accent}"
+            BorderColor="{StaticResource Accent}"
+            BorderWidth="3"
+            Command="{Binding SelectRatingFilterCommand}"
+            CommandParameter="{x:Static vm:MovieRatingFilter.All}"
+            FontSize="20"
+            MinimumHeightRequest="60"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+            Text="{x:Static strings:AppStrings.RatingFilterAll}"
+            TextColor="{StaticResource PageBackground}"
+          />
+          <Button
+            x:Name="GRatingFilterButton"
+            Grid.Column="1"
+            AutomationId="RatingFilterG"
+            BorderColor="{StaticResource Surface2}"
+            BorderWidth="3"
+            Command="{Binding SelectRatingFilterCommand}"
+            CommandParameter="{x:Static vm:MovieRatingFilter.G}"
+            FontSize="20"
+            MinimumHeightRequest="60"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+            Text="{x:Static strings:AppStrings.RatingFilterG}"
+          />
+          <Button
+            x:Name="PgRatingFilterButton"
+            Grid.Column="2"
+            AutomationId="RatingFilterPG"
+            BorderColor="{StaticResource Surface2}"
+            BorderWidth="3"
+            Command="{Binding SelectRatingFilterCommand}"
+            CommandParameter="{x:Static vm:MovieRatingFilter.PG}"
+            FontSize="20"
+            MinimumHeightRequest="60"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+            Text="{x:Static strings:AppStrings.RatingFilterPG}"
+          />
+          <Button
+            x:Name="RatingSoonFilterButton"
+            Grid.Column="3"
+            AutomationId="RatingFilterSoon"
+            BorderColor="{StaticResource Surface2}"
+            BorderWidth="3"
+            Command="{Binding SelectRatingFilterCommand}"
+            CommandParameter="{x:Static vm:MovieRatingFilter.RatingSoon}"
+            FontSize="20"
+            MinimumHeightRequest="60"
+            SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+            Text="{x:Static strings:AppStrings.RatingComingSoon}"
+          />
+        </Grid>
+      </Grid>
+
       <Border
         x:Name="RefreshBanner"
-        Grid.Row="2"
+        Grid.Row="3"
         IsVisible="{Binding ., Converter={StaticResource RefreshBannerVisibilityConverter}}"
         Margin="6,0"
         Padding="14,8"
@@ -240,7 +331,7 @@
         </Grid>
       </Border>
 
-      <Grid x:Name="FeedHost" Grid.Row="3" RowDefinitions="*">
+      <Grid x:Name="FeedHost" Grid.Row="4" RowDefinitions="*">
         <RefreshView
           x:Name="MovieRefresh"
           Grid.Row="0"

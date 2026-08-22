@@ -253,6 +253,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     private CatalogSection _selectedSection = CatalogSection.ComingSoon;
 
     [ObservableProperty]
+    private MovieRatingFilter _selectedRatingFilter = MovieRatingFilter.All;
+
+    [ObservableProperty]
     private string _query = string.Empty;
 
     public string NormalizedQuery => NormalizeQuery(Query);
@@ -576,6 +579,17 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     }
 
     public IAsyncRelayCommand<CatalogSection> SwitchSectionCommand => ExecuteSwitchSectionCommand;
+
+    [RelayCommand]
+    public void SelectRatingFilter(MovieRatingFilter filter)
+    {
+        if (!Enum.IsDefined(filter))
+        {
+            throw new ArgumentOutOfRangeException(nameof(filter));
+        }
+
+        SelectedRatingFilter = filter;
+    }
 
     public Task<FavoriteToggleResult> ToggleFavoriteAsync(
         MovieCardViewModel? card,
@@ -1442,7 +1456,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             CatalogSection.FindAMovie when !string.IsNullOrWhiteSpace(Query) =>
                 _cardsByMovieId.Values.Where(card => Matches(card, NormalizedQuery)),
             CatalogSection.FindAMovie => Array.Empty<MovieCardViewModel>(),
-            _ => _cardsByMovieId.Values,
+            _ => _cardsByMovieId.Values.Where(MatchesRatingFilter),
         };
 
         MovieCardViewModel[] selectedCards = selected
@@ -1723,6 +1737,16 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             NormalizeQuery(genre.Name).Contains(normalizedQuery, StringComparison.Ordinal)
         );
 
+    private bool MatchesRatingFilter(MovieCardViewModel card) =>
+        SelectedRatingFilter switch
+        {
+            MovieRatingFilter.All => true,
+            MovieRatingFilter.G => card.MovieCertification?.IsG == true,
+            MovieRatingFilter.PG => card.MovieCertification?.IsPg == true,
+            MovieRatingFilter.RatingSoon => card.IsNotYetRated,
+            _ => false,
+        };
+
     internal static string NormalizeQuery(string? query)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -1790,6 +1814,14 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             ScheduleSearch();
         }
         else
+        {
+            BuildCurrentView();
+        }
+    }
+
+    partial void OnSelectedRatingFilterChanged(MovieRatingFilter value)
+    {
+        if (SelectedSection == CatalogSection.ComingSoon)
         {
             BuildCurrentView();
         }

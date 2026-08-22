@@ -20,6 +20,7 @@ public partial class MainPage : ContentPage
     private CatalogSection _lastSection;
     private bool _layoutInitialized;
     private bool _isWide;
+    private bool _usesSingleRowFilters;
     private bool _isAppeared;
     private bool _hasStartedInitialization;
     private bool _loadingWasAnnounced;
@@ -56,6 +57,7 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SizeChanged += OnSizeChanged;
         UpdateNavigationState();
+        UpdateRatingFilterState();
     }
 
     public NavigationViewModel NavigationViewModel { get; }
@@ -188,29 +190,35 @@ public partial class MainPage : ContentPage
     private void OnSizeChanged(object? sender, EventArgs e)
     {
         bool isWide = Width >= 900 && Width > Height;
-        if (_layoutInitialized && isWide == _isWide)
+        bool usesSingleRowFilters = Width >= 600;
+        if (
+            _layoutInitialized
+            && isWide == _isWide
+            && usesSingleRowFilters == _usesSingleRowFilters
+        )
         {
             return;
         }
 
         _layoutInitialized = true;
         _isWide = isWide;
+        _usesSingleRowFilters = usesSingleRowFilters;
 
         if (Handler is IPlatformViewHandler { ViewController: { View: { } view } })
         {
             UIView.PerformWithoutAnimation(() =>
             {
-                ApplyLayout(isWide);
+                ApplyLayout(isWide, usesSingleRowFilters);
                 view.SetNeedsLayout();
                 view.LayoutIfNeeded();
             });
             return;
         }
 
-        ApplyLayout(isWide);
+        ApplyLayout(isWide, usesSingleRowFilters);
     }
 
-    private void ApplyLayout(bool isWide)
+    private void ApplyLayout(bool isWide, bool usesSingleRowFilters)
     {
         if (isWide)
         {
@@ -242,6 +250,34 @@ public partial class MainPage : ContentPage
         // Change the CollectionView layout only after its surrounding grid has
         // reached the matching shape, avoiding a stretched intermediate frame.
         _movieItemsLayout.Span = isWide ? 2 : 1;
+        ApplyRatingFilterLayout(usesSingleRowFilters);
+    }
+
+    private void ApplyRatingFilterLayout(bool useSingleRow)
+    {
+        RatingFilterOptions.ColumnDefinitions = useSingleRow
+            ? new ColumnDefinitionCollection
+            {
+                new(GridLength.Star),
+                new(GridLength.Star),
+                new(GridLength.Star),
+                new(GridLength.Star),
+            }
+            : new ColumnDefinitionCollection { new(GridLength.Star), new(GridLength.Star) };
+        RatingFilterOptions.RowDefinitions = useSingleRow
+            ? new RowDefinitionCollection { new(GridLength.Auto) }
+            : new RowDefinitionCollection { new(GridLength.Auto), new(GridLength.Auto) };
+
+        SetRatingFilterPosition(AllRatingFilterButton, 0, useSingleRow);
+        SetRatingFilterPosition(GRatingFilterButton, 1, useSingleRow);
+        SetRatingFilterPosition(PgRatingFilterButton, 2, useSingleRow);
+        SetRatingFilterPosition(RatingSoonFilterButton, 3, useSingleRow);
+    }
+
+    private static void SetRatingFilterPosition(Button button, int index, bool useSingleRow)
+    {
+        Grid.SetColumn(button, useSingleRow ? index : index % 2);
+        Grid.SetRow(button, useSingleRow ? 0 : index / 2);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -309,6 +345,11 @@ public partial class MainPage : ContentPage
                 SearchEntry.Unfocus();
             }
         }
+
+        if (e.PropertyName == nameof(CatalogViewModel.SelectedRatingFilter))
+        {
+            UpdateRatingFilterState();
+        }
     }
 
     private void UpdateNavigationState()
@@ -345,6 +386,62 @@ public partial class MainPage : ContentPage
         CompactComingTile.AccessibilityLabel = ComingTile.AccessibilityLabel;
         CompactFavoritesTile.AccessibilityLabel = FavoritesTile.AccessibilityLabel;
         CompactSearchTile.AccessibilityLabel = SearchTile.AccessibilityLabel;
+    }
+
+    private void UpdateRatingFilterState()
+    {
+        SetRatingFilterButtonState(
+            AllRatingFilterButton,
+            MovieRatingFilter.All,
+            AppStrings.RatingFilterAll
+        );
+        SetRatingFilterButtonState(
+            GRatingFilterButton,
+            MovieRatingFilter.G,
+            AppStrings.RatingFilterG
+        );
+        SetRatingFilterButtonState(
+            PgRatingFilterButton,
+            MovieRatingFilter.PG,
+            AppStrings.RatingFilterPG
+        );
+        SetRatingFilterButtonState(
+            RatingSoonFilterButton,
+            MovieRatingFilter.RatingSoon,
+            AppStrings.RatingComingSoon
+        );
+    }
+
+    private void SetRatingFilterButtonState(Button button, MovieRatingFilter filter, string label)
+    {
+        bool isSelected = _viewModel.SelectedRatingFilter == filter;
+        button.SetDynamicResource(
+            VisualElement.BackgroundProperty,
+            isSelected ? "Accent" : "Surface2"
+        );
+        button.SetDynamicResource(
+            Button.TextColorProperty,
+            isSelected ? "PageBackground" : "White"
+        );
+        button.SetDynamicResource(Button.BorderColorProperty, isSelected ? "Accent" : "Surface2");
+        button.Text = isSelected
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                AppStrings.SelectedRatingFilterFormat,
+                label
+            )
+            : label;
+        SemanticProperties.SetDescription(
+            button,
+            isSelected
+                ? string.Format(
+                    CultureInfo.CurrentCulture,
+                    AppStrings.SelectedAccessibilityFormat,
+                    label,
+                    AppStrings.SelectedState
+                )
+                : label
+        );
     }
 
     private static string FormatNavigationLabel(string title, string count, bool isSelected)

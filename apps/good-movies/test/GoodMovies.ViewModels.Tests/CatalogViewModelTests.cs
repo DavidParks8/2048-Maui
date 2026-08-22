@@ -699,6 +699,115 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
+    public async Task RatingFilters_ShowOnlyMatchingComingSoonMovies()
+    {
+        Movie g = MovieWithRating(1, "Gentle Day", Today.AddDays(1), "G");
+        Movie pg = MovieWithRating(2, "Big Adventure", Today.AddDays(2), "PG");
+        Movie ratingSoon = MovieWithRating(3, "Future Friend", Today.AddDays(3), null);
+        CatalogViewModel viewModel = CreateViewModel(FreshService(g, pg, ratingSoon));
+
+        await viewModel.InitializeAsync();
+
+        Assert.AreEqual(MovieRatingFilter.All, viewModel.SelectedRatingFilter);
+        Assert.AreSequenceEqual(
+            new[] { 1, 2, 3 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+
+        viewModel.SelectRatingFilter(MovieRatingFilter.G);
+        Assert.AreSequenceEqual(
+            new[] { 1 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+        Assert.AreEqual(1, viewModel.CurrentCount);
+        Assert.AreEqual(1, viewModel.MovieGroups.Sum(group => group.Count));
+
+        viewModel.SelectRatingFilter(MovieRatingFilter.PG);
+        Assert.AreSequenceEqual(
+            new[] { 2 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+
+        viewModel.SelectRatingFilter(MovieRatingFilter.RatingSoon);
+        Assert.AreSequenceEqual(
+            new[] { 3 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+
+        viewModel.SelectRatingFilter(MovieRatingFilter.All);
+        Assert.AreEqual(3, viewModel.MovieCards.Count);
+    }
+
+    [TestMethod]
+    public async Task RatingFilter_EmptyStateAndOtherSectionsUseTheirOwnMovieSets()
+    {
+        Movie g = MovieWithRating(1, "Gentle Day", Today.AddDays(1), "G");
+        Movie pg = MovieWithRating(2, "Favorite Quest", Today.AddDays(2), "PG");
+        IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
+        FavoriteEntry favorite = pg.CreateFavoriteEntry()!.Value;
+        favorites
+            .GetAsync(Today, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
+        favorites
+            .PruneAsync(Today, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
+        CatalogViewModel viewModel = CreateViewModel(
+            FreshService(g, pg),
+            favorites,
+            searchDebounce: TimeSpan.Zero
+        );
+        await viewModel.InitializeAsync();
+
+        viewModel.SelectRatingFilter(MovieRatingFilter.RatingSoon);
+
+        Assert.AreEqual(0, viewModel.CurrentCount);
+        Assert.AreEqual(CatalogViewState.Empty, viewModel.State);
+        Assert.AreEqual(CatalogMessageKey.NoMovies, viewModel.MessageKey);
+
+        await viewModel.SwitchSectionAsync(CatalogSection.MyFavorites);
+        Assert.AreSequenceEqual(
+            new[] { 2 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+
+        await viewModel.SwitchSectionAsync(CatalogSection.FindAMovie);
+        viewModel.Query = "Favorite";
+        await viewModel.SearchDebounceTask;
+        Assert.AreSequenceEqual(
+            new[] { 2 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+
+        await viewModel.SwitchSectionAsync(CatalogSection.ComingSoon);
+        Assert.AreEqual(0, viewModel.CurrentCount);
+        Assert.AreEqual(MovieRatingFilter.RatingSoon, viewModel.SelectedRatingFilter);
+    }
+
+    [TestMethod]
+    public async Task FavoriteToggle_WithActiveRatingFilter_PreservesGroupedCollections()
+    {
+        Movie movie = MovieWithRating(1, "Keep my place", Today.AddDays(1), "G");
+        FavoriteEntry favorite = movie.CreateFavoriteEntry()!.Value;
+        IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
+        favorites
+            .ToggleAsync(favorite, Today, Arg.Any<CancellationToken>())
+            .Returns(
+                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added, favorite))
+            );
+        CatalogViewModel viewModel = CreateViewModel(FreshService(movie), favorites);
+        await viewModel.InitializeAsync();
+        viewModel.SelectRatingFilter(MovieRatingFilter.G);
+        var groups = viewModel.MovieGroups;
+        var cards = viewModel.MovieCards;
+
+        await viewModel.MovieCards.Single().ToggleFavoriteCommand.ExecuteAsync(null);
+
+        Assert.AreSame(groups, viewModel.MovieGroups);
+        Assert.AreSame(cards, viewModel.MovieCards);
+        Assert.IsTrue(viewModel.MovieCards.Single().IsFavorite);
+    }
+
+    [TestMethod]
     public async Task FavoriteToggle_UpdatesCardsOnlyAfterPersistence_AndRemovesFromFavorites()
     {
         Movie movie = MovieWithRelease(1, "Save me", Today.AddDays(1));
@@ -885,6 +994,22 @@ public sealed class CatalogViewModelTests
             "PG",
             new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType),
             new[] { new MovieGenre(0, genre) }
+        );
+
+    private static Movie MovieWithRating(
+        int id,
+        string title,
+        DateOnly releaseDate,
+        string? certification
+    ) =>
+        new(
+            id,
+            title,
+            certification,
+            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType),
+            certification is null
+                ? new[] { new MovieGenre(MovieGenre.AnimationId, "Animation") }
+                : null
         );
 
     private static TaskCompletionSource<T> Pending<T>() =>

@@ -16,6 +16,14 @@ public enum CatalogSection
     Search = FindAMovie,
 }
 
+public enum MovieRatingFilter
+{
+    All,
+    G,
+    PG,
+    RatingSoon,
+}
+
 /// <summary>
 /// A presentation state. Text for these states belongs to the MAUI
 /// localization layer; the ViewModels expose only semantic keys.

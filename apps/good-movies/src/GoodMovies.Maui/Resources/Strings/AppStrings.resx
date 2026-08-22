@@ -41,6 +41,12 @@
   <data name="MovieCountOne" xml:space="preserve"><value>{0} movie</value></data>
   <data name="MovieCountMany" xml:space="preserve"><value>{0} movies</value></data>
   <data name="RatingComingSoon" xml:space="preserve"><value>Rating soon</value></data>
+  <data name="RatingFilterHeading" xml:space="preserve"><value>Show me</value></data>
+  <data name="RatingFilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="RatingFilterG" xml:space="preserve"><value>G</value></data>
+  <data name="RatingFilterPG" xml:space="preserve"><value>PG</value></data>
+  <data name="RatingFilterHint" xml:space="preserve"><value>Filters the Coming soon movies by rating</value></data>
+  <data name="SelectedRatingFilterFormat" xml:space="preserve"><value>✓ {0}</value></data>
   <data name="MovieKindFallback" xml:space="preserve"><value>Movie</value></data>
   <data name="SavedCountOne" xml:space="preserve"><value>{0} saved</value></data>
   <data name="SavedCountMany" xml:space="preserve"><value>{0} saved</value></data>
