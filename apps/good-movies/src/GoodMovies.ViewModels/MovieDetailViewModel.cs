@@ -167,6 +167,13 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public string Certification => Rating;
 
+    /// <summary>
+    /// True when the MPAA has not rated this release yet. The movie is still
+    /// safe to show because only animation and family titles reach the catalog
+    /// without a rating.
+    /// </summary>
+    public bool IsNotYetRated => Movie.IsNotYetRated;
+
     public string Kind => Movie.Genres.FirstOrDefault()?.Name ?? string.Empty;
 
     public string Genre => Kind;

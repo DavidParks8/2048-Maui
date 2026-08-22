@@ -67,6 +67,7 @@ internal static class AppStrings
     internal static string CompactDateFormat => Get(nameof(CompactDateFormat));
     internal static string MovieCountOne => Get(nameof(MovieCountOne));
     internal static string MovieCountMany => Get(nameof(MovieCountMany));
+    internal static string RatingComingSoon => Get(nameof(RatingComingSoon));
     internal static string MovieKindFallback => Get(nameof(MovieKindFallback));
     internal static string SavedCountOne => Get(nameof(SavedCountOne));
     internal static string SavedCountMany => Get(nameof(SavedCountMany));
@@ -123,6 +124,7 @@ internal static class AppStrings
     internal static string ReadAloud => Get(nameof(ReadAloud));
     internal static string StopReading => Get(nameof(StopReading));
     internal static string GoBack => Get(nameof(GoBack));
+    internal static string BackLabel => Get(nameof(BackLabel));
     internal static string TapWordHint => Get(nameof(TapWordHint));
     internal static string Synopsis => Get(nameof(Synopsis));
     internal static string PlayTrailer => Get(nameof(PlayTrailer));

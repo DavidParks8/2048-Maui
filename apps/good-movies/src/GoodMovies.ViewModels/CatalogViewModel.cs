@@ -1452,10 +1452,16 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             .ThenBy(static card => card.MovieId)
             .ToArray();
 
-        MovieGroups = new ObservableCollection<MovieGroupViewModel>(
-            MovieGroupViewModel.CreateGroups(selectedCards)
-        );
-        MovieCards = new ObservableCollection<MovieCardViewModel>(selectedCards);
+        // Replacing the collections reloads the grouped CollectionView, which
+        // resets the scroll position. Skip it when the visible cards are
+        // unchanged so that toggling a favorite leaves the feed where it is.
+        if (!IsCurrentView(selectedCards))
+        {
+            MovieGroups = new ObservableCollection<MovieGroupViewModel>(
+                MovieGroupViewModel.CreateGroups(selectedCards)
+            );
+            MovieCards = new ObservableCollection<MovieCardViewModel>(selectedCards);
+        }
 
         UpdateCounts();
         OnPropertyChanged(nameof(Groups));
@@ -1468,6 +1474,30 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(FavoriteMovies));
         OnPropertyChanged(nameof(EmptyStateKey));
         UpdatePresentationState();
+    }
+
+    /// <summary>
+    /// True when the feed already shows exactly these card instances in this
+    /// order, so the grouped collections can be left alone.
+    /// </summary>
+    private bool IsCurrentView(IReadOnlyList<MovieCardViewModel> selectedCards)
+    {
+        if (MovieCards.Count != selectedCards.Count)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < selectedCards.Count; index++)
+        {
+            if (!ReferenceEquals(MovieCards[index], selectedCards[index]))
+            {
+                return false;
+            }
+        }
+
+        // Groups are a pure function of the ordered cards, but an earlier build
+        // may have been skipped before the groups were ever populated.
+        return MovieGroups.Sum(static group => group.Count) == selectedCards.Count;
     }
 
     private void UpdateCounts()

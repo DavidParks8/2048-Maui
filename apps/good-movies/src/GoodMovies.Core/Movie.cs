@@ -29,6 +29,7 @@ public sealed record Movie
         )
             ? normalized
             : null;
+        IsNotYetRated = string.IsNullOrWhiteSpace(certification);
         Releases = Copy(releases);
         Genres = Copy(genres);
         GenreNames = Copy(Genres.Select(static genre => genre.Name));
@@ -118,6 +119,18 @@ public sealed record Movie
     public MovieCertification? Certification { get; }
 
     public string? CertificationCode => Certification?.Code;
+
+    /// <summary>
+    /// True when the provider has not published a US certification yet, which is
+    /// normal for releases that are still many months away. This is different
+    /// from a movie that carries a certification we do not allow.
+    /// </summary>
+    public bool IsNotYetRated { get; }
+
+    /// <summary>
+    /// True when the provider classifies the movie as animation or family.
+    /// </summary>
+    public bool IsFamilyAudience => GenreIds.Any(MovieGenre.IsFamilyAudienceGenre);
 
     public IReadOnlyList<TheatricalRelease> Releases { get; }
 

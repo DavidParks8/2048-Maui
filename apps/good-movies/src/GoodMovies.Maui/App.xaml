@@ -18,6 +18,7 @@
       <converters:MovieCountConverter x:Key="MovieCountConverter" />
       <converters:SavedCountConverter x:Key="SavedCountConverter" />
       <converters:KindLabelConverter x:Key="KindLabelConverter" />
+      <converters:RatingLabelConverter x:Key="RatingLabelConverter" />
       <converters:CardStatusConverter x:Key="CardStatusConverter" />
       <converters:DetailStatusConverter x:Key="DetailStatusConverter" />
       <converters:GroupTitleConverter x:Key="GroupTitleConverter" />

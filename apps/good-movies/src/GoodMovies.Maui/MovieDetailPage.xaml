@@ -11,22 +11,59 @@
   SafeAreaEdges="All"
   Shell.BackgroundColor="{StaticResource PageBackground}"
   Shell.ForegroundColor="{StaticResource Accent}"
-  Shell.NavBarIsVisible="True"
+  Shell.NavBarIsVisible="False"
   Shell.NavBarHasShadow="False"
   Shell.TitleColor="{StaticResource White}"
   Title="{Binding Title}"
 >
-  <Grid RowDefinitions="*">
+  <Grid RowDefinitions="Auto,*">
+    <Grid
+      x:Name="DetailHeader"
+      Grid.Row="0"
+      Padding="24,52,24,10"
+      ColumnDefinitions="Auto,*"
+      ColumnSpacing="18"
+    >
+      <Button
+        x:Name="BackButton"
+        Grid.Column="0"
+        Padding="22,10"
+        AutomationId="MovieDetailBackButton"
+        Background="{StaticResource Surface}"
+        Clicked="OnBackClicked"
+        FontAttributes="Bold"
+        FontAutoScalingEnabled="True"
+        FontSize="21"
+        HeightRequest="60"
+        SemanticProperties.Description="{x:Static strings:AppStrings.GoBack}"
+        Text="{x:Static strings:AppStrings.BackLabel}"
+        TextColor="{StaticResource White}"
+        VerticalOptions="Center"
+      />
+      <Label
+        Grid.Column="1"
+        FontAttributes="Bold"
+        FontAutoScalingEnabled="True"
+        FontSize="21"
+        AutomationProperties.IsInAccessibleTree="False"
+        HorizontalTextAlignment="End"
+        LineBreakMode="TailTruncation"
+        MaxLines="1"
+        Text="{Binding Title}"
+        TextColor="{StaticResource TextSecondary}"
+        VerticalOptions="Center"
+      />
+    </Grid>
     <ScrollView
       x:Name="DetailScroll"
-      Grid.Row="0"
+      Grid.Row="1"
       AutomationId="MovieDetailScroll"
       HorizontalScrollBarVisibility="Never"
       VerticalScrollBarVisibility="Never"
     >
       <Grid
         x:Name="DetailContent"
-        Padding="24,18,24,32"
+        Padding="24,4,24,32"
         ColumnDefinitions="250,*"
         ColumnSpacing="30"
         RowDefinitions="*"
@@ -159,7 +196,7 @@
                 FontAutoScalingEnabled="True"
                 FontAttributes="Bold"
                 FontSize="16"
-                Text="{Binding Rating}"
+                Text="{Binding Rating, Converter={StaticResource RatingLabelConverter}}"
                 TextColor="{StaticResource PageBackground}"
               />
             </Border>

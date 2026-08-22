@@ -78,6 +78,23 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         }
     }
 
+    private void OnBackClicked(object? sender, EventArgs e) => _ = GoBackAsync();
+
+    private async Task GoBackAsync()
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception)
+        {
+            if (Navigation.NavigationStack.Count > 1)
+            {
+                await Navigation.PopAsync();
+            }
+        }
+    }
+
     private void OnWordTapped(object? sender, TappedEventArgs e)
     {
         if (

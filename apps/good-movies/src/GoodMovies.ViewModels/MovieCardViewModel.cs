@@ -104,6 +104,13 @@ public partial class MovieCardViewModel : ObservableObject
 
     public string Certification => Rating;
 
+    /// <summary>
+    /// True when the MPAA has not rated this release yet. The movie is still
+    /// safe to show because only animation and family titles reach the catalog
+    /// without a rating.
+    /// </summary>
+    public bool IsNotYetRated => Movie.IsNotYetRated;
+
     public MovieCertification? MovieCertification => Movie.Certification;
 
     /// <summary>

@@ -128,7 +128,7 @@
                 FontAutoScalingEnabled="True"
                 FontAttributes="Bold"
                 FontSize="16"
-                Text="{Binding Card.Rating, Source={x:Reference Root}}"
+                Text="{Binding Card.Rating, Converter={StaticResource RatingLabelConverter}, Source={x:Reference Root}}"
                 TextColor="{StaticResource PageBackground}"
               />
             </Border>

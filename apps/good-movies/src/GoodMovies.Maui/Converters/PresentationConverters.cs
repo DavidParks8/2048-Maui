@@ -72,7 +72,7 @@ public static class GoodMoviesTextFormatter
             AppStrings.MovieCardAccessibility,
             card.Title,
             FormatStatus(card.Status, card.Sleeps),
-            card.Rating,
+            card.Rating is { Length: > 0 } rating ? rating : AppStrings.RatingComingSoon,
             string.IsNullOrWhiteSpace(card.Kind) ? AppStrings.MovieKindFallback : card.Kind
         );
 
@@ -192,6 +192,21 @@ public sealed class KindLabelConverter : IValueConverter
         value is string text && !string.IsNullOrWhiteSpace(text)
             ? text
             : AppStrings.MovieKindFallback;
+
+    public object ConvertBack(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+public sealed class RatingLabelConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is string text && !string.IsNullOrWhiteSpace(text)
+            ? text
+            : AppStrings.RatingComingSoon;
 
     public object ConvertBack(
         object? value,

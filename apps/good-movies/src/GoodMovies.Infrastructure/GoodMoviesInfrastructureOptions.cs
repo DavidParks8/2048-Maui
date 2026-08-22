@@ -37,6 +37,15 @@ public class GoodMoviesInfrastructureOptions
 
     public int MaxPages { get; set; } = 20;
 
+    /// <summary>
+    /// Minimum TMDB popularity a movie must have before it is accepted without a
+    /// published US certification. Real theatrical family releases score well
+    /// above this even a year out, while festival shorts sit far below it, so
+    /// this keeps the twelve month window full without filling it with noise.
+    /// Movies that already carry a G or PG certification ignore this entirely.
+    /// </summary>
+    public double MinimumUnratedPopularity { get; set; } = 0.75;
+
     public int PageLimit
     {
         get => MaxPages;
@@ -180,6 +189,13 @@ public class GoodMoviesInfrastructureOptions
         if (MaxPages < 1)
         {
             throw new GoodMoviesConfigurationException("The maximum page count must be positive.");
+        }
+
+        if (MinimumUnratedPopularity < 0)
+        {
+            throw new GoodMoviesConfigurationException(
+                "The minimum unrated popularity cannot be negative."
+            );
         }
 
         if (MaxConcurrentRequests < 1)

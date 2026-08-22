@@ -240,8 +240,44 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
     {
         DateOnly earliestDate = _releaseWindowPolicy.EarliestVisibleDate(today);
         DateOnly latestDate = _releaseWindowPolicy.LatestVisibleDate(today);
+        List<TmdbDiscoverMovie> allCandidates = new();
+        foreach (bool familyPass in new[] { false, true })
+        {
+            allCandidates.AddRange(
+                await LoadCandidatePagesAsync(
+                        earliestDate,
+                        latestDate,
+                        familyPass,
+                        cancellationToken
+                    )
+                    .ConfigureAwait(false)
+            );
+        }
+
+        // The API can repeat a movie across pages and across both passes. Keep
+        // the first complete candidate in deterministic sequence and verify each
+        // ID once.
+        Dictionary<int, TmdbDiscoverMovie> unique = new();
+        foreach (TmdbDiscoverMovie candidate in allCandidates)
+        {
+            if (candidate.Id > 0)
+            {
+                unique.TryAdd(candidate.Id, candidate);
+            }
+        }
+
+        return unique.Values.OrderBy(static candidate => candidate.Id).ToList();
+    }
+
+    private async Task<List<TmdbDiscoverMovie>> LoadCandidatePagesAsync(
+        DateOnly earliestDate,
+        DateOnly latestDate,
+        bool familyPass,
+        CancellationToken cancellationToken
+    )
+    {
         TmdbDiscoverResponse firstPage = await GetJsonAsync(
-                BuildDiscoverUri(1, earliestDate, latestDate),
+                BuildDiscoverUri(1, earliestDate, latestDate, familyPass),
                 GoodMoviesJsonContext.Default.TmdbDiscoverResponse,
                 cancellationToken
             )
@@ -258,19 +294,19 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             totalPages = 1;
         }
 
+        // Reading fewer of the furthest-out pages is far better than failing the
+        // whole refresh, so the cap clamps instead of throwing.
         if (totalPages > _options.MaxPages)
         {
-            throw new TmdbProtocolException(
-                $"TMDB returned {totalPages} pages, exceeding the configured page cap."
-            );
+            totalPages = _options.MaxPages;
         }
 
-        List<TmdbDiscoverMovie> allCandidates = new(firstPage.Results);
+        List<TmdbDiscoverMovie> candidates = new(firstPage.Results);
         for (int page = 2; page <= totalPages; page++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             TmdbDiscoverResponse response = await GetJsonAsync(
-                    BuildDiscoverUri(page, earliestDate, latestDate),
+                    BuildDiscoverUri(page, earliestDate, latestDate, familyPass),
                     GoodMoviesJsonContext.Default.TmdbDiscoverResponse,
                     cancellationToken
                 )
@@ -281,26 +317,19 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                 throw new TmdbProtocolException("TMDB returned a negative page count.");
             }
 
-            if (response.TotalPages > 0 && response.TotalPages != totalPages)
+            if (
+                response.TotalPages > 0
+                && response.TotalPages < totalPages
+                && response.TotalPages < _options.MaxPages
+            )
             {
                 throw new TmdbProtocolException("TMDB changed the page count during a refresh.");
             }
 
-            allCandidates.AddRange(response.Results);
+            candidates.AddRange(response.Results);
         }
 
-        // The API can repeat a movie across pages. Keep the first complete
-        // candidate in deterministic page/order sequence and verify each ID once.
-        Dictionary<int, TmdbDiscoverMovie> unique = new();
-        foreach (TmdbDiscoverMovie candidate in allCandidates)
-        {
-            if (candidate.Id > 0)
-            {
-                unique.TryAdd(candidate.Id, candidate);
-            }
-        }
-
-        return unique.Values.OrderBy(static candidate => candidate.Id).ToList();
+        return candidates;
     }
 
     private async Task<List<Movie>> VerifyCandidatesAsync(
@@ -389,6 +418,7 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             .ConfigureAwait(false);
 
         VerifiedRelease? selected = null;
+        bool hasDisallowedCertification = false;
         foreach (TmdbReleaseCountry country in response.Results)
         {
             if (
@@ -404,12 +434,22 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
 
             foreach (TmdbReleaseDate release in country.ReleaseDates)
             {
+                string reported = release.Certification?.Trim() ?? string.Empty;
+                bool isRated = reported.Length > 0;
+                if (isRated && !MovieCertification.TryCreate(reported, out MovieCertification? _))
+                {
+                    // A US certification we do not allow disqualifies the whole
+                    // movie, even if another entry for it is still unrated.
+                    hasDisallowedCertification = true;
+                    continue;
+                }
+
+                MovieCertification? certification = isRated
+                    ? MovieCertification.Parse(reported)
+                    : null;
+
                 if (
-                    !MovieCertification.TryCreate(
-                        release.Certification,
-                        out MovieCertification? certification
-                    )
-                    || !TheatricalRelease.IsAllowedTheatricalType(release.Type)
+                    !TheatricalRelease.IsAllowedTheatricalType(release.Type)
                     || !TryParseReleaseDate(release.ReleaseDate, out DateOnly releaseDate)
                     || !_releaseWindowPolicy.IsVisible(releaseDate, today)
                 )
@@ -417,7 +457,7 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                     continue;
                 }
 
-                VerifiedRelease value = new(releaseDate, release.Type, certification!);
+                VerifiedRelease value = new(releaseDate, release.Type, certification);
                 if (
                     selected is null
                     || value.ReleaseDate < selected.ReleaseDate
@@ -432,7 +472,7 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             }
         }
 
-        if (selected is null)
+        if (selected is null || hasDisallowedCertification)
         {
             return null;
         }
@@ -443,13 +483,27 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             .Where(genres.ContainsKey)
             .Select(id => new MovieGenre(id, genres[id]))
             .ToArray();
+
+        if (
+            selected.Certification is null
+            && (
+                !candidate.GenreIds.Any(MovieGenre.IsFamilyAudienceGenre)
+                || candidate.Popularity < _options.MinimumUnratedPopularity
+            )
+        )
+        {
+            // Not rated yet, so we only vouch for animation and family titles
+            // that are prominent enough to be a real theatrical release.
+            return null;
+        }
+
         Uri? posterUri = _posterUrlBuilder.Build(candidate.PosterPath);
         string? safePosterPath = posterUri is null ? null : candidate.PosterPath;
 
         return new Movie(
             candidate.Id,
             candidate.Title ?? string.Empty,
-            selected.Certification,
+            selected.Certification?.Code,
             new TheatricalRelease(selected.ReleaseDate, "US", selected.ReleaseType),
             mappedGenres,
             trailers: null,
@@ -499,6 +553,21 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
     }
 
     private Uri BuildDiscoverUri(int page, DateOnly earliestDate, DateOnly latestDate) =>
+        BuildDiscoverUri(page, earliestDate, latestDate, familyPass: false);
+
+    /// <summary>
+    /// The rated pass filters on the US certification so only G/PG titles come
+    /// back. TMDB only carries a certification once the MPAA has rated a movie,
+    /// which hides most releases more than a few months out, so the family pass
+    /// drops that filter and asks for animation or family titles instead. Every
+    /// candidate is still verified per movie before it reaches the catalog.
+    /// </summary>
+    private Uri BuildDiscoverUri(
+        int page,
+        DateOnly earliestDate,
+        DateOnly latestDate,
+        bool familyPass
+    ) =>
         BuildUri(
             "3/discover/movie",
             $"region=US"
@@ -508,8 +577,12 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                 + $"&primary_release_date.gte={earliestDate:yyyy-MM-dd}"
                 + $"&primary_release_date.lte={latestDate:yyyy-MM-dd}"
                 + $"&with_release_type={Escape("2|3")}"
-                + $"&certification_country=US"
-                + $"&certification.lte=PG"
+                + (
+                    familyPass
+                        ? $"&with_genres={Escape($"{MovieGenre.AnimationId}|{MovieGenre.FamilyId}")}"
+                            + $"&with_original_language=en"
+                        : $"&certification_country=US&certification.lte=PG"
+                )
                 + $"&page={page}"
         );
 
@@ -588,6 +661,6 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
     private sealed record VerifiedRelease(
         DateOnly ReleaseDate,
         int ReleaseType,
-        MovieCertification Certification
+        MovieCertification? Certification
     );
 }

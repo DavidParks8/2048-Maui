@@ -19,11 +19,14 @@ public sealed class InfrastructureBehaviorTests
         using FakeHandler handler = new(request =>
         {
             string path = request.RequestUri!.AbsolutePath;
+            string query = request.RequestUri.Query;
+            bool isFamilyPass = query.Contains("with_genres=", StringComparison.Ordinal);
             return path switch
             {
                 "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
+                "/3/discover/movie" when isFamilyPass => Json(Discover(1, 1)),
                 "/3/discover/movie" => Json(
-                    request.RequestUri.Query.Contains("page=1", StringComparison.Ordinal)
+                    query.Contains("page=1", StringComparison.Ordinal)
                         ? Discover(1, 2, Candidate(2, "Second", Today.AddDays(2), new[] { 16 }))
                         : Discover(2, 2, Candidate(1, "First", Today, new[] { 16 }))
                 ),
@@ -44,38 +47,64 @@ public sealed class InfrastructureBehaviorTests
 
         Assert.IsTrue(result.Succeeded, result.Error?.ToString());
         Assert.AreEqual(2, result.Movies.Count);
-        HttpRequestMessage discoverRequest = handler.Requests.Single(request =>
+        HttpRequestMessage ratedRequest = handler.Requests.Single(request =>
             request.RequestUri!.AbsolutePath == "/3/discover/movie"
             && request.RequestUri.Query.Contains("page=1", StringComparison.Ordinal)
+            && request.RequestUri.Query.Contains("certification.lte=PG", StringComparison.Ordinal)
         );
-        string query = discoverRequest.RequestUri!.Query;
-        Assert.AreEqual("Bearer", discoverRequest.Headers.Authorization!.Scheme);
-        Assert.AreEqual("do-not-log", discoverRequest.Headers.Authorization.Parameter);
-        Assert.IsTrue(query.Contains("region=US", StringComparison.Ordinal));
-        Assert.IsTrue(query.Contains("include_adult=false", StringComparison.Ordinal));
-        Assert.IsTrue(query.Contains("language=en-US", StringComparison.Ordinal));
-        Assert.IsTrue(query.Contains("sort_by=primary_release_date.asc", StringComparison.Ordinal));
+        string ratedQuery = ratedRequest.RequestUri!.Query;
+        Assert.AreEqual("Bearer", ratedRequest.Headers.Authorization!.Scheme);
+        Assert.AreEqual("do-not-log", ratedRequest.Headers.Authorization.Parameter);
+        Assert.IsTrue(ratedQuery.Contains("region=US", StringComparison.Ordinal));
+        Assert.IsTrue(ratedQuery.Contains("include_adult=false", StringComparison.Ordinal));
+        Assert.IsTrue(ratedQuery.Contains("language=en-US", StringComparison.Ordinal));
         Assert.IsTrue(
-            query.Contains(
+            ratedQuery.Contains("sort_by=primary_release_date.asc", StringComparison.Ordinal)
+        );
+        Assert.IsTrue(
+            ratedQuery.Contains(
                 $"primary_release_date.gte={Today.AddDays(-13):yyyy-MM-dd}",
                 StringComparison.Ordinal
             )
         );
         Assert.IsTrue(
-            query.Contains(
+            ratedQuery.Contains(
                 $"primary_release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
                 StringComparison.Ordinal
             )
         );
         Assert.IsTrue(
-            query.Contains("with_release_type=2%7C3", StringComparison.OrdinalIgnoreCase)
+            ratedQuery.Contains("with_release_type=2%7C3", StringComparison.OrdinalIgnoreCase)
         );
-        Assert.IsTrue(query.Contains("certification_country=US", StringComparison.Ordinal));
-        Assert.IsTrue(query.Contains("certification.lte=PG", StringComparison.Ordinal));
+        Assert.IsTrue(ratedQuery.Contains("certification_country=US", StringComparison.Ordinal));
+        Assert.IsFalse(ratedQuery.Contains("with_genres=", StringComparison.Ordinal));
         Assert.AreEqual(
             2,
             handler.Requests.Count(request =>
                 request.RequestUri!.AbsolutePath == "/3/discover/movie"
+                && request.RequestUri.Query.Contains(
+                    "certification.lte=PG",
+                    StringComparison.Ordinal
+                )
+            )
+        );
+
+        // The family pass drops the certification filter so that titles the MPAA
+        // has not rated yet are still candidates.
+        HttpRequestMessage familyRequest = handler.Requests.Single(request =>
+            request.RequestUri!.AbsolutePath == "/3/discover/movie"
+            && request.RequestUri.Query.Contains("with_genres=", StringComparison.Ordinal)
+        );
+        string familyQuery = familyRequest.RequestUri!.Query;
+        Assert.IsTrue(
+            familyQuery.Contains("with_genres=16%7C10751", StringComparison.OrdinalIgnoreCase)
+        );
+        Assert.IsTrue(familyQuery.Contains("with_original_language=en", StringComparison.Ordinal));
+        Assert.IsFalse(familyQuery.Contains("certification.lte", StringComparison.Ordinal));
+        Assert.IsTrue(
+            familyQuery.Contains(
+                $"primary_release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
+                StringComparison.Ordinal
             )
         );
     }
@@ -245,13 +274,18 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public async Task TmdbClient_PageCapStopsAnUnboundedResponseAsFailure()
+    public async Task TmdbClient_PageCapClampsAnUnboundedResponseInsteadOfFailing()
     {
         using FakeHandler handler = new(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/3/genre/movie/list")
             {
                 return Json("""{"genres":[]}""");
+            }
+
+            if (request.RequestUri.AbsolutePath == "/3/movie/1/release_dates")
+            {
+                return Json(UsRelease(Today, "G", 3));
             }
 
             return Json(Discover(1, 21, Candidate(1, "Good", Today)));
@@ -267,14 +301,177 @@ public sealed class InfrastructureBehaviorTests
 
         CatalogFetchResult result = await client.FetchAsync(Today);
 
-        Assert.AreEqual(CatalogFetchStatus.Failed, result.Status);
-        Assert.AreEqual(0, result.Movies.Count);
+        // Twenty pages for each of the two discover passes, and no failure.
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(1, result.Movies.Count);
         Assert.AreEqual(
-            1,
+            40,
             handler.Requests.Count(request =>
                 request.RequestUri!.AbsolutePath == "/3/discover/movie"
             )
         );
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_KeepsNotYetRatedFamilyMovies_AndDropsNotYetRatedGrownUpMovies()
+    {
+        // 1 is animation and has no US certification yet, which is normal for a
+        // release that is still months out. 2 has no certification either but is
+        // not a family title, so it must not reach the catalog.
+        using FakeHandler handler = new(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            return path switch
+            {
+                "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
+                "/3/discover/movie" => Json(
+                    Discover(
+                        1,
+                        1,
+                        Candidate(1, "Not Rated Yet Family", Today.AddDays(200), new[] { 16 }),
+                        Candidate(2, "Not Rated Yet Thriller", Today.AddDays(200), new[] { 53 })
+                    )
+                ),
+                "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
+                "/3/movie/2/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
+                _ => NotFound(),
+            };
+        });
+        GoodMoviesInfrastructureOptions options = Options();
+        using HttpClient httpClient = CreateHttpClient(
+            handler,
+            options,
+            new StaticGoodMoviesTokenProvider(options.Token)
+        );
+        TmdbMovieCatalogClient client = new(httpClient, options);
+
+        CatalogFetchResult result = await client.FetchAsync(Today);
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(1, result.Movies.Count);
+        Movie kept = result.Movies.Single();
+        Assert.AreEqual(1, kept.Id);
+        Assert.IsTrue(kept.IsNotYetRated);
+        Assert.IsTrue(kept.IsFamilyAudience);
+        Assert.IsNull(kept.Certification);
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_DropsFamilyMovieThatCarriesADisallowedCertification()
+    {
+        // An unrated entry must never be used to sneak past a PG-13 rating that
+        // the same movie already carries.
+        using FakeHandler handler = new(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            return path switch
+            {
+                "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
+                "/3/discover/movie" => Json(
+                    Discover(1, 1, Candidate(1, "Teen Cartoon", Today.AddDays(200), new[] { 16 }))
+                ),
+                "/3/movie/1/release_dates" => Json(
+                    $$"""{"results":[{"iso_3166_1":"US","release_dates":[{"certification":"","release_date":"{{Today.AddDays(200):yyyy-MM-dd}}T00:00:00Z","type":3},{"certification":"PG-13","release_date":"{{Today.AddDays(201):yyyy-MM-dd}}T00:00:00Z","type":3}]}]}"""
+                ),
+                _ => NotFound(),
+            };
+        });
+        GoodMoviesInfrastructureOptions options = Options();
+        using HttpClient httpClient = CreateHttpClient(
+            handler,
+            options,
+            new StaticGoodMoviesTokenProvider(options.Token)
+        );
+        TmdbMovieCatalogClient client = new(httpClient, options);
+
+        CatalogFetchResult result = await client.FetchAsync(Today);
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(0, result.Movies.Count);
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_DropsNotYetRatedFamilyMoviesBelowThePopularityFloor()
+    {
+        // Festival shorts share the animation genre with real releases, so an
+        // unrated title also has to be prominent enough to be a real release.
+        using FakeHandler handler = new(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            return path switch
+            {
+                "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
+                "/3/discover/movie" => Json(
+                    Discover(
+                        1,
+                        1,
+                        Candidate(
+                            1,
+                            "Tiny Festival Short",
+                            Today.AddDays(200),
+                            new[] { 16 },
+                            popularity: 0.4
+                        ),
+                        Candidate(
+                            2,
+                            "Real Release",
+                            Today.AddDays(200),
+                            new[] { 16 },
+                            popularity: 7.9
+                        )
+                    )
+                ),
+                "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
+                "/3/movie/2/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
+                _ => NotFound(),
+            };
+        });
+        GoodMoviesInfrastructureOptions options = Options();
+        using HttpClient httpClient = CreateHttpClient(
+            handler,
+            options,
+            new StaticGoodMoviesTokenProvider(options.Token)
+        );
+        TmdbMovieCatalogClient client = new(httpClient, options);
+
+        CatalogFetchResult result = await client.FetchAsync(Today);
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(1, result.Movies.Count);
+        Assert.AreEqual(2, result.Movies.Single().Id);
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_KeepsUnpopularMoviesThatCarryAnAllowedCertification()
+    {
+        // The popularity floor only exists to vouch for unrated movies. A small
+        // title the MPAA already rated G stays in.
+        using FakeHandler handler = new(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            return path switch
+            {
+                "/3/genre/movie/list" => Json("""{"genres":[]}"""),
+                "/3/discover/movie" => Json(
+                    Discover(1, 1, Candidate(1, "Small But Rated", Today, popularity: 0.01))
+                ),
+                "/3/movie/1/release_dates" => Json(UsRelease(Today, "G", 3)),
+                _ => NotFound(),
+            };
+        });
+        GoodMoviesInfrastructureOptions options = Options();
+        using HttpClient httpClient = CreateHttpClient(
+            handler,
+            options,
+            new StaticGoodMoviesTokenProvider(options.Token)
+        );
+        TmdbMovieCatalogClient client = new(httpClient, options);
+
+        CatalogFetchResult result = await client.FetchAsync(Today);
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(1, result.Movies.Count);
+        Assert.IsFalse(result.Movies.Single().IsNotYetRated);
     }
 
     [TestMethod]
@@ -743,7 +940,8 @@ public sealed class InfrastructureBehaviorTests
         DateOnly date,
         int[]? genreIds = null,
         string? overview = null,
-        string? posterPath = null
+        string? posterPath = null,
+        double popularity = 10
     ) =>
         new()
         {
@@ -754,6 +952,7 @@ public sealed class InfrastructureBehaviorTests
             Overview = overview,
             PosterPath = posterPath,
             OriginalLanguage = "en",
+            Popularity = popularity,
         };
 
     private static string Discover(int page, int totalPages, params TmdbDiscoverMovie[] movies) =>

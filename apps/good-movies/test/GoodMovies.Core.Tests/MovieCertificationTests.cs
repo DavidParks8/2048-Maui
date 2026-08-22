@@ -76,4 +76,45 @@ public sealed class MovieCertificationTests
         Assert.IsTrue(policy.IsSafe(typedMovie));
         Assert.IsFalse(policy.IsSafe(missingTypedMovie));
     }
+
+    [TestMethod]
+    public void MovieSafetyPolicy_NotYetRatedMovie_IsSafeOnlyWhenItIsAFamilyTitle()
+    {
+        DateOnly today = new(2026, 8, 21);
+        TheatricalRelease release = new(today, "US", TheatricalRelease.TheatricalType);
+        MovieSafetyPolicy policy = new();
+        Movie familyMovie = new(
+            1,
+            "Not rated yet cartoon",
+            certification: null,
+            releases: new[] { release },
+            genres: new[] { new MovieGenre(MovieGenre.AnimationId, "Animation") }
+        );
+        Movie grownUpMovie = new(
+            2,
+            "Not rated yet thriller",
+            certification: null,
+            releases: new[] { release },
+            genres: new[] { new MovieGenre(53, "Thriller") }
+        );
+        Movie ratedTeenFamilyMovie = new(
+            3,
+            "PG-13 cartoon",
+            certification: "PG-13",
+            releases: new[] { release },
+            genres: new[] { new MovieGenre(MovieGenre.AnimationId, "Animation") }
+        );
+
+        Assert.IsTrue(familyMovie.IsNotYetRated);
+        Assert.IsTrue(familyMovie.IsFamilyAudience);
+        Assert.IsTrue(policy.IsSafe(familyMovie));
+
+        Assert.IsTrue(grownUpMovie.IsNotYetRated);
+        Assert.IsFalse(grownUpMovie.IsFamilyAudience);
+        Assert.IsFalse(policy.IsSafe(grownUpMovie));
+
+        // A rating we do not allow is not the same as having no rating yet.
+        Assert.IsFalse(ratedTeenFamilyMovie.IsNotYetRated);
+        Assert.IsFalse(policy.IsSafe(ratedTeenFamilyMovie));
+    }
 }

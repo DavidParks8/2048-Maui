@@ -40,6 +40,7 @@
   <data name="CompactDateFormat" xml:space="preserve"><value>{0:MMMM d}</value></data>
   <data name="MovieCountOne" xml:space="preserve"><value>{0} movie</value></data>
   <data name="MovieCountMany" xml:space="preserve"><value>{0} movies</value></data>
+  <data name="RatingComingSoon" xml:space="preserve"><value>Rating soon</value></data>
   <data name="MovieKindFallback" xml:space="preserve"><value>Movie</value></data>
   <data name="SavedCountOne" xml:space="preserve"><value>{0} saved</value></data>
   <data name="SavedCountMany" xml:space="preserve"><value>{0} saved</value></data>
@@ -96,6 +97,7 @@
   <data name="ReadAloud" xml:space="preserve"><value>Read it to me</value></data>
   <data name="StopReading" xml:space="preserve"><value>Stop reading</value></data>
   <data name="GoBack" xml:space="preserve"><value>Go back</value></data>
+  <data name="BackLabel" xml:space="preserve"><value>← Back</value></data>
   <data name="TapWordHint" xml:space="preserve"><value>Tap any word to hear it</value></data>
   <data name="Synopsis" xml:space="preserve"><value>Story</value></data>
   <data name="PlayTrailer" xml:space="preserve"><value>Play trailer</value></data>

@@ -108,6 +108,8 @@ public sealed class TmdbDiscoverMovie
 
     [JsonPropertyName("release_date")]
     public string? ReleaseDate { get; set; }
+
+    public double Popularity { get; set; }
 }
 
 public sealed class TmdbGenreListResponse
