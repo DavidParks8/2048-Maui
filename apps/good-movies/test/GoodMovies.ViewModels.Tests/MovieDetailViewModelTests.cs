@@ -130,6 +130,22 @@ public sealed class MovieDetailViewModelTests
         TrailerPlaybackResult failed = await detail.PlayTrailerAsync();
         Assert.AreEqual(TrailerPlaybackState.LaunchFailed, failed.State);
         Assert.IsFalse(failed.Succeeded);
+        Assert.IsTrue(detail.IsTrailerLaunchFailed);
+        Assert.IsNotNull(failed.Error);
+
+        IOException launchError = new("YouTube is blocked");
+        launcher
+            .LaunchAsync("youtube-key", Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<bool>(launchError));
+        detail = new(
+            movie,
+            new FixedClock(Today),
+            trailerLookup: lookup,
+            trailerLauncher: launcher
+        );
+        TrailerPlaybackResult errored = await detail.PlayTrailerAsync();
+        Assert.AreEqual(TrailerPlaybackState.LaunchFailed, errored.State);
+        Assert.AreSame(launchError, errored.Error);
     }
 
     [TestMethod]

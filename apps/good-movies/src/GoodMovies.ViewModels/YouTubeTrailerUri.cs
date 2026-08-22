@@ -3,10 +3,12 @@ using GoodMovies.Core;
 namespace GoodMovies.ViewModels;
 
 /// <summary>
-/// Builds the HTTPS universal link used for YouTube trailer playback.
+/// Builds the native iOS YouTube app link used for trailer playback.
 /// </summary>
 public static class YouTubeTrailerUri
 {
+    public const string Scheme = "youtube";
+
     public const int VideoKeyLength = YouTubeVideoKey.Length;
 
     public static bool IsValidKey(string? key) => YouTubeVideoKey.IsValid(key);
@@ -20,7 +22,7 @@ public static class YouTubeTrailerUri
         }
 
         uri = new Uri(
-            $"https://www.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
+            $"{Scheme}://www.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
             UriKind.Absolute
         );
         return true;

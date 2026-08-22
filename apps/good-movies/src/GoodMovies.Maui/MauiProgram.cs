@@ -113,6 +113,7 @@ public static class MauiProgram
             serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
         );
 #endif
+        builder.Services.AddSingleton<INativeUriLauncher>(_ => new MauiNativeUriLauncher());
         builder.Services.AddSingleton<MauiExternalTrailerLauncher>();
         builder.Services.AddSingleton<IExternalTrailerLauncher>(serviceProvider =>
             serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()

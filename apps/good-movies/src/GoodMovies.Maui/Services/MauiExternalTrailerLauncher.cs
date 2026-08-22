@@ -11,20 +11,43 @@ public class MauiExternalTrailerLauncher
         IExternalLauncher,
         IExternalTrailerService
 {
-    public async Task<bool> LaunchAsync(
+    private readonly NativeYouTubeTrailerLauncher _launcher;
+
+    public MauiExternalTrailerLauncher()
+        : this(new MauiNativeUriLauncher()) { }
+
+    public MauiExternalTrailerLauncher(INativeUriLauncher uriLauncher)
+    {
+        _launcher = new NativeYouTubeTrailerLauncher(uriLauncher);
+    }
+
+    public Task<bool> LaunchAsync(
         string youtubeKey,
+        CancellationToken cancellationToken = default
+    ) => _launcher.LaunchAsync(youtubeKey, cancellationToken);
+}
+
+internal sealed class MauiNativeUriLauncher : INativeUriLauncher
+{
+    public async Task<bool> CanOpenAsync(
+        Uri uri,
         CancellationToken cancellationToken = default
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri uri))
-        {
-            return false;
-        }
-
-        Task<bool> launch = MainThread.InvokeOnMainThreadAsync(() =>
-            Launcher.Default.OpenAsync(uri)
+        Task<bool> availability = MainThread.InvokeOnMainThreadAsync(() =>
+            Launcher.Default.CanOpenAsync(uri)
         );
+        return await availability.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<bool> OpenAsync(
+        Uri uri,
+        CancellationToken cancellationToken = default
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Task<bool> launch = MainThread.InvokeOnMainThreadAsync(() => Launcher.Default.OpenAsync(uri));
         return await launch.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 }
