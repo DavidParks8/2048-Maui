@@ -4,14 +4,15 @@ using UIKit;
 
 namespace GoodMovies.Maui;
 
-public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailerPlaybackHost
+public partial class MovieDetailPage : ContentPage, IQueryAttributable
 {
     private readonly CatalogViewModel _catalogViewModel;
     private readonly MauiExternalTrailerLauncher _trailerLauncher;
     private MovieDetailViewModel? _boundDetail;
-    private TaskCompletionSource<bool>? _trailerLoadCompletion;
     private int? _requestedMovieId;
-    private bool _isTrailerActive;
+    private long _ignoreWordTapsUntilMilliseconds;
+    private bool _isAppeared;
+    private bool _isPlaybackSubscribed;
     private bool _isWide;
     private bool _layoutInitialized;
     private double _compactPosterWidth;
@@ -47,13 +48,22 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailer
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        _trailerLauncher.AttachHost(this);
+        if (!_isPlaybackSubscribed)
+        {
+            _trailerLauncher.PlaybackChanged += OnTrailerPlaybackChanged;
+            _isPlaybackSubscribed = true;
+        }
+
+        _isAppeared = true;
+        _ignoreWordTapsUntilMilliseconds = Environment.TickCount64 + 500;
         BindSelectedDetail();
         _boundDetail?.Activate();
+        ScheduleSynopsisWords(_boundDetail);
     }
 
     protected override void OnDisappearing()
     {
+        _isAppeared = false;
         _boundDetail?.Deactivate();
         base.OnDisappearing();
     }
@@ -63,10 +73,15 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailer
         _boundDetail?.Deactivate();
         if (!Navigation.NavigationStack.Contains(this))
         {
-            _trailerLauncher.DetachHost(this);
+            if (_isPlaybackSubscribed)
+            {
+                _trailerLauncher.PlaybackChanged -= OnTrailerPlaybackChanged;
+                _isPlaybackSubscribed = false;
+            }
             _catalogViewModel.CloseDetail();
             _boundDetail = null;
             BindingContext = null;
+            BindableLayout.SetItemsSource(SynopsisWords, null);
         }
 
         base.OnNavigatedFrom(args);
@@ -87,88 +102,69 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailer
 
         _boundDetail?.Deactivate();
         _boundDetail = detail;
+        BindableLayout.SetItemsSource(SynopsisWords, null);
         BindingContext = detail;
         if (detail is not null)
         {
-            _ = detail.PrepareTrailerAsync();
+            _ = PrepareTrailerAndSyncPlaybackAsync(detail);
+            if (_isAppeared)
+            {
+                ScheduleSynopsisWords(detail);
+            }
         }
     }
 
     private void OnBackClicked(object? sender, EventArgs e) => _ = GoBackAsync();
 
-    public async Task<bool> PlayAsync(string youtubeKey, CancellationToken cancellationToken)
+    private async Task PrepareTrailerAndSyncPlaybackAsync(MovieDetailViewModel detail)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri source))
+        SyncTrailerPlayback(detail, _trailerLauncher.ActiveYoutubeKey);
+        await detail.PrepareTrailerAsync();
+        if (ReferenceEquals(_boundDetail, detail))
         {
-            return false;
+            SyncTrailerPlayback(detail, _trailerLauncher.ActiveYoutubeKey);
+        }
+    }
+
+    private void ScheduleSynopsisWords(MovieDetailViewModel? detail)
+    {
+        if (detail is null)
+        {
+            return;
         }
 
-        if (_isTrailerActive)
-        {
-            return true;
-        }
-
-        TaskCompletionSource<bool> completion = new(
-            TaskCreationOptions.RunContinuationsAsynchronously
-        );
-        _trailerLoadCompletion?.TrySetResult(false);
-        _trailerLoadCompletion = completion;
-
-        if (Equals(TrailerWebView.Source, source))
-        {
-            TrailerWebView.Reload();
-        }
-        else
-        {
-            TrailerWebView.Source = source;
-        }
-
-        try
-        {
-            return await completion.Task.WaitAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            if (ReferenceEquals(_trailerLoadCompletion, completion))
+        Dispatcher.DispatchDelayed(
+            TimeSpan.FromMilliseconds(16),
+            () =>
             {
-                _trailerLoadCompletion = null;
-                Stop();
+                if (_isAppeared && ReferenceEquals(_boundDetail, detail))
+                {
+                    BindableLayout.SetItemsSource(SynopsisWords, detail.WordTokens);
+                }
             }
+        );
+    }
 
-            throw;
+    private void OnTrailerPlaybackChanged(object? sender, TrailerPlaybackChangedEventArgs args)
+    {
+        if (_boundDetail is not { } detail)
+        {
+            return;
         }
+
+        SyncTrailerPlayback(detail, args.IsPlaying ? args.YouTubeKey : null);
     }
 
-    public void Stop()
+    private static void SyncTrailerPlayback(MovieDetailViewModel detail, string? activeYoutubeKey)
     {
-        _isTrailerActive = false;
-        _boundDetail?.SetTrailerPlaybackActive(false);
-        _trailerLoadCompletion?.TrySetResult(false);
-        _trailerLoadCompletion = null;
-        TrailerWebView.StopPlayback();
+        bool isCurrent =
+            activeYoutubeKey is not null
+            && string.Equals(detail.SelectedTrailerKey, activeYoutubeKey, StringComparison.Ordinal);
+        detail.SetTrailerPlaybackContext(
+            isCurrentTrailer: isCurrent,
+            isAnotherTrailerPlaying: activeYoutubeKey is not null && !isCurrent
+        );
     }
-
-    private void OnTrailerLoadStarted(object? sender, EventArgs e) { }
-
-    private void OnTrailerLoadSucceeded(object? sender, EventArgs e)
-    {
-        _isTrailerActive = true;
-        _boundDetail?.SetTrailerPlaybackActive(true);
-        _trailerLoadCompletion?.TrySetResult(true);
-        _trailerLoadCompletion = null;
-    }
-
-    private void OnTrailerLoadFailed(object? sender, EventArgs e)
-    {
-        _isTrailerActive = false;
-        _boundDetail?.SetTrailerPlaybackActive(false);
-        _trailerLoadCompletion?.TrySetResult(false);
-        _trailerLoadCompletion = null;
-        TrailerWebView.StopPlayback();
-    }
-
-    private void OnTrailerPresentationEnded(object? sender, EventArgs e) => Stop();
 
     private async Task GoBackAsync()
     {
@@ -187,6 +183,11 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailer
 
     private void OnWordTapped(object? sender, TappedEventArgs e)
     {
+        if (Environment.TickCount64 < _ignoreWordTapsUntilMilliseconds)
+        {
+            return;
+        }
+
         if (
             sender is Border { BindingContext: WordTokenViewModel token }
             && BindingContext is MovieDetailViewModel detail
@@ -205,11 +206,15 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailer
             return;
         }
 
+        bool isInitialLayout = !_layoutInitialized;
         _layoutInitialized = true;
         _isWide = isWide;
         _compactPosterWidth = compactPosterWidth;
 
-        if (Handler is IPlatformViewHandler { ViewController: { View: { } view } })
+        if (
+            !isInitialLayout
+            && Handler is IPlatformViewHandler { ViewController: { View: { } view } }
+        )
         {
             UIView.PerformWithoutAnimation(() =>
             {

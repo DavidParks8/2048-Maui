@@ -7,8 +7,20 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   x:DataType="local:MovieCardView"
   x:Name="Root"
+  HeightRequest="{OnIdiom Phone=182, Default=218}"
+  MinimumHeightRequest="{OnIdiom Phone=182, Default=218}"
 >
   <Grid x:Name="CardRoot" RowDefinitions="*">
+    <Border
+      HeightRequest="{OnIdiom Phone=176, Default=212}"
+      Background="#66000000"
+      InputTransparent="True"
+      Stroke="Transparent"
+      StrokeShape="RoundRectangle 24"
+      StrokeThickness="0"
+      TranslationY="6"
+      VerticalOptions="Start"
+    />
     <Border
       x:Name="CardBorder"
       Padding="{OnIdiom Phone=14, Default=16}"
@@ -19,10 +31,9 @@
       Stroke="Transparent"
       StrokeShape="RoundRectangle 24"
       StrokeThickness="0"
+      HeightRequest="{OnIdiom Phone=176, Default=212}"
+      VerticalOptions="Start"
     >
-      <Border.Shadow>
-        <Shadow Brush="#66000000" Offset="0,6" Opacity="0.45" Radius="0" />
-      </Border.Shadow>
       <Border.GestureRecognizers>
         <TapGestureRecognizer Tapped="OnOpenTapped" />
       </Border.GestureRecognizers>
@@ -82,7 +93,7 @@
               Aspect="AspectFill"
               InputTransparent="True"
               IsVisible="{Binding Card.PosterSource, Converter={StaticResource StringVisibilityConverter}, Source={x:Reference Root}}"
-              Source="{Binding Card.PosterSource, Converter={StaticResource PosterImageSourceConverter}, Source={x:Reference Root}}"
+              Source="{Binding Card.PosterSource, Converter={StaticResource PosterImageSourceConverter}, ConverterParameter=Card, Source={x:Reference Root}}"
             />
           </Grid>
         </Border>
@@ -102,7 +113,7 @@
             FontAttributes="Bold"
             FontSize="27"
             LineBreakMode="TailTruncation"
-            MaxLines="3"
+            MaxLines="{OnIdiom Phone=2, Default=3}"
             Text="{Binding Card.Title, Source={x:Reference Root}}"
             TextColor="{StaticResource White}"
           />
@@ -111,20 +122,13 @@
             FontAutoScalingEnabled="True"
             FontAttributes="Bold"
             FontSize="21"
-            LineBreakMode="WordWrap"
-            MaxLines="2"
+            LineBreakMode="TailTruncation"
+            MaxLines="1"
             Text="{Binding Card, Converter={StaticResource CardStatusConverter}, Source={x:Reference Root}}"
             TextColor="{StaticResource Accent}"
           />
-          <FlexLayout
-            Grid.Row="2"
-            AlignItems="Start"
-            Direction="Row"
-            InputTransparent="True"
-            Wrap="Wrap"
-          >
+          <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8" InputTransparent="True">
             <Border
-              Margin="0,0,8,6"
               Padding="10,4"
               Background="{StaticResource Accent}"
               Stroke="Transparent"
@@ -140,9 +144,11 @@
               />
             </Border>
             <Border
-              Margin="0,0,0,6"
+              Grid.Column="1"
               Padding="10,4"
               Background="{StaticResource Surface2}"
+              HorizontalOptions="Start"
+              MaximumWidthRequest="190"
               Stroke="{StaticResource AccentMuted}"
               StrokeShape="RoundRectangle 10"
               StrokeThickness="1"
@@ -164,7 +170,7 @@
                 />
               </HorizontalStackLayout>
             </Border>
-          </FlexLayout>
+          </Grid>
         </Grid>
       </Grid>
     </Border>

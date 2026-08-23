@@ -21,21 +21,19 @@ public interface IMovieDetailPageFactory
 
 public sealed class MauiMovieDetailPageFactory : IMovieDetailPageFactory
 {
-    private readonly CatalogViewModel _catalogViewModel;
-    private readonly MauiExternalTrailerLauncher _trailerLauncher;
+    private readonly MovieDetailPage _page;
 
     public MauiMovieDetailPageFactory(
         CatalogViewModel catalogViewModel,
         MauiExternalTrailerLauncher trailerLauncher
     )
     {
-        _catalogViewModel =
-            catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
-        _trailerLauncher =
-            trailerLauncher ?? throw new ArgumentNullException(nameof(trailerLauncher));
+        ArgumentNullException.ThrowIfNull(catalogViewModel);
+        ArgumentNullException.ThrowIfNull(trailerLauncher);
+        _page = new MovieDetailPage(catalogViewModel, trailerLauncher);
     }
 
-    public MovieDetailPage Create() => new(_catalogViewModel, _trailerLauncher);
+    public MovieDetailPage Create() => _page;
 }
 
 public sealed class MauiMovieDetailRouteFactory : RouteFactory
@@ -84,7 +82,7 @@ public sealed class MauiMovieDetailNavigationHost : IMovieDetailNavigationHost
             ["movieId"] = movieId.ToString(CultureInfo.InvariantCulture),
         };
         Task navigation = MainThread.InvokeOnMainThreadAsync(() =>
-            shell.GoToAsync(GoodMoviesRoutes.MovieDetail, parameters)
+            shell.GoToAsync(GoodMoviesRoutes.MovieDetail, animate: false, parameters)
         );
         return navigation.WaitAsync(cancellationToken);
     }

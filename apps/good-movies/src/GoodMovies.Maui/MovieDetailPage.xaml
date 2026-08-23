@@ -2,7 +2,6 @@
 <ContentPage
   x:Class="GoodMovies.Maui.MovieDetailPage"
   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-  xmlns:controls="clr-namespace:GoodMovies.Maui.Controls"
   xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
   xmlns:vm="clr-namespace:GoodMovies.ViewModels;assembly=GoodMovies.ViewModels"
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -18,22 +17,6 @@
   Title="{Binding Title}"
 >
   <Grid RowDefinitions="Auto,*">
-    <controls:TrailerPlayerView
-      x:Name="TrailerWebView"
-      Grid.RowSpan="2"
-      AutomationId="MovieDetailTrailerPlayer"
-      HeightRequest="270"
-      HorizontalOptions="Start"
-      InputTransparent="True"
-      LoadFailed="OnTrailerLoadFailed"
-      LoadStarted="OnTrailerLoadStarted"
-      LoadSucceeded="OnTrailerLoadSucceeded"
-      Opacity="0.01"
-      PresentationEnded="OnTrailerPresentationEnded"
-      VerticalOptions="Start"
-      WidthRequest="480"
-      ZIndex="-1"
-    />
     <Grid
       x:Name="DetailHeader"
       Grid.Row="0"
@@ -179,7 +162,7 @@
             FontAutoScalingEnabled="True"
             FontSize="16"
             HorizontalTextAlignment="Center"
-            IsVisible="{Binding TrailerState, Converter={StaticResource TrailerMessageVisibilityConverter}}"
+            IsVisible="{Binding IsTrailerMessageVisible}"
             LineHeight="1.6"
             Text="{Binding TrailerState, Converter={StaticResource TrailerStateMessageConverter}}"
             TextColor="{StaticResource TextSecondary}"
@@ -367,13 +350,7 @@
               VerticalOptions="Center"
             />
           </Grid>
-          <FlexLayout
-            x:Name="SynopsisWords"
-            BindableLayout.ItemsSource="{Binding WordTokens}"
-            Direction="Row"
-            JustifyContent="Start"
-            Wrap="Wrap"
-          >
+          <FlexLayout x:Name="SynopsisWords" Direction="Row" JustifyContent="Start" Wrap="Wrap">
             <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="vm:WordTokenViewModel">
                 <Border

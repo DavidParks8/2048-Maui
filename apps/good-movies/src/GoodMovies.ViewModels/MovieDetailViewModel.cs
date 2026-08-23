@@ -18,6 +18,7 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
     private readonly ReleaseWindowPolicy _releaseWindowPolicy;
     private readonly SemaphoreSlim _favoriteGate = new(1, 1);
     private readonly object _trailerSync = new();
+    private readonly Lazy<ReadOnlyObservableCollection<WordTokenViewModel>> _wordTokens;
     private DateOnly? _releaseDate;
 
     private Task<TrailerPlaybackResult>? _trailerTask;
@@ -50,8 +51,12 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
         StatusInfo = _releaseDate is DateOnly releaseDate
             ? _releaseWindowPolicy.GetStatusInfo(releaseDate, Clock.Today)
             : default;
-        WordTokens = new ReadOnlyObservableCollection<WordTokenViewModel>(
-            new ObservableCollection<WordTokenViewModel>(Tokenize(Overview).ToArray())
+        _wordTokens = new Lazy<ReadOnlyObservableCollection<WordTokenViewModel>>(
+            () =>
+                new ReadOnlyObservableCollection<WordTokenViewModel>(
+                    new ObservableCollection<WordTokenViewModel>(Tokenize(Overview).ToArray())
+                ),
+            LazyThreadSafetyMode.ExecutionAndPublication
         );
 
         if (_speechService is not null)
@@ -236,7 +241,7 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public string SpeechText => ReadAloudText;
 
-    public ReadOnlyObservableCollection<WordTokenViewModel> WordTokens { get; }
+    public ReadOnlyObservableCollection<WordTokenViewModel> WordTokens => _wordTokens.Value;
 
     public IReadOnlyList<WordTokenViewModel> Tokens => WordTokens;
 
@@ -289,6 +294,9 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isTrailerPlaying;
 
+    [ObservableProperty]
+    private bool _isAnotherTrailerPlaying;
+
     public TrailerPlaybackState TrailerStatus => TrailerState;
 
     public bool IsTrailerLoading => TrailerState == TrailerPlaybackState.Loading;
@@ -315,6 +323,14 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public bool CanPlayTrailer => !IsTrailerLoading && !IsTrailerPlaying;
 
+    public bool IsTrailerMessageVisible =>
+        !IsAnotherTrailerPlaying
+        && TrailerState
+            is TrailerPlaybackState.NotFound
+                or TrailerPlaybackState.MissingConfiguration
+                or TrailerPlaybackState.Failed
+                or TrailerPlaybackState.LaunchFailed;
+
     [ObservableProperty]
     private TrailerPlaybackResult? _lastTrailerResult;
 
@@ -336,7 +352,13 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public void SetTrailerPlaybackActive(bool isActive)
     {
-        IsTrailerPlaying = isActive;
+        SetTrailerPlaybackContext(isActive, isAnotherTrailerPlaying: false);
+    }
+
+    public void SetTrailerPlaybackContext(bool isCurrentTrailer, bool isAnotherTrailerPlaying)
+    {
+        IsTrailerPlaying = isCurrentTrailer;
+        IsAnotherTrailerPlaying = isAnotherTrailerPlaying;
     }
 
     public void ReapplyCurrentDatePolicies()
@@ -1108,11 +1130,17 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsTrailerLaunchFailed));
         OnPropertyChanged(nameof(IsTrailerAvailable));
         OnPropertyChanged(nameof(CanPlayTrailer));
+        OnPropertyChanged(nameof(IsTrailerMessageVisible));
     }
 
     partial void OnIsTrailerPlayingChanged(bool value)
     {
         OnPropertyChanged(nameof(CanPlayTrailer));
+    }
+
+    partial void OnIsAnotherTrailerPlayingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsTrailerMessageVisible));
     }
 
     partial void OnLastTrailerResultChanged(TrailerPlaybackResult? value)

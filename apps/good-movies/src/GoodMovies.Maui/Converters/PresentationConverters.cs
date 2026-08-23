@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using GoodMovies.Core;
 using GoodMovies.Maui.Resources.Strings;
@@ -655,21 +656,32 @@ public sealed class ReadAloudButtonTextConverter : IValueConverter
 
 public sealed class PosterImageSourceConverter : IValueConverter
 {
+    private static readonly ConcurrentDictionary<string, UriImageSource> RemoteSources = new(
+        StringComparer.Ordinal
+    );
+    private static readonly ConcurrentDictionary<string, ImageSource> LocalSources = new(
+        StringComparer.Ordinal
+    );
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is Uri uri && IsTrustedRemoteUri(uri))
         {
-            return CreateRemoteSource(uri);
+            return CreateRemoteSource(OptimizeUri(uri, parameter));
         }
 
         if (value is string text && !string.IsNullOrWhiteSpace(text))
         {
             if (Uri.TryCreate(text, UriKind.Absolute, out Uri? absoluteUri))
             {
-                return IsTrustedRemoteUri(absoluteUri) ? CreateRemoteSource(absoluteUri) : null;
+                return IsTrustedRemoteUri(absoluteUri)
+                    ? CreateRemoteSource(OptimizeUri(absoluteUri, parameter))
+                    : null;
             }
 
-            return IsSafeLocalAssetName(text) ? ImageSource.FromFile(text) : null;
+            return IsSafeLocalAssetName(text)
+                ? LocalSources.GetOrAdd(text, static file => ImageSource.FromFile(file))
+                : null;
         }
 
         return null;
@@ -683,12 +695,39 @@ public sealed class PosterImageSourceConverter : IValueConverter
     ) => throw new NotSupportedException();
 
     private static UriImageSource CreateRemoteSource(Uri uri) =>
-        new()
+        RemoteSources.GetOrAdd(
+            uri.AbsoluteUri,
+            static absoluteUri => new UriImageSource
+            {
+                Uri = new Uri(absoluteUri, UriKind.Absolute),
+                CachingEnabled = true,
+                CacheValidity = TimeSpan.FromDays(5),
+            }
+        );
+
+    private static Uri OptimizeUri(Uri uri, object? parameter)
+    {
+        if (
+            parameter is not string { Length: > 0 } role
+            || !string.Equals(role, "Card", StringComparison.Ordinal)
+        )
         {
-            Uri = uri,
-            CachingEnabled = true,
-            CacheValidity = TimeSpan.FromDays(5),
-        };
+            return uri;
+        }
+
+        const string originalSize = "/t/p/w500/";
+        int sizeIndex = uri.AbsoluteUri.IndexOf(originalSize, StringComparison.Ordinal);
+        return sizeIndex < 0
+            ? uri
+            : new Uri(
+                string.Concat(
+                    uri.AbsoluteUri.AsSpan(0, sizeIndex),
+                    "/t/p/w342/",
+                    uri.AbsoluteUri.AsSpan(sizeIndex + originalSize.Length)
+                ),
+                UriKind.Absolute
+            );
+    }
 
     private static bool IsTrustedRemoteUri(Uri uri) =>
         uri.IsAbsoluteUri

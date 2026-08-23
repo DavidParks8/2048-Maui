@@ -10,62 +10,69 @@
   HeightRequest="90"
   MinimumHeightRequest="90"
 >
-  <Border
-    AutomationId="MovieGroupHeader"
-    HeightRequest="64"
-    Margin="0,14,0,12"
-    Padding="16,12"
-    Background="{StaticResource Surface2}"
-    SemanticProperties.Description="{Binding Group, Converter={StaticResource GroupAccessibilityConverter}, Source={x:Reference Root}}"
-    Stroke="Transparent"
-    StrokeShape="RoundRectangle 18"
-    StrokeThickness="0"
-  >
-    <Border.Shadow>
-      <Shadow Brush="#55000000" Offset="0,4" Opacity="0.35" Radius="0" />
-    </Border.Shadow>
-    <Grid
-      AutomationProperties.IsInAccessibleTree="False"
-      ColumnDefinitions="Auto,*,Auto"
-      ColumnSpacing="12"
+  <Grid Margin="0,14,0,12">
+    <Border
+      HeightRequest="64"
+      Background="#55000000"
+      InputTransparent="True"
+      Stroke="Transparent"
+      StrokeShape="RoundRectangle 18"
+      StrokeThickness="0"
+      TranslationY="4"
+    />
+    <Border
+      AutomationId="MovieGroupHeader"
+      HeightRequest="64"
+      Padding="16,12"
+      Background="{StaticResource Surface2}"
+      SemanticProperties.Description="{Binding Group, Converter={StaticResource GroupAccessibilityConverter}, Source={x:Reference Root}}"
+      Stroke="Transparent"
+      StrokeShape="RoundRectangle 18"
+      StrokeThickness="0"
     >
-      <Label
-        Grid.Column="0"
-        FontAutoScalingEnabled="True"
-        FontSize="25"
+      <Grid
         AutomationProperties.IsInAccessibleTree="False"
-        Text="{x:Static strings:AppStrings.CalendarIcon}"
-        TextColor="{StaticResource Accent}"
-        VerticalOptions="Center"
-      />
-      <Label
-        x:Name="TitleLabel"
-        Grid.Column="1"
-        FontAutoScalingEnabled="True"
-        FontAttributes="Bold"
-        FontSize="27"
-        LineBreakMode="WordWrap"
-        MaxLines="2"
-        TextColor="{StaticResource White}"
-        VerticalOptions="Center"
-      />
-      <Border
-        Grid.Column="2"
-        Padding="12,6"
-        Background="{StaticResource Accent}"
-        Stroke="Transparent"
-        StrokeShape="RoundRectangle 12"
-        StrokeThickness="0"
-        VerticalOptions="Center"
+        ColumnDefinitions="Auto,*,Auto"
+        ColumnSpacing="12"
       >
         <Label
+          Grid.Column="0"
+          FontAutoScalingEnabled="True"
+          FontSize="25"
+          AutomationProperties.IsInAccessibleTree="False"
+          Text="{x:Static strings:AppStrings.CalendarIcon}"
+          TextColor="{StaticResource Accent}"
+          VerticalOptions="Center"
+        />
+        <Label
+          x:Name="TitleLabel"
+          Grid.Column="1"
           FontAutoScalingEnabled="True"
           FontAttributes="Bold"
-          FontSize="16"
-          Text="{Binding Group, Converter={StaticResource GroupStatusConverter}, Source={x:Reference Root}}"
-          TextColor="{StaticResource PageBackground}"
+          FontSize="27"
+          LineBreakMode="WordWrap"
+          MaxLines="2"
+          TextColor="{StaticResource White}"
+          VerticalOptions="Center"
         />
-      </Border>
-    </Grid>
-  </Border>
+        <Border
+          Grid.Column="2"
+          Padding="12,6"
+          Background="{StaticResource Accent}"
+          Stroke="Transparent"
+          StrokeShape="RoundRectangle 12"
+          StrokeThickness="0"
+          VerticalOptions="Center"
+        >
+          <Label
+            FontAutoScalingEnabled="True"
+            FontAttributes="Bold"
+            FontSize="16"
+            Text="{Binding Group, Converter={StaticResource GroupStatusConverter}, Source={x:Reference Root}}"
+            TextColor="{StaticResource PageBackground}"
+          />
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
 </ContentView>

@@ -90,6 +90,11 @@ public sealed class MovieDetailViewModelTests
             .Returns(Task.FromResult(TrailerLookupResult.NotFound(8)));
         TrailerPlaybackResult missing = await detail.PrepareTrailerAsync();
         Assert.AreEqual(TrailerPlaybackState.NotFound, missing.State);
+        Assert.IsTrue(detail.IsTrailerMessageVisible);
+        detail.SetTrailerPlaybackContext(isCurrentTrailer: false, isAnotherTrailerPlaying: true);
+        Assert.IsFalse(detail.IsTrailerMessageVisible);
+        detail.SetTrailerPlaybackContext(isCurrentTrailer: false, isAnotherTrailerPlaying: false);
+        Assert.IsTrue(detail.IsTrailerMessageVisible);
 
         lookup
             .GetTrailerAsync(8, Arg.Any<CancellationToken>())

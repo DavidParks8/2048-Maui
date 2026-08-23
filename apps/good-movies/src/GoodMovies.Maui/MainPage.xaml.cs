@@ -26,6 +26,7 @@ public partial class MainPage : ContentPage
     private bool _loadingWasAnnounced;
     private bool _refreshWasAnnounced;
     private bool _shimmerRunning;
+    private int _movieNavigationPending;
     private UICollectionView? _nativeMovieCollection;
     private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
     private int _feedScrollRestoreVersion;
@@ -702,7 +703,10 @@ public partial class MainPage : ContentPage
 
     private void OnMovieRequested(object? sender, EventArgs e)
     {
-        if (sender is MovieCardView { Card: MovieCardViewModel card })
+        if (
+            sender is MovieCardView { Card: MovieCardViewModel card }
+            && Interlocked.Exchange(ref _movieNavigationPending, 1) == 0
+        )
         {
             _ = OpenMovieAsync(card);
         }
@@ -715,6 +719,10 @@ public partial class MainPage : ContentPage
             await _viewModel.OpenDetailAsync(card);
         }
         catch (OperationCanceledException) { }
+        finally
+        {
+            Interlocked.Exchange(ref _movieNavigationPending, 0);
+        }
     }
 
     private readonly record struct FeedScrollAnchor(int MovieId, double OffsetFromItemTop);

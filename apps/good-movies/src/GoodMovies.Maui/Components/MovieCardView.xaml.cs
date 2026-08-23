@@ -7,6 +7,8 @@ namespace GoodMovies.Maui.Components;
 
 public partial class MovieCardView : ContentView
 {
+    private int _openRequestPending;
+
 #pragma warning disable CS0169
     [AutoBindable(OnChanged = nameof(OnCardChanged))]
     private readonly MovieCardViewModel? _card;
@@ -31,17 +33,31 @@ public partial class MovieCardView : ContentView
                 : AppStrings.AddFavorite
             : AppStrings.AddFavorite;
 
-    private async void OnOpenTapped(object? sender, TappedEventArgs e)
+    private void OnOpenTapped(object? sender, TappedEventArgs e)
+    {
+        if (Interlocked.Exchange(ref _openRequestPending, 1) != 0)
+        {
+            return;
+        }
+
+        CardRoot.TranslationY = 4;
+        OpenRequested?.Invoke(this, EventArgs.Empty);
+        _ = ResetPressedStateAsync();
+    }
+
+    private async Task ResetPressedStateAsync()
     {
         try
         {
-            await CardRoot.TranslateToAsync(0, 4, 60, Easing.CubicOut);
-            OpenRequested?.Invoke(this, EventArgs.Empty);
-            await CardRoot.TranslateToAsync(0, 0, 110, Easing.CubicIn);
+            await CardRoot.TranslateToAsync(0, 0, 90, Easing.CubicOut);
         }
         catch (TaskCanceledException)
         {
             CardRoot.TranslationY = 0;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _openRequestPending, 0);
         }
     }
 
