@@ -380,7 +380,7 @@ public sealed class CatalogViewModelTests
 
         Assert.IsTrue(YouTubeKidsTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri kidsUri));
         Assert.AreEqual(
-            "vnd.youtube.kids://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "vnd.youtube.kids://kids.youtube.com/watch?v=dQw4w9WgXcQ",
             kidsUri.AbsoluteUri
         );
         Assert.AreEqual(YouTubeKidsTrailerUri.Scheme, kidsUri.Scheme);

@@ -54,7 +54,7 @@ public static class YouTubeKidsTrailerUri
         }
 
         uri = new Uri(
-            $"{Scheme}://www.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
+            $"{Scheme}://kids.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
             UriKind.Absolute
         );
         return true;
