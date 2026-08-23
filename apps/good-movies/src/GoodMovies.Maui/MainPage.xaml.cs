@@ -27,10 +27,8 @@ public partial class MainPage : ContentPage
     private bool _refreshWasAnnounced;
     private bool _shimmerRunning;
     private UICollectionView? _nativeMovieCollection;
-    private FeedScrollSnapshot? _visibleFeedScrollSnapshot;
     private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
     private int _feedScrollRestoreVersion;
-    private long _lastFeedScrollSnapshotMilliseconds;
     private bool _restoreFeedScrollAfterRefresh;
 
     public MainPage(
@@ -344,19 +342,10 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        if (MainThread.IsMainThread)
-        {
-            UpdateVisibleFeedScrollSnapshot();
-        }
-
-        FeedScrollSnapshot? snapshot = _visibleFeedScrollSnapshot;
-        _pendingFeedScrollAnchors =
-            snapshot is not null
-            && snapshot.Value.Section == _viewModel.SelectedSection
-            && snapshot.Value.Filter == _viewModel.SelectedRatingFilter
-                ? snapshot.Value.Anchors
-            : MainThread.IsMainThread ? CaptureVisibleFeedAnchors()
-            : null;
+        // Anchors are captured only here, immediately before the grouped source
+        // is replaced. Sampling during scrolling measured native layout on every
+        // frame and visibly stuttered the feed.
+        _pendingFeedScrollAnchors = MainThread.IsMainThread ? CaptureVisibleFeedAnchors() : null;
     }
 
     private void OnFeedReplacementCompleted(object? sender, EventArgs e)
@@ -376,36 +365,9 @@ public partial class MainPage : ContentPage
         ScheduleFeedScrollRestore();
     }
 
-    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
-    {
-        long now = Environment.TickCount64;
-        if (now - _lastFeedScrollSnapshotMilliseconds < 100)
-        {
-            return;
-        }
-
-        _lastFeedScrollSnapshotMilliseconds = now;
-        UpdateVisibleFeedScrollSnapshot();
-    }
-
-    private void UpdateVisibleFeedScrollSnapshot()
-    {
-        FeedScrollAnchor[]? anchors = CaptureVisibleFeedAnchors();
-        if (anchors is not null)
-        {
-            _visibleFeedScrollSnapshot = new FeedScrollSnapshot(
-                _viewModel.SelectedSection,
-                _viewModel.SelectedRatingFilter,
-                anchors
-            );
-        }
-    }
-
     private void ClearFeedScrollSnapshot()
     {
-        _visibleFeedScrollSnapshot = null;
         _pendingFeedScrollAnchors = null;
-        _lastFeedScrollSnapshotMilliseconds = 0;
         _restoreFeedScrollAfterRefresh = false;
         _feedScrollRestoreVersion++;
     }
@@ -522,8 +484,10 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        if (collectionView.Dragging || collectionView.Decelerating)
+        if (collectionView.Dragging || collectionView.Decelerating || collectionView.Tracking)
         {
+            // The user owns the scroll position once they touch the feed, so
+            // abandon restoration instead of fighting their momentum.
             _feedScrollRestoreVersion++;
             return;
         }
@@ -569,8 +533,10 @@ public partial class MainPage : ContentPage
                     animated: false
                 )
             );
-            if (attempt < 2)
+            if (attempt < 1)
             {
+                // One settling pass covers self-sizing group headers that finish
+                // measuring after the reload.
                 Dispatcher.DispatchDelayed(
                     TimeSpan.FromMilliseconds(100),
                     () => RestoreFeedScrollPosition(anchors, section, filter, version, attempt + 1)
@@ -652,15 +618,17 @@ public partial class MainPage : ContentPage
     private void SetRatingFilterButtonState(Button button, MovieRatingFilter filter, string label)
     {
         bool isSelected = _viewModel.SelectedRatingFilter == filter;
-        button.SetDynamicResource(
-            VisualElement.BackgroundProperty,
-            isSelected ? "Accent" : "Surface2"
+
+        // Assign the resolved colors directly. SetDynamicResource cannot convert
+        // a Color resource into the Background brush, so it would silently leave
+        // whatever the XAML applied and strand a stale selected chip.
+        Color surface = GetThemeColor(isSelected ? "Accent" : "Surface2", Colors.Purple);
+        button.Background = new SolidColorBrush(surface);
+        button.BorderColor = surface;
+        button.TextColor = GetThemeColor(
+            isSelected ? "PageBackground" : "White",
+            isSelected ? Colors.Black : Colors.White
         );
-        button.SetDynamicResource(
-            Button.TextColorProperty,
-            isSelected ? "PageBackground" : "White"
-        );
-        button.SetDynamicResource(Button.BorderColorProperty, isSelected ? "Accent" : "Surface2");
         button.Text = isSelected
             ? string.Format(
                 CultureInfo.CurrentCulture,
@@ -680,6 +648,12 @@ public partial class MainPage : ContentPage
                 : label
         );
     }
+
+    private static Color GetThemeColor(string key, Color fallback) =>
+        Application.Current?.Resources.TryGetValue(key, out object? value) == true
+        && value is Color color
+            ? color
+            : fallback;
 
     private static string FormatNavigationLabel(string title, string count, bool isSelected)
     {
@@ -728,11 +702,5 @@ public partial class MainPage : ContentPage
         int MovieId,
         double OffsetFromItemTop,
         double ItemOrigin
-    );
-
-    private readonly record struct FeedScrollSnapshot(
-        CatalogSection Section,
-        MovieRatingFilter Filter,
-        FeedScrollAnchor[] Anchors
     );
 }
