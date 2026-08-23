@@ -119,23 +119,38 @@
               />
             </Grid>
           </Border>
-          <Button
-            x:Name="TrailerButton"
+          <Grid
+            x:Name="TrailerAction"
             Grid.Row="1"
-            AutomationId="MovieDetailTrailerButton"
-            Background="{StaticResource Accent}"
-            Command="{Binding PlayTrailerCommand}"
-            ContentLayout="Left,12"
-            FontAutoScalingEnabled="True"
-            FontAttributes="Bold"
-            FontSize="21"
-            ImageSource="play.png"
-            IsEnabled="{Binding IsTrailerLoading, Converter={StaticResource InverseBooleanConverter}}"
             IsVisible="{Binding TrailerState, Converter={StaticResource TrailerButtonVisibilityConverter}}"
-            SemanticProperties.Description="{x:Static strings:AppStrings.PlayTrailer}"
-            Text="{Binding TrailerState, Converter={StaticResource TrailerButtonTextConverter}}"
-            TextColor="{StaticResource PageBackground}"
-          />
+            MinimumHeightRequest="60"
+          >
+            <Button
+              x:Name="TrailerButton"
+              AutomationId="MovieDetailTrailerButton"
+              Background="{StaticResource Accent}"
+              Command="{Binding PlayTrailerCommand}"
+              IsEnabled="{Binding IsTrailerLoading, Converter={StaticResource InverseBooleanConverter}}"
+              SemanticProperties.Description="{x:Static strings:AppStrings.PlayTrailer}"
+            />
+            <HorizontalStackLayout
+              AutomationProperties.IsInAccessibleTree="False"
+              HorizontalOptions="Center"
+              InputTransparent="True"
+              Spacing="12"
+              VerticalOptions="Center"
+            >
+              <Image HeightRequest="24" Source="play.png" WidthRequest="24" />
+              <Label
+                FontAttributes="Bold"
+                FontAutoScalingEnabled="True"
+                FontSize="21"
+                Text="{Binding TrailerState, Converter={StaticResource TrailerButtonTextConverter}}"
+                TextColor="{StaticResource PageBackground}"
+                VerticalTextAlignment="Center"
+              />
+            </HorizontalStackLayout>
+          </Grid>
           <Label
             Grid.Row="2"
             FontAutoScalingEnabled="True"
@@ -227,27 +242,44 @@
           </HorizontalStackLayout>
 
           <Grid Margin="0,20,0,0" ColumnDefinitions="*,Auto" ColumnSpacing="14">
-            <Button
-              Grid.Column="0"
-              AutomationId="MovieDetailReadAloudButton"
-              Background="{StaticResource Surface2}"
-              Command="{Binding PlayReadAloudCommand}"
-              ContentLayout="Left,12"
-              FontAutoScalingEnabled="True"
-              FontAttributes="Bold"
-              FontSize="21"
-              ImageSource="read_aloud.png"
-              SemanticProperties.Description="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
-              Text="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
-              TextColor="{StaticResource White}"
-            >
-              <Button.Triggers>
-                <DataTrigger Binding="{Binding IsReading}" TargetType="Button" Value="True">
-                  <Setter Property="Command" Value="{Binding StopReadAloudCommand}" />
-                  <Setter Property="ImageSource" Value="stop_reading.png" />
-                </DataTrigger>
-              </Button.Triggers>
-            </Button>
+            <Grid Grid.Column="0" MinimumHeightRequest="60">
+              <Button
+                x:Name="ReadAloudButton"
+                AutomationId="MovieDetailReadAloudButton"
+                Background="{StaticResource Surface2}"
+                Command="{Binding PlayReadAloudCommand}"
+                SemanticProperties.Description="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
+              >
+                <Button.Triggers>
+                  <DataTrigger Binding="{Binding IsReading}" TargetType="Button" Value="True">
+                    <Setter Property="Command" Value="{Binding StopReadAloudCommand}" />
+                  </DataTrigger>
+                </Button.Triggers>
+              </Button>
+              <HorizontalStackLayout
+                AutomationProperties.IsInAccessibleTree="False"
+                HorizontalOptions="Center"
+                InputTransparent="True"
+                Spacing="12"
+                VerticalOptions="Center"
+              >
+                <Image HeightRequest="24" Source="read_aloud.png" WidthRequest="24">
+                  <Image.Triggers>
+                    <DataTrigger Binding="{Binding IsReading}" TargetType="Image" Value="True">
+                      <Setter Property="Source" Value="stop_reading.png" />
+                    </DataTrigger>
+                  </Image.Triggers>
+                </Image>
+                <Label
+                  FontAttributes="Bold"
+                  FontAutoScalingEnabled="True"
+                  FontSize="21"
+                  Text="{Binding IsReading, Converter={StaticResource ReadAloudButtonTextConverter}}"
+                  TextColor="{StaticResource White}"
+                  VerticalTextAlignment="Center"
+                />
+              </HorizontalStackLayout>
+            </Grid>
             <Button
               Grid.Column="1"
               Padding="0"
