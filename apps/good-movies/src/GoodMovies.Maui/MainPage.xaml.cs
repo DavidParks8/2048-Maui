@@ -20,7 +20,6 @@ public partial class MainPage : ContentPage
     private CatalogSection _lastSection;
     private bool _layoutInitialized;
     private bool _isWide;
-    private bool _usesSingleRowFilters;
     private bool _isAppeared;
     private bool _hasStartedInitialization;
     private bool _loadingWasAnnounced;
@@ -190,35 +189,29 @@ public partial class MainPage : ContentPage
     private void OnSizeChanged(object? sender, EventArgs e)
     {
         bool isWide = Width >= 900 && Width > Height;
-        bool usesSingleRowFilters = Width >= 600;
-        if (
-            _layoutInitialized
-            && isWide == _isWide
-            && usesSingleRowFilters == _usesSingleRowFilters
-        )
+        if (_layoutInitialized && isWide == _isWide)
         {
             return;
         }
 
         _layoutInitialized = true;
         _isWide = isWide;
-        _usesSingleRowFilters = usesSingleRowFilters;
 
         if (Handler is IPlatformViewHandler { ViewController: { View: { } view } })
         {
             UIView.PerformWithoutAnimation(() =>
             {
-                ApplyLayout(isWide, usesSingleRowFilters);
+                ApplyLayout(isWide);
                 view.SetNeedsLayout();
                 view.LayoutIfNeeded();
             });
             return;
         }
 
-        ApplyLayout(isWide, usesSingleRowFilters);
+        ApplyLayout(isWide);
     }
 
-    private void ApplyLayout(bool isWide, bool usesSingleRowFilters)
+    private void ApplyLayout(bool isWide)
     {
         if (isWide)
         {
@@ -250,34 +243,6 @@ public partial class MainPage : ContentPage
         // Change the CollectionView layout only after its surrounding grid has
         // reached the matching shape, avoiding a stretched intermediate frame.
         _movieItemsLayout.Span = isWide ? 2 : 1;
-        ApplyRatingFilterLayout(usesSingleRowFilters);
-    }
-
-    private void ApplyRatingFilterLayout(bool useSingleRow)
-    {
-        RatingFilterOptions.ColumnDefinitions = useSingleRow
-            ? new ColumnDefinitionCollection
-            {
-                new(GridLength.Star),
-                new(GridLength.Star),
-                new(GridLength.Star),
-                new(GridLength.Star),
-            }
-            : new ColumnDefinitionCollection { new(GridLength.Star), new(GridLength.Star) };
-        RatingFilterOptions.RowDefinitions = useSingleRow
-            ? new RowDefinitionCollection { new(GridLength.Auto) }
-            : new RowDefinitionCollection { new(GridLength.Auto), new(GridLength.Auto) };
-
-        SetRatingFilterPosition(AllRatingFilterButton, 0, useSingleRow);
-        SetRatingFilterPosition(GRatingFilterButton, 1, useSingleRow);
-        SetRatingFilterPosition(PgRatingFilterButton, 2, useSingleRow);
-        SetRatingFilterPosition(RatingSoonFilterButton, 3, useSingleRow);
-    }
-
-    private static void SetRatingFilterPosition(Button button, int index, bool useSingleRow)
-    {
-        Grid.SetColumn(button, useSingleRow ? index : index % 2);
-        Grid.SetRow(button, useSingleRow ? 0 : index / 2);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
