@@ -311,10 +311,9 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     private static bool ActivatePlaybackAudioSession()
     {
         AVAudioSession audioSession = AVAudioSession.SharedInstance();
-        NSError? categoryError = audioSession.SetCategory(
-            AVAudioSessionCategory.Playback,
-            AVAudioSessionCategoryOptions.AllowAirPlay
-        );
+        // Playback supports AirPlay by default. AllowAirPlay is only valid for
+        // categories that otherwise restrict it and returns OSStatus -50 here.
+        NSError? categoryError = audioSession.SetCategory(AVAudioSessionCategory.Playback);
         if (categoryError is not null)
         {
             Console.WriteLine(
