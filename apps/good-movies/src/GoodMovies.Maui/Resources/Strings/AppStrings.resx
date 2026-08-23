@@ -107,18 +107,13 @@
   <data name="TapWordHint" xml:space="preserve"><value>Tap any word to hear it</value></data>
   <data name="Synopsis" xml:space="preserve"><value>Story</value></data>
   <data name="PlayTrailer" xml:space="preserve"><value>Play trailer</value></data>
+  <data name="TrailerPlaying" xml:space="preserve"><value>Trailer playing</value></data>
   <data name="OpeningTrailer" xml:space="preserve"><value>Opening trailer</value></data>
   <data name="TrailerUnavailableButton" xml:space="preserve"><value>No trailer yet</value></data>
   <data name="TrailerLoading" xml:space="preserve"><value>Looking for the trailer</value></data>
   <data name="TrailerNotFound" xml:space="preserve"><value>No trailer for this movie yet.</value></data>
   <data name="TrailerMissingConfiguration" xml:space="preserve"><value>Movie data is not configured for trailers.</value></data>
-  <data name="TrailerLaunchFailed" xml:space="preserve"><value>The trailer player could not open. Check the internet connection, then try again.</value></data>
-  <data name="TrailerOpened" xml:space="preserve"><value>The trailer played here in Good Movies.</value></data>
-  <data name="TrailerPlayerTitle" xml:space="preserve"><value>Movie trailer</value></data>
-  <data name="TrailerPlayerDone" xml:space="preserve"><value>Done</value></data>
-  <data name="TrailerPlayerLoading" xml:space="preserve"><value>Loading the trailer</value></data>
-  <data name="TrailerPlayerErrorTitle" xml:space="preserve"><value>Trailer needs another try</value></data>
-  <data name="TrailerPlayerErrorMessage" xml:space="preserve"><value>Check the internet connection, then try again.</value></data>
+  <data name="TrailerLaunchFailed" xml:space="preserve"><value>The trailer could not open. Ask a grown-up to check Screen Time or the internet, then try again.</value></data>
   <data name="NoSynopsis" xml:space="preserve"><value>This movie has no story yet.</value></data>
   <data name="DetailAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
   <data name="TodayStatus" xml:space="preserve"><value>Today</value></data>

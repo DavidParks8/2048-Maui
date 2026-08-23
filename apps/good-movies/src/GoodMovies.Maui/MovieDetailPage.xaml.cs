@@ -1,21 +1,30 @@
+using GoodMovies.Maui.Services;
 using GoodMovies.ViewModels;
 using UIKit;
 
 namespace GoodMovies.Maui;
 
-public partial class MovieDetailPage : ContentPage, IQueryAttributable
+public partial class MovieDetailPage : ContentPage, IQueryAttributable, ITrailerPlaybackHost
 {
     private readonly CatalogViewModel _catalogViewModel;
+    private readonly MauiExternalTrailerLauncher _trailerLauncher;
     private MovieDetailViewModel? _boundDetail;
+    private TaskCompletionSource<bool>? _trailerLoadCompletion;
     private int? _requestedMovieId;
+    private bool _isTrailerActive;
     private bool _isWide;
     private bool _layoutInitialized;
     private double _compactPosterWidth;
 
-    public MovieDetailPage(CatalogViewModel catalogViewModel)
+    public MovieDetailPage(
+        CatalogViewModel catalogViewModel,
+        MauiExternalTrailerLauncher trailerLauncher
+    )
     {
         _catalogViewModel =
             catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
+        _trailerLauncher =
+            trailerLauncher ?? throw new ArgumentNullException(nameof(trailerLauncher));
         InitializeComponent();
         SizeChanged += OnSizeChanged;
     }
@@ -38,6 +47,7 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _trailerLauncher.AttachHost(this);
         BindSelectedDetail();
         _boundDetail?.Activate();
     }
@@ -53,6 +63,7 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         _boundDetail?.Deactivate();
         if (!Navigation.NavigationStack.Contains(this))
         {
+            _trailerLauncher.DetachHost(this);
             _catalogViewModel.CloseDetail();
             _boundDetail = null;
             BindingContext = null;
@@ -84,6 +95,80 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     }
 
     private void OnBackClicked(object? sender, EventArgs e) => _ = GoBackAsync();
+
+    public async Task<bool> PlayAsync(string youtubeKey, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri source))
+        {
+            return false;
+        }
+
+        if (_isTrailerActive)
+        {
+            return true;
+        }
+
+        TaskCompletionSource<bool> completion = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        _trailerLoadCompletion?.TrySetResult(false);
+        _trailerLoadCompletion = completion;
+
+        if (Equals(TrailerWebView.Source, source))
+        {
+            TrailerWebView.Reload();
+        }
+        else
+        {
+            TrailerWebView.Source = source;
+        }
+
+        try
+        {
+            return await completion.Task.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            if (ReferenceEquals(_trailerLoadCompletion, completion))
+            {
+                _trailerLoadCompletion = null;
+                Stop();
+            }
+
+            throw;
+        }
+    }
+
+    public void Stop()
+    {
+        _isTrailerActive = false;
+        _boundDetail?.SetTrailerPlaybackActive(false);
+        _trailerLoadCompletion?.TrySetResult(false);
+        _trailerLoadCompletion = null;
+        TrailerWebView.StopPlayback();
+    }
+
+    private void OnTrailerLoadStarted(object? sender, EventArgs e) { }
+
+    private void OnTrailerLoadSucceeded(object? sender, EventArgs e)
+    {
+        _isTrailerActive = true;
+        _boundDetail?.SetTrailerPlaybackActive(true);
+        _trailerLoadCompletion?.TrySetResult(true);
+        _trailerLoadCompletion = null;
+    }
+
+    private void OnTrailerLoadFailed(object? sender, EventArgs e)
+    {
+        _isTrailerActive = false;
+        _boundDetail?.SetTrailerPlaybackActive(false);
+        _trailerLoadCompletion?.TrySetResult(false);
+        _trailerLoadCompletion = null;
+        TrailerWebView.StopPlayback();
+    }
+
+    private void OnTrailerPresentationEnded(object? sender, EventArgs e) => Stop();
 
     private async Task GoBackAsync()
     {

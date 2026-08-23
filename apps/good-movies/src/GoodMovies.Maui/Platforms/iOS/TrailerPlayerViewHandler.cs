@@ -1,3 +1,4 @@
+using AVFoundation;
 using CoreGraphics;
 using Foundation;
 using GoodMovies.Maui.Controls;
@@ -26,6 +27,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     private TrailerUiDelegate? _uiDelegate;
     private TrailerScriptMessageHandler? _scriptMessageHandler;
     private CancellationTokenSource? _loadTimeout;
+    private bool _presentationActive;
 
     public TrailerPlayerViewHandler()
         : base(Mapper, CommandMapper) { }
@@ -34,10 +36,10 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     {
         WKWebViewConfiguration configuration = new()
         {
-            AllowsAirPlayForMediaPlayback = false,
-            AllowsInlineMediaPlayback = true,
-            AllowsPictureInPictureMediaPlayback = false,
-            MediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.All,
+            AllowsAirPlayForMediaPlayback = true,
+            AllowsInlineMediaPlayback = false,
+            AllowsPictureInPictureMediaPlayback = true,
+            MediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.None,
             WebsiteDataStore = WKWebsiteDataStore.NonPersistentDataStore,
         };
         configuration.Preferences.JavaScriptCanOpenWindowsAutomatically = false;
@@ -112,7 +114,14 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
             return;
         }
 
+        if (!ActivatePlaybackAudioSession())
+        {
+            ReportLoadFailed();
+            return;
+        }
+
         _navigationDelegate?.SetAllowedVideoKey(videoKey);
+        _presentationActive = false;
         StartLoadTimeout();
         VirtualView.ReportLoadStarted();
         NSMutableUrlRequest request = new(new NSUrl(uri!.AbsoluteUri))
@@ -145,14 +154,37 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                 + "if (player && player.stopVideo) { player.stopVideo(); }",
             null!
         );
+        DeactivatePlaybackAudioSession();
     }
 
     private void HandlePlayerMessage(string message)
     {
-        if (message is "ready" or "playing")
+        if (message == "playing")
         {
             _loadTimeout?.Cancel();
             VirtualView.ReportLoadSucceeded();
+            return;
+        }
+
+        if (message is "presentation:fullscreen" or "presentation:picture-in-picture")
+        {
+            _presentationActive = true;
+            _loadTimeout?.Cancel();
+            VirtualView.ReportLoadSucceeded();
+            return;
+        }
+
+        if (message == "presentation:inline" && _presentationActive)
+        {
+            _presentationActive = false;
+            VirtualView.ReportPresentationEnded();
+            return;
+        }
+
+        if (message == "ended")
+        {
+            _presentationActive = false;
+            VirtualView.ReportPresentationEnded();
             return;
         }
 
@@ -165,6 +197,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     private void ReportLoadFailed()
     {
         _loadTimeout?.Cancel();
+        DeactivatePlaybackAudioSession();
         VirtualView.ReportLoadFailed();
     }
 
@@ -201,12 +234,30 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
               var restrictedUiStyle = document.createElement('style');
               restrictedUiStyle.textContent =
                 '.ytp-ce-element,.ytp-endscreen-content,.ytp-impression-link,'
-                + '.ytp-copylink-button,.ytp-suggestion-set,.ytp-title-channel,'
-                + '.ytp-title-link,.ytp-videowall-still,.ytp-youtube-button'
+                + '.ytp-copylink-button,.ytp-more-videos-view,.ytp-pause-overlay,'
+                + '.ytp-suggestion-set,.ytp-title-channel,.ytp-title-link,'
+                + '.ytp-videowall-still,.ytp-youtube-button'
                 + '{display:none!important}';
               document.head.appendChild(restrictedUiStyle);
               var notifyNative = function(message) {
                 window.webkit.messageHandlers.goodMoviesPlayer.postMessage(message);
+              };
+              var reportPresentationMode = function(video) {
+                notifyNative('presentation:' + (video.webkitPresentationMode || 'inline'));
+              };
+              var attachVideoEvents = function(video) {
+                if (!video || video.goodMoviesEventsInstalled) { return; }
+                video.goodMoviesEventsInstalled = true;
+                video.addEventListener('webkitbeginfullscreen', function() {
+                  notifyNative('presentation:fullscreen');
+                });
+                video.addEventListener('webkitendfullscreen', function() {
+                  setTimeout(function() { reportPresentationMode(video); }, 0);
+                });
+                video.addEventListener('webkitpresentationmodechanged', function() {
+                  reportPresentationMode(video);
+                });
+                reportPresentationMode(video);
               };
               var checkPlayer = function() {
                 var error = document.querySelector('.ytp-error');
@@ -216,6 +267,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                 }
                 var player = document.getElementById('movie_player');
                 if (!player || !player.getVideoData) { return; }
+                attachVideoEvents(player.querySelector('video'));
                 var data = player.getVideoData();
                 if (data && data.video_id && data.video_id !== selectedKey) {
                   player.stopVideo();
@@ -228,6 +280,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
               if (player && player.addEventListener) {
                 player.addEventListener('onError', function() { notifyNative('error'); });
                 player.addEventListener('onStateChange', function(state) {
+                  attachVideoEvents(player.querySelector('video'));
                   var data = player.getVideoData ? player.getVideoData() : null;
                   if (data && data.video_id && data.video_id !== selectedKey) {
                     player.stopVideo();
@@ -235,7 +288,8 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                     return;
                   }
                   if (state === 0) {
-                    player.cueVideoById(selectedKey);
+                    player.stopVideo();
+                    notifyNative('ended');
                     return;
                   }
                   if (state === 1) { notifyNative('playing'); }
@@ -252,6 +306,44 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
             """,
             null!
         );
+    }
+
+    private static bool ActivatePlaybackAudioSession()
+    {
+        AVAudioSession audioSession = AVAudioSession.SharedInstance();
+        NSError? categoryError = audioSession.SetCategory(
+            AVAudioSessionCategory.Playback,
+            AVAudioSessionCategoryOptions.AllowAirPlay
+        );
+        if (categoryError is not null)
+        {
+            Console.WriteLine(
+                $"Could not configure trailer audio: {categoryError.LocalizedDescription}"
+            );
+            return false;
+        }
+
+        NSError? activationError = audioSession.SetActive(true);
+        if (activationError is null)
+        {
+            return true;
+        }
+
+        Console.WriteLine(
+            $"Could not activate trailer audio: {activationError.LocalizedDescription}"
+        );
+        return false;
+    }
+
+    private static void DeactivatePlaybackAudioSession()
+    {
+        NSError? error = AVAudioSession
+            .SharedInstance()
+            .SetActive(false, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation);
+        if (error is not null)
+        {
+            Console.WriteLine($"Could not deactivate trailer audio: {error.LocalizedDescription}");
+        }
     }
 
     private sealed class TrailerScriptMessageHandler(Action<string> onMessage)

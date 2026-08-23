@@ -402,7 +402,7 @@ public sealed class CatalogViewModelTests
 
         Assert.IsTrue(YouTubeTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri uri));
         Assert.AreEqual(
-            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?playsinline=1&modestbranding=1&rel=0",
+            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&controls=1&playsinline=0&rel=0",
             uri.AbsoluteUri
         );
         Assert.AreEqual(YouTubeTrailerUri.Scheme, uri.Scheme);

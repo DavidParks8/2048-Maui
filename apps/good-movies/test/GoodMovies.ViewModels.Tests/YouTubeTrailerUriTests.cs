@@ -8,14 +8,14 @@ public sealed class YouTubeTrailerUriTests
     private const string ValidKey = "dQw4w9WgXcQ";
 
     [TestMethod]
-    public void Create_ValidKey_BuildsPrivacyEnhancedInlineEmbed()
+    public void Create_ValidKey_BuildsPrivacyEnhancedFullscreenEmbed()
     {
         Uri uri = YouTubeTrailerUri.Create(ValidKey);
 
         Assert.AreEqual(Uri.UriSchemeHttps, uri.Scheme);
         Assert.AreEqual("www.youtube-nocookie.com", uri.Host);
         Assert.AreEqual($"/embed/{ValidKey}", uri.AbsolutePath);
-        Assert.AreEqual("?playsinline=1&modestbranding=1&rel=0", uri.Query);
+        Assert.AreEqual("?autoplay=1&controls=1&playsinline=0&rel=0", uri.Query);
         Assert.IsTrue(YouTubeTrailerUri.IsTrustedEmbedUri(uri));
     }
 

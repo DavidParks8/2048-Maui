@@ -27,8 +27,6 @@ public partial class MainPage : ContentPage
     private bool _refreshWasAnnounced;
     private bool _shimmerRunning;
     private UICollectionView? _nativeMovieCollection;
-    private FeedScrollSnapshot? _visibleFeedScrollSnapshot;
-    private long _lastFeedScrollSnapshotMilliseconds;
     private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
     private int _feedScrollRestoreVersion;
     private bool _restoreFeedScrollAfterRefresh;
@@ -344,19 +342,9 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        // Catalog replacement can arrive off the main thread, where native
-        // layout cannot be queried, so fall back to the last sampled anchor.
-        FeedScrollAnchor[]? captured = MainThread.IsMainThread ? CaptureVisibleFeedAnchors() : null;
-        FeedScrollSnapshot? sampled = _visibleFeedScrollSnapshot;
-        _pendingFeedScrollAnchors =
-            captured
-            ?? (
-                sampled is not null
-                && sampled.Value.Section == _viewModel.SelectedSection
-                && sampled.Value.Filter == _viewModel.SelectedRatingFilter
-                    ? new[] { sampled.Value.Anchor }
-                    : null
-            );
+        // Capture only at the replacement boundary. Reading native layout from
+        // the Scrolled event caused a visible hitch during drag and momentum.
+        _pendingFeedScrollAnchors = MainThread.IsMainThread ? CaptureVisibleFeedAnchors() : null;
     }
 
     private void OnFeedReplacementCompleted(object? sender, EventArgs e)
@@ -376,33 +364,9 @@ public partial class MainPage : ContentPage
         ScheduleFeedScrollRestore();
     }
 
-    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
-    {
-        // Sampling is throttled and measures only the topmost visible item, so
-        // scrolling stays smooth while still leaving an anchor for catalog
-        // replacements that arrive off the main thread.
-        long now = Environment.TickCount64;
-        if (now - _lastFeedScrollSnapshotMilliseconds < 250)
-        {
-            return;
-        }
-
-        _lastFeedScrollSnapshotMilliseconds = now;
-        if (CaptureTopVisibleAnchor() is { } anchor)
-        {
-            _visibleFeedScrollSnapshot = new FeedScrollSnapshot(
-                _viewModel.SelectedSection,
-                _viewModel.SelectedRatingFilter,
-                anchor
-            );
-        }
-    }
-
     private void ClearFeedScrollSnapshot()
     {
-        _visibleFeedScrollSnapshot = null;
         _pendingFeedScrollAnchors = null;
-        _lastFeedScrollSnapshotMilliseconds = 0;
         _restoreFeedScrollAfterRefresh = false;
         _feedScrollRestoreVersion++;
     }
@@ -429,39 +393,10 @@ public partial class MainPage : ContentPage
         }
 
         // OffsetFromItemTop decreases as items sit further down the viewport,
-        // so descending order puts the topmost visible card first and matches
-        // the anchor CaptureTopVisibleAnchor picks.
+        // so descending order puts the topmost visible card first.
         return anchors.Count == 0
             ? null
             : anchors.OrderByDescending(static anchor => anchor.OffsetFromItemTop).ToArray();
-    }
-
-    /// <summary>
-    /// Measures only the topmost visible card. One layout query keeps sampling
-    /// cheap enough to run while the feed is scrolling.
-    /// </summary>
-    private FeedScrollAnchor? CaptureTopVisibleAnchor()
-    {
-        UICollectionView? collectionView = GetNativeMovieCollection();
-        if (collectionView is null)
-        {
-            return null;
-        }
-
-        Foundation.NSIndexPath? topIndexPath = null;
-        foreach (Foundation.NSIndexPath indexPath in collectionView.IndexPathsForVisibleItems)
-        {
-            if (
-                topIndexPath is null
-                || indexPath.Section < topIndexPath.Section
-                || (indexPath.Section == topIndexPath.Section && indexPath.Item < topIndexPath.Item)
-            )
-            {
-                topIndexPath = indexPath;
-            }
-        }
-
-        return topIndexPath is null ? null : ResolveAnchor(collectionView, topIndexPath);
     }
 
     private FeedScrollAnchor? ResolveAnchor(
@@ -783,10 +718,4 @@ public partial class MainPage : ContentPage
     }
 
     private readonly record struct FeedScrollAnchor(int MovieId, double OffsetFromItemTop);
-
-    private readonly record struct FeedScrollSnapshot(
-        CatalogSection Section,
-        MovieRatingFilter Filter,
-        FeedScrollAnchor Anchor
-    );
 }

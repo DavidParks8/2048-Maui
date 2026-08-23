@@ -51,6 +51,7 @@
       <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
       <converters:TrailerStateMessageConverter x:Key="TrailerStateMessageConverter" />
       <converters:TrailerButtonTextConverter x:Key="TrailerButtonTextConverter" />
+      <converters:TrailerPlaybackActivityTextConverter x:Key="TrailerPlaybackActivityTextConverter" />
       <converters:TokenHighlightBackgroundConverter x:Key="TokenHighlightBackgroundConverter" />
       <converters:TokenTextColorConverter x:Key="TokenTextColorConverter" />
     </ResourceDictionary>

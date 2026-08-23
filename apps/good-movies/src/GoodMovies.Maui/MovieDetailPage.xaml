@@ -2,6 +2,7 @@
 <ContentPage
   x:Class="GoodMovies.Maui.MovieDetailPage"
   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:controls="clr-namespace:GoodMovies.Maui.Controls"
   xmlns:strings="clr-namespace:GoodMovies.Maui.Resources.Strings"
   xmlns:vm="clr-namespace:GoodMovies.ViewModels;assembly=GoodMovies.ViewModels"
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -17,6 +18,22 @@
   Title="{Binding Title}"
 >
   <Grid RowDefinitions="Auto,*">
+    <controls:TrailerPlayerView
+      x:Name="TrailerWebView"
+      Grid.RowSpan="2"
+      AutomationId="MovieDetailTrailerPlayer"
+      HeightRequest="270"
+      HorizontalOptions="Start"
+      InputTransparent="True"
+      LoadFailed="OnTrailerLoadFailed"
+      LoadStarted="OnTrailerLoadStarted"
+      LoadSucceeded="OnTrailerLoadSucceeded"
+      Opacity="0.01"
+      PresentationEnded="OnTrailerPresentationEnded"
+      VerticalOptions="Start"
+      WidthRequest="480"
+      ZIndex="-1"
+    />
     <Grid
       x:Name="DetailHeader"
       Grid.Row="0"
@@ -130,8 +147,8 @@
               AutomationId="MovieDetailTrailerButton"
               Background="{StaticResource Accent}"
               Command="{Binding PlayTrailerCommand}"
-              IsEnabled="{Binding IsTrailerLoading, Converter={StaticResource InverseBooleanConverter}}"
-              SemanticProperties.Description="{x:Static strings:AppStrings.PlayTrailer}"
+              IsEnabled="{Binding CanPlayTrailer}"
+              SemanticProperties.Description="{Binding IsTrailerPlaying, Converter={StaticResource TrailerPlaybackActivityTextConverter}}"
             />
             <HorizontalStackLayout
               AutomationProperties.IsInAccessibleTree="False"
@@ -148,7 +165,13 @@
                 Text="{Binding TrailerState, Converter={StaticResource TrailerButtonTextConverter}}"
                 TextColor="{StaticResource PageBackground}"
                 VerticalTextAlignment="Center"
-              />
+              >
+                <Label.Triggers>
+                  <DataTrigger Binding="{Binding IsTrailerPlaying}" TargetType="Label" Value="True">
+                    <Setter Property="Text" Value="{x:Static strings:AppStrings.TrailerPlaying}" />
+                  </DataTrigger>
+                </Label.Triggers>
+              </Label>
             </HorizontalStackLayout>
           </Grid>
           <Label

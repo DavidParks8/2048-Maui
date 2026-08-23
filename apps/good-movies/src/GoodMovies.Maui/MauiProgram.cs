@@ -137,9 +137,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITrailerPlaybackController>(serviceProvider =>
             serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
         );
-        builder.Services.AddSingleton<ITrailerPlayerPageFactory>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
         builder.Services.AddTransient<AppShell>();
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddSingleton<Func<AppShell>>(serviceProvider =>

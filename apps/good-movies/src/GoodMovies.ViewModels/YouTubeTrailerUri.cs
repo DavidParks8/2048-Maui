@@ -24,7 +24,7 @@ public static class YouTubeTrailerUri
 
         uri = new Uri(
             $"{Scheme}://{Host}/embed/{Uri.EscapeDataString(key!)}"
-                + "?playsinline=1&modestbranding=1&rel=0",
+                + "?autoplay=1&controls=1&playsinline=0&rel=0",
             UriKind.Absolute
         );
         return true;

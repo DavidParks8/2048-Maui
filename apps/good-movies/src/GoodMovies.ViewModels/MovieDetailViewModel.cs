@@ -286,6 +286,9 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private TrailerPlaybackState _trailerState;
 
+    [ObservableProperty]
+    private bool _isTrailerPlaying;
+
     public TrailerPlaybackState TrailerStatus => TrailerState;
 
     public bool IsTrailerLoading => TrailerState == TrailerPlaybackState.Loading;
@@ -310,6 +313,8 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public bool IsTrailerLaunchFailed => TrailerState == TrailerPlaybackState.LaunchFailed;
 
+    public bool CanPlayTrailer => !IsTrailerLoading && !IsTrailerPlaying;
+
     [ObservableProperty]
     private TrailerPlaybackResult? _lastTrailerResult;
 
@@ -327,6 +332,11 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
     public void SetFavoriteState(bool isFavorite)
     {
         IsFavorite = isFavorite;
+    }
+
+    public void SetTrailerPlaybackActive(bool isActive)
+    {
+        IsTrailerPlaying = isActive;
     }
 
     public void ReapplyCurrentDatePolicies()
@@ -1097,6 +1107,12 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsTrailerFailure));
         OnPropertyChanged(nameof(IsTrailerLaunchFailed));
         OnPropertyChanged(nameof(IsTrailerAvailable));
+        OnPropertyChanged(nameof(CanPlayTrailer));
+    }
+
+    partial void OnIsTrailerPlayingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanPlayTrailer));
     }
 
     partial void OnLastTrailerResultChanged(TrailerPlaybackResult? value)

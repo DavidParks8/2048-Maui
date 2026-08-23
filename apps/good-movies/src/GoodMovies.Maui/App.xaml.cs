@@ -46,7 +46,7 @@ public partial class App : Application
 
     protected override void OnSleep()
     {
-        StopMedia();
+        StopSpeech();
         StopDateBoundaryWatch();
     }
 
@@ -61,13 +61,13 @@ public partial class App : Application
 
     private void OnWindowDeactivated(object? sender, EventArgs e)
     {
-        StopMedia();
+        StopSpeech();
         StopDateBoundaryWatch();
     }
 
     private void OnWindowStopped(object? sender, EventArgs e)
     {
-        StopMedia();
+        StopSpeech();
         StopDateBoundaryWatch();
     }
 

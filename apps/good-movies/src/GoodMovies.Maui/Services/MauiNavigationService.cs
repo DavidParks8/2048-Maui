@@ -8,7 +8,6 @@ namespace GoodMovies.Maui.Services;
 public static class GoodMoviesRoutes
 {
     public const string MovieDetail = "movie-detail";
-    public const string TrailerPlayer = "trailer-player";
 }
 
 /// <summary>
@@ -23,14 +22,20 @@ public interface IMovieDetailPageFactory
 public sealed class MauiMovieDetailPageFactory : IMovieDetailPageFactory
 {
     private readonly CatalogViewModel _catalogViewModel;
+    private readonly MauiExternalTrailerLauncher _trailerLauncher;
 
-    public MauiMovieDetailPageFactory(CatalogViewModel catalogViewModel)
+    public MauiMovieDetailPageFactory(
+        CatalogViewModel catalogViewModel,
+        MauiExternalTrailerLauncher trailerLauncher
+    )
     {
         _catalogViewModel =
             catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
+        _trailerLauncher =
+            trailerLauncher ?? throw new ArgumentNullException(nameof(trailerLauncher));
     }
 
-    public MovieDetailPage Create() => new(_catalogViewModel);
+    public MovieDetailPage Create() => new(_catalogViewModel, _trailerLauncher);
 }
 
 public sealed class MauiMovieDetailRouteFactory : RouteFactory

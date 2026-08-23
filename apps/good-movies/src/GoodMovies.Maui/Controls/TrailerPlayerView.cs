@@ -20,6 +20,8 @@ public sealed class TrailerPlayerView : View
 
     public event EventHandler? LoadFailed;
 
+    public event EventHandler? PresentationEnded;
+
     public void Reload() => Handler?.Invoke(nameof(Reload));
 
     public void StopPlayback() => Handler?.Invoke(nameof(StopPlayback));
@@ -29,4 +31,6 @@ public sealed class TrailerPlayerView : View
     internal void ReportLoadSucceeded() => LoadSucceeded?.Invoke(this, EventArgs.Empty);
 
     internal void ReportLoadFailed() => LoadFailed?.Invoke(this, EventArgs.Empty);
+
+    internal void ReportPresentationEnded() => PresentationEnded?.Invoke(this, EventArgs.Empty);
 }

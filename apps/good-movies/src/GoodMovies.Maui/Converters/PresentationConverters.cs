@@ -611,8 +611,7 @@ public sealed class TrailerMessageVisibilityConverter : IValueConverter
             is TrailerPlaybackState.NotFound
                 or TrailerPlaybackState.MissingConfiguration
                 or TrailerPlaybackState.Failed
-                or TrailerPlaybackState.LaunchFailed
-                or TrailerPlaybackState.Launched;
+                or TrailerPlaybackState.LaunchFailed;
 
     public object ConvertBack(
         object? value,
@@ -824,7 +823,6 @@ public sealed class TrailerStateMessageConverter : IValueConverter
                 TrailerPlaybackState.MissingConfiguration => AppStrings.TrailerMissingConfiguration,
                 TrailerPlaybackState.Failed or TrailerPlaybackState.LaunchFailed =>
                     AppStrings.TrailerLaunchFailed,
-                TrailerPlaybackState.Launched => AppStrings.TrailerOpened,
                 _ => string.Empty,
             }
             : string.Empty;
@@ -848,6 +846,19 @@ public sealed class TrailerButtonTextConverter : IValueConverter
                 _ => AppStrings.PlayTrailer,
             }
             : AppStrings.PlayTrailer;
+
+    public object ConvertBack(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+public sealed class TrailerPlaybackActivityTextConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? AppStrings.TrailerPlaying : AppStrings.PlayTrailer;
 
     public object ConvertBack(
         object? value,
