@@ -31,6 +31,7 @@ public partial class MainPage : ContentPage
     private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
     private int _feedScrollRestoreVersion;
     private long _lastFeedScrollSnapshotMilliseconds;
+    private bool _restoreFeedScrollAfterRefresh;
 
     public MainPage(
         CatalogViewModel viewModel,
@@ -59,7 +60,8 @@ public partial class MainPage : ContentPage
         CompactFavoritesTile.Command = NavigationViewModel.SwitchSectionCommand;
         CompactSearchTile.Command = NavigationViewModel.SwitchSectionCommand;
         _lastSection = NavigationViewModel.SelectedSection;
-        _viewModel.PropertyChanging += OnViewModelPropertyChanging;
+        _viewModel.FeedReplacementStarting += OnFeedReplacementStarting;
+        _viewModel.FeedReplacementCompleted += OnFeedReplacementCompleted;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SizeChanged += OnSizeChanged;
         UpdateNavigationState();
@@ -278,14 +280,17 @@ public partial class MainPage : ContentPage
         {
             if (_viewModel.IsRefreshing && !_refreshWasAnnounced)
             {
-                UpdateVisibleFeedScrollSnapshot();
                 _screenReaderService.Announce(AppStrings.Refreshing);
                 _refreshWasAnnounced = true;
             }
             else if (!_viewModel.IsRefreshing)
             {
                 _refreshWasAnnounced = false;
-                ScheduleFeedScrollRestore();
+                if (_restoreFeedScrollAfterRefresh)
+                {
+                    _restoreFeedScrollAfterRefresh = false;
+                    ScheduleFeedScrollRestore();
+                }
             }
         }
 
@@ -332,20 +337,16 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnViewModelPropertyChanging(
-        object? sender,
-        System.ComponentModel.PropertyChangingEventArgs e
-    )
+    private void OnFeedReplacementStarting(object? sender, EventArgs e)
     {
-        // KeepScrollOffset covers collection mutations, but the compatibility
-        // handler resets grouped ItemsSource replacements during refresh.
-        if (
-            e.PropertyName != nameof(CatalogViewModel.MovieGroups)
-            || !_viewModel.IsRefreshing
-            || _viewModel.MovieCards.Count == 0
-        )
+        if (_viewModel.MovieCards.Count == 0)
         {
             return;
+        }
+
+        if (MainThread.IsMainThread)
+        {
+            UpdateVisibleFeedScrollSnapshot();
         }
 
         FeedScrollSnapshot? snapshot = _visibleFeedScrollSnapshot;
@@ -358,13 +359,25 @@ public partial class MainPage : ContentPage
             : null;
     }
 
-    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
+    private void OnFeedReplacementCompleted(object? sender, EventArgs e)
     {
-        if (!_viewModel.IsRefreshing)
+        if (!MainThread.IsMainThread)
         {
+            MainThread.BeginInvokeOnMainThread(() => OnFeedReplacementCompleted(sender, e));
             return;
         }
 
+        if (_viewModel.IsRefreshing)
+        {
+            _restoreFeedScrollAfterRefresh = true;
+            return;
+        }
+
+        ScheduleFeedScrollRestore();
+    }
+
+    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
+    {
         long now = Environment.TickCount64;
         if (now - _lastFeedScrollSnapshotMilliseconds < 100)
         {
@@ -393,6 +406,7 @@ public partial class MainPage : ContentPage
         _visibleFeedScrollSnapshot = null;
         _pendingFeedScrollAnchors = null;
         _lastFeedScrollSnapshotMilliseconds = 0;
+        _restoreFeedScrollAfterRefresh = false;
         _feedScrollRestoreVersion++;
     }
 

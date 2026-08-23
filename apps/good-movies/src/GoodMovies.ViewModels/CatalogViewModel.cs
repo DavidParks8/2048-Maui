@@ -42,6 +42,10 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     private Dictionary<int, MovieCardViewModel> _cardsByMovieId = new();
     private Dictionary<int, FavoriteEntry> _favoriteEntries = new();
 
+    public event EventHandler? FeedReplacementStarting;
+
+    public event EventHandler? FeedReplacementCompleted;
+
     [ActivatorUtilitiesConstructor]
     public CatalogViewModel(
         IMovieCatalogService catalogService,
@@ -463,7 +467,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             return;
         }
 
-        ReplaceCatalog(_catalogMovies, _hasCatalogData);
+        ReplaceCatalog(_catalogMovies, _hasCatalogData, preserveFeedPosition: true);
         long favoriteVersion = Interlocked.Increment(ref _favoriteVersion);
         await LoadFavoritesAsync(favoriteVersion, cancellationToken);
         if (SelectedMovieDetail is { } detail && !_cardsByMovieId.ContainsKey(detail.MovieId))
@@ -887,7 +891,11 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                     or CatalogResultStatus.RefreshSucceededCacheWriteFailed;
             if (successful)
             {
-                ReplaceCatalog(GetResultMovies(result), hasCatalogData: true);
+                ReplaceCatalog(
+                    GetResultMovies(result),
+                    hasCatalogData: true,
+                    preserveFeedPosition: true
+                );
                 IsStale = false;
                 IsError = false;
                 IsMissingToken = false;
@@ -984,7 +992,11 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
             if (remoteRefreshSucceeded)
             {
-                ReplaceCatalog(GetResultMovies(result), hasCatalogData: true);
+                ReplaceCatalog(
+                    GetResultMovies(result),
+                    hasCatalogData: true,
+                    preserveFeedPosition: true
+                );
                 IsStale = false;
                 IsError = false;
                 IsMissingToken = false;
@@ -1001,7 +1013,8 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                         is CatalogResultStatus.FreshCache
                             or CatalogResultStatus.StaleCache
                         || result.UsedCache
-                        || result.HasUsableData
+                        || result.HasUsableData,
+                    preserveFeedPosition: true
                 );
                 IsStale = result.IsStale || result.Status == CatalogResultStatus.StaleCache;
                 IsError = false;
@@ -1081,11 +1094,11 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         // snapshot also protects against a malformed implementation.
         if (hasCache)
         {
-            ReplaceCatalog(_catalogMovies, hasCatalogData: true);
+            ReplaceCatalog(_catalogMovies, hasCatalogData: true, preserveFeedPosition: true);
         }
         else
         {
-            ReplaceCatalog(Array.Empty<Movie>(), hasCatalogData: false);
+            ReplaceCatalog(Array.Empty<Movie>(), hasCatalogData: false, preserveFeedPosition: true);
         }
 
         IsStale = hasCache;
@@ -1407,7 +1420,11 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         SetFavoriteForMovie(args.Entry, args.IsFavorite);
     }
 
-    private void ReplaceCatalog(IEnumerable<Movie>? movies, bool hasCatalogData)
+    private void ReplaceCatalog(
+        IEnumerable<Movie>? movies,
+        bool hasCatalogData,
+        bool preserveFeedPosition = false
+    )
     {
         IReadOnlyList<Movie> safeMovies = MovieCatalogSnapshot
             .Create(
@@ -1438,7 +1455,22 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasCatalogData));
         OnPropertyChanged(nameof(HasData));
         UpdateCounts();
-        BuildCurrentView();
+        if (preserveFeedPosition)
+        {
+            FeedReplacementStarting?.Invoke(this, EventArgs.Empty);
+        }
+
+        try
+        {
+            BuildCurrentView();
+        }
+        finally
+        {
+            if (preserveFeedPosition)
+            {
+                FeedReplacementCompleted?.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 
     private static IReadOnlyList<Movie> GetResultMovies(CatalogResult result) =>

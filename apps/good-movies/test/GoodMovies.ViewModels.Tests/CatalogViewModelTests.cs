@@ -207,6 +207,33 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
+    public async Task ReapplyCurrentDatePolicies_BracketsGroupedReplacementForScrollPreservation()
+    {
+        Movie movie = MovieWithRelease(1, "Still here", Today.AddDays(3));
+        MutableClock clock = new(Today);
+        CatalogViewModel viewModel = new(FreshService(movie), clock);
+        await viewModel.InitializeAsync();
+        var originalGroups = viewModel.MovieGroups;
+        List<string> lifecycle = new();
+        viewModel.FeedReplacementStarting += (_, _) =>
+        {
+            lifecycle.Add("starting");
+            Assert.AreSame(originalGroups, viewModel.MovieGroups);
+        };
+        viewModel.FeedReplacementCompleted += (_, _) =>
+        {
+            lifecycle.Add("completed");
+            Assert.AreNotSame(originalGroups, viewModel.MovieGroups);
+        };
+
+        clock.Today = Today.AddDays(1);
+        await viewModel.ReapplyCurrentDatePoliciesAsync();
+
+        Assert.AreSequenceEqual(new[] { "starting", "completed" }, lifecycle);
+        Assert.AreEqual(movie.Id, viewModel.MovieCards.Single().MovieId);
+    }
+
+    [TestMethod]
     public async Task CheckForUpdates_UsesServiceRefreshForStaleOrMissingData()
     {
         Movie movie = MovieWithRelease(1, "Remote", Today);
@@ -807,12 +834,15 @@ public sealed class CatalogViewModelTests
         viewModel.SelectRatingFilter(MovieRatingFilter.G);
         var groups = viewModel.MovieGroups;
         var cards = viewModel.MovieCards;
+        int preservedReplacementStarts = 0;
+        viewModel.FeedReplacementStarting += (_, _) => preservedReplacementStarts++;
 
         await viewModel.MovieCards.Single().ToggleFavoriteCommand.ExecuteAsync(null);
 
         Assert.AreSame(groups, viewModel.MovieGroups);
         Assert.AreSame(cards, viewModel.MovieCards);
         Assert.IsTrue(viewModel.MovieCards.Single().IsFavorite);
+        Assert.AreEqual(0, preservedReplacementStarts);
     }
 
     [TestMethod]
