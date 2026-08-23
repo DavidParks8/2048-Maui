@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using CoreGraphics;
 using GoodMovies.Maui.Components;
 using GoodMovies.Maui.Converters;
 using GoodMovies.Maui.Resources.Strings;
@@ -25,6 +26,11 @@ public partial class MainPage : ContentPage
     private bool _loadingWasAnnounced;
     private bool _refreshWasAnnounced;
     private bool _shimmerRunning;
+    private UICollectionView? _nativeMovieCollection;
+    private FeedScrollSnapshot? _visibleFeedScrollSnapshot;
+    private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
+    private int _feedScrollRestoreVersion;
+    private long _lastFeedScrollSnapshotMilliseconds;
 
     public MainPage(
         CatalogViewModel viewModel,
@@ -53,6 +59,7 @@ public partial class MainPage : ContentPage
         CompactFavoritesTile.Command = NavigationViewModel.SwitchSectionCommand;
         CompactSearchTile.Command = NavigationViewModel.SwitchSectionCommand;
         _lastSection = NavigationViewModel.SelectedSection;
+        _viewModel.PropertyChanging += OnViewModelPropertyChanging;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SizeChanged += OnSizeChanged;
         UpdateNavigationState();
@@ -271,12 +278,14 @@ public partial class MainPage : ContentPage
         {
             if (_viewModel.IsRefreshing && !_refreshWasAnnounced)
             {
+                UpdateVisibleFeedScrollSnapshot();
                 _screenReaderService.Announce(AppStrings.Refreshing);
                 _refreshWasAnnounced = true;
             }
             else if (!_viewModel.IsRefreshing)
             {
                 _refreshWasAnnounced = false;
+                ScheduleFeedScrollRestore();
             }
         }
 
@@ -288,6 +297,11 @@ public partial class MainPage : ContentPage
                 or nameof(CatalogViewModel.FavoriteCount)
         )
         {
+            if (e.PropertyName == nameof(CatalogViewModel.SelectedSection))
+            {
+                ClearFeedScrollSnapshot();
+            }
+
             CatalogSection section = NavigationViewModel.SelectedSection;
             bool switchedToSearch =
                 _isAppeared
@@ -313,7 +327,251 @@ public partial class MainPage : ContentPage
 
         if (e.PropertyName == nameof(CatalogViewModel.SelectedRatingFilter))
         {
+            ClearFeedScrollSnapshot();
             UpdateRatingFilterState();
+        }
+    }
+
+    private void OnViewModelPropertyChanging(
+        object? sender,
+        System.ComponentModel.PropertyChangingEventArgs e
+    )
+    {
+        // KeepScrollOffset covers collection mutations, but the compatibility
+        // handler resets grouped ItemsSource replacements during refresh.
+        if (
+            e.PropertyName != nameof(CatalogViewModel.MovieGroups)
+            || !_viewModel.IsRefreshing
+            || _viewModel.MovieCards.Count == 0
+        )
+        {
+            return;
+        }
+
+        FeedScrollSnapshot? snapshot = _visibleFeedScrollSnapshot;
+        _pendingFeedScrollAnchors =
+            snapshot is not null
+            && snapshot.Value.Section == _viewModel.SelectedSection
+            && snapshot.Value.Filter == _viewModel.SelectedRatingFilter
+                ? snapshot.Value.Anchors
+            : MainThread.IsMainThread ? CaptureVisibleFeedAnchors()
+            : null;
+    }
+
+    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
+    {
+        if (!_viewModel.IsRefreshing)
+        {
+            return;
+        }
+
+        long now = Environment.TickCount64;
+        if (now - _lastFeedScrollSnapshotMilliseconds < 100)
+        {
+            return;
+        }
+
+        _lastFeedScrollSnapshotMilliseconds = now;
+        UpdateVisibleFeedScrollSnapshot();
+    }
+
+    private void UpdateVisibleFeedScrollSnapshot()
+    {
+        FeedScrollAnchor[]? anchors = CaptureVisibleFeedAnchors();
+        if (anchors is not null)
+        {
+            _visibleFeedScrollSnapshot = new FeedScrollSnapshot(
+                _viewModel.SelectedSection,
+                _viewModel.SelectedRatingFilter,
+                anchors
+            );
+        }
+    }
+
+    private void ClearFeedScrollSnapshot()
+    {
+        _visibleFeedScrollSnapshot = null;
+        _pendingFeedScrollAnchors = null;
+        _lastFeedScrollSnapshotMilliseconds = 0;
+        _feedScrollRestoreVersion++;
+    }
+
+    private FeedScrollAnchor[]? CaptureVisibleFeedAnchors()
+    {
+        UICollectionView? collectionView = GetNativeMovieCollection();
+        if (collectionView is null)
+        {
+            return null;
+        }
+
+        List<FeedScrollAnchor> anchors = new(collectionView.IndexPathsForVisibleItems.Length);
+        foreach (var indexPath in collectionView.IndexPathsForVisibleItems)
+        {
+            int groupIndex = (int)indexPath.Section;
+            int itemIndex = (int)indexPath.Item;
+            if (
+                groupIndex < 0
+                || groupIndex >= _viewModel.MovieGroups.Count
+                || itemIndex < 0
+                || itemIndex >= _viewModel.MovieGroups[groupIndex].Cards.Count
+            )
+            {
+                continue;
+            }
+
+            UICollectionViewLayoutAttributes? attributes =
+                collectionView.CollectionViewLayout.LayoutAttributesForItem(indexPath);
+            if (attributes is null)
+            {
+                continue;
+            }
+
+            anchors.Add(
+                new FeedScrollAnchor(
+                    _viewModel.MovieGroups[groupIndex].Cards[itemIndex].MovieId,
+                    collectionView.ContentOffset.Y - attributes.Frame.Y,
+                    attributes.Frame.Y
+                )
+            );
+        }
+
+        return anchors.Count == 0
+            ? null
+            : anchors.OrderBy(static anchor => anchor.ItemOrigin).ToArray();
+    }
+
+    private UICollectionView? GetNativeMovieCollection()
+    {
+        if (_nativeMovieCollection?.Window is not null)
+        {
+            return _nativeMovieCollection;
+        }
+
+        _nativeMovieCollection = MovieCollection.Handler?.PlatformView is UIView platformView
+            ? FindCollectionView(platformView)
+            : null;
+        return _nativeMovieCollection;
+    }
+
+    private static UICollectionView? FindCollectionView(UIView view)
+    {
+        if (view is UICollectionView collectionView)
+        {
+            return collectionView;
+        }
+
+        foreach (UIView subview in view.Subviews)
+        {
+            UICollectionView? match = FindCollectionView(subview);
+            if (match is not null)
+            {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    private void ScheduleFeedScrollRestore()
+    {
+        FeedScrollAnchor[]? anchors = _pendingFeedScrollAnchors;
+        _pendingFeedScrollAnchors = null;
+        if (anchors is null)
+        {
+            return;
+        }
+
+        int version = ++_feedScrollRestoreVersion;
+        CatalogSection section = _viewModel.SelectedSection;
+        MovieRatingFilter filter = _viewModel.SelectedRatingFilter;
+        Dispatcher.DispatchDelayed(
+            TimeSpan.FromMilliseconds(32),
+            () => RestoreFeedScrollPosition(anchors, section, filter, version, attempt: 0)
+        );
+    }
+
+    private void RestoreFeedScrollPosition(
+        IReadOnlyList<FeedScrollAnchor> anchors,
+        CatalogSection section,
+        MovieRatingFilter filter,
+        int version,
+        int attempt
+    )
+    {
+        if (
+            version != _feedScrollRestoreVersion
+            || section != _viewModel.SelectedSection
+            || filter != _viewModel.SelectedRatingFilter
+            || GetNativeMovieCollection() is not { } collectionView
+        )
+        {
+            return;
+        }
+
+        if (collectionView.Dragging || collectionView.Decelerating)
+        {
+            _feedScrollRestoreVersion++;
+            return;
+        }
+
+        collectionView.LayoutIfNeeded();
+        foreach (FeedScrollAnchor anchor in anchors)
+        {
+            if (
+                !MovieGroupViewModel.TryFindMovie(
+                    _viewModel.MovieGroups,
+                    anchor.MovieId,
+                    out int groupIndex,
+                    out int itemIndex
+                )
+            )
+            {
+                continue;
+            }
+
+            var indexPath = Foundation.NSIndexPath.FromItemSection(itemIndex, groupIndex);
+            UICollectionViewLayoutAttributes? attributes =
+                collectionView.CollectionViewLayout.LayoutAttributesForItem(indexPath);
+            if (attributes is null)
+            {
+                break;
+            }
+
+            double minimumOffset = -collectionView.AdjustedContentInset.Top;
+            double maximumOffset = Math.Max(
+                minimumOffset,
+                collectionView.ContentSize.Height
+                    - collectionView.Bounds.Height
+                    + collectionView.AdjustedContentInset.Bottom
+            );
+            double targetOffset = Math.Clamp(
+                attributes.Frame.Y + anchor.OffsetFromItemTop,
+                minimumOffset,
+                maximumOffset
+            );
+            UIView.PerformWithoutAnimation(() =>
+                collectionView.SetContentOffset(
+                    new CGPoint(collectionView.ContentOffset.X, targetOffset),
+                    animated: false
+                )
+            );
+            if (attempt < 2)
+            {
+                Dispatcher.DispatchDelayed(
+                    TimeSpan.FromMilliseconds(100),
+                    () => RestoreFeedScrollPosition(anchors, section, filter, version, attempt + 1)
+                );
+            }
+
+            return;
+        }
+
+        if (attempt < 4)
+        {
+            Dispatcher.DispatchDelayed(
+                TimeSpan.FromMilliseconds(32),
+                () => RestoreFeedScrollPosition(anchors, section, filter, version, attempt + 1)
+            );
         }
     }
 
@@ -451,4 +709,16 @@ public partial class MainPage : ContentPage
         }
         catch (OperationCanceledException) { }
     }
+
+    private readonly record struct FeedScrollAnchor(
+        int MovieId,
+        double OffsetFromItemTop,
+        double ItemOrigin
+    );
+
+    private readonly record struct FeedScrollSnapshot(
+        CatalogSection Section,
+        MovieRatingFilter Filter,
+        FeedScrollAnchor[] Anchors
+    );
 }

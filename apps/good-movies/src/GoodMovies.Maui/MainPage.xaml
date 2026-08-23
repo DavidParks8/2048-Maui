@@ -346,6 +346,8 @@
             IsGrouped="True"
             ItemsSource="{Binding MovieGroups}"
             ItemSizingStrategy="MeasureAllItems"
+            ItemsUpdatingScrollMode="KeepScrollOffset"
+            Scrolled="OnMovieCollectionScrolled"
             SelectionMode="None"
             VerticalScrollBarVisibility="Never"
           >

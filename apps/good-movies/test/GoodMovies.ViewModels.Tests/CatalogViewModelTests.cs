@@ -951,6 +951,35 @@ public sealed class CatalogViewModelTests
         Assert.AreSame(card, ((IEnumerable<MovieCardViewModel>)group).Single());
     }
 
+    [TestMethod]
+    public void Grouping_FindsMoviePositionAcrossGroupedSections()
+    {
+        MovieCardViewModel now = new(MovieWithRelease(1, "Now", Today), new FixedClock(Today));
+        MovieCardViewModel later = new(
+            MovieWithRelease(2, "Later", Today.AddDays(2)),
+            new FixedClock(Today)
+        );
+        IReadOnlyList<MovieGroupViewModel> groups = MovieGroupViewModel.CreateGroups(
+            new[] { now, later }
+        );
+
+        Assert.IsTrue(
+            MovieGroupViewModel.TryFindMovie(
+                groups,
+                later.MovieId,
+                out int groupIndex,
+                out int itemIndex
+            )
+        );
+        Assert.AreEqual(1, groupIndex);
+        Assert.AreEqual(0, itemIndex);
+        Assert.IsFalse(
+            MovieGroupViewModel.TryFindMovie(groups, 999, out groupIndex, out itemIndex)
+        );
+        Assert.AreEqual(-1, groupIndex);
+        Assert.AreEqual(-1, itemIndex);
+    }
+
     private static CatalogViewModel CreateViewModel(
         IMovieCatalogService service,
         IFavoritesStore? favorites = null,

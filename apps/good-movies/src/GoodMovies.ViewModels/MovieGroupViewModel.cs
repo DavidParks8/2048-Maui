@@ -91,6 +91,35 @@ public sealed class MovieGroupViewModel : IEnumerable<MovieCardViewModel>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    public static bool TryFindMovie(
+        IReadOnlyList<MovieGroupViewModel>? groups,
+        int movieId,
+        out int groupIndex,
+        out int itemIndex
+    )
+    {
+        if (groups is not null)
+        {
+            for (int currentGroupIndex = 0; currentGroupIndex < groups.Count; currentGroupIndex++)
+            {
+                IReadOnlyList<MovieCardViewModel> cards = groups[currentGroupIndex].Cards;
+                for (int currentItemIndex = 0; currentItemIndex < cards.Count; currentItemIndex++)
+                {
+                    if (cards[currentItemIndex].MovieId == movieId)
+                    {
+                        groupIndex = currentGroupIndex;
+                        itemIndex = currentItemIndex;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        groupIndex = -1;
+        itemIndex = -1;
+        return false;
+    }
+
     public static IReadOnlyList<MovieGroupViewModel> CreateGroups(
         IEnumerable<MovieCardViewModel>? cards
     )
