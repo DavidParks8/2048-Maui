@@ -55,9 +55,19 @@ public partial class TrailerPlayerPage : ContentPage, IQueryAttributable
         }
 
         _released = true;
-        TrailerWebView.StopPlayback();
-        TrailerWebView.Handler?.DisconnectHandler();
-        Closed?.Invoke(this, EventArgs.Empty);
+        try
+        {
+            TrailerWebView.StopPlayback();
+            TrailerWebView.Handler?.DisconnectHandler();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "The trailer player could not be torn down cleanly.");
+        }
+        finally
+        {
+            Closed?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void OnRetryClicked(object? sender, EventArgs e)

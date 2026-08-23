@@ -66,7 +66,8 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     protected override void DisconnectHandler(WKWebView platformView)
     {
-        StopAndClear();
+        CancelLoadTimeout();
+        StopAndClear(platformView);
         platformView.Configuration.UserContentController.RemoveScriptMessageHandler(
             TrailerScriptMessageHandler.ChannelName
         );
@@ -125,11 +126,21 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     private void StopAndClear()
     {
+        CancelLoadTimeout();
+        StopAndClear(PlatformView);
+    }
+
+    private void CancelLoadTimeout()
+    {
         _loadTimeout?.Cancel();
         _loadTimeout?.Dispose();
         _loadTimeout = null;
-        PlatformView.StopLoading();
-        PlatformView.EvaluateJavaScript(
+    }
+
+    private static void StopAndClear(WKWebView webView)
+    {
+        webView.StopLoading();
+        webView.EvaluateJavaScript(
             "var player = document.getElementById('movie_player');"
                 + "if (player && player.stopVideo) { player.stopVideo(); }",
             null!
