@@ -4,7 +4,7 @@ using GoodMovies.Core;
 
 namespace GoodMovies.Infrastructure;
 
-public sealed class CatalogCacheException : IOException
+internal sealed class CatalogCacheException : IOException
 {
     public CatalogCacheException(string message)
         : base(message) { }
@@ -16,116 +16,32 @@ public sealed class CatalogCacheException : IOException
 /// <summary>
 /// JSON catalog cache with policy revalidation on every read.
 /// </summary>
-public class JsonMovieCatalogCache : IMovieCatalogCache
+internal sealed class JsonMovieCatalogCache : IMovieCatalogCache
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(
         StringComparer.OrdinalIgnoreCase
     );
 
-    private readonly IFileSystemPathProvider? _pathProvider;
-    private readonly string? _explicitPath;
+    private readonly IFileSystemPathProvider _pathProvider;
     private readonly GoodMoviesInfrastructureOptions _options;
-    private readonly IGoodMoviesTimeProvider _timeProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly IAtomicFileWriter _atomicFileWriter;
     private readonly PosterUrlBuilder _posterUrlBuilder;
-    private readonly IClock _clock;
-    private readonly ReleaseWindowPolicy _releaseWindowPolicy;
-    private readonly MovieSafetyPolicy _movieSafetyPolicy;
     private readonly SemaphoreSlim _gate;
 
     public JsonMovieCatalogCache(
         IFileSystemPathProvider pathProvider,
         GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
+        TimeProvider? timeProvider = null,
+        IAtomicFileWriter? atomicFileWriter = null
     )
     {
         _pathProvider = pathProvider ?? throw new ArgumentNullException(nameof(pathProvider));
         _options = options ?? new GoodMoviesInfrastructureOptions();
         _options.Validate();
-        _clock = clock ?? new SystemClock();
-        _timeProvider = timeProvider ?? new SystemGoodMoviesTimeProvider();
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _atomicFileWriter = atomicFileWriter ?? new AtomicFileWriter();
         _posterUrlBuilder = new PosterUrlBuilder(_options);
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
-        _gate = Gates.GetOrAdd(GetCachePath(), static _ => new SemaphoreSlim(1, 1));
-    }
-
-    public JsonMovieCatalogCache(
-        string filePath,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        TimeSpan? cacheLifetime = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : this(
-            ResolvePath(filePath, "good-movies-catalog.json"),
-            new GoodMoviesInfrastructureOptions
-            {
-                CatalogCacheFileName = Path.GetFileName(
-                    ResolvePath(filePath, "good-movies-catalog.json")
-                ),
-                CacheLifetime = cacheLifetime ?? TimeSpan.FromHours(6),
-            },
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            explicitPath: true
-        ) { }
-
-    public JsonMovieCatalogCache(
-        string directoryPath,
-        GoodMoviesInfrastructureOptions options,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : this(
-            ResolvePath(directoryPath, options?.CatalogCacheFileName ?? "good-movies-catalog.json"),
-            options ?? new GoodMoviesInfrastructureOptions(),
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            explicitPath: true
-        ) { }
-
-    private JsonMovieCatalogCache(
-        string filePath,
-        GoodMoviesInfrastructureOptions options,
-        IClock? clock,
-        IGoodMoviesTimeProvider? timeProvider,
-        IAtomicFileWriter? atomicFileWriter,
-        ReleaseWindowPolicy? releaseWindowPolicy,
-        MovieSafetyPolicy? movieSafetyPolicy,
-        bool explicitPath
-    )
-    {
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            throw new ArgumentException("A cache file path is required.", nameof(filePath));
-        }
-
-        _explicitPath = Path.GetFullPath(filePath);
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _options.Validate();
-        _clock = clock ?? new SystemClock();
-        _timeProvider = timeProvider ?? new SystemGoodMoviesTimeProvider();
-        _atomicFileWriter = atomicFileWriter ?? new AtomicFileWriter();
-        _posterUrlBuilder = new PosterUrlBuilder(_options);
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
         _gate = Gates.GetOrAdd(GetCachePath(), static _ => new SemaphoreSlim(1, 1));
     }
 
@@ -178,14 +94,8 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
             {
                 return CatalogCacheReadResult.NoCache();
             }
-            catch (IOException exception)
-            {
-                return CatalogCacheReadResult.Failure(
-                    CatalogCacheStatus.ReadFailed,
-                    new CatalogCacheException("The catalog cache could not be read.", exception)
-                );
-            }
-            catch (UnauthorizedAccessException exception)
+            catch (Exception exception)
+                when (exception is IOException or UnauthorizedAccessException)
             {
                 return CatalogCacheReadResult.Failure(
                     CatalogCacheStatus.ReadFailed,
@@ -210,12 +120,7 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
                     .Where(static movie => movie is not null)
                     .Cast<Movie>()
                     .ToArray();
-                snapshot = MovieCatalogSnapshot.Create(
-                    cachedMovies,
-                    today,
-                    _releaseWindowPolicy,
-                    _movieSafetyPolicy
-                );
+                snapshot = new MovieCatalogSnapshot(cachedMovies, today);
             }
             catch (Exception exception)
             {
@@ -228,18 +133,13 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
                 );
             }
 
-            TimeSpan age = _timeProvider.UtcNow - document.RefreshedAt;
+            TimeSpan age = _timeProvider.GetUtcNow() - document.RefreshedAt;
             if (age < TimeSpan.Zero)
             {
                 age = TimeSpan.Zero;
             }
 
-            return CatalogCacheReadResult.Available(
-                snapshot.Movies,
-                document.RefreshedAt,
-                age,
-                age >= _options.CacheLifetime
-            );
+            return CatalogCacheReadResult.Available(snapshot.Movies, age >= _options.CacheLifetime);
         }
         finally
         {
@@ -267,11 +167,9 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            MovieCatalogSnapshot safeSnapshot = MovieCatalogSnapshot.Create(
+            MovieCatalogSnapshot safeSnapshot = new MovieCatalogSnapshot(
                 snapshot.Movies,
-                snapshot.AsOfDate ?? _clock.Today,
-                _releaseWindowPolicy,
-                _movieSafetyPolicy
+                snapshot.AsOfDate
             );
             CatalogCacheDocument document = new()
             {
@@ -294,10 +192,7 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
                         cancellationToken
                     )
                     .ConfigureAwait(false);
-                return new CatalogCacheWriteResult(
-                    CatalogCacheWriteStatus.Succeeded,
-                    document.RefreshedAt
-                );
+                return new CatalogCacheWriteResult(CatalogCacheWriteStatus.Succeeded);
             }
             catch (OperationCanceledException)
             {
@@ -320,61 +215,7 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
         }
     }
 
-    public Task<CatalogCacheReadResult> LoadAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => ReadAsync(today, cancellationToken);
-
-    public Task<CatalogCacheReadResult> LoadAsync(CancellationToken cancellationToken = default) =>
-        ReadAsync(_clock.Today, cancellationToken);
-
-    public Task<CatalogCacheReadResult> ReadAsync(CancellationToken cancellationToken = default) =>
-        ReadAsync(_clock.Today, cancellationToken);
-
-    public Task<CatalogCacheWriteResult> SaveAsync(
-        MovieCatalogSnapshot snapshot,
-        DateTimeOffset refreshedAt,
-        CancellationToken cancellationToken = default
-    ) => WriteAsync(snapshot, refreshedAt, cancellationToken);
-
-    public async Task<CatalogCacheWriteResult> WriteAsync(
-        IEnumerable<Movie> movies,
-        DateOnly today,
-        DateTimeOffset refreshedAt,
-        CancellationToken cancellationToken = default
-    ) =>
-        await WriteAsync(
-                MovieCatalogSnapshot.Create(
-                    movies ?? Array.Empty<Movie>(),
-                    today,
-                    _releaseWindowPolicy,
-                    _movieSafetyPolicy
-                ),
-                refreshedAt,
-                cancellationToken
-            )
-            .ConfigureAwait(false);
-
-    public Task<CatalogCacheWriteResult> SaveAsync(
-        IEnumerable<Movie> movies,
-        DateOnly today,
-        DateTimeOffset refreshedAt,
-        CancellationToken cancellationToken = default
-    ) => WriteAsync(movies, today, refreshedAt, cancellationToken);
-
-    public Task<CatalogCacheWriteResult> SaveAsync(
-        IEnumerable<Movie> movies,
-        DateTimeOffset refreshedAt,
-        CancellationToken cancellationToken = default
-    ) => WriteAsync(movies, _clock.Today, refreshedAt, cancellationToken);
-
-    private string GetCachePath() =>
-        _explicitPath ?? _pathProvider!.GetPath(_options.CatalogCacheFileName);
-
-    private static string ResolvePath(string path, string defaultFileName) =>
-        Directory.Exists(path) || string.IsNullOrEmpty(Path.GetExtension(path))
-            ? Path.Combine(path, defaultFileName)
-            : path;
+    private string GetCachePath() => _pathProvider.GetPath(_options.CatalogCacheFileName);
 
     private CachedMovie ToCachedMovie(Movie movie)
     {
@@ -385,9 +226,8 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
             Title = movie.Title,
             Overview = movie.Overview,
             PosterPath = posterUri is null ? null : movie.PosterPath,
-            PosterUri = posterUri?.ToString(),
             OriginalLanguage = movie.OriginalLanguage,
-            Certification = movie.CertificationCode,
+            Certification = movie.Certification?.Code,
             GenreIds = movie.GenreIds.ToList(),
             Genres = movie
                 .Genres.Select(static genre => new CachedGenre { Id = genre.Id, Name = genre.Name })
@@ -398,17 +238,6 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
                     ReleaseDate = release.ReleaseDate,
                     CountryCode = release.CountryCode,
                     ReleaseType = release.ReleaseType,
-                })
-                .ToList(),
-            Trailers = movie
-                .Trailers.Select(static trailer => new CachedTrailer
-                {
-                    Key = trailer.Key,
-                    Name = trailer.Name,
-                    Site = trailer.Site,
-                    Type = trailer.Type,
-                    IsOfficial = trailer.IsOfficial,
-                    LanguageCode = trailer.LanguageCode,
                 })
                 .ToList(),
         };
@@ -433,17 +262,17 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
                 release.ReleaseType
             ))
             .ToArray();
-        MovieTrailer[] trailers = (cachedMovie.Trailers ?? new List<CachedTrailer>())
-            .Where(static trailer => trailer is not null)
-            .Select(static trailer => new MovieTrailer(
-                trailer.Key,
-                trailer.Name,
-                trailer.Site,
-                trailer.Type,
-                trailer.IsOfficial,
-                trailer.LanguageCode
-            ))
-            .ToArray();
+        if (
+            releases.Length == 0
+            && cachedMovie.LegacyUsTheatricalReleaseDate is DateOnly legacyReleaseDate
+        )
+        {
+            releases =
+            [
+                new TheatricalRelease(legacyReleaseDate, "US", TheatricalRelease.TheatricalType),
+            ];
+        }
+
         Uri? posterUri = _posterUrlBuilder.Build(cachedMovie.PosterPath);
         string? safePosterPath = posterUri is null ? null : cachedMovie.PosterPath;
 
@@ -453,98 +282,11 @@ public class JsonMovieCatalogCache : IMovieCatalogCache
             cachedMovie.Certification,
             releases,
             genres,
-            trailers,
             cachedMovie.Overview,
             safePosterPath,
-            posterUri?.ToString(),
+            posterUri,
             cachedMovie.OriginalLanguage,
             cachedMovie.GenreIds
         );
     }
-}
-
-/// <summary>
-/// Friendly alias for callers that name the implementation by its storage
-/// mechanism.
-/// </summary>
-public class FileMovieCatalogCache : JsonMovieCatalogCache
-{
-    public FileMovieCatalogCache(
-        IFileSystemPathProvider pathProvider,
-        GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            pathProvider,
-            options,
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
-
-    public FileMovieCatalogCache(
-        string filePath,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        TimeSpan? cacheLifetime = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            filePath,
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            cacheLifetime,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
-}
-
-public class FileCatalogCache : JsonMovieCatalogCache
-{
-    public FileCatalogCache(
-        IFileSystemPathProvider pathProvider,
-        GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            pathProvider,
-            options,
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
-
-    public FileCatalogCache(
-        string filePath,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        TimeSpan? cacheLifetime = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            filePath,
-            clock,
-            timeProvider,
-            atomicFileWriter,
-            cacheLifetime,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
 }

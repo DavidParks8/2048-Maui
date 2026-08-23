@@ -2,7 +2,7 @@ using GoodMovies.Core;
 
 namespace GoodMovies.ViewModels;
 
-public static class MovieKindIconMapper
+internal static class MovieKindIconMapper
 {
     public static string GetIcon(MovieGenre? genre)
     {

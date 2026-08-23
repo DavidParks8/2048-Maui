@@ -4,12 +4,4 @@
     <RootNamespace>GoodMovies.Core</RootNamespace>
     <AssemblyName>GoodMovies.Core</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="GoodMovies.Core.Tests" />
-  </ItemGroup>
 </Project>

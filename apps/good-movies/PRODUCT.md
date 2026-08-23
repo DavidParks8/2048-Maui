@@ -14,18 +14,20 @@ in-app parent configuration in v1.
 
 ## Product Purpose
 
-Good Movies helps a child discover which G- and PG-rated movies are coming to U.S.
-theaters, understand when they arrive, save favorites, hear descriptions read aloud,
-and open official trailers.
+Good Movies helps a child discover family-appropriate movies coming to U.S. theaters,
+understand when they arrive, save favorites, hear descriptions read aloud, and open
+official trailers.
 
-Success means the child can browse independently without encountering unrated or
-older-audience titles and without needing to decode dense movie metadata.
+Success means the child can browse independently without encountering known
+older-audience titles or needing to decode dense movie metadata.
 
 ## Positioning
 
-The catalog is safety-filtered before display: every title must have a verified U.S.
-limited or wide theatrical release and an exact G or PG certification. Unrated titles
-are excluded rather than treated as safe.
+The catalog is safety-filtered before display. Every title must have a verified U.S.
+limited or wide theatrical release. It must either carry an exact G or PG certification,
+or have no published certification yet and pass the stricter English-language,
+family/animation genre, and popularity checks. Titles with any known rating above PG are
+excluded.
 
 ## Operating Context
 
@@ -50,15 +52,13 @@ are excluded rather than treated as safe.
 
 - Product name: **Good Movies**.
 - Purple is the defining color because it is the primary user's favorite.
-- The selected visual direction is Design E / Big Buttons: solid color blocks, huge
+- The selected visual direction is Big Buttons: solid color blocks, huge
   touch targets, very few words, and no glass effects.
 
-## Evidence on Hand
+## Content source
 
-- Approved interactive prototype:
-  `prototypes/ipad-e-bigbuttons.html`
-- Prototype movie titles and posters are synthetic placeholders. Production content
-  comes from TMDB; no testimonials, ratings claims, or commercial proof exist.
+Production content comes from TMDB. Simulator sample titles and posters are synthetic
+placeholders; no testimonials, ratings claims, or commercial proof exist.
 
 ## Product Principles
 

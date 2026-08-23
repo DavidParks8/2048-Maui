@@ -15,30 +15,14 @@ public sealed record TheatricalRelease
         ReleaseType = releaseType;
     }
 
-    public TheatricalRelease(string countryCode, int releaseType, DateOnly releaseDate)
-        : this(releaseDate, countryCode, releaseType) { }
-
-    public TheatricalRelease(string countryCode, DateOnly releaseDate, int releaseType)
-        : this(releaseDate, countryCode, releaseType) { }
-
     public DateOnly ReleaseDate { get; }
-
-    public DateOnly Date => ReleaseDate;
 
     public string CountryCode { get; }
 
-    public string Country => CountryCode;
-
-    public string Iso3166CountryCode => CountryCode;
-
     public int ReleaseType { get; }
 
-    public int Type => ReleaseType;
-
-    public bool IsUsRelease => CountryCode == "US";
-
     public bool IsUsTheatrical =>
-        IsUsRelease && ReleaseType is LimitedTheatricalType or TheatricalType;
+        CountryCode == "US" && ReleaseType is LimitedTheatricalType or TheatricalType;
 
     public static bool IsAllowedTheatricalType(int releaseType) =>
         releaseType is LimitedTheatricalType or TheatricalType;

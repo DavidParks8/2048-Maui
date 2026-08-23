@@ -16,7 +16,7 @@ public partial class MainPage : ContentPage
     private const string ShimmerAnimationName = "GoodMoviesSkeletonShimmer";
 
     private readonly CatalogViewModel _viewModel;
-    private readonly IScreenReaderService _screenReaderService;
+    private readonly MauiScreenReaderService _screenReaderService;
     private readonly GridItemsLayout _movieItemsLayout;
     private CatalogSection _lastSection;
     private bool _layoutInitialized;
@@ -32,15 +32,9 @@ public partial class MainPage : ContentPage
     private int _feedScrollRestoreVersion;
     private bool _restoreFeedScrollAfterRefresh;
 
-    public MainPage(
-        CatalogViewModel viewModel,
-        NavigationViewModel navigationViewModel,
-        IScreenReaderService screenReaderService
-    )
+    public MainPage(CatalogViewModel viewModel, MauiScreenReaderService screenReaderService)
     {
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
-        NavigationViewModel =
-            navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
         _screenReaderService =
             screenReaderService ?? throw new ArgumentNullException(nameof(screenReaderService));
         BindingContext = _viewModel;
@@ -52,13 +46,13 @@ public partial class MainPage : ContentPage
             VerticalItemSpacing = 14,
         };
         MovieCollection.ItemsLayout = _movieItemsLayout;
-        ComingTile.Command = NavigationViewModel.SwitchSectionCommand;
-        FavoritesTile.Command = NavigationViewModel.SwitchSectionCommand;
-        SearchTile.Command = NavigationViewModel.SwitchSectionCommand;
-        CompactComingTile.Command = NavigationViewModel.SwitchSectionCommand;
-        CompactFavoritesTile.Command = NavigationViewModel.SwitchSectionCommand;
-        CompactSearchTile.Command = NavigationViewModel.SwitchSectionCommand;
-        _lastSection = NavigationViewModel.SelectedSection;
+        ComingTile.Command = _viewModel.SwitchSectionCommand;
+        FavoritesTile.Command = _viewModel.SwitchSectionCommand;
+        SearchTile.Command = _viewModel.SwitchSectionCommand;
+        CompactComingTile.Command = _viewModel.SwitchSectionCommand;
+        CompactFavoritesTile.Command = _viewModel.SwitchSectionCommand;
+        CompactSearchTile.Command = _viewModel.SwitchSectionCommand;
+        _lastSection = _viewModel.SelectedSection;
         _viewModel.FeedReplacementStarting += OnFeedReplacementStarting;
         _viewModel.FeedReplacementCompleted += OnFeedReplacementCompleted;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -66,8 +60,6 @@ public partial class MainPage : ContentPage
         UpdateNavigationState();
         UpdateRatingFilterState();
     }
-
-    public NavigationViewModel NavigationViewModel { get; }
 
     protected override void OnAppearing()
     {
@@ -296,7 +288,6 @@ public partial class MainPage : ContentPage
         if (
             e.PropertyName
             is nameof(CatalogViewModel.SelectedSection)
-                or nameof(CatalogViewModel.CurrentSection)
                 or nameof(CatalogViewModel.ComingSoonCount)
                 or nameof(CatalogViewModel.FavoriteCount)
         )
@@ -306,7 +297,7 @@ public partial class MainPage : ContentPage
                 ClearFeedScrollSnapshot();
             }
 
-            CatalogSection section = NavigationViewModel.SelectedSection;
+            CatalogSection section = _viewModel.SelectedSection;
             bool switchedToSearch =
                 _isAppeared
                 && section == CatalogSection.FindAMovie
@@ -384,8 +375,9 @@ public partial class MainPage : ContentPage
             return null;
         }
 
-        List<FeedScrollAnchor> anchors = new(collectionView.IndexPathsForVisibleItems.Length);
-        foreach (Foundation.NSIndexPath indexPath in collectionView.IndexPathsForVisibleItems)
+        Foundation.NSIndexPath[] visibleItems = collectionView.IndexPathsForVisibleItems;
+        List<FeedScrollAnchor> anchors = new(visibleItems.Length);
+        foreach (Foundation.NSIndexPath indexPath in visibleItems)
         {
             if (ResolveAnchor(collectionView, indexPath) is { } anchor)
             {
@@ -395,9 +387,15 @@ public partial class MainPage : ContentPage
 
         // OffsetFromItemTop decreases as items sit further down the viewport,
         // so descending order puts the topmost visible card first.
-        return anchors.Count == 0
-            ? null
-            : anchors.OrderByDescending(static anchor => anchor.OffsetFromItemTop).ToArray();
+        if (anchors.Count == 0)
+        {
+            return null;
+        }
+
+        anchors.Sort(
+            static (left, right) => right.OffsetFromItemTop.CompareTo(left.OffsetFromItemTop)
+        );
+        return anchors.ToArray();
     }
 
     private FeedScrollAnchor? ResolveAnchor(
@@ -577,28 +575,26 @@ public partial class MainPage : ContentPage
 
     private void UpdateNavigationState()
     {
-        CatalogSection selected = NavigationViewModel.SelectedSection;
+        CatalogSection selected = _viewModel.SelectedSection;
         ComingTile.IsSelected = selected == CatalogSection.ComingSoon;
         FavoritesTile.IsSelected = selected == CatalogSection.MyFavorites;
         SearchTile.IsSelected = selected == CatalogSection.FindAMovie;
         CompactComingTile.IsSelected = selected == CatalogSection.ComingSoon;
         CompactFavoritesTile.IsSelected = selected == CatalogSection.MyFavorites;
         CompactSearchTile.IsSelected = selected == CatalogSection.FindAMovie;
-        ComingTile.Subtext = GoodMoviesTextFormatter.FormatCount(
-            NavigationViewModel.ComingSoonCount
-        );
-        FavoritesTile.Subtext = GoodMoviesTextFormatter.FormatSavedCount(
-            NavigationViewModel.FavoriteCount
-        );
+        string comingCount = GoodMoviesTextFormatter.FormatCount(_viewModel.ComingSoonCount);
+        string favoriteCount = GoodMoviesTextFormatter.FormatSavedCount(_viewModel.FavoriteCount);
+        ComingTile.Subtext = comingCount;
+        FavoritesTile.Subtext = favoriteCount;
 
         ComingTile.AccessibilityLabel = FormatNavigationLabel(
             AppStrings.NavComingAccessibility,
-            GoodMoviesTextFormatter.FormatCount(NavigationViewModel.ComingSoonCount),
+            comingCount,
             selected == CatalogSection.ComingSoon
         );
         FavoritesTile.AccessibilityLabel = FormatNavigationLabel(
             AppStrings.NavFavoritesAccessibility,
-            GoodMoviesTextFormatter.FormatSavedCount(NavigationViewModel.FavoriteCount),
+            favoriteCount,
             selected == CatalogSection.MyFavorites
         );
         SearchTile.AccessibilityLabel = FormatNavigationLabel(

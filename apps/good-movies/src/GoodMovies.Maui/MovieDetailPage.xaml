@@ -374,7 +374,7 @@
                     HorizontalOptions="Center"
                     InputTransparent="True"
                     Text="{Binding Text}"
-                    TextColor="{Binding IsHighlighted, Converter={StaticResource TokenTextColorConverter}}"
+                    TextColor="{Binding IsHighlighted, Converter={StaticResource SelectionTextColorConverter}}"
                     VerticalOptions="Center"
                   />
                 </Border>

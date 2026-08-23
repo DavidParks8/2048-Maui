@@ -75,14 +75,11 @@ public sealed class CatalogViewModelTests
     public async Task Initialize_ReconcilesFavoritesAgainstTheCachedCatalog()
     {
         Movie cached = MovieWithRelease(1, "Cached", Today.AddDays(1));
-        FavoriteEntry present = cached.CreateFavoriteEntry()!.Value;
+        FavoriteEntry present = Favorite(cached);
         FavoriteEntry absent = new(99, Today.AddDays(2));
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
         favorites
             .GetAsync(Today, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(FavoritesResult.Success(new[] { present, absent })));
-        favorites
-            .PruneAsync(Today, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(FavoritesResult.Success(new[] { present, absent })));
         favorites
             .ReconcileAsync(Arg.Any<IEnumerable<Movie>>(), Today, Arg.Any<CancellationToken>())
@@ -131,12 +128,9 @@ public sealed class CatalogViewModelTests
             .GetCatalogAsync(false, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Cache(CatalogResultStatus.FreshCache, movie)));
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
-        FavoriteEntry entry = movie.CreateFavoriteEntry()!.Value;
+        FavoriteEntry entry = Favorite(movie);
         favorites
             .GetAsync(Today, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(FavoritesResult.Success(new[] { entry })));
-        favorites
-            .PruneAsync(Today, Arg.Any<CancellationToken>())
             .Returns(
                 Task.FromResult(FavoritesResult.Success(new[] { entry })),
                 Task.FromResult(FavoritesResult.Success(Array.Empty<FavoriteEntry>()))
@@ -147,7 +141,7 @@ public sealed class CatalogViewModelTests
 
         await viewModel.CheckForUpdatesAsync();
 
-        await favorites.Received(2).PruneAsync(Today, Arg.Any<CancellationToken>());
+        await favorites.Received(2).GetAsync(Today, Arg.Any<CancellationToken>());
         Assert.AreEqual(0, viewModel.FavoriteCount);
     }
 
@@ -155,7 +149,7 @@ public sealed class CatalogViewModelTests
     public async Task ReapplyCurrentDatePolicies_RemovesDayFourteenMovieAndFavoriteOffline()
     {
         Movie expiring = MovieWithRelease(1, "Last day", Today.AddDays(-13));
-        FavoriteEntry favorite = expiring.CreateFavoriteEntry()!.Value;
+        FavoriteEntry favorite = Favorite(expiring);
         MutableClock clock = new(Today);
         IMovieCatalogService service = Substitute.For<IMovieCatalogService>();
         service
@@ -173,23 +167,17 @@ public sealed class CatalogViewModelTests
                     )
                 )
             );
-        favorites
-            .PruneAsync(Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo =>
-                Task.FromResult(
-                    FavoritesResult.Success(
-                        callInfo.Arg<DateOnly>() == Today
-                            ? new[] { favorite }
-                            : Array.Empty<FavoriteEntry>()
-                    )
-                )
-            );
         INavigationService navigation = Substitute.For<INavigationService>();
         navigation
             .NavigateToMovieDetailAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         navigation.NavigateBackAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        CatalogViewModel viewModel = new(service, favorites, clock, navigationService: navigation);
+        CatalogViewModel viewModel = new(
+            service,
+            favorites,
+            clock: clock,
+            navigationService: navigation
+        );
         await viewModel.InitializeAsync();
         Assert.AreEqual(1, viewModel.MovieCards.Count);
         Assert.AreEqual(1, viewModel.FavoriteCount);
@@ -201,7 +189,7 @@ public sealed class CatalogViewModelTests
 
         Assert.AreEqual(0, viewModel.MovieCards.Count);
         Assert.AreEqual(0, viewModel.FavoriteCount);
-        await favorites.Received().PruneAsync(Today.AddDays(1), Arg.Any<CancellationToken>());
+        await favorites.Received().GetAsync(Today.AddDays(1), Arg.Any<CancellationToken>());
         Assert.IsNull(viewModel.SelectedMovieDetail);
         await navigation.Received(1).NavigateBackAsync(Arg.Any<CancellationToken>());
     }
@@ -211,7 +199,7 @@ public sealed class CatalogViewModelTests
     {
         Movie movie = MovieWithRelease(1, "Still here", Today.AddDays(3));
         MutableClock clock = new(Today);
-        CatalogViewModel viewModel = new(FreshService(movie), clock);
+        CatalogViewModel viewModel = new(FreshService(movie), clock: clock);
         await viewModel.InitializeAsync();
         var originalGroups = viewModel.MovieGroups;
         List<string> lifecycle = new();
@@ -294,7 +282,7 @@ public sealed class CatalogViewModelTests
         CatalogViewModel viewModel = new(
             service,
             noFavorites,
-            clock,
+            clock: clock,
             navigationService: navigation
         );
         await viewModel.InitializeAsync();
@@ -302,11 +290,11 @@ public sealed class CatalogViewModelTests
         Assert.AreEqual(ReleaseStatus.Future, viewModel.SelectedMovieDetail!.Status);
 
         clock.Today = Today.AddDays(1);
-        await viewModel.ResumeAsync();
+        await viewModel.CheckForUpdatesAndReapplyDateAsync();
 
         Assert.AreEqual(ReleaseStatus.Today, viewModel.SelectedMovieDetail!.Status);
         clock.Today = Today.AddDays(2);
-        await viewModel.OnResumeAsync();
+        await viewModel.CheckForUpdatesAndReapplyDateAsync();
         Assert.AreEqual(ReleaseStatus.InTheatersNow, viewModel.SelectedMovieDetail!.Status);
         await service.Received(2).GetCatalogAsync(false, Arg.Any<CancellationToken>());
     }
@@ -340,7 +328,7 @@ public sealed class CatalogViewModelTests
         CatalogViewModel viewModel = new(
             service,
             noFavorites,
-            clock,
+            clock: clock,
             navigationService: navigation
         );
         await viewModel.InitializeAsync();
@@ -374,7 +362,7 @@ public sealed class CatalogViewModelTests
         CatalogViewModel viewModel = new(
             service,
             noFavorites,
-            clock,
+            clock: clock,
             navigationService: navigation
         );
         await viewModel.InitializeAsync();
@@ -392,26 +380,6 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public void YouTubeTrailerUri_ValidatesConservativeVideoKeys()
-    {
-        Assert.IsTrue(YouTubeTrailerUri.IsValidKey("dQw4w9WgXcQ"));
-        Assert.IsFalse(YouTubeTrailerUri.IsValidKey(null));
-        Assert.IsFalse(YouTubeTrailerUri.IsValidKey("short"));
-        Assert.IsFalse(YouTubeTrailerUri.IsValidKey("dQw4w9WgXcQ!"));
-        Assert.IsFalse(YouTubeTrailerUri.IsValidKey("dQw4w9WgXc Q"));
-
-        Assert.IsTrue(YouTubeTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri uri));
-        Assert.AreEqual(
-            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&controls=1&playsinline=0&rel=0",
-            uri.AbsoluteUri
-        );
-        Assert.AreEqual(YouTubeTrailerUri.Scheme, uri.Scheme);
-        Assert.AreEqual(YouTubeTrailerUri.Host, uri.Host);
-        Assert.IsTrue(YouTubeTrailerUri.IsTrustedEmbedUri(uri));
-        Assert.IsNull(YouTubeTrailerUri.Build("not-a-key"));
-    }
-
-    [TestMethod]
     public async Task Refresh_SuccessReplacesCatalogOrdersGroupsAndReconcilesFavorites()
     {
         Movie later = MovieWithRelease(2, "Zulu", Today.AddDays(3));
@@ -419,11 +387,7 @@ public sealed class CatalogViewModelTests
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
         favorites
             .ReconcileAsync(Arg.Any<IEnumerable<Movie>>(), Today, Arg.Any<CancellationToken>())
-            .Returns(
-                Task.FromResult(
-                    FavoritesResult.Success(new[] { earlier.CreateFavoriteEntry()!.Value })
-                )
-            );
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { Favorite(earlier) })));
         IMovieCatalogService service = Substitute.For<IMovieCatalogService>();
         service
             .LoadAsync(Arg.Any<CancellationToken>())
@@ -478,7 +442,6 @@ public sealed class CatalogViewModelTests
         Assert.AreEqual("Cached", viewModel.MovieCards.Single().Title);
         Assert.IsTrue(viewModel.IsWarning);
         Assert.IsTrue(viewModel.IsStale);
-        Assert.IsFalse(viewModel.IsError);
         Assert.AreEqual(CatalogMessageKey.RefreshWarning, viewModel.MessageKey);
 
         IMovieCatalogService noCacheService = Substitute.For<IMovieCatalogService>();
@@ -499,8 +462,6 @@ public sealed class CatalogViewModelTests
 
         await noCache.InitializeAsync();
 
-        Assert.IsTrue(noCache.IsError);
-        Assert.IsTrue(noCache.IsMissingToken);
         Assert.AreEqual(CatalogViewState.MissingToken, noCache.State);
         Assert.AreEqual(CatalogMessageKey.MissingToken, noCache.MessageKey);
     }
@@ -530,13 +491,13 @@ public sealed class CatalogViewModelTests
         await viewModel.InitializeAsync();
         await viewModel.RefreshAsync();
 
-        await viewModel.SwitchSectionAsync(CatalogSection.FindAMovie);
+        viewModel.SwitchSection(CatalogSection.FindAMovie);
 
         Assert.IsTrue(viewModel.IsWarning);
         Assert.AreEqual(CatalogViewState.SearchPrompt, viewModel.State);
         Assert.AreEqual(CatalogMessageKey.SearchPrompt, viewModel.MessageKey);
 
-        await viewModel.SwitchSectionAsync(CatalogSection.MyFavorites);
+        viewModel.SwitchSection(CatalogSection.MyFavorites);
 
         Assert.IsTrue(viewModel.IsWarning);
         Assert.AreEqual(CatalogViewState.Empty, viewModel.State);
@@ -570,8 +531,8 @@ public sealed class CatalogViewModelTests
         CatalogViewModel viewModel = new(
             service,
             noFavorites,
-            new FixedClock(Today),
-            networkStatusService: network
+            networkStatusService: network,
+            clock: new FixedClock(Today)
         );
         await viewModel.InitializeAsync();
 
@@ -592,7 +553,7 @@ public sealed class CatalogViewModelTests
             3,
             "Unsafe",
             "PG-13",
-            new TheatricalRelease(Today, "US", TheatricalRelease.TheatricalType)
+            new[] { new TheatricalRelease(Today, "US", TheatricalRelease.TheatricalType) }
         );
         IMovieCatalogService service = Substitute.For<IMovieCatalogService>();
         service
@@ -676,18 +637,7 @@ public sealed class CatalogViewModelTests
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
         favorites
             .GetAsync(Today, Arg.Any<CancellationToken>())
-            .Returns(
-                Task.FromResult(
-                    FavoritesResult.Success(new[] { space.CreateFavoriteEntry()!.Value })
-                )
-            );
-        favorites
-            .PruneAsync(Today, Arg.Any<CancellationToken>())
-            .Returns(
-                Task.FromResult(
-                    FavoritesResult.Success(new[] { space.CreateFavoriteEntry()!.Value })
-                )
-            );
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { Favorite(space) })));
         CatalogViewModel viewModel = CreateViewModel(
             service,
             favorites,
@@ -701,9 +651,8 @@ public sealed class CatalogViewModelTests
         Assert.AreEqual(3, viewModel.ComingSoonCount);
         Assert.AreEqual(3, viewModel.MovieCards.Count);
 
-        await viewModel.SwitchSectionAsync(CatalogSection.FindAMovie);
+        viewModel.SwitchSection(CatalogSection.FindAMovie);
         await viewModel.SearchDebounceTask;
-        Assert.IsTrue(viewModel.IsSearchPrompt);
         Assert.AreEqual(0, viewModel.MovieCards.Count);
 
         viewModel.Query = "fantasy";
@@ -715,15 +664,13 @@ public sealed class CatalogViewModelTests
 
         viewModel.Query = "   ";
         await viewModel.SearchDebounceTask;
-        Assert.IsTrue(viewModel.IsSearchPrompt);
         Assert.AreEqual(0, viewModel.MovieCards.Count);
 
         viewModel.Query = "does not exist";
         await viewModel.SearchDebounceTask;
-        Assert.IsTrue(viewModel.HasNoResults);
         Assert.AreEqual(CatalogMessageKey.NoSearchResults, viewModel.MessageKey);
 
-        await viewModel.SwitchSectionAsync(CatalogSection.MyFavorites);
+        viewModel.SwitchSection(CatalogSection.MyFavorites);
         Assert.AreSequenceEqual(
             new[] { 2 },
             viewModel.MovieCards.Select(card => card.MovieId).ToArray()
@@ -776,12 +723,9 @@ public sealed class CatalogViewModelTests
         Movie g = MovieWithRating(1, "Gentle Day", Today.AddDays(1), "G");
         Movie pg = MovieWithRating(2, "Favorite Quest", Today.AddDays(2), "PG");
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
-        FavoriteEntry favorite = pg.CreateFavoriteEntry()!.Value;
+        FavoriteEntry favorite = Favorite(pg);
         favorites
             .GetAsync(Today, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
-        favorites
-            .PruneAsync(Today, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
         CatalogViewModel viewModel = CreateViewModel(
             FreshService(g, pg),
@@ -796,13 +740,13 @@ public sealed class CatalogViewModelTests
         Assert.AreEqual(CatalogViewState.Empty, viewModel.State);
         Assert.AreEqual(CatalogMessageKey.NoMovies, viewModel.MessageKey);
 
-        await viewModel.SwitchSectionAsync(CatalogSection.MyFavorites);
+        viewModel.SwitchSection(CatalogSection.MyFavorites);
         Assert.AreSequenceEqual(
             new[] { 2 },
             viewModel.MovieCards.Select(card => card.MovieId).ToArray()
         );
 
-        await viewModel.SwitchSectionAsync(CatalogSection.FindAMovie);
+        viewModel.SwitchSection(CatalogSection.FindAMovie);
         viewModel.Query = "Favorite";
         await viewModel.SearchDebounceTask;
         Assert.AreSequenceEqual(
@@ -810,7 +754,7 @@ public sealed class CatalogViewModelTests
             viewModel.MovieCards.Select(card => card.MovieId).ToArray()
         );
 
-        await viewModel.SwitchSectionAsync(CatalogSection.ComingSoon);
+        viewModel.SwitchSection(CatalogSection.ComingSoon);
         Assert.AreEqual(0, viewModel.CurrentCount);
         Assert.AreEqual(MovieRatingFilter.RatingSoon, viewModel.SelectedRatingFilter);
     }
@@ -819,13 +763,11 @@ public sealed class CatalogViewModelTests
     public async Task FavoriteToggle_WithActiveRatingFilter_PreservesGroupedCollections()
     {
         Movie movie = MovieWithRating(1, "Keep my place", Today.AddDays(1), "G");
-        FavoriteEntry favorite = movie.CreateFavoriteEntry()!.Value;
+        FavoriteEntry favorite = Favorite(movie);
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
         favorites
             .ToggleAsync(favorite, Today, Arg.Any<CancellationToken>())
-            .Returns(
-                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added, favorite))
-            );
+            .Returns(Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added)));
         CatalogViewModel viewModel = CreateViewModel(FreshService(movie), favorites);
         await viewModel.InitializeAsync();
         viewModel.SelectRatingFilter(MovieRatingFilter.G);
@@ -850,25 +792,14 @@ public sealed class CatalogViewModelTests
         favorites
             .ToggleAsync(Arg.Any<FavoriteEntry>(), Today, Arg.Any<CancellationToken>())
             .Returns(
-                Task.FromResult(
-                    new FavoriteToggleResult(
-                        FavoriteToggleStatus.Added,
-                        movie.CreateFavoriteEntry()!.Value
-                    )
-                ),
+                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added)),
                 Task.FromResult(
                     new FavoriteToggleResult(
                         FavoriteToggleStatus.Failed,
-                        movie.CreateFavoriteEntry()!.Value,
                         error: new IOException("read-only")
                     )
                 ),
-                Task.FromResult(
-                    new FavoriteToggleResult(
-                        FavoriteToggleStatus.Removed,
-                        movie.CreateFavoriteEntry()!.Value
-                    )
-                )
+                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Removed))
             );
         IMovieCatalogService service = FreshService(movie);
         CatalogViewModel viewModel = CreateViewModel(service, favorites);
@@ -879,19 +810,20 @@ public sealed class CatalogViewModelTests
         Assert.IsTrue(card.IsFavorite);
         Assert.AreEqual(1, viewModel.FavoriteCount);
 
-        await viewModel.SwitchSectionAsync(CatalogSection.MyFavorites);
+        viewModel.SwitchSection(CatalogSection.MyFavorites);
         Assert.AreEqual(1, viewModel.MovieCards.Count);
         FavoriteToggleResult failed = await viewModel.ToggleFavoriteAsync(
             viewModel.MovieCards.Single()
         );
         Assert.AreEqual(FavoriteToggleStatus.Failed, failed.Status);
         Assert.IsTrue(viewModel.MovieCards.Single().IsFavorite);
-        Assert.AreEqual(CatalogMessageKey.FavoriteSaveFailed, viewModel.FavoriteMessageKey);
+        Assert.AreEqual(CatalogMessageKey.FavoriteSaveFailed, viewModel.WarningKey);
 
         FavoriteToggleResult removed = await viewModel.ToggleFavoriteAsync(
             viewModel.MovieCards.Single()
         );
         Assert.AreEqual(FavoriteToggleStatus.Removed, removed.Status);
+        Assert.AreEqual(CatalogMessageKey.None, viewModel.WarningKey);
         Assert.AreEqual(0, viewModel.MovieCards.Count);
         Assert.AreEqual(0, viewModel.FavoriteCount);
     }
@@ -902,17 +834,22 @@ public sealed class CatalogViewModelTests
         Movie movie = MovieWithRelease(1, "Detail", Today);
         IMovieCatalogService service = FreshService(movie);
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
-        FavoriteEntry entry = movie.CreateFavoriteEntry()!.Value;
+        FavoriteEntry entry = Favorite(movie);
         favorites
             .ToggleAsync(entry, Today, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added, entry)));
+            .Returns(Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added)));
         INavigationService navigation = Substitute.For<INavigationService>();
-        CatalogViewModel viewModel = new(service, favorites, new FixedClock(Today), navigation);
+        CatalogViewModel viewModel = new(
+            service,
+            favorites,
+            clock: new FixedClock(Today),
+            navigationService: navigation
+        );
         await viewModel.InitializeAsync();
 
         MovieCardViewModel card = viewModel.MovieCards.Single();
         await viewModel.OpenDetailAsync(card);
-        Assert.AreEqual(movie, viewModel.SelectedMovie);
+        Assert.AreEqual(movie, viewModel.SelectedMovieDetail?.Movie);
         await navigation
             .Received(1)
             .NavigateToMovieDetailAsync(movie.Id, Arg.Any<CancellationToken>());
@@ -927,6 +864,7 @@ public sealed class CatalogViewModelTests
     [TestMethod]
     public void Grouping_PutsRetainedAndTodayFirst_ThenExactFutureDates()
     {
+        FixedClock clock = new(Today);
         MovieGroupViewModel[] groups = MovieGroupViewModel
             .CreateGroups(
                 new[]
@@ -935,8 +873,7 @@ public sealed class CatalogViewModelTests
                     MovieWithRelease(1, "Past", Today.AddDays(-13)),
                     MovieWithRelease(3, "Future A", Today.AddDays(3)),
                     MovieWithRelease(2, "Today", Today),
-                },
-                new FixedClock(Today)
+                }.Select(movie => new MovieCardViewModel(movie, clock))
             )
             .ToArray();
 
@@ -972,7 +909,7 @@ public sealed class CatalogViewModelTests
     public void Grouping_ExposesCardsAsEnumerableForGroupedCollectionView()
     {
         MovieCardViewModel card = new(MovieWithRelease(1, "One", Today), new FixedClock(Today));
-        MovieGroupViewModel group = new(MovieGroupKind.InTheatersNow, null, new[] { card });
+        MovieGroupViewModel group = MovieGroupViewModel.CreateGroups(new[] { card }).Single();
 
         Assert.AreSame(card, group.Single());
         Assert.AreSame(card, ((IEnumerable<MovieCardViewModel>)group).Single());
@@ -1011,7 +948,7 @@ public sealed class CatalogViewModelTests
         IMovieCatalogService service,
         IFavoritesStore? favorites = null,
         TimeSpan? searchDebounce = null
-    ) => new(service, favorites, new FixedClock(Today), searchDebounce: searchDebounce);
+    ) => new(service, favorites, clock: new FixedClock(Today), searchDebounce: searchDebounce);
 
     private static IMovieCatalogService FreshService(params Movie[] movies)
     {
@@ -1023,32 +960,20 @@ public sealed class CatalogViewModelTests
     }
 
     private static CatalogResult Cache(CatalogResultStatus status, params Movie[] movies) =>
-        new(
-            status,
-            movies,
-            lastSuccessfulRefresh: DateTimeOffset.UtcNow,
-            cacheAge: TimeSpan.Zero,
-            isStale: status == CatalogResultStatus.StaleCache,
-            usedCache: true,
-            snapshot: MovieCatalogSnapshot.Create(movies, Today),
-            cacheStatus: CatalogCacheStatus.Available
-        );
+        new(status, movies, isStale: status == CatalogResultStatus.StaleCache, usedCache: true);
 
     private static CatalogResult Refreshed(params Movie[] movies) =>
-        new(
-            CatalogResultStatus.Refreshed,
-            movies,
-            lastSuccessfulRefresh: DateTimeOffset.UtcNow,
-            snapshot: MovieCatalogSnapshot.Create(movies, Today),
-            cacheStatus: CatalogCacheStatus.Available
-        );
+        new(CatalogResultStatus.Refreshed, movies);
+
+    private static FavoriteEntry Favorite(Movie movie) =>
+        new(movie.Id, movie.UsTheatricalReleaseDate!.Value);
 
     private static Movie MovieWithRelease(int id, string title, DateOnly releaseDate) =>
         new(
             id,
             title,
             "G",
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType)
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) }
         );
 
     private static Movie MovieWithGenre(int id, string title, DateOnly releaseDate, string genre) =>
@@ -1056,7 +981,7 @@ public sealed class CatalogViewModelTests
             id,
             title,
             "PG",
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType),
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) },
             new[] { new MovieGenre(0, genre) }
         );
 
@@ -1070,10 +995,11 @@ public sealed class CatalogViewModelTests
             id,
             title,
             certification,
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType),
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) },
             certification is null
                 ? new[] { new MovieGenre(MovieGenre.AnimationId, "Animation") }
-                : null
+                : null,
+            originalLanguage: certification is null ? "en" : null
         );
 
     private static TaskCompletionSource<T> Pending<T>() =>

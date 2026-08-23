@@ -10,16 +10,17 @@ namespace GoodMovies.Maui;
 
 public partial class AppShell : Shell, ITrailerPlaybackHost
 {
-    private readonly MauiExternalTrailerLauncher _trailerLauncher;
+    private readonly MauiTrailerLauncher _trailerLauncher;
     private TrailerPlayerView? _trailerPlayer;
     private IElementHandler? _trailerHandler;
     private TaskCompletionSource<bool>? _trailerLoadCompletion;
     private bool _isTrailerActive;
+    private bool _isTornDown;
 
     public AppShell(
         MainPage mainPage,
-        IMovieDetailPageFactory detailPageFactory,
-        MauiExternalTrailerLauncher trailerLauncher
+        MovieDetailPage detailPage,
+        MauiTrailerLauncher trailerLauncher
     )
     {
         _trailerLauncher =
@@ -28,7 +29,7 @@ public partial class AppShell : Shell, ITrailerPlaybackHost
         MainShellContent.Content = mainPage ?? throw new ArgumentNullException(nameof(mainPage));
         Routing.RegisterRoute(
             GoodMoviesRoutes.MovieDetail,
-            new MauiMovieDetailRouteFactory(detailPageFactory)
+            new MauiMovieDetailRouteFactory(detailPage)
         );
         _trailerLauncher.AttachHost(this);
     }
@@ -38,14 +39,19 @@ public partial class AppShell : Shell, ITrailerPlaybackHost
     public async Task<bool> PlayAsync(string youtubeKey, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri source))
+        if (_isTornDown)
+        {
+            return false;
+        }
+
+        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri? source))
         {
             return false;
         }
 
         if (_isTrailerActive)
         {
-            Stop();
+            StopPlayback(notifyPlaybackEnded: false);
         }
 
         TrailerPlayerView player = EnsureTrailerPlayer();
@@ -80,14 +86,55 @@ public partial class AppShell : Shell, ITrailerPlaybackHost
         }
     }
 
-    public void Stop()
+    public void Stop() => StopPlayback(notifyPlaybackEnded: true);
+
+    internal void TearDown()
+    {
+        if (_isTornDown)
+        {
+            return;
+        }
+
+        _isTornDown = true;
+        _trailerLauncher.DetachHost(this);
+        StopPlayback(notifyPlaybackEnded: false);
+
+        TrailerPlayerView? player = _trailerPlayer;
+        IElementHandler? handler = _trailerHandler;
+        if (handler?.PlatformView is UIView platformView)
+        {
+            platformView.RemoveFromSuperview();
+        }
+
+        if (player is not null)
+        {
+            player.LoadFailed -= OnTrailerLoadFailed;
+            player.LoadSucceeded -= OnTrailerLoadSucceeded;
+            player.PresentationEnded -= OnTrailerPresentationEnded;
+        }
+
+        try
+        {
+            if (handler?.PlatformView is not null)
+            {
+                handler.DisconnectHandler();
+            }
+        }
+        finally
+        {
+            _trailerHandler = null;
+            _trailerPlayer = null;
+        }
+    }
+
+    private void StopPlayback(bool notifyPlaybackEnded)
     {
         bool wasActive = _isTrailerActive;
         _isTrailerActive = false;
         _trailerLoadCompletion?.TrySetResult(false);
         _trailerLoadCompletion = null;
         _trailerPlayer?.StopPlayback();
-        if (wasActive)
+        if (wasActive && notifyPlaybackEnded)
         {
             PlaybackEnded?.Invoke(this, EventArgs.Empty);
         }
@@ -95,6 +142,7 @@ public partial class AppShell : Shell, ITrailerPlaybackHost
 
     private TrailerPlayerView EnsureTrailerPlayer()
     {
+        ObjectDisposedException.ThrowIf(_isTornDown, this);
         if (_trailerPlayer is not null)
         {
             return _trailerPlayer;

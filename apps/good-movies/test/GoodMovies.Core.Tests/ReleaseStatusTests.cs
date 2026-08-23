@@ -10,16 +10,15 @@ public sealed class ReleaseStatusTests
     [TestMethod]
     public void GetStatus_ReleaseDay_IsInTheatersToday()
     {
-        ReleaseStatusInfo status = ReleaseStatusHelpers.GetStatusInfo(Today, Today);
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today, Today);
 
         Assert.AreEqual(ReleaseStatus.Today, status.Status);
-        Assert.AreEqual(Today, status.ReleaseDate);
     }
 
     [TestMethod]
     public void GetStatus_PastRetainedRelease_IsInTheatersNow()
     {
-        ReleaseStatusInfo status = ReleaseStatusHelpers.GetStatusInfo(Today.AddDays(-13), Today);
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(-13), Today);
 
         Assert.AreEqual(ReleaseStatus.InTheatersNow, status.Status);
     }
@@ -27,8 +26,8 @@ public sealed class ReleaseStatusTests
     [TestMethod]
     public void GetStatus_FutureRelease_UsesSingularAndPluralSleeps()
     {
-        ReleaseStatusInfo tomorrow = ReleaseStatusHelpers.GetStatusInfo(Today.AddDays(1), Today);
-        ReleaseStatusInfo later = ReleaseStatusHelpers.GetStatusInfo(Today.AddDays(4), Today);
+        ReleaseStatusInfo tomorrow = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(1), Today);
+        ReleaseStatusInfo later = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(4), Today);
 
         Assert.AreEqual(ReleaseStatus.Future, tomorrow.Status);
         Assert.AreEqual(1, tomorrow.Sleeps);
@@ -39,7 +38,7 @@ public sealed class ReleaseStatusTests
     [TestMethod]
     public void GetStatus_ExpiredPastRelease_IsNotReportedAsInTheatersNow()
     {
-        ReleaseStatusInfo status = ReleaseStatusHelpers.GetStatusInfo(Today.AddDays(-14), Today);
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(-14), Today);
 
         Assert.AreEqual(ReleaseStatus.Expired, status.Status);
     }

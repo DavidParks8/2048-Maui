@@ -5,88 +5,32 @@ using GoodMovies.Core;
 namespace GoodMovies.ViewModels;
 
 /// <summary>
-/// A semantic group of cards. The UI localizes the heading and formats the
-/// exact date rather than receiving display prose from this type.
+/// A semantic group of cards. The UI localizes its heading and formats its date.
 /// </summary>
 public sealed class MovieGroupViewModel : IEnumerable<MovieCardViewModel>
 {
-    public MovieGroupViewModel(
-        IEnumerable<MovieCardViewModel> cards,
-        MovieGroupKind kind,
-        DateOnly? releaseDate = null
-    )
-        : this(kind, releaseDate, cards) { }
-
-    public MovieGroupViewModel(
+    private MovieGroupViewModel(
         MovieGroupKind kind,
         DateOnly? releaseDate,
-        IEnumerable<MovieCardViewModel> cards
+        List<MovieCardViewModel> cards
     )
     {
-        if (kind == MovieGroupKind.InTheatersNow)
-        {
-            releaseDate = null;
-        }
-
         GroupKind = kind;
-        ReleaseDate = releaseDate;
-        Cards = new ReadOnlyCollection<MovieCardViewModel>(
-            (cards ?? Array.Empty<MovieCardViewModel>())
-                .Where(static card => card is not null)
-                .OrderBy(static card => card.ReleaseDate ?? DateOnly.MaxValue)
-                .ThenBy(static card => card.Title, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static card => card.Title, StringComparer.Ordinal)
-                .ThenBy(static card => card.MovieId)
-                .ToArray()
-        );
+        ReleaseDate = kind == MovieGroupKind.InTheatersNow ? null : releaseDate;
+        cards.Sort(CompareCards);
+        Cards = new ReadOnlyCollection<MovieCardViewModel>(cards);
     }
 
     public MovieGroupKind GroupKind { get; }
 
-    public MovieGroupKind Kind => GroupKind;
-
-    public MovieGroupKind Group => GroupKind;
-
-    public string GroupKey => HeaderKey.ToString();
-
-    public MovieGroupHeaderKey HeaderKey =>
-        GroupKind == MovieGroupKind.InTheatersNow
-            ? MovieGroupHeaderKey.InTheatersNow
-            : MovieGroupHeaderKey.ReleaseDate;
-
-    public MovieGroupHeaderKey HeaderKind => HeaderKey;
-
-    public MovieGroupHeaderKey Header => HeaderKey;
-
     public DateOnly? ReleaseDate { get; }
 
-    public DateOnly? Date => ReleaseDate;
-
-    public DateOnly? GroupDate => ReleaseDate;
-
-    public DateOnly? DateKey => ReleaseDate;
-
     public IReadOnlyList<MovieCardViewModel> Cards { get; }
-
-    public IReadOnlyList<MovieCardViewModel> MovieCards => Cards;
-
-    public IReadOnlyList<MovieCardViewModel> Items => Cards;
-
-    public IReadOnlyList<MovieCardViewModel> Movies => Cards;
 
     public int Count => Cards.Count;
 
     public bool IsInTheatersNow => GroupKind == MovieGroupKind.InTheatersNow;
 
-    public bool IsInTheaters => IsInTheatersNow;
-
-    public bool IsFutureDate => GroupKind == MovieGroupKind.ReleaseDate;
-
-    /// <summary>
-    /// CollectionView grouping requires each group to expose an enumerable
-    /// sequence. Cards remains the read-only presentation surface used by
-    /// callers and tests.
-    /// </summary>
     public IEnumerator<MovieCardViewModel> GetEnumerator() => Cards.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -167,95 +111,26 @@ public sealed class MovieGroupViewModel : IEnumerable<MovieCardViewModel>
             groups.Add(new MovieGroupViewModel(MovieGroupKind.ReleaseDate, pair.Key, pair.Value));
         }
 
-        return new ReadOnlyCollection<MovieGroupViewModel>(groups);
+        return groups.Count == 0
+            ? Array.Empty<MovieGroupViewModel>()
+            : new ReadOnlyCollection<MovieGroupViewModel>(groups);
     }
 
-    public static IReadOnlyList<MovieGroupViewModel> GroupByDate(
-        IEnumerable<MovieCardViewModel>? cards
-    ) => CreateGroups(cards);
-
-    public static IReadOnlyList<MovieGroupViewModel> GroupByReleaseDate(
-        IEnumerable<MovieCardViewModel>? cards
-    ) => CreateGroups(cards);
-
-    public static IReadOnlyList<MovieGroupViewModel> GroupByDate(
-        IEnumerable<Movie>? movies,
-        IClock? clock = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        INavigationService? navigationService = null
-    ) => CreateGroups(movies, clock, releaseWindowPolicy, movieSafetyPolicy, navigationService);
-
-    public static IReadOnlyList<MovieGroupViewModel> GroupByReleaseDate(
-        IEnumerable<Movie>? movies,
-        IClock? clock = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        INavigationService? navigationService = null
-    ) => CreateGroups(movies, clock, releaseWindowPolicy, movieSafetyPolicy, navigationService);
-
-    public static IReadOnlyList<MovieGroupViewModel> CreateGroups(
-        IEnumerable<Movie>? movies,
-        DateOnly today,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        INavigationService? navigationService = null
-    ) =>
-        CreateGroups(
-            movies,
-            new FixedClock(today),
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            navigationService
+    private static int CompareCards(MovieCardViewModel left, MovieCardViewModel right)
+    {
+        int result = (left.ReleaseDate ?? DateOnly.MaxValue).CompareTo(
+            right.ReleaseDate ?? DateOnly.MaxValue
         );
+        if (result == 0)
+        {
+            result = StringComparer.OrdinalIgnoreCase.Compare(left.Title, right.Title);
+        }
 
-    public static IReadOnlyList<MovieGroupViewModel> CreateGroups(
-        IEnumerable<Movie>? movies,
-        IClock? clock = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        INavigationService? navigationService = null
-    )
-    {
-        DateOnly today = (clock ?? new SystemClock()).Today;
-        IReadOnlyList<Movie> safeMovies = MovieCatalogSnapshot
-            .Create(
-                movies ?? Array.Empty<Movie>(),
-                today,
-                releaseWindowPolicy ?? GoodMovies.Core.ReleaseWindowPolicy.Default,
-                movieSafetyPolicy ?? new MovieSafetyPolicy()
-            )
-            .Movies;
-        MovieCardViewModel[] cards = safeMovies
-            .Select(movie => new MovieCardViewModel(
-                movie,
-                clock,
-                releaseWindowPolicy,
-                navigationService
-            ))
-            .ToArray();
-        return CreateGroups(cards);
-    }
+        if (result == 0)
+        {
+            result = StringComparer.Ordinal.Compare(left.Title, right.Title);
+        }
 
-    public static IReadOnlyList<MovieGroupViewModel> CreateGroups(
-        MovieCatalogSnapshot snapshot,
-        IClock? clock = null,
-        INavigationService? navigationService = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-        DateOnly today = snapshot.AsOfDate ?? (clock ?? new SystemClock()).Today;
-        return CreateGroups(
-            snapshot.Movies,
-            clock ?? new FixedClock(today),
-            snapshot.ReleaseWindowPolicy,
-            snapshot.MovieSafetyPolicy,
-            navigationService
-        );
-    }
-
-    private sealed class FixedClock(DateOnly today) : IClock
-    {
-        public DateOnly Today { get; } = today;
+        return result == 0 ? left.MovieId.CompareTo(right.MovieId) : result;
     }
 }

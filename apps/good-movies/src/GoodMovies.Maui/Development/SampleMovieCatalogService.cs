@@ -47,17 +47,8 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
 
     private CatalogResult CreateResult(CatalogResultStatus status, bool usedCache)
     {
-        MovieCatalogSnapshot snapshot = MovieCatalogSnapshot.Create(_movies, _clock.Today);
-        return new CatalogResult(
-            status,
-            snapshot.Movies,
-            lastSuccessfulRefresh: DateTimeOffset.UtcNow,
-            cacheAge: TimeSpan.Zero,
-            isStale: false,
-            usedCache: usedCache,
-            snapshot: snapshot,
-            cacheStatus: CatalogCacheStatus.Available
-        );
+        MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(_movies, _clock.Today);
+        return new CatalogResult(status, snapshot.Movies, isStale: false, usedCache: usedCache);
     }
 
     private static IReadOnlyList<Movie> CreateMovies(DateOnly today) =>
@@ -179,7 +170,7 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
 /// Sample visual QA uses an optional launch-argument key so an official trailer
 /// can exercise the complete player without committing a video ID to the app.
 /// </summary>
-public sealed class SampleTrailerLookup : IMovieTrailerLookup, IMovieTrailerService, ITrailerLookup
+public sealed class SampleTrailerLookup : IMovieTrailerLookup
 {
     public Task<TrailerLookupResult> GetTrailerAsync(
         int movieId,
@@ -188,23 +179,11 @@ public sealed class SampleTrailerLookup : IMovieTrailerLookup, IMovieTrailerServ
     {
         cancellationToken.ThrowIfCancellationRequested();
         string? key = NSUserDefaults.StandardUserDefaults.StringForKey("GoodMoviesTrailerTestKey");
-        MovieTrailer? trailer = TrailerSelectionPolicy.SelectBest(
-            new[]
-            {
-                new MovieTrailer(
-                    key ?? string.Empty,
-                    "Official trailer",
-                    "YouTube",
-                    "Trailer",
-                    true,
-                    "en"
-                ),
-            }
+        MovieTrailer? trailer = TrailerSelectionPolicy.Select(
+            new[] { new MovieTrailer(key ?? string.Empty, "YouTube", "Trailer", true, "en") }
         );
         return Task.FromResult(
-            trailer is null
-                ? TrailerLookupResult.NotFound(movieId)
-                : TrailerLookupResult.Found(movieId, trailer)
+            trailer is null ? TrailerLookupResult.NotFound() : TrailerLookupResult.Found(trailer)
         );
     }
 }

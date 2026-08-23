@@ -47,8 +47,8 @@ saved state.
 ## Components
 
 - Navigation tiles are equal, large blocks. Selected state flips to lilac/dark-purple.
-- Movie cards use poster, title, release status, exact G/PG badge, one kind chip, and a
-  separate favorite target.
+- Movie cards use poster, title, release status, a G/PG or rating-pending badge, one kind
+  chip, and a separate favorite target.
 - Date headers group the feed and carry a count/status pill.
 - Detail uses native Shell navigation, poster-first content, trailer handoff,
   read-aloud, favorite, and a tappable-word story.

@@ -32,7 +32,6 @@ public sealed class TheatricalReleaseTests
     [TestMethod]
     public void MovieSafetyPolicy_RequiresAtLeastOneUsTheatricalRelease()
     {
-        MovieSafetyPolicy policy = new();
         DateOnly date = new(2026, 8, 21);
 
         Movie foreignOnly = new(
@@ -54,8 +53,8 @@ public sealed class TheatricalReleaseTests
             new[] { new TheatricalRelease(date, "GB", 3), new TheatricalRelease(date, "US", 2) }
         );
 
-        Assert.IsFalse(policy.IsSafe(foreignOnly));
-        Assert.IsFalse(policy.IsSafe(streamingOnly));
-        Assert.IsTrue(policy.IsSafe(oneAllowedRelease));
+        Assert.IsFalse(MovieSafetyPolicy.IsSafe(foreignOnly));
+        Assert.IsFalse(MovieSafetyPolicy.IsSafe(streamingOnly));
+        Assert.IsTrue(MovieSafetyPolicy.IsSafe(oneAllowedRelease));
     }
 }

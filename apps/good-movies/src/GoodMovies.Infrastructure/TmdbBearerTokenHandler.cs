@@ -3,29 +3,31 @@ using System.Net.Http.Headers;
 namespace GoodMovies.Infrastructure;
 
 /// <summary>
-/// Adds the current TMDB bearer token to each outgoing request.
+/// Adds the configured TMDB bearer token to each outgoing request.
 /// </summary>
-public sealed class TmdbBearerTokenHandler : DelegatingHandler
+internal sealed class TmdbBearerTokenHandler : DelegatingHandler
 {
-    private readonly IGoodMoviesTokenProvider _tokenProvider;
+    private readonly GoodMoviesInfrastructureOptions _options;
 
-    public TmdbBearerTokenHandler(IGoodMoviesTokenProvider tokenProvider)
+    public TmdbBearerTokenHandler(GoodMoviesInfrastructureOptions options)
     {
-        _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(
+    protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        string? token = await _tokenProvider.GetTokenAsync(cancellationToken).ConfigureAwait(false);
+        string? token = _options.Token;
         if (
             string.IsNullOrWhiteSpace(token)
             || token.Any(static character =>
-                char.IsWhiteSpace(character) || char.IsControl(character)
+                !char.IsAsciiLetterOrDigit(character)
+                && character is not ('.' or '_' or '~' or '+' or '/' or '=' or '-')
             )
         )
         {
@@ -36,11 +38,11 @@ public sealed class TmdbBearerTokenHandler : DelegatingHandler
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-        catch (ArgumentException)
+        catch (Exception exception) when (exception is ArgumentException or FormatException)
         {
             throw new GoodMoviesConfigurationException("The TMDB bearer token format is invalid.");
         }
 
-        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        return base.SendAsync(request, cancellationToken);
     }
 }

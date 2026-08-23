@@ -126,7 +126,6 @@ internal static class AppStrings
     internal static string SpeechFailedMessage => Get(nameof(SpeechFailedMessage));
     internal static string Retry => Get(nameof(Retry));
     internal static string Refreshing => Get(nameof(Refreshing));
-    internal static string PosterFallbackAccessibility => Get(nameof(PosterFallbackAccessibility));
     internal static string ReadAloud => Get(nameof(ReadAloud));
     internal static string StopReading => Get(nameof(StopReading));
     internal static string GoBack => Get(nameof(GoBack));
@@ -142,8 +141,6 @@ internal static class AppStrings
     internal static string TrailerMissingConfiguration => Get(nameof(TrailerMissingConfiguration));
     internal static string TrailerLaunchFailed => Get(nameof(TrailerLaunchFailed));
     internal static string NoSynopsis => Get(nameof(NoSynopsis));
-    internal static string DetailAccessibility => Get(nameof(DetailAccessibility));
-    internal static string TodayStatus => Get(nameof(TodayStatus));
 
     private static string Get(string name) =>
         ResourceManager.GetString(name, resourceCulture) ?? string.Empty;

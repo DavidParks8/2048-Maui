@@ -83,11 +83,7 @@ public partial class MovieCardView : ContentView
         System.ComponentModel.PropertyChangedEventArgs e
     )
     {
-        if (
-            e.PropertyName
-            is nameof(MovieCardViewModel.IsFavorite)
-                or nameof(MovieCardViewModel.Favorite)
-        )
+        if (e.PropertyName == nameof(MovieCardViewModel.IsFavorite))
         {
             OnPropertyChanged(nameof(FavoriteAccessibilityLabel));
             OnPropertyChanged(nameof(FavoriteAccessibilityHint));

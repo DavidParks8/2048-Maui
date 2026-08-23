@@ -11,12 +11,7 @@ public sealed record MovieGenre
         Name = name?.Trim() ?? string.Empty;
     }
 
-    public MovieGenre(string name)
-        : this(0, name) { }
-
     public int Id { get; }
-
-    public int GenreId => Id;
 
     public string Name { get; }
 

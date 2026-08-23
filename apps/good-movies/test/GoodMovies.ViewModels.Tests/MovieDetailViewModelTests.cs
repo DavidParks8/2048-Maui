@@ -19,15 +19,14 @@ public sealed class MovieDetailViewModelTests
             "A bright day brings a small surprise."
         );
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
-        FavoriteEntry entry = movie.CreateFavoriteEntry()!.Value;
+        FavoriteEntry entry = Favorite(movie);
         favorites
             .ToggleAsync(entry, Today, Arg.Any<CancellationToken>())
             .Returns(
-                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added, entry)),
+                Task.FromResult(new FavoriteToggleResult(FavoriteToggleStatus.Added)),
                 Task.FromResult(
                     new FavoriteToggleResult(
                         FavoriteToggleStatus.Failed,
-                        entry,
                         error: new IOException("offline")
                     )
                 )
@@ -38,12 +37,11 @@ public sealed class MovieDetailViewModelTests
             .Returns(
                 Task.FromResult(
                     TrailerLookupResult.Found(
-                        7,
-                        new MovieTrailer("youtube-key", "Trailer", "YouTube", "Trailer", true, "en")
+                        new MovieTrailer("youtube-key", "YouTube", "Trailer", true, "en")
                     )
                 )
             );
-        IExternalTrailerLauncher launcher = Substitute.For<IExternalTrailerLauncher>();
+        ITrailerLauncher launcher = Substitute.For<ITrailerLauncher>();
         launcher.LaunchAsync("youtube-key", Arg.Any<CancellationToken>()).Returns(true);
         MovieDetailViewModel detail = new(
             movie,
@@ -67,7 +65,7 @@ public sealed class MovieDetailViewModelTests
 
         TrailerPlaybackResult trailer = await detail.PlayTrailerAsync();
         Assert.AreEqual(TrailerPlaybackState.Launched, trailer.State);
-        Assert.IsTrue(detail.IsTrailerLaunched);
+        Assert.AreEqual(TrailerPlaybackState.Launched, detail.TrailerState);
         await lookup.Received(1).GetTrailerAsync(7, Arg.Any<CancellationToken>());
         await launcher.Received(1).LaunchAsync("youtube-key", Arg.Any<CancellationToken>());
     }
@@ -77,7 +75,7 @@ public sealed class MovieDetailViewModelTests
     {
         Movie movie = Movie(8, "Trailer states", Today, "Overview");
         IMovieTrailerLookup lookup = Substitute.For<IMovieTrailerLookup>();
-        IExternalTrailerLauncher launcher = Substitute.For<IExternalTrailerLauncher>();
+        ITrailerLauncher launcher = Substitute.For<ITrailerLauncher>();
         MovieDetailViewModel detail = new(
             movie,
             new FixedClock(Today),
@@ -87,7 +85,7 @@ public sealed class MovieDetailViewModelTests
 
         lookup
             .GetTrailerAsync(8, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(TrailerLookupResult.NotFound(8)));
+            .Returns(Task.FromResult(TrailerLookupResult.NotFound()));
         TrailerPlaybackResult missing = await detail.PrepareTrailerAsync();
         Assert.AreEqual(TrailerPlaybackState.NotFound, missing.State);
         Assert.IsTrue(detail.IsTrailerMessageVisible);
@@ -101,7 +99,6 @@ public sealed class MovieDetailViewModelTests
             .Returns(
                 Task.FromResult(
                     TrailerLookupResult.MissingConfiguration(
-                        8,
                         new InvalidOperationException("missing token")
                     )
                 )
@@ -120,8 +117,7 @@ public sealed class MovieDetailViewModelTests
             .Returns(
                 Task.FromResult(
                     TrailerLookupResult.Found(
-                        8,
-                        new MovieTrailer("youtube-key", "Trailer", "YouTube", "Trailer", true, "en")
+                        new MovieTrailer("youtube-key", "YouTube", "Trailer", true, "en")
                     )
                 )
             );
@@ -134,8 +130,6 @@ public sealed class MovieDetailViewModelTests
         );
         TrailerPlaybackResult failed = await detail.PlayTrailerAsync();
         Assert.AreEqual(TrailerPlaybackState.LaunchFailed, failed.State);
-        Assert.IsFalse(failed.Succeeded);
-        Assert.IsTrue(detail.IsTrailerLaunchFailed);
         Assert.IsNotNull(failed.Error);
 
         IOException launchError = new("YouTube is blocked");
@@ -184,7 +178,7 @@ public sealed class MovieDetailViewModelTests
         Assert.IsTrue(detail.WordTokens[2].IsHighlighted);
 
         detail.Deactivate();
-        speech.Received(1).Stop();
+        speech.Received(1).StopSpeaking();
         speech.SpokenRange += Raise.Event<EventHandler<SpeechRangeEventArgs>>(
             speech,
             new SpeechRangeEventArgs(0, 3)
@@ -199,7 +193,7 @@ public sealed class MovieDetailViewModelTests
         IWordLevelSpeechService speech = Substitute.For<IWordLevelSpeechService>();
         TaskCompletionSource speaking = new(TaskCreationOptions.RunContinuationsAsynchronously);
         speech.SpeakAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(speaking.Task);
-        speech.When(service => service.Stop()).Do(_ => speaking.TrySetCanceled());
+        speech.When(service => service.StopSpeaking()).Do(_ => speaking.TrySetCanceled());
         MovieDetailViewModel detail = new(movie, new FixedClock(Today), speechService: speech);
 
         Task operation = detail.PlayReadAloudAsync();
@@ -209,7 +203,7 @@ public sealed class MovieDetailViewModelTests
         await operation;
 
         Assert.IsFalse(detail.IsReading);
-        speech.Received(1).Stop();
+        speech.Received(1).StopSpeaking();
     }
 
     [TestMethod]
@@ -255,12 +249,15 @@ public sealed class MovieDetailViewModelTests
         Assert.AreEqual("🎬", MovieKindIconMapper.GetIcon(new MovieGenre(999, "Other")));
     }
 
+    private static FavoriteEntry Favorite(Movie movie) =>
+        new(movie.Id, movie.UsTheatricalReleaseDate!.Value);
+
     private static Movie Movie(int id, string title, DateOnly date, string overview) =>
         new(
             id,
             title,
             "PG",
-            new TheatricalRelease(date, "US", TheatricalRelease.TheatricalType),
+            new[] { new TheatricalRelease(date, "US", TheatricalRelease.TheatricalType) },
             overview: overview
         );
 

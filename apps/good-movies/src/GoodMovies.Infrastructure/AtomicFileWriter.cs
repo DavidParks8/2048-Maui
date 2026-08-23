@@ -1,6 +1,6 @@
 namespace GoodMovies.Infrastructure;
 
-public interface IAtomicFileWriter
+internal interface IAtomicFileWriter
 {
     Task WriteAsync(
         string targetPath,
@@ -13,7 +13,7 @@ public interface IAtomicFileWriter
 /// Writes a sibling temporary file, flushes it to disk, and then renames it
 /// over the destination. The destination is never removed on a failed write.
 /// </summary>
-public class AtomicFileWriter : IAtomicFileWriter
+internal sealed class AtomicFileWriter : IAtomicFileWriter
 {
     public async Task WriteAsync(
         string targetPath,
@@ -65,11 +65,8 @@ public class AtomicFileWriter : IAtomicFileWriter
                     File.Delete(temporaryPath);
                 }
             }
-            catch (IOException)
-            {
-                // Preserve the original write error, if there was one.
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception exception)
+                when (exception is IOException or UnauthorizedAccessException)
             {
                 // Preserve the original write error, if there was one.
             }

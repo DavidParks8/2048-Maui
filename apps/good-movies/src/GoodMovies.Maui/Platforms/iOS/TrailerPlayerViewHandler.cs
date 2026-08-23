@@ -27,6 +27,8 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     private TrailerUiDelegate? _uiDelegate;
     private TrailerScriptMessageHandler? _scriptMessageHandler;
     private CancellationTokenSource? _loadTimeout;
+    private long _loadVersion;
+    private bool _audioSessionActive;
     private bool _presentationActive;
 
     public TrailerPlayerViewHandler()
@@ -34,7 +36,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     protected override WKWebView CreatePlatformView()
     {
-        WKWebViewConfiguration configuration = new()
+        using WKWebViewConfiguration configuration = new()
         {
             AllowsAirPlayForMediaPlayback = true,
             AllowsInlineMediaPlayback = false,
@@ -68,7 +70,10 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     protected override void DisconnectHandler(WKWebView platformView)
     {
+        _loadVersion++;
         CancelLoadTimeout();
+        _presentationActive = false;
+        _navigationDelegate?.ClearNavigations();
         StopAndClear(platformView);
         platformView.Configuration.UserContentController.RemoveScriptMessageHandler(
             TrailerScriptMessageHandler.ChannelName
@@ -82,7 +87,6 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
         _navigationDelegate = null;
         _uiDelegate = null;
         base.DisconnectHandler(platformView);
-        platformView.Dispose();
     }
 
     private static void MapSource(
@@ -104,38 +108,47 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     private void LoadSource(WKWebView webView, Uri? uri)
     {
+        long loadVersion = ++_loadVersion;
+        CancelLoadTimeout();
         webView.StopLoading();
-        if (
-            !YouTubeTrailerUri.IsTrustedEmbedUri(uri)
-            || !YouTubeTrailerUri.TryGetVideoKey(uri, out string videoKey)
-        )
+        if (!YouTubeTrailerUri.TryGetTrustedVideoKey(uri, out string videoKey))
         {
-            ReportLoadFailed();
+            ReportLoadFailed(loadVersion);
             return;
         }
 
         if (!ActivatePlaybackAudioSession())
         {
-            ReportLoadFailed();
+            ReportLoadFailed(loadVersion);
             return;
         }
 
         _navigationDelegate?.SetAllowedVideoKey(videoKey);
         _presentationActive = false;
-        StartLoadTimeout();
-        VirtualView.ReportLoadStarted();
-        NSMutableUrlRequest request = new(new NSUrl(uri!.AbsoluteUri))
+        StartLoadTimeout(loadVersion);
+        using NSUrl source = new(uri!.AbsoluteUri);
+        using NSMutableUrlRequest request = new(source)
         {
             CachePolicy = NSUrlRequestCachePolicy.ReloadIgnoringLocalCacheData,
             TimeoutInterval = 20,
         };
         request["Referer"] = $"https://{YouTubeTrailerUri.Host}/";
-        webView.LoadRequest(request);
+        WKNavigation? navigation = webView.LoadRequest(request);
+        if (navigation is null)
+        {
+            ReportLoadFailed(loadVersion);
+            return;
+        }
+
+        _navigationDelegate?.Track(navigation, videoKey, loadVersion);
     }
 
     private void StopAndClear()
     {
+        _loadVersion++;
         CancelLoadTimeout();
+        _presentationActive = false;
+        _navigationDelegate?.ClearNavigations();
         StopAndClear(PlatformView);
     }
 
@@ -146,11 +159,18 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
         _loadTimeout = null;
     }
 
-    private static void StopAndClear(WKWebView webView)
+    private void StopAndClear(WKWebView webView)
     {
         webView.StopLoading();
         webView.EvaluateJavaScript(
-            "var player = document.getElementById('movie_player');"
+            "if (window.goodMoviesPlayerGuardTimer) { "
+                + "clearInterval(window.goodMoviesPlayerGuardTimer); "
+                + "window.goodMoviesPlayerGuardTimer = null; }"
+                + "if (window.goodMoviesPlayerGuardObserver) { "
+                + "window.goodMoviesPlayerGuardObserver.disconnect(); "
+                + "window.goodMoviesPlayerGuardObserver = null; }"
+                + "window.goodMoviesPlayerGuardInstalled = false;"
+                + "var player = document.getElementById('movie_player');"
                 + "if (player && player.stopVideo) { player.stopVideo(); }",
             null!
         );
@@ -159,78 +179,104 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
     private void HandlePlayerMessage(string message)
     {
-        if (message == "playing")
+        int separator = message.IndexOf(":", StringComparison.Ordinal);
+        if (
+            separator <= 0
+            || !long.TryParse(message.AsSpan(0, separator), out long loadVersion)
+            || loadVersion != _loadVersion
+        )
         {
-            _loadTimeout?.Cancel();
+            return;
+        }
+
+        ReadOnlySpan<char> playerEvent = message.AsSpan(separator + 1);
+        if (playerEvent.SequenceEqual("playing"))
+        {
+            CancelLoadTimeout();
             VirtualView.ReportLoadSucceeded();
             return;
         }
 
-        if (message is "presentation:fullscreen" or "presentation:picture-in-picture")
+        if (
+            playerEvent.SequenceEqual("presentation:fullscreen")
+            || playerEvent.SequenceEqual("presentation:picture-in-picture")
+        )
         {
             _presentationActive = true;
-            _loadTimeout?.Cancel();
+            CancelLoadTimeout();
             VirtualView.ReportLoadSucceeded();
             return;
         }
 
-        if (message == "presentation:inline" && _presentationActive)
+        if (playerEvent.SequenceEqual("presentation:inline") && _presentationActive)
         {
             _presentationActive = false;
             VirtualView.ReportPresentationEnded();
             return;
         }
 
-        if (message == "ended")
+        if (playerEvent.SequenceEqual("ended"))
         {
             _presentationActive = false;
             VirtualView.ReportPresentationEnded();
             return;
         }
 
-        if (message == "error")
+        if (playerEvent.SequenceEqual("error"))
         {
-            ReportLoadFailed();
+            ReportLoadFailed(loadVersion);
         }
     }
 
-    private void ReportLoadFailed()
+    private void ReportLoadFailed(long loadVersion)
     {
-        _loadTimeout?.Cancel();
+        if (loadVersion != _loadVersion)
+        {
+            return;
+        }
+
+        CancelLoadTimeout();
+        _presentationActive = false;
         DeactivatePlaybackAudioSession();
         VirtualView.ReportLoadFailed();
     }
 
-    private void StartLoadTimeout()
+    private void StartLoadTimeout(long loadVersion)
     {
         _loadTimeout?.Cancel();
         _loadTimeout?.Dispose();
         CancellationTokenSource timeout = new();
         _loadTimeout = timeout;
-        _ = ReportTimeoutAsync(timeout);
+        _ = ReportTimeoutAsync(timeout, loadVersion);
     }
 
-    private async Task ReportTimeoutAsync(CancellationTokenSource timeout)
+    private async Task ReportTimeoutAsync(CancellationTokenSource timeout, long loadVersion)
     {
         try
         {
             await Task.Delay(TimeSpan.FromSeconds(20), timeout.Token);
             if (ReferenceEquals(_loadTimeout, timeout))
             {
-                ReportLoadFailed();
+                ReportLoadFailed(loadVersion);
             }
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested) { }
     }
 
-    private void InjectPlayerGuard(WKWebView webView, string videoKey)
+    private void InjectPlayerGuard(WKWebView webView, string videoKey, long loadVersion)
     {
+        if (loadVersion != _loadVersion)
+        {
+            return;
+        }
+
         webView.EvaluateJavaScript(
             $$"""
             (function() {
               if (window.goodMoviesPlayerGuardInstalled) { return; }
               window.goodMoviesPlayerGuardInstalled = true;
               var selectedKey = '{{videoKey}}';
+              var loadVersion = {{loadVersion}};
               var restrictedUiStyle = document.createElement('style');
               restrictedUiStyle.textContent =
                 '.ytp-ce-element,.ytp-endscreen-content,.ytp-impression-link,'
@@ -240,7 +286,9 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                 + '{display:none!important}';
               document.head.appendChild(restrictedUiStyle);
               var notifyNative = function(message) {
-                window.webkit.messageHandlers.goodMoviesPlayer.postMessage(message);
+                window.webkit.messageHandlers.goodMoviesPlayer.postMessage(
+                  loadVersion + ":" + message
+                );
               };
               var reportPresentationMode = function(video) {
                 notifyNative('presentation:' + (video.webkitPresentationMode || 'inline'));
@@ -295,7 +343,8 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                   if (state === 1) { notifyNative('playing'); }
                 });
               }
-              new MutationObserver(checkPlayer).observe(document.documentElement, {
+              window.goodMoviesPlayerGuardObserver = new MutationObserver(checkPlayer);
+              window.goodMoviesPlayerGuardObserver.observe(document.documentElement, {
                 childList: true,
                 subtree: true,
                 attributes: true
@@ -308,40 +357,47 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
         );
     }
 
-    private static bool ActivatePlaybackAudioSession()
+    private bool ActivatePlaybackAudioSession()
     {
-        AVAudioSession audioSession = AVAudioSession.SharedInstance();
-        // Playback supports AirPlay by default. AllowAirPlay is only valid for
-        // categories that otherwise restrict it and returns OSStatus -50 here.
-        NSError? categoryError = audioSession.SetCategory(AVAudioSessionCategory.Playback);
-        if (categoryError is not null)
-        {
-            Console.WriteLine(
-                $"Could not configure trailer audio: {categoryError.LocalizedDescription}"
-            );
-            return false;
-        }
-
-        NSError? activationError = audioSession.SetActive(true);
-        if (activationError is null)
+        if (_audioSessionActive)
         {
             return true;
         }
 
-        Console.WriteLine(
-            $"Could not activate trailer audio: {activationError.LocalizedDescription}"
-        );
-        return false;
+        AVAudioSession audioSession = AVAudioSession.SharedInstance();
+        // Playback supports AirPlay by default. AllowAirPlay is invalid for this category.
+        if (audioSession.SetCategory(AVAudioSessionCategory.Playback) is not null)
+        {
+            TrailerPlayerDiagnostics.LogAudioCategoryFailure();
+            return false;
+        }
+
+        if (audioSession.SetActive(true) is not null)
+        {
+            TrailerPlayerDiagnostics.LogAudioActivationFailure();
+            return false;
+        }
+
+        _audioSessionActive = true;
+        return true;
     }
 
-    private static void DeactivatePlaybackAudioSession()
+    private void DeactivatePlaybackAudioSession()
     {
-        NSError? error = AVAudioSession
-            .SharedInstance()
-            .SetActive(false, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation);
-        if (error is not null)
+        if (!_audioSessionActive)
         {
-            Console.WriteLine($"Could not deactivate trailer audio: {error.LocalizedDescription}");
+            return;
+        }
+
+        _audioSessionActive = false;
+        if (
+            AVAudioSession
+                .SharedInstance()
+                .SetActive(false, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation)
+            is not null
+        )
+        {
+            TrailerPlayerDiagnostics.LogAudioDeactivationFailure();
         }
     }
 
@@ -363,17 +419,29 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
     }
 
     private sealed class TrailerNavigationDelegate(
-        Action<WKWebView, string> navigationFinished,
-        Action reportLoadFailed
+        Action<WKWebView, string, long> navigationFinished,
+        Action<long> reportLoadFailed
     ) : WKNavigationDelegate
     {
-        private readonly Action<WKWebView, string> _navigationFinished = navigationFinished;
-        private readonly Action _reportLoadFailed = reportLoadFailed;
+        private readonly Dictionary<WKNavigation, NavigationRequest> _navigations = new();
+        private readonly Action<WKWebView, string, long> _navigationFinished = navigationFinished;
+        private readonly Action<long> _reportLoadFailed = reportLoadFailed;
         private string? _allowedVideoKey;
 
         public void SetAllowedVideoKey(string videoKey)
         {
             _allowedVideoKey = videoKey;
+        }
+
+        public void Track(WKNavigation navigation, string videoKey, long loadVersion)
+        {
+            _navigations[navigation] = new NavigationRequest(videoKey, loadVersion);
+        }
+
+        public void ClearNavigations()
+        {
+            _allowedVideoKey = null;
+            _navigations.Clear();
         }
 
         public override void DecidePolicy(
@@ -386,8 +454,7 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
             bool isAllowed =
                 requestUrl is not null
                 && Uri.TryCreate(requestUrl.AbsoluteString, UriKind.Absolute, out Uri? uri)
-                && YouTubeTrailerUri.IsTrustedEmbedUri(uri)
-                && YouTubeTrailerUri.TryGetVideoKey(uri, out string videoKey)
+                && YouTubeTrailerUri.TryGetTrustedVideoKey(uri, out string videoKey)
                 && string.Equals(videoKey, _allowedVideoKey, StringComparison.Ordinal);
             decisionHandler(
                 isAllowed ? WKNavigationActionPolicy.Allow : WKNavigationActionPolicy.Cancel
@@ -396,9 +463,9 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
 
         public override void DidFinishNavigation(WKWebView webView, WKNavigation navigation)
         {
-            if (_allowedVideoKey is not null)
+            if (_navigations.Remove(navigation, out NavigationRequest request))
             {
-                _navigationFinished(webView, _allowedVideoKey);
+                _navigationFinished(webView, request.VideoKey, request.LoadVersion);
             }
         }
 
@@ -406,19 +473,23 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
             WKWebView webView,
             WKNavigation navigation,
             NSError error
-        )
-        {
-            _reportLoadFailed();
-        }
+        ) => ReportFailure(navigation);
 
         public override void DidFailProvisionalNavigation(
             WKWebView webView,
             WKNavigation navigation,
             NSError error
-        )
+        ) => ReportFailure(navigation);
+
+        private void ReportFailure(WKNavigation navigation)
         {
-            _reportLoadFailed();
+            if (_navigations.Remove(navigation, out NavigationRequest request))
+            {
+                _reportLoadFailed(request.LoadVersion);
+            }
         }
+
+        private readonly record struct NavigationRequest(string VideoKey, long LoadVersion);
     }
 
     private sealed class TrailerUiDelegate : WKUIDelegate

@@ -2,27 +2,24 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GoodMovies.Core;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GoodMovies.ViewModels;
 
 /// <summary>
 /// Coordinates the cache-first catalog, local search, favorites, and detail
-/// navigation for the Design E sections.
+/// navigation for the three catalog sections.
 /// </summary>
-public partial class CatalogViewModel : ObservableObject, IDisposable
+public sealed partial class CatalogViewModel : ObservableObject, IDisposable
 {
     private static readonly TimeSpan DefaultSearchDebounce = TimeSpan.FromMilliseconds(250);
 
     private readonly IMovieCatalogService _catalogService;
     private readonly IFavoritesStore? _favoritesStore;
     private readonly IClock _clock;
-    private readonly ReleaseWindowPolicy _releaseWindowPolicy;
-    private readonly MovieSafetyPolicy _movieSafetyPolicy;
     private readonly INavigationService? _navigationService;
     private readonly IWordLevelSpeechService? _speechService;
     private readonly IMovieTrailerLookup? _trailerLookup;
-    private readonly IExternalTrailerLauncher? _trailerLauncher;
+    private readonly ITrailerLauncher? _trailerLauncher;
     private readonly INetworkStatusService? _networkStatusService;
     private readonly TimeSpan _searchDebounce;
     private readonly object _operationSync = new();
@@ -46,17 +43,14 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
     public event EventHandler? FeedReplacementCompleted;
 
-    [ActivatorUtilitiesConstructor]
     public CatalogViewModel(
         IMovieCatalogService catalogService,
         IFavoritesStore? favoritesStore = null,
         IClock? clock = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
         INavigationService? navigationService = null,
         IWordLevelSpeechService? speechService = null,
         IMovieTrailerLookup? trailerLookup = null,
-        IExternalTrailerLauncher? trailerLauncher = null,
+        ITrailerLauncher? trailerLauncher = null,
         TimeSpan? searchDebounce = null,
         INetworkStatusService? networkStatusService = null
     )
@@ -64,8 +58,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
         _favoritesStore = favoritesStore;
         _clock = clock ?? new SystemClock();
-        _releaseWindowPolicy = releaseWindowPolicy ?? GoodMovies.Core.ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
         _navigationService = navigationService;
         _speechService = speechService;
         _trailerLookup = trailerLookup;
@@ -83,175 +75,21 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
     }
 
-    public CatalogViewModel(
-        IMovieCatalogService catalogService,
-        IClock clock,
-        IFavoritesStore? favoritesStore = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        INavigationService? navigationService = null,
-        IWordLevelSpeechService? speechService = null,
-        IMovieTrailerLookup? trailerLookup = null,
-        IExternalTrailerLauncher? trailerLauncher = null,
-        TimeSpan? searchDebounce = null
-    )
-        : this(
-            catalogService,
-            favoritesStore,
-            clock,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            navigationService,
-            speechService,
-            trailerLookup,
-            trailerLauncher,
-            searchDebounce
-        ) { }
-
-    public CatalogViewModel(
-        IMovieCatalogService catalogService,
-        IFavoritesStore? favoritesStore,
-        IClock clock,
-        INavigationService? navigation,
-        IWordLevelSpeechService? speechService = null,
-        IMovieTrailerLookup? trailerLookup = null,
-        IExternalTrailerLauncher? trailerLauncher = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        TimeSpan? searchDebounce = null
-    )
-        : this(
-            catalogService,
-            favoritesStore,
-            clock,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            navigation,
-            speechService,
-            trailerLookup,
-            trailerLauncher,
-            searchDebounce
-        ) { }
-
-    public CatalogViewModel(
-        IMovieCatalogService catalogService,
-        IClock clock,
-        IFavoritesStore? favoritesStore,
-        INavigationService? navigation,
-        IWordLevelSpeechService? speechService = null,
-        IMovieTrailerLookup? trailerLookup = null,
-        IExternalTrailerLauncher? trailerLauncher = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        TimeSpan? searchDebounce = null
-    )
-        : this(
-            catalogService,
-            favoritesStore,
-            clock,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            navigation,
-            speechService,
-            trailerLookup,
-            trailerLauncher,
-            searchDebounce
-        ) { }
-
     [ObservableProperty]
     private ObservableCollection<MovieGroupViewModel> _movieGroups = new();
-
-    public ObservableCollection<MovieGroupViewModel> GroupsCollection => MovieGroups;
-
-    public IReadOnlyList<MovieGroupViewModel> Groups => MovieGroups;
-
-    public IReadOnlyList<MovieGroupViewModel> GroupViewModels => MovieGroups;
 
     [ObservableProperty]
     private ObservableCollection<MovieCardViewModel> _movieCards = new();
 
-    public ObservableCollection<MovieCardViewModel> CardsCollection => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> Cards => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> CurrentMovies => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> CurrentCards => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> VisibleMovies => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> Movies => MovieCards;
-
-    public IReadOnlyList<MovieCardViewModel> FavoriteMovies =>
-        _cardsByMovieId
-            .Values.Where(card => _favoriteEntries.ContainsKey(card.MovieId))
-            .OrderBy(static card => card.ReleaseDate ?? DateOnly.MaxValue)
-            .ThenBy(static card => card.Title, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(static card => card.Title, StringComparer.Ordinal)
-            .ThenBy(static card => card.MovieId)
-            .ToArray();
-
-    public IReadOnlyList<Movie> CatalogMovies => _catalogMovies;
-
-    public bool HasCatalogData => _hasCatalogData;
-
-    public bool HasData => HasCatalogData;
-
-    public bool IsOffline => _networkStatusService is { IsInternetAvailable: false };
-
-    public bool IsBusy => IsLoading || IsRefreshing;
-
-    public bool Loading => IsLoading;
-
-    public bool Refreshing => IsRefreshing;
-
-    public bool Stale => IsStale;
-
-    public CatalogSection CurrentSection => SelectedSection;
-
-    public CatalogSection Section => SelectedSection;
-
-    public CatalogResultStatus ResultStatus => Status;
-
-    public CatalogResultStatus CatalogStatus => Status;
-
-    public CatalogViewState ViewState => State;
-
-    public CatalogViewState PresentationState => State;
-
-    public CatalogMessageKey CurrentMessageKey => MessageKey;
-
-    public CatalogMessageKey WarningMessageKey => WarningKey;
-
-    public CatalogMessageKey ErrorMessageKey => ErrorKey;
-
-    public CatalogMessageKey EmptyStateKey =>
-        SelectedSection == CatalogSection.FindAMovie
-            ? string.IsNullOrWhiteSpace(Query)
-                ? CatalogMessageKey.SearchPrompt
-                : CatalogMessageKey.NoSearchResults
-            : SelectedSection == CatalogSection.MyFavorites
-                ? CatalogMessageKey.NoFavorites
-                : CatalogMessageKey.NoMovies;
+    private bool IsOffline => _networkStatusService is { IsInternetAvailable: false };
 
     private MovieDetailViewModel? _selectedMovieDetail;
 
     public MovieDetailViewModel? SelectedMovieDetail
     {
         get => _selectedMovieDetail;
-        private set
-        {
-            if (SetProperty(ref _selectedMovieDetail, value))
-            {
-                OnPropertyChanged(nameof(SelectedMovie));
-                OnPropertyChanged(nameof(Detail));
-            }
-        }
+        private set => SetProperty(ref _selectedMovieDetail, value);
     }
-
-    public MovieDetailViewModel? Detail => SelectedMovieDetail;
-
-    public Movie? SelectedMovie => SelectedMovieDetail?.Movie;
 
     [ObservableProperty]
     private CatalogSection _selectedSection = CatalogSection.ComingSoon;
@@ -262,36 +100,14 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _query = string.Empty;
 
-    public string NormalizedQuery => NormalizeQuery(Query);
-
-    public string SearchQuery
-    {
-        get => Query;
-        set => Query = value;
-    }
-
     [ObservableProperty]
     private int _comingSoonCount;
 
     [ObservableProperty]
     private int _favoriteCount;
 
-    public int FavoritesCount => FavoriteCount;
-
-    public int FavoriteMoviesCount => FavoriteCount;
-
-    [ObservableProperty]
-    private int _findMovieCount;
-
-    public int SearchResultCount => FindMovieCount;
-
     [ObservableProperty]
     private int _currentCount;
-
-    public int MovieCount => CurrentCount;
-
-    [ObservableProperty]
-    private CatalogResultStatus _status = CatalogResultStatus.NoCache;
 
     [ObservableProperty]
     private CatalogViewState _state = CatalogViewState.Idle;
@@ -301,14 +117,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private CatalogMessageKey _warningKey;
-
-    [ObservableProperty]
-    private CatalogMessageKey _errorKey;
-
-    [ObservableProperty]
-    private CatalogMessageKey _favoriteMessageKey;
-
-    public CatalogMessageKey FavoriteErrorKey => FavoriteMessageKey;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -322,76 +130,15 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isWarning;
 
-    public bool HasWarning => IsWarning;
-
-    public bool IsWarningVisible => IsWarning;
-
-    public bool IsWarningState => IsWarning;
-
-    public bool Warning => IsWarning;
-
-    public bool HasStaleData => IsStale;
-
-    public bool IsStaleState => IsStale;
-
-    public bool IsStaleData => IsStale;
-
-    [ObservableProperty]
     private bool _isError;
 
-    public bool HasError => IsError;
-
-    public bool IsErrorVisible => IsError;
-
-    public bool IsErrorState => IsError;
-
-    public bool IsBlockingError => IsError;
-
-    [ObservableProperty]
     private bool _isMissingToken;
 
-    public bool MissingToken => IsMissingToken;
+    private CatalogMessageKey ErrorKey { get; set; }
 
-    public bool IsMissingTokenVisible => IsMissingToken;
-
-    public bool IsMissingTokenState => IsMissingToken;
-
-    public bool IsMissingConfiguration => IsMissingToken;
-
-    [ObservableProperty]
-    private bool _isEmpty;
-
-    public bool IsEmptyState => IsEmpty;
-
-    public bool IsEmptyVisible => IsEmpty;
-
-    public bool Empty => IsEmpty;
-
-    public bool IsFavoriteError => FavoriteMessageKey != CatalogMessageKey.None;
-
-    [ObservableProperty]
-    private bool _isSearchPrompt;
-
-    [ObservableProperty]
-    private bool _hasNoResults;
-
-    [ObservableProperty]
-    private Exception? _lastError;
-
-    public Exception? Error => LastError;
-
-    [ObservableProperty]
     private CatalogResult? _lastResult;
 
-    public CatalogResult? Result => LastResult;
-
-    public DateTimeOffset? LastSuccessfulRefresh => LastResult?.LastSuccessfulRefresh;
-
-    public TimeSpan? CacheAge => LastResult?.CacheAge;
-
-    public Task SearchDebounceTask => _searchTask;
-
-    public TimeSpan SearchDebounce => _searchDebounce;
+    internal Task SearchDebounceTask => _searchTask;
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -410,35 +157,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
     }
 
-    public Task LoadAsync(CancellationToken cancellationToken = default) =>
-        InitializeAsync(cancellationToken);
-
-    [RelayCommand(AllowConcurrentExecutions = false)]
-    private async Task ExecuteInitializeAsync()
-    {
-        await InitializeAsync();
-    }
-
-    public IAsyncRelayCommand InitializeCommand => ExecuteInitializeCommand;
-
     public Task<CatalogResult> RefreshAsync(CancellationToken cancellationToken = default)
-    {
-        lock (_operationSync)
-        {
-            if (_refreshTask is not null)
-            {
-                return _refreshTask;
-            }
-
-            long version = ++_operationVersion;
-            Task<CatalogResult> task = RefreshCoreAsync(version, cancellationToken);
-            _refreshTask = task;
-            _ = ClearRefreshTaskAsync(task);
-            return task;
-        }
-    }
-
-    public Task<CatalogResult> RefreshResultAsync(CancellationToken cancellationToken = default)
     {
         lock (_operationSync)
         {
@@ -495,15 +214,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand(AllowConcurrentExecutions = false)]
-    private async Task ExecuteRefreshAsync()
-    {
-        await RefreshAsync();
-    }
-
-    public IAsyncRelayCommand RefreshCommand => ExecuteRefreshCommand;
-
-    public Task<CatalogResult> RetryAsync(CancellationToken cancellationToken = default) =>
-        RefreshAsync(cancellationToken);
+    private Task<CatalogResult> Refresh() => RefreshAsync();
 
     /// <summary>
     /// Revalidates the catalog using the service's cache policy. A fresh cache
@@ -545,20 +256,10 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         return await CheckForUpdatesAsync(cancellationToken);
     }
 
-    public Task<CatalogResult> ResumeAsync(CancellationToken cancellationToken = default) =>
-        CheckForUpdatesAndReapplyDateAsync(cancellationToken);
-
-    public Task<CatalogResult> OnResumeAsync(CancellationToken cancellationToken = default) =>
-        CheckForUpdatesAndReapplyDateAsync(cancellationToken);
-
     [RelayCommand(AllowConcurrentExecutions = false)]
-    private async Task ExecuteRetryAsync()
-    {
-        await RetryAsync();
-    }
+    private Task<CatalogResult> Retry() => RefreshAsync();
 
-    public IAsyncRelayCommand RetryCommand => ExecuteRetryCommand;
-
+    [RelayCommand]
     public void SwitchSection(CatalogSection section)
     {
         if (section != SelectedSection)
@@ -570,20 +271,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         SelectedSection = section;
     }
 
-    public Task SwitchSectionAsync(CatalogSection section)
-    {
-        SwitchSection(section);
-        return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private async Task ExecuteSwitchSectionAsync(CatalogSection section)
-    {
-        await SwitchSectionAsync(section);
-    }
-
-    public IAsyncRelayCommand<CatalogSection> SwitchSectionCommand => ExecuteSwitchSectionCommand;
-
     [RelayCommand]
     public void SelectRatingFilter(MovieRatingFilter filter)
     {
@@ -594,60 +281,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         SelectedRatingFilter = filter;
     }
-
-    public Task<FavoriteToggleResult> ToggleFavoriteAsync(
-        MovieCardViewModel? card,
-        CancellationToken cancellationToken = default
-    )
-    {
-        if (card is null)
-        {
-            return Task.FromResult(
-                new FavoriteToggleResult(
-                    FavoriteToggleStatus.Rejected,
-                    default,
-                    error: new ArgumentNullException(nameof(card))
-                )
-            );
-        }
-
-        return ToggleFavoriteCoreAsync(card, cancellationToken);
-    }
-
-    public Task<FavoriteToggleResult> ToggleFavoriteAsync(
-        int movieId,
-        CancellationToken cancellationToken = default
-    ) =>
-        _cardsByMovieId.TryGetValue(movieId, out MovieCardViewModel? card)
-            ? ToggleFavoriteAsync(card, cancellationToken)
-            : Task.FromResult(
-                new FavoriteToggleResult(
-                    FavoriteToggleStatus.Rejected,
-                    new FavoriteEntry(movieId, default),
-                    error: new KeyNotFoundException($"Movie {movieId} is not in the catalog.")
-                )
-            );
-
-    [RelayCommand(AllowConcurrentExecutions = false)]
-    private async Task ExecuteToggleFavoriteAsync(MovieCardViewModel card)
-    {
-        await ToggleFavoriteAsync(card);
-    }
-
-    public IAsyncRelayCommand<MovieCardViewModel> ToggleFavoriteCommand =>
-        ExecuteToggleFavoriteCommand;
-
-    [RelayCommand(AllowConcurrentExecutions = false)]
-    private async Task ExecuteToggleMovieFavoriteAsync(Movie movie)
-    {
-        if (_cardsByMovieId.TryGetValue(movie.Id, out MovieCardViewModel? card))
-        {
-            await ToggleFavoriteAsync(card);
-        }
-    }
-
-    public IAsyncRelayCommand<Movie> ToggleMovieFavoriteCommand =>
-        ExecuteToggleMovieFavoriteCommand;
 
     public Task OpenDetailAsync(
         MovieCardViewModel? card,
@@ -672,7 +305,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             _speechService,
             _trailerLookup,
             _trailerLauncher,
-            _releaseWindowPolicy,
             card.IsFavorite
         );
         detail.FavoriteChanged += OnDetailFavoriteChanged;
@@ -689,40 +321,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         );
         return navigation ?? Task.CompletedTask;
     }
-
-    public Task OpenDetailAsync(Movie? movie, CancellationToken cancellationToken = default) =>
-        movie is null
-            ? Task.CompletedTask
-            : OpenDetailAsync(
-                _cardsByMovieId.TryGetValue(movie.Id, out MovieCardViewModel? card)
-                    ? card
-                    : new MovieCardViewModel(
-                        movie,
-                        _clock,
-                        _releaseWindowPolicy,
-                        _navigationService
-                    ),
-                cancellationToken
-            );
-
-    [RelayCommand]
-    private async Task ExecuteOpenDetailAsync(MovieCardViewModel card)
-    {
-        await OpenDetailAsync(card);
-    }
-
-    public IAsyncRelayCommand<MovieCardViewModel> OpenDetailCommand => ExecuteOpenDetailCommand;
-
-    public Task OpenMovieDetailAsync(Movie? movie, CancellationToken cancellationToken = default) =>
-        OpenDetailAsync(movie, cancellationToken);
-
-    [RelayCommand]
-    private async Task ExecuteOpenMovieDetailAsync(Movie movie)
-    {
-        await OpenDetailAsync(movie);
-    }
-
-    public IAsyncRelayCommand<Movie> OpenMovieDetailCommand => ExecuteOpenMovieDetailCommand;
 
     public void CloseDetail()
     {
@@ -745,12 +343,11 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         IsLoading = true;
         IsRefreshing = false;
-        IsError = false;
-        IsMissingToken = false;
+        _isError = false;
+        _isMissingToken = false;
         IsWarning = false;
         WarningKey = CatalogMessageKey.None;
         ErrorKey = CatalogMessageKey.None;
-        LastError = null;
         UpdatePresentationState();
 
         CatalogResult loaded;
@@ -770,17 +367,12 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
         catch (Exception exception)
         {
-            loaded = new CatalogResult(
-                CatalogResultStatus.CacheReadFailed,
-                error: exception,
-                cacheStatus: CatalogCacheStatus.ReadFailed
-            );
+            loaded = new CatalogResult(CatalogResultStatus.CacheReadFailed, error: exception);
         }
 
         loaded ??= new CatalogResult(
             CatalogResultStatus.CacheReadFailed,
-            error: new InvalidOperationException("The catalog service returned no result."),
-            cacheStatus: CatalogCacheStatus.ReadFailed
+            error: new InvalidOperationException("The catalog service returned no result.")
         );
 
         if (!IsCurrentVersion(initialVersion))
@@ -788,15 +380,13 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             return;
         }
 
-        LastResult = loaded;
-        Status = loaded.Status;
-        LastError = loaded.Error;
+        _lastResult = loaded;
         bool hasCache =
             loaded.UsedCache
             || loaded.Status is CatalogResultStatus.FreshCache or CatalogResultStatus.StaleCache;
         if (hasCache || loaded.Status is CatalogResultStatus.Refreshed)
         {
-            ReplaceCatalog(GetResultMovies(loaded), hasCatalogData: true);
+            ReplaceCatalog(loaded.Movies, hasCatalogData: true);
         }
         else
         {
@@ -845,8 +435,8 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             IsRefreshing = true;
             WarningKey = CatalogMessageKey.None;
             ErrorKey = CatalogMessageKey.None;
-            IsError = false;
-            IsMissingToken = false;
+            _isError = false;
+            _isMissingToken = false;
             UpdatePresentationState();
         }
 
@@ -881,9 +471,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         try
         {
-            LastResult = result;
-            Status = result.Status;
-            LastError = result.Error;
+            _lastResult = result;
 
             bool successful =
                 result.Status
@@ -891,14 +479,10 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                     or CatalogResultStatus.RefreshSucceededCacheWriteFailed;
             if (successful)
             {
-                ReplaceCatalog(
-                    GetResultMovies(result),
-                    hasCatalogData: true,
-                    preserveFeedPosition: true
-                );
+                ReplaceCatalog(result.Movies, hasCatalogData: true, preserveFeedPosition: true);
                 IsStale = false;
-                IsError = false;
-                IsMissingToken = false;
+                _isError = false;
+                _isMissingToken = false;
                 IsWarning = result.Status == CatalogResultStatus.RefreshSucceededCacheWriteFailed;
                 WarningKey = IsWarning ? GetRefreshWarningKey() : CatalogMessageKey.None;
                 ErrorKey = CatalogMessageKey.None;
@@ -940,8 +524,8 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             IsRefreshing = true;
             WarningKey = CatalogMessageKey.None;
             ErrorKey = CatalogMessageKey.None;
-            IsError = false;
-            IsMissingToken = false;
+            _isError = false;
+            _isMissingToken = false;
             UpdatePresentationState();
         }
 
@@ -979,9 +563,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         try
         {
-            LastResult = result;
-            Status = result.Status;
-            LastError = result.Error;
+            _lastResult = result;
 
             bool remoteRefreshSucceeded =
                 result.Status
@@ -992,14 +574,10 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
             if (remoteRefreshSucceeded)
             {
-                ReplaceCatalog(
-                    GetResultMovies(result),
-                    hasCatalogData: true,
-                    preserveFeedPosition: true
-                );
+                ReplaceCatalog(result.Movies, hasCatalogData: true, preserveFeedPosition: true);
                 IsStale = false;
-                IsError = false;
-                IsMissingToken = false;
+                _isError = false;
+                _isMissingToken = false;
                 IsWarning = result.Status == CatalogResultStatus.RefreshSucceededCacheWriteFailed;
                 WarningKey = IsWarning ? CatalogMessageKey.RefreshWarning : CatalogMessageKey.None;
                 ErrorKey = CatalogMessageKey.None;
@@ -1008,7 +586,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             else if (cacheReadSucceeded)
             {
                 ReplaceCatalog(
-                    GetResultMovies(result),
+                    result.Movies,
                     hasCatalogData: result.Status
                         is CatalogResultStatus.FreshCache
                             or CatalogResultStatus.StaleCache
@@ -1017,8 +595,8 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                     preserveFeedPosition: true
                 );
                 IsStale = result.IsStale || result.Status == CatalogResultStatus.StaleCache;
-                IsError = false;
-                IsMissingToken = false;
+                _isError = false;
+                _isMissingToken = false;
                 IsWarning = IsStale;
                 WarningKey = IsWarning ? GetRefreshWarningKey() : CatalogMessageKey.None;
                 ErrorKey = CatalogMessageKey.None;
@@ -1054,11 +632,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     {
         await initializationTask.WaitAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        return LastResult
-            ?? new CatalogResult(
-                CatalogResultStatus.NoCache,
-                cacheStatus: CatalogCacheStatus.NoCache
-            );
+        return _lastResult ?? new CatalogResult(CatalogResultStatus.NoCache);
     }
 
     private CatalogResult CreateRefreshFailure(Exception exception)
@@ -1070,19 +644,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         return new CatalogResult(
             status,
             hasCache ? _catalogMovies : Array.Empty<Movie>(),
-            cacheAge: null,
             isStale: hasCache,
             usedCache: hasCache,
-            error: exception,
-            snapshot: hasCache
-                ? MovieCatalogSnapshot.Create(
-                    _catalogMovies,
-                    _clock.Today,
-                    _releaseWindowPolicy,
-                    _movieSafetyPolicy
-                )
-                : null,
-            cacheStatus: hasCache ? CatalogCacheStatus.Available : CatalogCacheStatus.NoCache
+            error: exception
         );
     }
 
@@ -1102,18 +666,18 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
 
         IsStale = hasCache;
-        IsMissingToken = result.Status == CatalogResultStatus.MissingConfiguration;
-        IsError = !hasCache;
+        _isMissingToken = result.Status == CatalogResultStatus.MissingConfiguration;
+        _isError = !hasCache;
         IsWarning = hasCache;
         WarningKey = hasCache
-            ? IsMissingToken
+            ? _isMissingToken
                 ? CatalogMessageKey.MissingToken
                 : IsOffline
                     ? CatalogMessageKey.OfflineWarning
                     : CatalogMessageKey.RefreshWarning
             : CatalogMessageKey.None;
         ErrorKey =
-            IsMissingToken ? CatalogMessageKey.MissingToken
+            _isMissingToken ? CatalogMessageKey.MissingToken
             : IsOffline ? CatalogMessageKey.OfflineError
             : CatalogMessageKey.RefreshError;
     }
@@ -1125,12 +689,16 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             return;
         }
 
-        FavoritesResult? loaded = null;
-        FavoritesResult? pruned = null;
+        FavoritesResult? result = null;
         Exception? failure = null;
         try
         {
-            loaded = await _favoritesStore.GetAsync(_clock.Today, cancellationToken);
+            result = await _favoritesStore.GetAsync(_clock.Today, cancellationToken);
+            if (!result.Succeeded)
+            {
+                failure =
+                    result.Error ?? new InvalidOperationException("Favorites could not be loaded.");
+            }
         }
         catch (OperationCanceledException)
         {
@@ -1140,61 +708,24 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         {
             failure = exception;
         }
-        if (loaded is not null && !loaded.Succeeded)
-        {
-            failure ??=
-                loaded.Error ?? new InvalidOperationException("Favorites could not be loaded.");
-        }
-
-        try
-        {
-            pruned = await _favoritesStore.PruneAsync(_clock.Today, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            failure ??= exception;
-        }
-        if (pruned is not null && !pruned.Succeeded)
-        {
-            failure ??=
-                pruned.Error ?? new InvalidOperationException("Favorites could not be pruned.");
-        }
 
         if (favoriteVersion != Volatile.Read(ref _favoriteVersion))
         {
             return;
         }
 
-        FavoritesResult? selected =
-            pruned?.Succeeded == true ? pruned
-            : loaded?.Succeeded == true ? loaded
-            : null;
-        if (selected is not null)
+        if (result?.Succeeded == true)
         {
-            ApplyFavoriteEntries(selected.Entries);
-            if (failure is null)
-            {
-                FavoriteMessageKey = CatalogMessageKey.None;
-            }
-            else
-            {
-                FavoriteMessageKey = CatalogMessageKey.FavoritesError;
-                LastError ??= failure;
-                WarningKey = CatalogMessageKey.FavoritesError;
-                IsWarning = true;
-            }
+            ApplyFavoriteEntries(result.Entries);
         }
-        else if (failure is not null)
+
+        if (failure is null)
         {
-            FavoriteMessageKey = CatalogMessageKey.FavoritesError;
-            LastError ??= failure;
-            WarningKey = CatalogMessageKey.FavoritesError;
-            IsWarning = true;
+            ClearFavoriteFailure();
+            return;
         }
+        WarningKey = CatalogMessageKey.FavoritesError;
+        IsWarning = true;
     }
 
     private async Task ReconcileFavoritesAsync(
@@ -1221,7 +752,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             )
             {
                 ApplyFavoriteEntries(reconciled.Entries);
-                FavoriteMessageKey = CatalogMessageKey.None;
+                ClearFavoriteFailure();
             }
             else if (
                 reconciled is not null
@@ -1229,8 +760,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                 && IsCurrentVersion(operationVersion)
             )
             {
-                FavoriteMessageKey = CatalogMessageKey.FavoritesError;
-                LastError ??= reconciled.Error;
                 WarningKey = CatalogMessageKey.FavoritesError;
                 IsWarning = true;
             }
@@ -1239,32 +768,37 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         {
             throw;
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             if (IsCurrentVersion(operationVersion))
             {
-                FavoriteMessageKey = CatalogMessageKey.FavoritesError;
-                LastError ??= exception;
                 WarningKey = CatalogMessageKey.FavoritesError;
                 IsWarning = true;
             }
         }
     }
 
-    private async Task<FavoriteToggleResult> ToggleFavoriteCoreAsync(
-        MovieCardViewModel card,
-        CancellationToken cancellationToken
+    public async Task<FavoriteToggleResult> ToggleFavoriteAsync(
+        MovieCardViewModel? card,
+        CancellationToken cancellationToken = default
     )
     {
+        if (card is null)
+        {
+            return new FavoriteToggleResult(
+                FavoriteToggleStatus.Rejected,
+                error: new ArgumentNullException(nameof(card))
+            );
+        }
+
         FavoriteEntry? optionalEntry = card.FavoriteEntry;
         if (optionalEntry is not FavoriteEntry entry)
         {
             FavoriteToggleResult rejected = new(
                 FavoriteToggleStatus.Rejected,
-                default,
                 error: new InvalidOperationException("The movie has no eligible release date.")
             );
-            SetFavoriteFailure(CatalogMessageKey.FavoriteNotAllowed, rejected.Error);
+            SetFavoriteFailure(CatalogMessageKey.FavoriteNotAllowed);
             return rejected;
         }
 
@@ -1272,10 +806,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         {
             FavoriteToggleResult failed = new(
                 FavoriteToggleStatus.Failed,
-                entry,
                 error: new InvalidOperationException("Favorites are not configured.")
             );
-            SetFavoriteFailure(CatalogMessageKey.FavoriteSaveFailed, failed.Error);
+            SetFavoriteFailure(CatalogMessageKey.FavoriteSaveFailed);
             return failed;
         }
 
@@ -1293,18 +826,13 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             }
             catch (Exception exception)
             {
-                result = new FavoriteToggleResult(
-                    FavoriteToggleStatus.Failed,
-                    entry,
-                    error: exception
-                );
+                result = new FavoriteToggleResult(FavoriteToggleStatus.Failed, error: exception);
             }
 
             if (result is null)
             {
                 result = new FavoriteToggleResult(
                     FavoriteToggleStatus.Failed,
-                    entry,
                     error: new InvalidOperationException("The favorites store returned no result.")
                 );
             }
@@ -1321,7 +849,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
                     result.Status == FavoriteToggleStatus.Rejected
                         ? CatalogMessageKey.FavoriteNotAllowed
                         : CatalogMessageKey.FavoriteSaveFailed;
-                SetFavoriteFailure(failureKey, result.Error);
+                SetFavoriteFailure(failureKey);
             }
 
             return result;
@@ -1344,12 +872,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             _favoriteEntries.Remove(entry.MovieId);
         }
 
-        foreach (MovieCardViewModel card in _cardsByMovieId.Values)
+        if (_cardsByMovieId.TryGetValue(entry.MovieId, out MovieCardViewModel? card))
         {
-            if (card.MovieId == entry.MovieId)
-            {
-                card.SetFavorite(isFavorite);
-            }
+            card.SetFavorite(isFavorite);
         }
 
         if (SelectedMovieDetail?.MovieId == entry.MovieId)
@@ -1357,22 +882,18 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             SelectedMovieDetail.SetFavoriteState(isFavorite);
         }
 
-        UpdateCounts();
         BuildCurrentView();
     }
 
-    private void SetFavoriteFailure(CatalogMessageKey key, Exception? error)
+    private void SetFavoriteFailure(CatalogMessageKey key)
     {
-        FavoriteMessageKey = key;
         WarningKey = key;
         IsWarning = true;
-        LastError ??= error;
         UpdatePresentationState();
     }
 
     private void ClearFavoriteFailure()
     {
-        FavoriteMessageKey = CatalogMessageKey.None;
         if (
             WarningKey
             is CatalogMessageKey.FavoriteSaveFailed
@@ -1391,7 +912,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         Dictionary<int, FavoriteEntry> next = new();
         foreach (FavoriteEntry entry in entries ?? Array.Empty<FavoriteEntry>())
         {
-            if (_releaseWindowPolicy.IsVisible(entry, _clock.Today))
+            if (ReleaseWindowPolicy.IsVisible(entry, _clock.Today))
             {
                 next[entry.MovieId] = entry;
             }
@@ -1410,7 +931,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             );
         }
 
-        UpdateCounts();
         BuildCurrentView();
         Interlocked.Increment(ref _favoriteVersion);
     }
@@ -1426,24 +946,18 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         bool preserveFeedPosition = false
     )
     {
-        IReadOnlyList<Movie> safeMovies = MovieCatalogSnapshot
-            .Create(
-                movies ?? Array.Empty<Movie>(),
-                _clock.Today,
-                _releaseWindowPolicy,
-                _movieSafetyPolicy
-            )
-            .Movies;
+        IReadOnlyList<Movie> safeMovies = new MovieCatalogSnapshot(
+            movies ?? Array.Empty<Movie>(),
+            _clock.Today
+        ).Movies;
         Dictionary<int, MovieCardViewModel> nextCards = new();
         foreach (Movie movie in safeMovies)
         {
             MovieCardViewModel card = new(
                 movie,
-                _favoriteEntries.ContainsKey(movie.Id),
                 _clock,
-                _releaseWindowPolicy,
-                _navigationService,
-                ToggleFavoriteCoreAsync
+                _favoriteEntries.ContainsKey(movie.Id),
+                ToggleFavoriteAsync
             );
             nextCards[movie.Id] = card;
         }
@@ -1451,10 +965,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         _catalogMovies = safeMovies;
         _cardsByMovieId = nextCards;
         _hasCatalogData = hasCatalogData;
-        OnPropertyChanged(nameof(CatalogMovies));
-        OnPropertyChanged(nameof(HasCatalogData));
-        OnPropertyChanged(nameof(HasData));
-        UpdateCounts();
         if (preserveFeedPosition)
         {
             FeedReplacementStarting?.Invoke(this, EventArgs.Empty);
@@ -1473,20 +983,16 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
     }
 
-    private static IReadOnlyList<Movie> GetResultMovies(CatalogResult result) =>
-        result.Movies.Count > 0 || result.Snapshot.Movies.Count == 0
-            ? result.Movies
-            : result.Snapshot.Movies;
-
     private void BuildCurrentView()
     {
+        string normalizedQuery = NormalizeQuery(Query);
         IEnumerable<MovieCardViewModel> selected = SelectedSection switch
         {
             CatalogSection.MyFavorites => _cardsByMovieId.Values.Where(card =>
                 _favoriteEntries.ContainsKey(card.MovieId)
             ),
-            CatalogSection.FindAMovie when !string.IsNullOrWhiteSpace(Query) =>
-                _cardsByMovieId.Values.Where(card => Matches(card, NormalizedQuery)),
+            CatalogSection.FindAMovie when normalizedQuery.Length > 0 =>
+                _cardsByMovieId.Values.Where(card => Matches(card, normalizedQuery)),
             CatalogSection.FindAMovie => Array.Empty<MovieCardViewModel>(),
             _ => _cardsByMovieId.Values.Where(MatchesRatingFilter),
         };
@@ -1510,15 +1016,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         }
 
         UpdateCounts();
-        OnPropertyChanged(nameof(Groups));
-        OnPropertyChanged(nameof(GroupViewModels));
-        OnPropertyChanged(nameof(Cards));
-        OnPropertyChanged(nameof(CurrentMovies));
-        OnPropertyChanged(nameof(CurrentCards));
-        OnPropertyChanged(nameof(VisibleMovies));
-        OnPropertyChanged(nameof(Movies));
-        OnPropertyChanged(nameof(FavoriteMovies));
-        OnPropertyChanged(nameof(EmptyStateKey));
         UpdatePresentationState();
     }
 
@@ -1526,14 +1023,14 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     /// True when the feed already shows exactly these card instances in this
     /// order, so the grouped collections can be left alone.
     /// </summary>
-    private bool IsCurrentView(IReadOnlyList<MovieCardViewModel> selectedCards)
+    private bool IsCurrentView(MovieCardViewModel[] selectedCards)
     {
-        if (MovieCards.Count != selectedCards.Count)
+        if (MovieCards.Count != selectedCards.Length)
         {
             return false;
         }
 
-        for (int index = 0; index < selectedCards.Count; index++)
+        for (int index = 0; index < selectedCards.Length; index++)
         {
             if (!ReferenceEquals(MovieCards[index], selectedCards[index]))
             {
@@ -1543,22 +1040,14 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         // Groups are a pure function of the ordered cards, but an earlier build
         // may have been skipped before the groups were ever populated.
-        return MovieGroups.Sum(static group => group.Count) == selectedCards.Count;
+        return MovieGroups.Sum(static group => group.Count) == selectedCards.Length;
     }
 
     private void UpdateCounts()
     {
         ComingSoonCount = _catalogMovies.Count;
         FavoriteCount = _catalogMovies.Count(movie => _favoriteEntries.ContainsKey(movie.Id));
-        FindMovieCount =
-            SelectedSection == CatalogSection.FindAMovie && !string.IsNullOrWhiteSpace(Query)
-                ? _cardsByMovieId.Values.Count(card => Matches(card, NormalizedQuery))
-                : 0;
         CurrentCount = MovieCards.Count;
-        OnPropertyChanged(nameof(FavoritesCount));
-        OnPropertyChanged(nameof(FavoriteMoviesCount));
-        OnPropertyChanged(nameof(SearchResultCount));
-        OnPropertyChanged(nameof(MovieCount));
     }
 
     private void UpdatePresentationState()
@@ -1571,9 +1060,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             nextState = CatalogViewState.Loading;
             nextMessage = CatalogMessageKey.Loading;
         }
-        else if (IsError)
+        else if (_isError)
         {
-            nextState = IsMissingToken ? CatalogViewState.MissingToken : CatalogViewState.Error;
+            nextState = _isMissingToken ? CatalogViewState.MissingToken : CatalogViewState.Error;
             nextMessage = ErrorKey;
         }
         else if (IsRefreshing)
@@ -1581,7 +1070,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
             nextState = CatalogViewState.Refreshing;
             nextMessage = CatalogMessageKey.Loading;
         }
-        else if (IsMissingToken && !_hasCatalogData)
+        else if (_isMissingToken && !_hasCatalogData)
         {
             nextState = CatalogViewState.MissingToken;
             nextMessage =
@@ -1623,28 +1112,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
         State = nextState;
         MessageKey = nextMessage;
-        bool canShowEmptyState = !IsLoading && !IsRefreshing && !IsError && !IsMissingToken;
-        IsEmpty = canShowEmptyState && MovieCards.Count == 0;
-        IsSearchPrompt =
-            canShowEmptyState
-            && SelectedSection == CatalogSection.FindAMovie
-            && string.IsNullOrWhiteSpace(Query);
-        HasNoResults =
-            canShowEmptyState
-            && SelectedSection == CatalogSection.FindAMovie
-            && !string.IsNullOrWhiteSpace(Query)
-            && MovieCards.Count == 0;
-        OnPropertyChanged(nameof(ViewState));
-        OnPropertyChanged(nameof(PresentationState));
-        OnPropertyChanged(nameof(CatalogStatus));
-        OnPropertyChanged(nameof(CurrentMessageKey));
-        OnPropertyChanged(nameof(IsBusy));
-        OnPropertyChanged(nameof(HasWarning));
-        OnPropertyChanged(nameof(HasError));
-        OnPropertyChanged(nameof(IsBlockingError));
-        OnPropertyChanged(nameof(MissingToken));
-        OnPropertyChanged(nameof(IsEmptyState));
-        OnPropertyChanged(nameof(EmptyStateKey));
     }
 
     private void ScheduleSearch()
@@ -1765,7 +1232,7 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
     private static bool Matches(MovieCardViewModel card, string normalizedQuery) =>
         NormalizeQuery(card.Title).Contains(normalizedQuery, StringComparison.Ordinal)
         || NormalizeQuery(card.Kind).Contains(normalizedQuery, StringComparison.Ordinal)
-        || card.Genres.Any(genre =>
+        || card.Movie.Genres.Any(genre =>
             NormalizeQuery(genre.Name).Contains(normalizedQuery, StringComparison.Ordinal)
         );
 
@@ -1773,9 +1240,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         SelectedRatingFilter switch
         {
             MovieRatingFilter.All => true,
-            MovieRatingFilter.G => card.MovieCertification?.IsG == true,
-            MovieRatingFilter.PG => card.MovieCertification?.IsPg == true,
-            MovieRatingFilter.RatingSoon => card.IsNotYetRated,
+            MovieRatingFilter.G => card.Movie.Certification?.IsG == true,
+            MovieRatingFilter.PG => card.Movie.Certification?.IsPg == true,
+            MovieRatingFilter.RatingSoon => card.Movie.IsNotYetRated,
             _ => false,
         };
 
@@ -1799,7 +1266,6 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
     private void OnNetworkStatusChanged(object? sender, EventArgs e)
     {
-        OnPropertyChanged(nameof(IsOffline));
         if (IsOffline && _hasCatalogData)
         {
             IsWarning = true;
@@ -1829,12 +1295,12 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
         {
             _networkStatusService.NetworkStatusChanged -= OnNetworkStatusChanged;
         }
+
+        GC.SuppressFinalize(this);
     }
 
     partial void OnSelectedSectionChanged(CatalogSection value)
     {
-        OnPropertyChanged(nameof(CurrentSection));
-        OnPropertyChanged(nameof(Section));
         CancelSearch();
         if (value != CatalogSection.FindAMovie && !string.IsNullOrWhiteSpace(Query))
         {
@@ -1861,102 +1327,9 @@ public partial class CatalogViewModel : ObservableObject, IDisposable
 
     partial void OnQueryChanged(string value)
     {
-        OnPropertyChanged(nameof(NormalizedQuery));
-        OnPropertyChanged(nameof(SearchQuery));
-        OnPropertyChanged(nameof(EmptyStateKey));
         if (SelectedSection == CatalogSection.FindAMovie)
         {
             ScheduleSearch();
         }
-    }
-
-    partial void OnStatusChanged(CatalogResultStatus value)
-    {
-        OnPropertyChanged(nameof(ResultStatus));
-        OnPropertyChanged(nameof(CatalogStatus));
-    }
-
-    partial void OnStateChanged(CatalogViewState value)
-    {
-        OnPropertyChanged(nameof(ViewState));
-        OnPropertyChanged(nameof(PresentationState));
-    }
-
-    partial void OnLastResultChanged(CatalogResult? value)
-    {
-        OnPropertyChanged(nameof(Result));
-        OnPropertyChanged(nameof(LastSuccessfulRefresh));
-        OnPropertyChanged(nameof(CacheAge));
-    }
-
-    partial void OnMessageKeyChanged(CatalogMessageKey value)
-    {
-        OnPropertyChanged(nameof(CurrentMessageKey));
-    }
-
-    partial void OnWarningKeyChanged(CatalogMessageKey value)
-    {
-        OnPropertyChanged(nameof(WarningMessageKey));
-    }
-
-    partial void OnErrorKeyChanged(CatalogMessageKey value)
-    {
-        OnPropertyChanged(nameof(ErrorMessageKey));
-    }
-
-    partial void OnFavoriteMessageKeyChanged(CatalogMessageKey value)
-    {
-        OnPropertyChanged(nameof(FavoriteErrorKey));
-        OnPropertyChanged(nameof(IsFavoriteError));
-    }
-
-    partial void OnIsLoadingChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsBusy));
-        OnPropertyChanged(nameof(Loading));
-    }
-
-    partial void OnIsRefreshingChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsBusy));
-        OnPropertyChanged(nameof(Refreshing));
-    }
-
-    partial void OnIsWarningChanged(bool value)
-    {
-        OnPropertyChanged(nameof(HasWarning));
-        OnPropertyChanged(nameof(IsWarningVisible));
-        OnPropertyChanged(nameof(IsWarningState));
-        OnPropertyChanged(nameof(Warning));
-    }
-
-    partial void OnIsStaleChanged(bool value)
-    {
-        OnPropertyChanged(nameof(HasStaleData));
-        OnPropertyChanged(nameof(IsStaleState));
-        OnPropertyChanged(nameof(IsStaleData));
-        OnPropertyChanged(nameof(Stale));
-    }
-
-    partial void OnIsErrorChanged(bool value)
-    {
-        OnPropertyChanged(nameof(HasError));
-        OnPropertyChanged(nameof(IsBlockingError));
-        OnPropertyChanged(nameof(IsErrorVisible));
-        OnPropertyChanged(nameof(IsErrorState));
-    }
-
-    partial void OnIsMissingTokenChanged(bool value)
-    {
-        OnPropertyChanged(nameof(MissingToken));
-        OnPropertyChanged(nameof(IsMissingTokenVisible));
-        OnPropertyChanged(nameof(IsMissingTokenState));
-        OnPropertyChanged(nameof(IsMissingConfiguration));
-    }
-
-    partial void OnIsEmptyChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsEmptyState));
-        OnPropertyChanged(nameof(Empty));
     }
 }

@@ -7,42 +7,24 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GoodMovies.Infrastructure;
 
-public interface ITmdbMovieCatalogClient
-    : IMovieCatalogClient,
-        IMovieTrailerLookup,
-        IMovieTrailerService,
-        ITrailerLookup
-{
-    Task<CatalogFetchResult> RefreshAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    );
-}
-
 /// <summary>
 /// Platform-neutral TMDB client. All provider calls go through this typed
 /// client so query construction and JSON handling stay in one place.
 /// </summary>
-public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
+internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrailerLookup
 {
     private readonly HttpClient _httpClient;
     private readonly GoodMoviesInfrastructureOptions _options;
     private readonly ILogger<TmdbMovieCatalogClient> _logger;
-    private readonly TrailerSelectionPolicy _trailerSelectionPolicy;
     private readonly Uri _apiBaseAddress;
     private readonly PosterUrlBuilder _posterUrlBuilder;
-    private readonly IGoodMoviesTimeProvider _timeProvider;
-    private readonly ReleaseWindowPolicy _releaseWindowPolicy;
-    private readonly MovieSafetyPolicy _movieSafetyPolicy;
+    private readonly TimeProvider _timeProvider;
 
     [ActivatorUtilitiesConstructor]
     public TmdbMovieCatalogClient(
         HttpClient httpClient,
         GoodMoviesInfrastructureOptions options,
-        TrailerSelectionPolicy? trailerSelectionPolicy = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
+        TimeProvider? timeProvider = null,
         ILogger<TmdbMovieCatalogClient>? logger = null
     )
     {
@@ -51,10 +33,7 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         _options.Validate();
         _apiBaseAddress = NormalizeBaseAddress(_httpClient.BaseAddress ?? _options.ApiBaseAddress);
         _posterUrlBuilder = new PosterUrlBuilder(_options);
-        _trailerSelectionPolicy = trailerSelectionPolicy ?? new TrailerSelectionPolicy();
-        _timeProvider = timeProvider ?? new SystemGoodMoviesTimeProvider();
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _logger = logger ?? NullLogger<TmdbMovieCatalogClient>.Instance;
     }
 
@@ -67,11 +46,13 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         {
             List<TmdbDiscoverMovie> candidates = await LoadCandidatesAsync(today, cancellationToken)
                 .ConfigureAwait(false);
-            Dictionary<int, string> genres =
-                candidates.Count == 0
-                    ? new Dictionary<int, string>()
-                    : await LoadGenresAsync(cancellationToken).ConfigureAwait(false);
+            if (candidates.Count == 0)
+            {
+                return CatalogFetchResult.Success(Array.Empty<Movie>(), _timeProvider.GetUtcNow());
+            }
 
+            Dictionary<int, string> genres = await LoadGenresAsync(cancellationToken)
+                .ConfigureAwait(false);
             List<Movie> movies = await VerifyCandidatesAsync(
                     candidates,
                     genres,
@@ -80,13 +61,8 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                 )
                 .ConfigureAwait(false);
 
-            MovieCatalogSnapshot snapshot = MovieCatalogSnapshot.Create(
-                movies,
-                today,
-                _releaseWindowPolicy,
-                _movieSafetyPolicy
-            );
-            return CatalogFetchResult.Success(snapshot.Movies, _timeProvider.UtcNow);
+            MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(movies, today);
+            return CatalogFetchResult.Success(snapshot.Movies, _timeProvider.GetUtcNow());
         }
         catch (OperationCanceledException)
         {
@@ -107,42 +83,6 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         }
     }
 
-    public Task<CatalogFetchResult> RefreshAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => FetchAsync(today, cancellationToken);
-
-    public Task<CatalogFetchResult> GetCatalogAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => FetchAsync(today, cancellationToken);
-
-    public Task<CatalogFetchResult> DiscoverAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => FetchAsync(today, cancellationToken);
-
-    public async Task<IReadOnlyList<Movie>> GetMoviesAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    )
-    {
-        CatalogFetchResult result = await FetchAsync(today, cancellationToken)
-            .ConfigureAwait(false);
-        if (result.Succeeded)
-        {
-            return result.Movies;
-        }
-
-        Exception error =
-            result.Error
-            ?? new CatalogRefreshException(
-                "The movie catalog refresh failed.",
-                new InvalidOperationException(result.Status.ToString())
-            );
-        throw error;
-    }
-
     public async Task<TrailerLookupResult> GetTrailerAsync(
         int movieId,
         CancellationToken cancellationToken = default
@@ -151,7 +91,6 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         if (movieId <= 0)
         {
             return TrailerLookupResult.Failure(
-                movieId,
                 new ArgumentOutOfRangeException(nameof(movieId), "A movie ID must be positive.")
             );
         }
@@ -165,22 +104,20 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                 )
                 .ConfigureAwait(false);
 
-            MovieTrailer[] trailers = response
-                .Results.Where(static video => video is not null)
-                .Select(static video => new MovieTrailer(
-                    video.Key ?? string.Empty,
-                    video.Name ?? string.Empty,
-                    video.Site ?? string.Empty,
-                    video.Type ?? string.Empty,
-                    video.Official,
-                    video.LanguageCode
-                ))
-                .ToArray();
-
-            MovieTrailer? selected = _trailerSelectionPolicy.Select(trailers);
+            MovieTrailer? selected = TrailerSelectionPolicy.Select(
+                response
+                    .Results.Where(static video => video is not null)
+                    .Select(static video => new MovieTrailer(
+                        video.Key ?? string.Empty,
+                        video.Site ?? string.Empty,
+                        video.Type ?? string.Empty,
+                        video.Official,
+                        video.LanguageCode
+                    ))
+            );
             return selected is null
-                ? TrailerLookupResult.NotFound(movieId)
-                : TrailerLookupResult.Found(movieId, selected);
+                ? TrailerLookupResult.NotFound()
+                : TrailerLookupResult.Found(selected);
         }
         catch (OperationCanceledException)
         {
@@ -189,27 +126,13 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         catch (GoodMoviesConfigurationException exception)
         {
             _logger.TrailerLookupMissingConfiguration();
-            return TrailerLookupResult.MissingConfiguration(movieId, exception);
+            return TrailerLookupResult.MissingConfiguration(exception);
         }
         catch (Exception exception)
         {
             _logger.TrailerLookupFailed();
-            return TrailerLookupResult.Failure(movieId, exception);
+            return TrailerLookupResult.Failure(exception);
         }
-    }
-
-    public Task<TrailerLookupResult> LookupTrailerAsync(
-        int movieId,
-        CancellationToken cancellationToken = default
-    ) => GetTrailerAsync(movieId, cancellationToken);
-
-    public Task<TrailerLookupResult> GetTrailerAsync(
-        Movie movie,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentNullException.ThrowIfNull(movie);
-        return GetTrailerAsync(movie.Id, cancellationToken);
     }
 
     private async Task<Dictionary<int, string>> LoadGenresAsync(CancellationToken cancellationToken)
@@ -238,31 +161,27 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         CancellationToken cancellationToken
     )
     {
-        DateOnly earliestDate = _releaseWindowPolicy.EarliestVisibleDate(today);
-        DateOnly latestDate = _releaseWindowPolicy.LatestVisibleDate(today);
-        List<TmdbDiscoverMovie> allCandidates = new();
-        foreach (bool familyPass in new[] { false, true })
-        {
-            allCandidates.AddRange(
-                await LoadCandidatePagesAsync(
-                        earliestDate,
-                        latestDate,
-                        familyPass,
-                        cancellationToken
-                    )
-                    .ConfigureAwait(false)
-            );
-        }
-
+        DateOnly earliestDate = ReleaseWindowPolicy.EarliestVisibleDate(today);
+        DateOnly latestDate = ReleaseWindowPolicy.LatestVisibleDate(today);
         // The API can repeat a movie across pages and across both passes. Keep
         // the first complete candidate in deterministic sequence and verify each
         // ID once.
         Dictionary<int, TmdbDiscoverMovie> unique = new();
-        foreach (TmdbDiscoverMovie candidate in allCandidates)
+        for (int pass = 0; pass < 2; pass++)
         {
-            if (candidate.Id > 0)
+            List<TmdbDiscoverMovie> candidates = await LoadCandidatePagesAsync(
+                    earliestDate,
+                    latestDate,
+                    familyPass: pass == 1,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+            foreach (TmdbDiscoverMovie candidate in candidates)
             {
-                unique.TryAdd(candidate.Id, candidate);
+                if (candidate.Id > 0)
+                {
+                    unique.TryAdd(candidate.Id, candidate);
+                }
             }
         }
 
@@ -333,74 +252,35 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
     }
 
     private async Task<List<Movie>> VerifyCandidatesAsync(
-        IReadOnlyList<TmdbDiscoverMovie> candidates,
+        List<TmdbDiscoverMovie> candidates,
         IReadOnlyDictionary<int, string> genres,
         DateOnly today,
         CancellationToken cancellationToken
     )
     {
-        if (candidates.Count == 0)
-        {
-            return new List<Movie>();
-        }
-
-        using CancellationTokenSource refreshCancellation =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        using SemaphoreSlim concurrencyGate = new(_options.MaxConcurrentRequests);
-        Task<Movie?>[] verifications = candidates
-            .Select(candidate =>
-                VerifyCandidateAsync(
-                    candidate,
-                    genres,
-                    today,
-                    concurrencyGate,
-                    refreshCancellation.Token
-                )
+        Movie?[] verified = new Movie?[candidates.Count];
+        await Parallel
+            .ForEachAsync(
+                Enumerable.Range(0, candidates.Count),
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = _options.MaxConcurrentRequests,
+                },
+                async (index, token) =>
+                {
+                    verified[index] = await VerifyAndMapAsync(
+                            candidates[index],
+                            genres,
+                            today,
+                            token
+                        )
+                        .ConfigureAwait(false);
+                }
             )
-            .ToArray();
+            .ConfigureAwait(false);
 
-        List<Task<Movie?>> pending = verifications.ToList();
-        while (pending.Count > 0)
-        {
-            Task<Movie?> completed = await Task.WhenAny(pending).ConfigureAwait(false);
-            pending.Remove(completed);
-            if (completed.IsFaulted || completed.IsCanceled)
-            {
-                try
-                {
-                    refreshCancellation.Cancel(throwOnFirstException: false);
-                }
-                finally
-                {
-                    await Task.WhenAll(verifications).ConfigureAwait(false);
-                }
-
-                throw new InvalidOperationException("TMDB release verification failed.");
-            }
-        }
-
-        Movie?[] verifiedMovies = await Task.WhenAll(verifications).ConfigureAwait(false);
-        return verifiedMovies.Where(static movie => movie is not null).Cast<Movie>().ToList();
-    }
-
-    private async Task<Movie?> VerifyCandidateAsync(
-        TmdbDiscoverMovie candidate,
-        IReadOnlyDictionary<int, string> genres,
-        DateOnly today,
-        SemaphoreSlim concurrencyGate,
-        CancellationToken cancellationToken
-    )
-    {
-        await concurrencyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            return await VerifyAndMapAsync(candidate, genres, today, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        finally
-        {
-            concurrencyGate.Release();
-        }
+        return verified.Where(static movie => movie is not null).Cast<Movie>().ToList();
     }
 
     private async Task<Movie?> VerifyAndMapAsync(
@@ -436,7 +316,8 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             {
                 string reported = release.Certification?.Trim() ?? string.Empty;
                 bool isRated = reported.Length > 0;
-                if (isRated && !MovieCertification.TryCreate(reported, out MovieCertification? _))
+                MovieCertification? certification = null;
+                if (isRated && !MovieCertification.TryCreate(reported, out certification))
                 {
                     // A US certification we do not allow disqualifies the whole
                     // movie, even if another entry for it is still unrated.
@@ -444,14 +325,10 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
                     continue;
                 }
 
-                MovieCertification? certification = isRated
-                    ? MovieCertification.Parse(reported)
-                    : null;
-
                 if (
                     !TheatricalRelease.IsAllowedTheatricalType(release.Type)
                     || !TryParseReleaseDate(release.ReleaseDate, out DateOnly releaseDate)
-                    || !_releaseWindowPolicy.IsVisible(releaseDate, today)
+                    || !ReleaseWindowPolicy.IsVisible(releaseDate, today)
                 )
                 {
                     continue;
@@ -488,6 +365,11 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             selected.Certification is null
             && (
                 !candidate.GenreIds.Any(MovieGenre.IsFamilyAudienceGenre)
+                || !string.Equals(
+                    candidate.OriginalLanguage?.Trim(),
+                    "en",
+                    StringComparison.OrdinalIgnoreCase
+                )
                 || candidate.Popularity < _options.MinimumUnratedPopularity
             )
         )
@@ -504,12 +386,11 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             candidate.Id,
             candidate.Title ?? string.Empty,
             selected.Certification?.Code,
-            new TheatricalRelease(selected.ReleaseDate, "US", selected.ReleaseType),
+            new[] { new TheatricalRelease(selected.ReleaseDate, "US", selected.ReleaseType) },
             mappedGenres,
-            trailers: null,
             candidate.Overview,
             safePosterPath,
-            posterUri?.ToString(),
+            posterUri,
             candidate.OriginalLanguage,
             candidate.GenreIds
         );
@@ -551,9 +432,6 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
             throw new TmdbProtocolException("TMDB returned malformed JSON.", exception);
         }
     }
-
-    private Uri BuildDiscoverUri(int page, DateOnly earliestDate, DateOnly latestDate) =>
-        BuildDiscoverUri(page, earliestDate, latestDate, familyPass: false);
 
     /// <summary>
     /// The rated pass filters on the US certification so only G/PG titles come
@@ -621,7 +499,7 @@ public class TmdbMovieCatalogClient : ITmdbMovieCatalogClient
         }
 
         string value = address.ToString();
-        return new Uri(value.EndsWith("/", StringComparison.Ordinal) ? value : $"{value}/");
+        return new Uri(value.EndsWith('/') ? value : $"{value}/");
     }
 
     private static string Escape(string value) => Uri.EscapeDataString(value);

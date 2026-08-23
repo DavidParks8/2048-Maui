@@ -21,10 +21,10 @@ public sealed class MovieCatalogSnapshotTests
             8,
             "Foreign",
             "G",
-            new TheatricalRelease(Today, "CA", TheatricalRelease.TheatricalType)
+            new[] { new TheatricalRelease(Today, "CA", TheatricalRelease.TheatricalType) }
         );
 
-        MovieCatalogSnapshot snapshot = MovieCatalogSnapshot.Create(
+        MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(
             new[]
             {
                 laterTitle,
@@ -47,36 +47,44 @@ public sealed class MovieCatalogSnapshotTests
     }
 
     [TestMethod]
-    public void Search_RunsOnTheAlreadyPolicyFilteredSnapshot()
+    public void Create_CopiesTheSourceCollection()
     {
-        Movie visible = Movie(1, "Visible Adventure", Today, "G");
-        Movie expiredMatchingTitle = Movie(2, "Visible Adventure Old", Today.AddDays(-14), "G");
-        Movie unsafeMatchingTitle = Movie(3, "Visible Adventure Unsafe", Today, "PG-13");
+        Movie original = Movie(1, "Original", Today, "G");
+        List<Movie> source = new() { original };
+        MovieCatalogSnapshot snapshot = new(source, Today);
 
-        MovieCatalogSnapshot snapshot = MovieCatalogSnapshot.Create(
-            new[] { visible, expiredMatchingTitle, unsafeMatchingTitle },
-            Today
-        );
+        source.Clear();
+        source.Add(Movie(2, "Replacement", Today, "G"));
 
-        IReadOnlyList<Movie> results = snapshot.Search("adventure").Movies;
-
-        Assert.AreEqual(1, results.Count);
-        Assert.AreEqual(visible.Id, results[0].Id);
+        Assert.AreEqual(1, snapshot.Movies.Count);
+        Assert.AreSame(original, snapshot.Movies[0]);
     }
 
     [TestMethod]
-    public void FilterCachedMovies_UsesTheSamePolicyAsCatalog()
+    public void Create_SortsByTheFirstCurrentlyVisibleRelease()
     {
-        Movie visible = Movie(1, "Visible", Today, "PG");
-        Movie expired = Movie(2, "Expired", Today.AddDays(-14), "PG");
-
-        IReadOnlyList<Movie> cached = MovieCatalogSnapshot.FilterCachedMovies(
-            new[] { visible, expired },
-            Today
+        Movie rerelease = new(
+            1,
+            "Rerelease",
+            "G",
+            new[]
+            {
+                new TheatricalRelease(
+                    Today.AddDays(-14),
+                    "US",
+                    TheatricalRelease.LimitedTheatricalType
+                ),
+                new TheatricalRelease(Today.AddDays(2), "US", TheatricalRelease.TheatricalType),
+            }
         );
+        Movie tomorrow = Movie(2, "Tomorrow", Today.AddDays(1), "G");
 
-        Assert.AreEqual(1, cached.Count);
-        Assert.AreEqual(visible.Id, cached[0].Id);
+        MovieCatalogSnapshot snapshot = new(new[] { rerelease, tomorrow }, Today);
+
+        CollectionAssert.AreEqual(
+            new[] { tomorrow.Id, rerelease.Id },
+            snapshot.Movies.Select(movie => movie.Id).ToArray()
+        );
     }
 
     private static Movie Movie(int id, string title, DateOnly releaseDate, string certification) =>
@@ -84,6 +92,6 @@ public sealed class MovieCatalogSnapshotTests
             id,
             title,
             certification,
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType)
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) }
         );
 }

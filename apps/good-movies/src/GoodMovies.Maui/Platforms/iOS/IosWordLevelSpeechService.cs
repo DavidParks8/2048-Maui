@@ -9,14 +9,7 @@ namespace GoodMovies.Maui.Platforms.iOS;
 /// AVFoundation speech adapter that reports the exact character range selected
 /// by AVSpeechSynthesizer for each spoken segment.
 /// </summary>
-public sealed class IosWordLevelSpeechService
-    : IWordLevelSpeechService,
-        IWordSpeechService,
-        ISpeechService,
-        IReadAloudService,
-        ITextToSpeechService,
-        IWordLevelSpeech,
-        IDisposable
+public sealed class IosWordLevelSpeechService : IWordLevelSpeechService, IDisposable
 {
     private const float ReadAloudRate = 0.47f;
     private const float SingleWordRate = 0.44f;
@@ -39,7 +32,7 @@ public sealed class IosWordLevelSpeechService
     public Task SpeakWordAsync(string word, CancellationToken cancellationToken = default) =>
         SpeakCoreAsync(word, reportRanges: false, cancellationToken);
 
-    public void Stop()
+    public void StopSpeaking()
     {
         SpeechOperation? operation;
         lock (_sync)
@@ -267,9 +260,9 @@ public sealed class IosWordLevelSpeechService
             return;
         }
 
-        operation.Completion.TrySetResult(null);
-        operation.CancellationRegistration.Dispose();
         _synthesizer?.StopSpeaking(AVSpeechBoundary.Immediate);
+        operation.Dispose();
+        operation.Completion.TrySetResult(null);
     }
 
     private void DisposeNative()
@@ -282,9 +275,16 @@ public sealed class IosWordLevelSpeechService
         StopActiveNative();
         lock (_sync)
         {
-            _synthesizer?.Dispose();
-            _synthesizer = null;
+            if (_synthesizer is not null)
+            {
+                _synthesizer.Delegate = null;
+                _synthesizer.Dispose();
+                _synthesizer = null;
+            }
+
+            _synthesizerDelegate?.Dispose();
             _synthesizerDelegate = null;
+            _voice?.Dispose();
             _voice = null;
         }
     }
@@ -301,7 +301,7 @@ public sealed class IosWordLevelSpeechService
             _activeOperation = null;
         }
 
-        operation.CancellationRegistration.Dispose();
+        operation.Dispose();
         operation.Completion.TrySetException(exception);
     }
 
@@ -317,7 +317,7 @@ public sealed class IosWordLevelSpeechService
             _activeOperation = null;
         }
 
-        operation.CancellationRegistration.Dispose();
+        operation.Dispose();
         operation.Completion.TrySetResult(null);
     }
 
@@ -333,8 +333,8 @@ public sealed class IosWordLevelSpeechService
             _activeOperation = null;
         }
 
+        operation.Dispose();
         operation.Completion.TrySetCanceled();
-        operation.CancellationRegistration.Dispose();
     }
 
     private void ReportRange(
@@ -432,7 +432,7 @@ public sealed class IosWordLevelSpeechService
     private static bool IsSameNativeObject(NSObject? left, NSObject? right) =>
         left is not null && right is not null && left.Handle == right.Handle;
 
-    private sealed class SpeechOperation
+    private sealed class SpeechOperation : IDisposable
     {
         public SpeechOperation(
             IosWordLevelSpeechService owner,
@@ -461,6 +461,12 @@ public sealed class IosWordLevelSpeechService
         public CancellationToken CancellationToken { get; }
 
         public CancellationTokenRegistration CancellationRegistration { get; set; }
+
+        public void Dispose()
+        {
+            CancellationRegistration.Dispose();
+            Utterance.Dispose();
+        }
     }
 
     private sealed class SpeechSynthesizerDelegate : AVSpeechSynthesizerDelegate

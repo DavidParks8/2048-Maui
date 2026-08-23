@@ -8,6 +8,11 @@ namespace GoodMovies.Maui.Converters;
 
 public static class GoodMoviesTextFormatter
 {
+    private static readonly ConcurrentDictionary<string, Brush> Brushes = new(
+        StringComparer.Ordinal
+    );
+    private static readonly Brush TransparentBrush = new SolidColorBrush(Colors.Transparent);
+
     public static string FormatDate(DateOnly date) =>
         string.Format(
             CultureInfo.CurrentCulture,
@@ -87,11 +92,97 @@ public static class GoodMoviesTextFormatter
 
     public static string FormatDetailStatus(MovieDetailViewModel detail) =>
         FormatStatus(detail.Status, detail.Sleeps);
+
+    public static string GetMessageTitle(CatalogMessageKey key) =>
+        key switch
+        {
+            CatalogMessageKey.Loading => AppStrings.LoadingTitle,
+            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptTitle,
+            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsTitle,
+            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesTitle,
+            CatalogMessageKey.NoMovies => AppStrings.NoMoviesTitle,
+            CatalogMessageKey.MissingToken => AppStrings.MissingTokenTitle,
+            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorTitle,
+            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningTitle,
+            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningTitle,
+            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorTitle,
+            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorTitle,
+            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedTitle,
+            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedTitle,
+            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedTitle,
+            _ => string.Empty,
+        };
+
+    internal static Brush GetBrush(string key)
+    {
+        object? resource = null;
+        _ = Application.Current?.Resources.TryGetValue(key, out resource);
+        return resource switch
+        {
+            Brush brush => brush,
+            Color color => Brushes.GetOrAdd(key, _ => new SolidColorBrush(color)),
+            _ => TransparentBrush,
+        };
+    }
+
+    internal static Color GetColor(string key, Color fallback)
+    {
+        object? resource = null;
+        _ = Application.Current?.Resources.TryGetValue(key, out resource);
+        return resource switch
+        {
+            Color color => color,
+            SolidColorBrush brush => brush.Color,
+            _ => fallback,
+        };
+    }
+
+    public static string GetMessageBody(CatalogMessageKey key) =>
+        key switch
+        {
+            CatalogMessageKey.Loading => AppStrings.LoadingMessage,
+            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptMessage,
+            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsMessage,
+            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesMessage,
+            CatalogMessageKey.NoMovies => AppStrings.NoMoviesMessage,
+            CatalogMessageKey.MissingToken => AppStrings.MissingTokenMessage,
+            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorMessage,
+            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningMessage,
+            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningMessage,
+            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorMessage,
+            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorMessage,
+            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedMessage,
+            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedMessage,
+            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedMessage,
+            _ => string.Empty,
+        };
 }
 
-public sealed class SectionTitleConverter : IValueConverter
+public abstract class OneWayValueConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    public abstract object? Convert(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    );
+
+    public object ConvertBack(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) => throw new NotSupportedException();
+}
+
+public sealed class SectionTitleConverter : OneWayValueConverter
+{
+    public override object Convert(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) =>
         value is CatalogSection section
             ? section switch
             {
@@ -100,44 +191,36 @@ public sealed class SectionTitleConverter : IValueConverter
                 _ => AppStrings.ComingSoon,
             }
             : AppStrings.ComingSoon;
+}
 
-    public object ConvertBack(
+public sealed class SearchSectionVisibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is CatalogSection.FindAMovie;
 }
 
-public sealed class SearchSectionVisibilityConverter : IValueConverter
+public sealed class RefreshBannerVisibilityConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is CatalogSection.FindAMovie;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is CatalogViewModel viewModel && (viewModel.IsWarning || viewModel.IsStale);
 }
 
-public sealed class RefreshBannerVisibilityConverter : IValueConverter
+public sealed class RefreshBannerMessageConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is CatalogViewModel viewModel && (viewModel.IsWarning || viewModel.IsStale);
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class RefreshBannerMessageConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    )
     {
         if (value is not CatalogViewModel viewModel)
         {
@@ -150,136 +233,93 @@ public sealed class RefreshBannerMessageConverter : IValueConverter
             key = CatalogMessageKey.RefreshWarning;
         }
 
-        return MessageBodyConverter.GetMessage(key);
+        return GoodMoviesTextFormatter.GetMessageBody(key);
     }
+}
 
-    public object ConvertBack(
+public sealed class MovieCountConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is int count ? GoodMoviesTextFormatter.FormatCount(count) : string.Empty;
 }
 
-public sealed class MovieCountConverter : IValueConverter
+public sealed class KindLabelConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is int count ? GoodMoviesTextFormatter.FormatCount(count) : string.Empty;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class SavedCountConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is int count ? GoodMoviesTextFormatter.FormatSavedCount(count) : string.Empty;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class KindLabelConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is string text && !string.IsNullOrWhiteSpace(text)
             ? text
             : AppStrings.MovieKindFallback;
+}
 
-    public object ConvertBack(
+public sealed class RatingLabelConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class RatingLabelConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is string text && !string.IsNullOrWhiteSpace(text)
             ? text
             : AppStrings.RatingComingSoon;
+}
 
-    public object ConvertBack(
+public sealed class CardStatusConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class CardStatusConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is MovieCardViewModel card
             ? GoodMoviesTextFormatter.FormatStatus(card.Status, card.Sleeps)
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class DetailStatusConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class DetailStatusConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is MovieDetailViewModel detail
             ? GoodMoviesTextFormatter.FormatDetailStatus(detail)
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class GroupStatusConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class GroupTitleConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is MovieGroupViewModel group
-            ? GoodMoviesTextFormatter.FormatGroupTitle(group)
-            : string.Empty;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class GroupStatusConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is MovieGroupViewModel group
             ? GoodMoviesTextFormatter.FormatGroupStatus(group)
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class GroupAccessibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class GroupAccessibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    )
     {
         if (value is not MovieGroupViewModel group)
         {
@@ -295,157 +335,72 @@ public sealed class GroupAccessibilityConverter : IValueConverter
                 : GoodMoviesTextFormatter.FormatGroupStatus(group)
         );
     }
+}
 
-    public object ConvertBack(
+public sealed class DateOnlyConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is DateOnly date ? GoodMoviesTextFormatter.FormatDate(date) : string.Empty;
 }
 
-public sealed class DateOnlyConverter : IValueConverter
+public sealed class MessageTitleConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is DateOnly date ? GoodMoviesTextFormatter.FormatDate(date) : string.Empty;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) =>
+        value is CatalogMessageKey key
+            ? GoodMoviesTextFormatter.GetMessageTitle(key)
+            : string.Empty;
 }
 
-public sealed class MessageTitleConverter : IValueConverter
+public sealed class MessageBodyConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is CatalogMessageKey key ? GetTitle(key) : string.Empty;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-
-    private static string GetTitle(CatalogMessageKey key) =>
-        key switch
-        {
-            CatalogMessageKey.Loading => AppStrings.LoadingTitle,
-            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptTitle,
-            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsTitle,
-            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesTitle,
-            CatalogMessageKey.NoMovies => AppStrings.NoMoviesTitle,
-            CatalogMessageKey.MissingToken => AppStrings.MissingTokenTitle,
-            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorTitle,
-            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningTitle,
-            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningTitle,
-            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorTitle,
-            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorTitle,
-            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedTitle,
-            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedTitle,
-            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedTitle,
-            _ => AppStrings.LoadingTitle,
-        };
+    ) =>
+        value is CatalogMessageKey key ? GoodMoviesTextFormatter.GetMessageBody(key) : string.Empty;
 }
 
-public sealed class MessageBodyConverter : IValueConverter
+public sealed class MessageAccessibilityConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is CatalogMessageKey key ? GetMessage(key) : string.Empty;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-
-    internal static string GetMessage(CatalogMessageKey key) =>
-        key switch
-        {
-            CatalogMessageKey.Loading => AppStrings.LoadingMessage,
-            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptMessage,
-            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsMessage,
-            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesMessage,
-            CatalogMessageKey.NoMovies => AppStrings.NoMoviesMessage,
-            CatalogMessageKey.MissingToken => AppStrings.MissingTokenMessage,
-            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorMessage,
-            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningMessage,
-            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningMessage,
-            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorMessage,
-            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorMessage,
-            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedMessage,
-            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedMessage,
-            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedMessage,
-            _ => string.Empty,
-        };
-}
-
-public sealed class MessageAccessibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    )
     {
         if (value is not CatalogMessageKey key || key == CatalogMessageKey.None)
         {
             return string.Empty;
         }
 
-        return string.Concat(GetTitle(key), ". ", GetBody(key));
+        return string.Concat(
+            GoodMoviesTextFormatter.GetMessageTitle(key),
+            ". ",
+            GoodMoviesTextFormatter.GetMessageBody(key)
+        );
     }
+}
 
-    public object ConvertBack(
+public sealed class MessageIconConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-
-    private static string GetTitle(CatalogMessageKey key) =>
-        key switch
-        {
-            CatalogMessageKey.Loading => AppStrings.LoadingTitle,
-            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptTitle,
-            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsTitle,
-            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesTitle,
-            CatalogMessageKey.NoMovies => AppStrings.NoMoviesTitle,
-            CatalogMessageKey.MissingToken => AppStrings.MissingTokenTitle,
-            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorTitle,
-            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningTitle,
-            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningTitle,
-            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorTitle,
-            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorTitle,
-            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedTitle,
-            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedTitle,
-            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedTitle,
-            _ => AppStrings.LoadingTitle,
-        };
-
-    private static string GetBody(CatalogMessageKey key) =>
-        key switch
-        {
-            CatalogMessageKey.Loading => AppStrings.LoadingMessage,
-            CatalogMessageKey.SearchPrompt => AppStrings.SearchPromptMessage,
-            CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsMessage,
-            CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesMessage,
-            CatalogMessageKey.NoMovies => AppStrings.NoMoviesMessage,
-            CatalogMessageKey.MissingToken => AppStrings.MissingTokenMessage,
-            CatalogMessageKey.RefreshError => AppStrings.RefreshErrorMessage,
-            CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningMessage,
-            CatalogMessageKey.OfflineWarning => AppStrings.OfflineWarningMessage,
-            CatalogMessageKey.OfflineError => AppStrings.OfflineErrorMessage,
-            CatalogMessageKey.FavoritesError => AppStrings.FavoritesErrorMessage,
-            CatalogMessageKey.FavoriteSaveFailed => AppStrings.FavoriteSaveFailedMessage,
-            CatalogMessageKey.FavoriteNotAllowed => AppStrings.FavoriteNotAllowedMessage,
-            CatalogMessageKey.SpeechFailed => AppStrings.SpeechFailedMessage,
-            _ => string.Empty,
-        };
-}
-
-public sealed class MessageIconConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is CatalogMessageKey key
             ? key switch
             {
@@ -461,18 +416,16 @@ public sealed class MessageIconConverter : IValueConverter
                 _ => AppStrings.MovieIcon,
             }
             : AppStrings.MovieIcon;
+}
 
-    public object ConvertBack(
+public sealed class StatePanelVisibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class StatePanelVisibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is CatalogViewState state
         && state
             is CatalogViewState.Error
@@ -480,151 +433,84 @@ public sealed class StatePanelVisibilityConverter : IValueConverter
                 or CatalogViewState.Empty
                 or CatalogViewState.SearchPrompt
                 or CatalogViewState.NoResults;
+}
 
-    public object ConvertBack(
+public sealed class RetryVisibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class RetryVisibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is CatalogViewState state
         && state is CatalogViewState.Error or CatalogViewState.MissingToken;
+}
 
-    public object ConvertBack(
+public sealed class HeartGlyphConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is true ? AppStrings.FilledHeartGlyph : AppStrings.OutlineHeartGlyph;
 }
 
-public sealed class HeartGlyphConverter : IValueConverter
+public sealed class FavoriteTextConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true ? AppStrings.FilledHeartGlyph : AppStrings.OutlineHeartGlyph;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class FavoriteTextConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is bool isFavorite
             ? GoodMoviesTextFormatter.FormatFavoriteStatus(isFavorite)
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class FavoriteButtonDescriptionConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is true ? AppStrings.RemoveFavorite : AppStrings.AddFavorite;
 }
 
-public sealed class FavoriteAccessibilityConverter : IValueConverter
+public sealed class CardAccessibilityConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is MovieCardViewModel card
-            ? GoodMoviesTextFormatter.FormatFavoriteAccessibility(card)
-            : AppStrings.AddFavorite;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class FavoriteHintConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is MovieCardViewModel card
-            ? card.IsFavorite
-                ? AppStrings.RemoveFavorite
-                : AppStrings.AddFavorite
-            : AppStrings.AddFavorite;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class FavoriteButtonDescriptionConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true ? AppStrings.RemoveFavorite : AppStrings.AddFavorite;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class CardAccessibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is MovieCardViewModel card
             ? GoodMoviesTextFormatter.FormatCardAccessibility(card)
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class MessageKeyVisibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is CatalogMessageKey key && key != CatalogMessageKey.None;
 }
 
-public sealed class MessageKeyVisibilityConverter : IValueConverter
+public sealed class TrailerButtonVisibilityConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is CatalogMessageKey key && key != CatalogMessageKey.None;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class TrailerMessageVisibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is TrailerPlaybackState state
-        && state
-            is TrailerPlaybackState.NotFound
-                or TrailerPlaybackState.MissingConfiguration
-                or TrailerPlaybackState.Failed
-                or TrailerPlaybackState.LaunchFailed;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class TrailerButtonVisibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is TrailerPlaybackState state
         && state
             is TrailerPlaybackState.Idle
@@ -632,29 +518,19 @@ public sealed class TrailerButtonVisibilityConverter : IValueConverter
                 or TrailerPlaybackState.Ready
                 or TrailerPlaybackState.Launched
                 or TrailerPlaybackState.LaunchFailed;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
 }
 
-public sealed class ReadAloudButtonTextConverter : IValueConverter
+public sealed class ReadAloudButtonTextConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true ? AppStrings.StopReading : AppStrings.ReadAloud;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is true ? AppStrings.StopReading : AppStrings.ReadAloud;
 }
 
-public sealed class PosterImageSourceConverter : IValueConverter
+public sealed class PosterImageSourceConverter : OneWayValueConverter
 {
     private static readonly ConcurrentDictionary<string, UriImageSource> RemoteSources = new(
         StringComparer.Ordinal
@@ -663,7 +539,12 @@ public sealed class PosterImageSourceConverter : IValueConverter
         StringComparer.Ordinal
     );
 
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public override object? Convert(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    )
     {
         if (value is Uri uri && IsTrustedRemoteUri(uri))
         {
@@ -686,13 +567,6 @@ public sealed class PosterImageSourceConverter : IValueConverter
 
         return null;
     }
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
 
     private static UriImageSource CreateRemoteSource(Uri uri) =>
         RemoteSources.GetOrAdd(
@@ -736,124 +610,91 @@ public sealed class PosterImageSourceConverter : IValueConverter
 
     private static bool IsSafeLocalAssetName(string value) =>
         !value.Contains("..", StringComparison.Ordinal)
-        && !value.Contains('/')
-        && !value.Contains('\\')
+        && !value.Contains('/', StringComparison.Ordinal)
+        && !value.Contains('\\', StringComparison.Ordinal)
         && string.Equals(Path.GetFileName(value), value, StringComparison.Ordinal);
 }
 
-public sealed class CardAutomationIdConverter : IValueConverter
+public sealed class CardAutomationIdConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    public override object Convert(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) =>
         value is MovieCardViewModel card
             ? string.Format(CultureInfo.InvariantCulture, "MovieCard-{0}", card.MovieId)
             : "MovieCard";
+}
 
-    public object ConvertBack(
+public sealed class CardFavoriteAutomationIdConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class CardFavoriteAutomationIdConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is MovieCardViewModel card
             ? string.Format(CultureInfo.InvariantCulture, "Favorite-{0}", card.MovieId)
             : "Favorite";
+}
 
-    public object ConvertBack(
+public sealed class StringVisibilityConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is string text && !string.IsNullOrWhiteSpace(text);
 }
 
-public sealed class StringVisibilityConverter : IValueConverter
+public sealed class InverseStringVisibilityConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is string text && !string.IsNullOrWhiteSpace(text);
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is not string text || string.IsNullOrWhiteSpace(text);
 }
 
-public sealed class InverseStringVisibilityConverter : IValueConverter
+public sealed class SelectionBackgroundConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is not string text || string.IsNullOrWhiteSpace(text);
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class SelectionBackgroundConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is true
-            ? ResourceBrush("Accent", Colors.Transparent)
-            : ResourceBrush("Surface", Colors.Transparent);
+            ? GoodMoviesTextFormatter.GetBrush("Accent")
+            : GoodMoviesTextFormatter.GetBrush("Surface");
+}
 
-    public object ConvertBack(
+public sealed class SelectionTextColorConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-
-    private static Brush ResourceBrush(string key, Color fallback)
-    {
-        object? resource = Application.Current?.Resources[key];
-        return resource switch
-        {
-            Brush brush => brush,
-            Color color => new SolidColorBrush(color),
-            _ => new SolidColorBrush(fallback),
-        };
-    }
-}
-
-public sealed class SelectionTextColorConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is true
-            ? Application.Current?.Resources["PageBackground"] as Color ?? Colors.Black
-            : Application.Current?.Resources["White"] as Color ?? Colors.White;
+            ? GoodMoviesTextFormatter.GetColor("PageBackground", Colors.Black)
+            : GoodMoviesTextFormatter.GetColor("White", Colors.White);
+}
 
-    public object ConvertBack(
+public sealed class TrailerStateMessageConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class InverseBooleanConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is not true;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class TrailerStateMessageConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is TrailerPlaybackState state
             ? state switch
             {
@@ -865,18 +706,16 @@ public sealed class TrailerStateMessageConverter : IValueConverter
                 _ => string.Empty,
             }
             : string.Empty;
+}
 
-    public object ConvertBack(
+public sealed class TrailerButtonTextConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class TrailerButtonTextConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is TrailerPlaybackState state
             ? state switch
             {
@@ -885,65 +724,27 @@ public sealed class TrailerButtonTextConverter : IValueConverter
                 _ => AppStrings.PlayTrailer,
             }
             : AppStrings.PlayTrailer;
+}
 
-    public object ConvertBack(
+public sealed class TrailerPlaybackActivityTextConverter : OneWayValueConverter
+{
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
+    ) => value is true ? AppStrings.TrailerPlaying : AppStrings.PlayTrailer;
 }
 
-public sealed class TrailerPlaybackActivityTextConverter : IValueConverter
+public sealed class TokenHighlightBackgroundConverter : OneWayValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true ? AppStrings.TrailerPlaying : AppStrings.PlayTrailer;
-
-    public object ConvertBack(
+    public override object Convert(
         object? value,
         Type targetType,
         object? parameter,
         CultureInfo culture
-    ) => throw new NotSupportedException();
-}
-
-public sealed class TokenHighlightBackgroundConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    ) =>
         value is true
-            ? ResourceBrush("Highlight", Colors.Transparent)
-            : new SolidColorBrush(Colors.Transparent);
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
-
-    private static Brush ResourceBrush(string key, Color fallback)
-    {
-        object? resource = Application.Current?.Resources[key];
-        return resource switch
-        {
-            Brush brush => brush,
-            Color color => new SolidColorBrush(color),
-            _ => new SolidColorBrush(fallback),
-        };
-    }
-}
-
-public sealed class TokenTextColorConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true
-            ? Application.Current?.Resources["PageBackground"] as Color ?? Colors.Black
-            : Application.Current?.Resources["White"] as Color ?? Colors.White;
-
-    public object ConvertBack(
-        object? value,
-        Type targetType,
-        object? parameter,
-        CultureInfo culture
-    ) => throw new NotSupportedException();
+            ? GoodMoviesTextFormatter.GetBrush("Highlight")
+            : GoodMoviesTextFormatter.GetBrush("Transparent");
 }

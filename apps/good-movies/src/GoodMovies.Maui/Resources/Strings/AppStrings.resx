@@ -99,7 +99,6 @@
   <data name="SpeechFailedMessage" xml:space="preserve"><value>The words could not be read aloud. Try again.</value></data>
   <data name="Retry" xml:space="preserve"><value>Try again</value></data>
   <data name="Refreshing" xml:space="preserve"><value>Refreshing saved movies</value></data>
-  <data name="PosterFallbackAccessibility" xml:space="preserve"><value>Poster placeholder for {0}</value></data>
   <data name="ReadAloud" xml:space="preserve"><value>Read it to me</value></data>
   <data name="StopReading" xml:space="preserve"><value>Stop reading</value></data>
   <data name="GoBack" xml:space="preserve"><value>Go back</value></data>
@@ -115,6 +114,4 @@
   <data name="TrailerMissingConfiguration" xml:space="preserve"><value>Movie data is not configured for trailers.</value></data>
   <data name="TrailerLaunchFailed" xml:space="preserve"><value>The trailer could not open. Ask a grown-up to check Screen Time or the internet, then try again.</value></data>
   <data name="NoSynopsis" xml:space="preserve"><value>This movie has no story yet.</value></data>
-  <data name="DetailAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
-  <data name="TodayStatus" xml:space="preserve"><value>Today</value></data>
 </root>

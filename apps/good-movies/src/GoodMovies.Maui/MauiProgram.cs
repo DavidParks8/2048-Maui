@@ -1,16 +1,13 @@
 using GoodMovies.Core;
 using GoodMovies.Infrastructure;
+using GoodMovies.Maui.Controls;
+using GoodMovies.Maui.Platforms.iOS;
 using GoodMovies.Maui.Services;
 using GoodMovies.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Storage;
-#if IOS
-using GoodMovies.Maui.Platforms.iOS;
-using GoodMovies.Maui.Controls;
-#endif
-
 #if DEBUG && GOOD_MOVIES_SAMPLE_DATA
 using GoodMovies.Maui.Development;
 #endif
@@ -23,9 +20,8 @@ public static class MauiProgram
     {
         MauiAppBuilder builder = MauiApp.CreateBuilder();
 
-        builder.UseMauiApp<App>().ConfigureFonts(_ => { });
+        builder.UseMauiApp<App>();
 
-#if IOS
         // The .NET 10 grouped CollectionView handler can index a section after
         // its group is removed. The compatibility handler does not have that
         // crash and is safer for the favorites feed.
@@ -37,23 +33,11 @@ public static class MauiProgram
             >();
             handlers.AddHandler<TrailerPlayerView, TrailerPlayerViewHandler>();
         });
-#endif
 
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
 
-        builder.Services.AddSingleton<
-            IGoodMoviesFilePathProvider,
-            MauiGoodMoviesFilePathProvider
-        >();
-        builder.Services.AddSingleton<IFileSystemPathProvider>(serviceProvider =>
-            serviceProvider.GetRequiredService<IGoodMoviesFilePathProvider>()
-        );
-        builder.Services.AddSingleton<IFilePathProvider>(serviceProvider =>
-            serviceProvider.GetRequiredService<IGoodMoviesFilePathProvider>() as IFilePathProvider
-            ?? throw new InvalidOperationException("The Good Movies file path provider is invalid.")
-        );
         builder.Services.AddGoodMoviesInfrastructure(
             new GoodMoviesInfrastructureOptions
             {
@@ -63,79 +47,15 @@ public static class MauiProgram
             }
         );
         builder.Services.AddSingleton<INetworkStatusService, MauiNetworkStatusService>();
-        builder.Services.AddSingleton<IScreenReaderService, MauiScreenReaderService>();
-        builder.Services.AddGoodMoviesViewModels();
-        builder.Services.AddSingleton<IMovieDetailPageFactory, MauiMovieDetailPageFactory>();
-        builder.Services.TryAddSingleton<
-            IMovieDetailNavigationHost,
-            MauiMovieDetailNavigationHost
-        >();
-        builder.Services.TryAddSingleton<MauiNavigationService>();
-        builder.Services.TryAddSingleton<INavigationService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNavigationService>()
-        );
-        builder.Services.TryAddSingleton<IMovieNavigationService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNavigationService>()
-        );
-#if IOS
-        builder.Services.AddSingleton<IosWordLevelSpeechService>();
-        builder.Services.AddSingleton<IWordLevelSpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<IWordSpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<ISpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<IReadAloudService>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<ITextToSpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<IWordLevelSpeech>(serviceProvider =>
-            serviceProvider.GetRequiredService<IosWordLevelSpeechService>()
-        );
-#else
-        builder.Services.AddSingleton<IWordLevelSpeechService, MauiNoopWordLevelSpeechService>();
-        builder.Services.AddSingleton<IWordSpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<ISpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<IReadAloudService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<ITextToSpeechService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
-        );
-        builder.Services.AddSingleton<IWordLevelSpeech>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
-        );
-#endif
-        builder.Services.AddSingleton<MauiExternalTrailerLauncher>();
-        builder.Services.AddSingleton<IExternalTrailerLauncher>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
+        builder.Services.AddSingleton<MauiScreenReaderService>();
+        builder.Services.AddSingleton<CatalogViewModel>();
+        builder.Services.AddSingleton<MovieDetailPage>();
+        builder.Services.AddSingleton<INavigationService, MauiNavigationService>();
+        builder.Services.AddSingleton<IWordLevelSpeechService, IosWordLevelSpeechService>();
+
+        builder.Services.AddSingleton<MauiTrailerLauncher>();
         builder.Services.AddSingleton<ITrailerLauncher>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
-        builder.Services.AddSingleton<IYouTubeTrailerLauncher>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
-        builder.Services.AddSingleton<IExternalLinkLauncher>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
-        builder.Services.AddSingleton<IExternalLauncher>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
-        builder.Services.AddSingleton<IExternalTrailerService>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
-        );
-        builder.Services.AddSingleton<ITrailerPlaybackController>(serviceProvider =>
-            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
+            serviceProvider.GetRequiredService<MauiTrailerLauncher>()
         );
         builder.Services.AddTransient<AppShell>();
         builder.Services.AddTransient<MainPage>();
@@ -150,14 +70,10 @@ public static class MauiProgram
         builder.Services.Replace(
             ServiceDescriptor.Singleton<IMovieTrailerLookup, SampleTrailerLookup>()
         );
-        builder.Services.Replace(
-            ServiceDescriptor.Singleton<IMovieTrailerService, SampleTrailerLookup>()
-        );
-        builder.Services.Replace(
-            ServiceDescriptor.Singleton<ITrailerLookup, SampleTrailerLookup>()
-        );
 #endif
 
-        return builder.Build();
+        MauiApp app = builder.Build();
+        TrailerPlayerDiagnostics.Configure(app.Services.GetRequiredService<ILoggerFactory>());
+        return app;
     }
 }

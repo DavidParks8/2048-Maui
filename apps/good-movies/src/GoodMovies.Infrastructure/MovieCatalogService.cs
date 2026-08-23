@@ -6,14 +6,12 @@ namespace GoodMovies.Infrastructure;
 /// Coordinates cache-first loading, remote revalidation, and favorite
 /// reconciliation. A failed refresh never replaces a good cache.
 /// </summary>
-public class MovieCatalogService : IMovieCatalogService
+internal sealed class MovieCatalogService : IMovieCatalogService
 {
     private readonly IMovieCatalogProvider _provider;
     private readonly IMovieCatalogCache _cache;
     private readonly IClock _clock;
-    private readonly IGoodMoviesTimeProvider _timeProvider;
-    private readonly ReleaseWindowPolicy _releaseWindowPolicy;
-    private readonly MovieSafetyPolicy _movieSafetyPolicy;
+    private readonly TimeProvider _timeProvider;
     private readonly IFavoritesStore? _favoritesStore;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
@@ -21,18 +19,14 @@ public class MovieCatalogService : IMovieCatalogService
         IMovieCatalogProvider provider,
         IMovieCatalogCache cache,
         IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
+        TimeProvider? timeProvider = null,
         IFavoritesStore? favoritesStore = null
     )
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _clock = clock ?? new SystemClock();
-        _timeProvider = timeProvider ?? new SystemGoodMoviesTimeProvider();
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _favoritesStore = favoritesStore;
     }
 
@@ -44,19 +38,10 @@ public class MovieCatalogService : IMovieCatalogService
         return FromCache(cached);
     }
 
-    public async Task<CatalogResult> GetCatalogAsync(
+    public Task<CatalogResult> GetCatalogAsync(
         bool forceRefresh = false,
         CancellationToken cancellationToken = default
-    )
-    {
-        return await GetCatalogSerializedAsync(forceRefresh, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public Task<CatalogResult> GetAsync(
-        bool forceRefresh = false,
-        CancellationToken cancellationToken = default
-    ) => GetCatalogAsync(forceRefresh, cancellationToken);
+    ) => GetCatalogSerializedAsync(forceRefresh, cancellationToken);
 
     public Task<CatalogResult> RefreshAsync(CancellationToken cancellationToken = default) =>
         GetCatalogSerializedAsync(forceRefresh: true, cancellationToken);
@@ -71,8 +56,9 @@ public class MovieCatalogService : IMovieCatalogService
         {
             // Read after acquiring the gate so a queued refresh never falls back
             // to a snapshot that another refresh has already replaced.
+            DateOnly today = _clock.Today;
             CatalogCacheReadResult cached = await _cache
-                .ReadAsync(_clock.Today, cancellationToken)
+                .ReadAsync(today, cancellationToken)
                 .ConfigureAwait(false);
 
             if (!forceRefresh && cached.Status == CatalogCacheStatus.Available && !cached.IsStale)
@@ -80,7 +66,8 @@ public class MovieCatalogService : IMovieCatalogService
                 return FromCache(cached);
             }
 
-            return await RefreshWithFallbackAsync(cached, cancellationToken).ConfigureAwait(false);
+            return await RefreshWithFallbackAsync(cached, today, cancellationToken)
+                .ConfigureAwait(false);
         }
         finally
         {
@@ -90,15 +77,14 @@ public class MovieCatalogService : IMovieCatalogService
 
     private async Task<CatalogResult> RefreshWithFallbackAsync(
         CatalogCacheReadResult cached,
+        DateOnly today,
         CancellationToken cancellationToken
     )
     {
         CatalogFetchResult fetched;
         try
         {
-            fetched = await _provider
-                .FetchAsync(_clock.Today, cancellationToken)
-                .ConfigureAwait(false);
+            fetched = await _provider.FetchAsync(today, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -122,33 +108,17 @@ public class MovieCatalogService : IMovieCatalogService
             return new CatalogResult(
                 status,
                 cached.HasUsableCache ? cached.Movies : Array.Empty<Movie>(),
-                cached.LastSuccessfulRefresh,
-                cached.Age,
                 cached.IsStale,
                 cached.HasUsableCache,
-                fetched.Error ?? cached.Error,
-                cached.HasUsableCache
-                    ? MovieCatalogSnapshot.Create(
-                        cached.Movies,
-                        _clock.Today,
-                        _releaseWindowPolicy,
-                        _movieSafetyPolicy
-                    )
-                    : null,
-                cached.Status
+                fetched.Error ?? cached.Error
             );
         }
 
-        MovieCatalogSnapshot snapshot = MovieCatalogSnapshot.Create(
-            fetched.Movies,
-            _clock.Today,
-            _releaseWindowPolicy,
-            _movieSafetyPolicy
-        );
+        MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(fetched.Movies, today);
         DateTimeOffset refreshedAt =
             fetched.RefreshedAt is DateTimeOffset value && value != default
                 ? value
-                : _timeProvider.UtcNow;
+                : _timeProvider.GetUtcNow();
         CatalogCacheWriteResult written;
         try
         {
@@ -176,7 +146,7 @@ public class MovieCatalogService : IMovieCatalogService
             // Reconciliation is intentionally tied to a successful provider
             // response, not to a cache write or a transient API failure.
             await _favoritesStore
-                .ReconcileAsync(snapshot.Movies, _clock.Today, cancellationToken)
+                .ReconcileAsync(snapshot.Movies, today, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -185,29 +155,21 @@ public class MovieCatalogService : IMovieCatalogService
             return new CatalogResult(
                 CatalogResultStatus.RefreshSucceededCacheWriteFailed,
                 snapshot.Movies,
-                refreshedAt,
-                TimeSpan.Zero,
                 isStale: false,
                 usedCache: false,
-                error: written.Error,
-                snapshot: snapshot,
-                cacheStatus: CatalogCacheStatus.Available
+                error: written.Error
             );
         }
 
         return new CatalogResult(
             CatalogResultStatus.Refreshed,
             snapshot.Movies,
-            refreshedAt,
-            TimeSpan.Zero,
             isStale: false,
-            usedCache: false,
-            snapshot: snapshot,
-            cacheStatus: CatalogCacheStatus.Available
+            usedCache: false
         );
     }
 
-    private CatalogResult FromCache(CatalogCacheReadResult cached)
+    private static CatalogResult FromCache(CatalogCacheReadResult cached)
     {
         CatalogResultStatus status = cached.Status switch
         {
@@ -222,42 +184,9 @@ public class MovieCatalogService : IMovieCatalogService
         return new CatalogResult(
             status,
             cached.HasUsableCache ? cached.Movies : Array.Empty<Movie>(),
-            cached.LastSuccessfulRefresh,
-            cached.Age,
             cached.IsStale,
             cached.HasUsableCache,
-            cached.Error,
-            cached.HasUsableCache
-                ? MovieCatalogSnapshot.Create(
-                    cached.Movies,
-                    _clock.Today,
-                    _releaseWindowPolicy,
-                    _movieSafetyPolicy
-                )
-                : null,
-            cached.Status
+            cached.Error
         );
     }
-}
-
-public class GoodMoviesCatalogService : MovieCatalogService
-{
-    public GoodMoviesCatalogService(
-        IMovieCatalogProvider provider,
-        IMovieCatalogCache cache,
-        IClock? clock = null,
-        IGoodMoviesTimeProvider? timeProvider = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null,
-        IFavoritesStore? favoritesStore = null
-    )
-        : base(
-            provider,
-            cache,
-            clock,
-            timeProvider,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            favoritesStore
-        ) { }
 }

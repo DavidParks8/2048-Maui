@@ -18,29 +18,12 @@ public partial class WordTokenViewModel : ObservableObject
 
     public string Text { get; }
 
-    public string Word => Text;
-
     public int Start { get; }
 
-    public int CharacterStart => Start;
-
-    public int Offset => Start;
-
-    public int CharacterIndex => Start;
-
     public int Length { get; }
-
-    public int CharacterLength => Length;
 
     public int End => Start + Length;
 
     [ObservableProperty]
     private bool _isHighlighted;
-
-    public bool IsSpoken => IsHighlighted;
-
-    partial void OnIsHighlightedChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsSpoken));
-    }
 }

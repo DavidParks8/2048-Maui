@@ -7,7 +7,7 @@ namespace GoodMovies.Maui;
 public partial class MovieDetailPage : ContentPage, IQueryAttributable
 {
     private readonly CatalogViewModel _catalogViewModel;
-    private readonly MauiExternalTrailerLauncher _trailerLauncher;
+    private readonly MauiTrailerLauncher _trailerLauncher;
     private MovieDetailViewModel? _boundDetail;
     private int? _requestedMovieId;
     private long _ignoreWordTapsUntilMilliseconds;
@@ -17,10 +17,7 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     private bool _layoutInitialized;
     private double _compactPosterWidth;
 
-    public MovieDetailPage(
-        CatalogViewModel catalogViewModel,
-        MauiExternalTrailerLauncher trailerLauncher
-    )
+    public MovieDetailPage(CatalogViewModel catalogViewModel, MauiTrailerLauncher trailerLauncher)
     {
         _catalogViewModel =
             catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
@@ -43,6 +40,10 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         }
 
         BindSelectedDetail();
+        if (_isAppeared)
+        {
+            ScheduleSynopsisWords(_boundDetail);
+        }
     }
 
     protected override void OnAppearing()
@@ -107,10 +108,6 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
         if (detail is not null)
         {
             _ = PrepareTrailerAndSyncPlaybackAsync(detail);
-            if (_isAppeared)
-            {
-                ScheduleSynopsisWords(detail);
-            }
         }
     }
 
@@ -152,7 +149,7 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
             return;
         }
 
-        SyncTrailerPlayback(detail, args.IsPlaying ? args.YouTubeKey : null);
+        SyncTrailerPlayback(detail, args.YouTubeKey);
     }
 
     private static void SyncTrailerPlayback(MovieDetailViewModel detail, string? activeYoutubeKey)

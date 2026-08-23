@@ -14,8 +14,6 @@ public sealed class TrailerPlayerView : View
         set => SetValue(SourceProperty, value);
     }
 
-    public event EventHandler? LoadStarted;
-
     public event EventHandler? LoadSucceeded;
 
     public event EventHandler? LoadFailed;
@@ -25,8 +23,6 @@ public sealed class TrailerPlayerView : View
     public void Reload() => Handler?.Invoke(nameof(Reload));
 
     public void StopPlayback() => Handler?.Invoke(nameof(StopPlayback));
-
-    internal void ReportLoadStarted() => LoadStarted?.Invoke(this, EventArgs.Empty);
 
     internal void ReportLoadSucceeded() => LoadSucceeded?.Invoke(this, EventArgs.Empty);
 

@@ -24,11 +24,11 @@ public sealed class InfrastructureBehaviorTests
             return path switch
             {
                 "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
-                "/3/discover/movie" when isFamilyPass => Json(Discover(1, 1)),
+                "/3/discover/movie" when isFamilyPass => Json(Discover(1)),
                 "/3/discover/movie" => Json(
                     query.Contains("page=1", StringComparison.Ordinal)
-                        ? Discover(1, 2, Candidate(2, "Second", Today.AddDays(2), new[] { 16 }))
-                        : Discover(2, 2, Candidate(1, "First", Today, new[] { 16 }))
+                        ? Discover(2, Candidate(2, "Second", new[] { 16 }))
+                        : Discover(2, Candidate(1, "First", new[] { 16 }))
                 ),
                 "/3/movie/1/release_dates" => Json(UsRelease(Today, "G", 3)),
                 "/3/movie/2/release_dates" => Json(UsRelease(Today.AddDays(2), "PG", 2)),
@@ -36,11 +36,8 @@ public sealed class InfrastructureBehaviorTests
             };
         });
         GoodMoviesInfrastructureOptions options = Options();
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider("do-not-log")
-        );
+        options.Token = "do-not-log";
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -121,12 +118,11 @@ public sealed class InfrastructureBehaviorTests
                 "/3/discover/movie" => Json(
                     Discover(
                         1,
-                        1,
-                        Candidate(1, "Good", Today, Array.Empty<int>()),
-                        Candidate(2, "Pg13", Today, Array.Empty<int>()),
-                        Candidate(3, "Unrated", Today, Array.Empty<int>()),
-                        Candidate(4, "Foreign", Today, Array.Empty<int>()),
-                        Candidate(5, "Streaming", Today, Array.Empty<int>())
+                        Candidate(1, "Good", Array.Empty<int>()),
+                        Candidate(2, "Pg13", Array.Empty<int>()),
+                        Candidate(3, "Unrated", Array.Empty<int>()),
+                        Candidate(4, "Foreign", Array.Empty<int>()),
+                        Candidate(5, "Streaming", Array.Empty<int>())
                     )
                 ),
                 "/3/movie/1/release_dates" => Json(
@@ -147,9 +143,12 @@ public sealed class InfrastructureBehaviorTests
         Assert.AreEqual(1, result.Movies.Count);
         Movie movie = result.Movies[0];
         Assert.AreEqual(1, movie.Id);
-        Assert.AreEqual("G", movie.CertificationCode);
+        Assert.AreEqual("G", movie.Certification?.Code);
         Assert.AreEqual(Today.AddDays(1), movie.UsTheatricalReleaseDate);
-        Assert.AreEqual(TheatricalRelease.LimitedTheatricalType, movie.Release!.ReleaseType);
+        Assert.AreEqual(
+            TheatricalRelease.LimitedTheatricalType,
+            movie.UsTheatricalReleases[0].ReleaseType
+        );
     }
 
     [TestMethod]
@@ -166,19 +165,11 @@ public sealed class InfrastructureBehaviorTests
                 "/3/discover/movie" => Json(
                     request.RequestUri.Query.Contains("page=1", StringComparison.Ordinal)
                         ? Discover(
-                            1,
                             2,
-                            Candidate(2, "Zulu", Today.AddDays(2), new[] { 2, 1 }),
-                            Candidate(
-                                1,
-                                "Alpha",
-                                Today.AddDays(1),
-                                new[] { 1 },
-                                "Overview",
-                                "/poster.jpg"
-                            )
+                            Candidate(2, "Zulu", new[] { 2, 1 }),
+                            Candidate(1, "Alpha", new[] { 1 }, "Overview", "/poster.jpg")
                         )
-                        : Discover(2, 2, Candidate(1, "Duplicate", Today.AddDays(1), new[] { 1 }))
+                        : Discover(2, Candidate(1, "Duplicate", new[] { 1 }))
                 ),
                 "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(1), "G", 3)),
                 "/3/movie/2/release_dates" => Json(UsRelease(Today.AddDays(2), "PG", 3)),
@@ -194,7 +185,10 @@ public sealed class InfrastructureBehaviorTests
         Assert.AreEqual(1, result.Movies[0].Id);
         Assert.AreEqual("Overview", result.Movies[0].Overview);
         Assert.AreEqual("/poster.jpg", result.Movies[0].PosterPath);
-        Assert.AreEqual("https://image.tmdb.org/t/p/w500/poster.jpg", result.Movies[0].PosterUri);
+        Assert.AreEqual(
+            "https://image.tmdb.org/t/p/w500/poster.jpg",
+            result.Movies[0].PosterUri?.AbsoluteUri
+        );
         CollectionAssert.AreEqual(new[] { 1 }, result.Movies[0].GenreIds.ToArray());
         Assert.AreEqual("Action", result.Movies[0].Genres[0].Name);
         Assert.AreEqual(
@@ -212,11 +206,7 @@ public sealed class InfrastructureBehaviorTests
         using BoundedVerificationHandler handler = new(concurrencyCap);
         GoodMoviesInfrastructureOptions options = Options();
         options.MaxConcurrentRequests = concurrencyCap;
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         Task<CatalogFetchResult> operation = client.FetchAsync(Today);
@@ -243,7 +233,7 @@ public sealed class InfrastructureBehaviorTests
             if (request.RequestUri.AbsolutePath == "/3/discover/movie")
             {
                 return request.RequestUri.Query.Contains("page=1", StringComparison.Ordinal)
-                    ? Json(Discover(1, 2, Candidate(1, "Good", Today)))
+                    ? Json(Discover(2, Candidate(1, "Good")))
                     : ServerError();
             }
 
@@ -262,7 +252,7 @@ public sealed class InfrastructureBehaviorTests
 
             if (request.RequestUri.AbsolutePath == "/3/discover/movie")
             {
-                return Json(Discover(1, 1, Candidate(1, "Good", Today)));
+                return Json(Discover(1, Candidate(1, "Good")));
             }
 
             return ServerError();
@@ -288,15 +278,11 @@ public sealed class InfrastructureBehaviorTests
                 return Json(UsRelease(Today, "G", 3));
             }
 
-            return Json(Discover(1, 21, Candidate(1, "Good", Today)));
+            return Json(Discover(21, Candidate(1, "Good")));
         });
         GoodMoviesInfrastructureOptions options = Options();
         options.MaxPages = 20;
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -327,22 +313,24 @@ public sealed class InfrastructureBehaviorTests
                 "/3/discover/movie" => Json(
                     Discover(
                         1,
-                        1,
-                        Candidate(1, "Not Rated Yet Family", Today.AddDays(200), new[] { 16 }),
-                        Candidate(2, "Not Rated Yet Thriller", Today.AddDays(200), new[] { 53 })
+                        Candidate(1, "Not Rated Yet Family", new[] { 16 }),
+                        Candidate(2, "Not Rated Yet Thriller", new[] { 53 }),
+                        Candidate(
+                            3,
+                            "Not Rated Yet Foreign Cartoon",
+                            new[] { 16 },
+                            originalLanguage: "fr"
+                        )
                     )
                 ),
                 "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
                 "/3/movie/2/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
+                "/3/movie/3/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
                 _ => NotFound(),
             };
         });
         GoodMoviesInfrastructureOptions options = Options();
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -368,7 +356,7 @@ public sealed class InfrastructureBehaviorTests
             {
                 "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
                 "/3/discover/movie" => Json(
-                    Discover(1, 1, Candidate(1, "Teen Cartoon", Today.AddDays(200), new[] { 16 }))
+                    Discover(1, Candidate(1, "Teen Cartoon", new[] { 16 }))
                 ),
                 "/3/movie/1/release_dates" => Json(
                     $$"""{"results":[{"iso_3166_1":"US","release_dates":[{"certification":"","release_date":"{{Today.AddDays(200):yyyy-MM-dd}}T00:00:00Z","type":3},{"certification":"PG-13","release_date":"{{Today.AddDays(201):yyyy-MM-dd}}T00:00:00Z","type":3}]}]}"""
@@ -377,11 +365,7 @@ public sealed class InfrastructureBehaviorTests
             };
         });
         GoodMoviesInfrastructureOptions options = Options();
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -404,21 +388,8 @@ public sealed class InfrastructureBehaviorTests
                 "/3/discover/movie" => Json(
                     Discover(
                         1,
-                        1,
-                        Candidate(
-                            1,
-                            "Tiny Festival Short",
-                            Today.AddDays(200),
-                            new[] { 16 },
-                            popularity: 0.4
-                        ),
-                        Candidate(
-                            2,
-                            "Real Release",
-                            Today.AddDays(200),
-                            new[] { 16 },
-                            popularity: 7.9
-                        )
+                        Candidate(1, "Tiny Festival Short", new[] { 16 }, popularity: 0.4),
+                        Candidate(2, "Real Release", new[] { 16 }, popularity: 7.9)
                     )
                 ),
                 "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(200), "", 3)),
@@ -427,11 +398,7 @@ public sealed class InfrastructureBehaviorTests
             };
         });
         GoodMoviesInfrastructureOptions options = Options();
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -453,18 +420,14 @@ public sealed class InfrastructureBehaviorTests
             {
                 "/3/genre/movie/list" => Json("""{"genres":[]}"""),
                 "/3/discover/movie" => Json(
-                    Discover(1, 1, Candidate(1, "Small But Rated", Today, popularity: 0.01))
+                    Discover(1, Candidate(1, "Small But Rated", popularity: 0.01))
                 ),
                 "/3/movie/1/release_dates" => Json(UsRelease(Today, "G", 3)),
                 _ => NotFound(),
             };
         });
         GoodMoviesInfrastructureOptions options = Options();
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(options.Token)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult result = await client.FetchAsync(Today);
@@ -505,7 +468,7 @@ public sealed class InfrastructureBehaviorTests
 
             if (request.RequestUri.AbsolutePath == "/3/discover/movie")
             {
-                return Json(Discover(1, 1, Candidate(1, "Good", Today)));
+                return Json(Discover(1, Candidate(1, "Good")));
             }
 
             if (request.RequestUri.AbsolutePath == "/3/movie/1/release_dates")
@@ -541,20 +504,19 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public void PosterUrlBuilder_ReturnsNullForNoPath_AndUsesW500()
+    public void PosterUrlBuilder_ReturnsNullForUnsafePaths_AndUsesConfiguredSize()
     {
-        Assert.IsNull(PosterUrlBuilder.Build(null));
-        Assert.IsNull(PosterUrlBuilder.Build(" "));
+        PosterUrlBuilder builder = new(Options());
+
+        Assert.IsNull(builder.Build(null));
+        Assert.IsNull(builder.Build(" "));
         Assert.AreEqual(
             "https://image.tmdb.org/t/p/w500/abc.jpg",
-            PosterUrlBuilder.Build("/abc.jpg")
+            builder.Build("/abc.jpg")?.AbsoluteUri
         );
-        Assert.IsNull(PosterUrlBuilder.Build("http://image.tmdb.org/t/p/w500/abc.jpg"));
-        Assert.IsNull(PosterUrlBuilder.Build("https://example.com/abc.jpg"));
-        Assert.IsNull(PosterUrlBuilder.Build("../abc.jpg"));
-        Assert.Throws<ArgumentException>(() =>
-            new PosterUrlBuilder(new Uri("http://image.tmdb.org/t/p/w500"))
-        );
+        Assert.IsNull(builder.Build("http://image.tmdb.org/t/p/w500/abc.jpg"));
+        Assert.IsNull(builder.Build("https://example.com/abc.jpg"));
+        Assert.IsNull(builder.Build("../abc.jpg"));
     }
 
     [TestMethod]
@@ -563,13 +525,12 @@ public sealed class InfrastructureBehaviorTests
         using TestDirectory directory = new();
         DateOnly today = Today;
         Movie cachedMovie = Movie(1, "Cached", today);
-        JsonMovieCatalogCache cache = new(
+        JsonMovieCatalogCache cache = CreateCache(
             Path.Combine(directory.Path, "catalog.json"),
-            new FixedClock(today),
             new FixedTimeProvider(new DateTimeOffset(2026, 8, 21, 12, 0, 0, TimeSpan.Zero))
         );
         CatalogCacheWriteResult write = await cache.WriteAsync(
-            MovieCatalogSnapshot.Create(new[] { cachedMovie }, today),
+            new MovieCatalogSnapshot(new[] { cachedMovie }, today),
             new DateTimeOffset(2026, 8, 21, 12, 0, 0, TimeSpan.Zero)
         );
         Assert.IsTrue(write.Succeeded);
@@ -591,10 +552,7 @@ public sealed class InfrastructureBehaviorTests
     public async Task CatalogService_SerializesRefreshesAndNewestWriteWins()
     {
         using TestDirectory directory = new();
-        JsonMovieCatalogCache cache = new(
-            Path.Combine(directory.Path, "catalog.json"),
-            new FixedClock(Today)
-        );
+        JsonMovieCatalogCache cache = CreateCache(Path.Combine(directory.Path, "catalog.json"));
         TaskCompletionSource<CatalogFetchResult> first = new(
             TaskCreationOptions.RunContinuationsAsynchronously
         );
@@ -635,26 +593,24 @@ public sealed class InfrastructureBehaviorTests
         using TestDirectory directory = new();
         DateOnly today = Today;
         MutableTimeProvider time = new(new DateTimeOffset(2026, 8, 21, 12, 0, 0, TimeSpan.Zero));
-        JsonMovieCatalogCache cache = new(
+        JsonMovieCatalogCache cache = CreateCache(
             Path.Combine(directory.Path, "catalog.json"),
-            new FixedClock(today),
             time
         );
         Movie original = new(
             8,
             "Animation",
             "PG",
-            new TheatricalRelease(today, "US", 3),
+            new[] { new TheatricalRelease(today, "US", 3) },
             new[] { new MovieGenre(16, "Animation") },
-            new[] { new MovieTrailer("key", "name", "YouTube", "Trailer", true, "en") },
             "A synopsis",
             "/poster.jpg",
-            "https://image.tmdb.org/t/p/w500/poster.jpg",
+            new Uri("https://image.tmdb.org/t/p/w500/poster.jpg"),
             "en",
             new[] { 16 }
         );
 
-        await cache.WriteAsync(MovieCatalogSnapshot.Create(new[] { original }, today), time.UtcNow);
+        await cache.WriteAsync(new MovieCatalogSnapshot(new[] { original }, today), time.UtcNow);
         string json = await File.ReadAllTextAsync(Path.Combine(directory.Path, "catalog.json"));
         Assert.IsNotNull(GoodMoviesJsonContext.Default.CatalogCacheDocument);
         Assert.IsTrue(json.Contains("refreshedAt", StringComparison.Ordinal));
@@ -666,7 +622,6 @@ public sealed class InfrastructureBehaviorTests
         Assert.AreEqual(1, stale.Movies.Count);
         Assert.AreEqual("A synopsis", stale.Movies[0].Overview);
         Assert.AreEqual("Animation", stale.Movies[0].Genres[0].Name);
-        Assert.AreEqual("key", stale.Movies[0].Trailers[0].Key);
 
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "catalog.json"), "{");
         CatalogCacheReadResult corrupt = await cache.ReadAsync(today);
@@ -693,7 +648,7 @@ public sealed class InfrastructureBehaviorTests
             }
             """
         );
-        JsonMovieCatalogCache cache = new(path, new FixedClock(Today));
+        JsonMovieCatalogCache cache = CreateCache(path);
 
         CatalogCacheReadResult result = await cache.ReadAsync(Today);
 
@@ -707,21 +662,19 @@ public sealed class InfrastructureBehaviorTests
     {
         using TestDirectory directory = new();
         string path = Path.Combine(directory.Path, "catalog.json");
-        FixedClock clock = new(Today);
-        JsonMovieCatalogCache goodCache = new(path, clock);
+        JsonMovieCatalogCache goodCache = CreateCache(path);
         await goodCache.WriteAsync(
-            MovieCatalogSnapshot.Create(new[] { Movie(1, "Good", Today) }, Today),
+            new MovieCatalogSnapshot(new[] { Movie(1, "Good", Today) }, Today),
             DateTimeOffset.UtcNow
         );
         string prior = await File.ReadAllTextAsync(path);
-        JsonMovieCatalogCache failingCache = new(
+        JsonMovieCatalogCache failingCache = CreateCache(
             path,
-            clock,
             atomicFileWriter: new ThrowingAtomicFileWriter()
         );
 
         CatalogCacheWriteResult failed = await failingCache.WriteAsync(
-            MovieCatalogSnapshot.Create(new[] { Movie(2, "New", Today) }, Today),
+            new MovieCatalogSnapshot(new[] { Movie(2, "New", Today) }, Today),
             DateTimeOffset.UtcNow
         );
 
@@ -734,7 +687,7 @@ public sealed class InfrastructureBehaviorTests
     {
         using TestDirectory directory = new();
         string path = Path.Combine(directory.Path, "favorites.json");
-        JsonFavoritesStore store = new(path, new FixedClock(Today));
+        JsonFavoritesStore store = CreateFavoritesStore(path);
         FavoriteEntry retained = new(1, Today.AddDays(-13));
         FavoriteEntry expired = new(2, Today.AddDays(-14));
 
@@ -763,7 +716,7 @@ public sealed class InfrastructureBehaviorTests
         Assert.AreEqual(1, reconciled.Entries.Count);
         Assert.AreEqual(
             matchingWithNewDate.UsTheatricalReleaseDate,
-            reconciled.Entries[0].ReleaseDate
+            reconciled.Entries[0].UsTheatricalReleaseDate
         );
     }
 
@@ -771,9 +724,8 @@ public sealed class InfrastructureBehaviorTests
     public async Task FavoritesStore_GuardsConcurrentToggles()
     {
         using TestDirectory directory = new();
-        JsonFavoritesStore store = new(
-            Path.Combine(directory.Path, "favorites.json"),
-            new FixedClock(Today)
+        JsonFavoritesStore store = CreateFavoritesStore(
+            Path.Combine(directory.Path, "favorites.json")
         );
         Task<FavoriteToggleResult>[] operations = Enumerable
             .Range(1, 12)
@@ -792,11 +744,7 @@ public sealed class InfrastructureBehaviorTests
         using FakeHandler handler = new(_ => throw new AssertFailedException("HTTP was called"));
         GoodMoviesInfrastructureOptions options = Options();
         options.Token = " ";
-        using HttpClient httpClient = CreateHttpClient(
-            handler,
-            options,
-            new StaticGoodMoviesTokenProvider(null)
-        );
+        using HttpClient httpClient = CreateHttpClient(handler, options);
         TmdbMovieCatalogClient client = new(httpClient, options);
 
         CatalogFetchResult catalog = await client.FetchAsync(Today);
@@ -808,13 +756,16 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public async Task InvalidToken_ReturnsConfigurationResultWithoutHttpCallsOrTokenLogs()
+    [DataRow("secret-token with-space")]
+    [DataRow("secret,token")]
+    public async Task InvalidToken_ReturnsConfigurationResultWithoutHttpCallsOrTokenLogs(
+        string token
+    )
     {
-        const string token = "secret-token with-space";
         using FakeHandler handler = new(_ => throw new AssertFailedException("HTTP was called"));
         GoodMoviesInfrastructureOptions options = Options();
-        TrackingTokenProvider tokenProvider = new(token);
-        TmdbBearerTokenHandler bearerHandler = new(tokenProvider) { InnerHandler = handler };
+        options.Token = token;
+        TmdbBearerTokenHandler bearerHandler = new(options) { InnerHandler = handler };
         using HttpClient httpClient = new(bearerHandler) { BaseAddress = options.ApiBaseAddress };
         ListLogger<TmdbMovieCatalogClient> logger = new();
         TmdbMovieCatalogClient client = new(httpClient, options, logger: logger);
@@ -824,7 +775,6 @@ public sealed class InfrastructureBehaviorTests
 
         Assert.AreEqual(CatalogFetchStatus.MissingConfiguration, catalog.Status);
         Assert.AreEqual(TrailerLookupStatus.MissingConfiguration, trailer.Status);
-        Assert.AreEqual(2, tokenProvider.CallCount);
         Assert.AreEqual(0, handler.Requests.Count);
         Assert.IsFalse(catalog.Error!.ToString()!.Contains(token, StringComparison.Ordinal));
         Assert.IsFalse(trailer.Error!.ToString()!.Contains(token, StringComparison.Ordinal));
@@ -834,46 +784,53 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public void Options_RejectsHttpApiAddressBeforeTokenUse()
+    public void Options_RejectsInvalidUnratedPopularity()
+    {
+        foreach (double value in new[] { -1, double.NaN, double.PositiveInfinity })
+        {
+            GoodMoviesInfrastructureOptions options = Options();
+            options.MinimumUnratedPopularity = value;
+
+            Assert.Throws<GoodMoviesConfigurationException>(() => options.Validate());
+        }
+    }
+
+    [TestMethod]
+    public void Options_RejectsHttpApiAddress()
     {
         GoodMoviesInfrastructureOptions options = Options();
         options.ApiBaseAddress = new Uri("http://tmdb.test/");
-        TrackingTokenProvider tokenProvider = new("secret");
         using FakeHandler handler = new(_ => throw new AssertFailedException("HTTP was called"));
-        using HttpClient httpClient = CreateHttpClient(handler, options, tokenProvider);
+        using HttpClient httpClient = CreateHttpClient(handler, options);
 
         Assert.Throws<GoodMoviesConfigurationException>(() => options.Validate());
         Assert.Throws<GoodMoviesConfigurationException>(() =>
             new TmdbMovieCatalogClient(httpClient, options)
         );
-        Assert.AreEqual(0, tokenProvider.CallCount);
         Assert.AreEqual(0, handler.Requests.Count);
     }
 
     [TestMethod]
-    public void Options_RejectsHttpImageAddressBeforeTokenUse()
+    public void Options_RejectsHttpImageAddress()
     {
         GoodMoviesInfrastructureOptions options = Options();
         options.ImageBaseAddress = new Uri("http://images.test/t/p/w500");
-        TrackingTokenProvider tokenProvider = new("secret");
         using FakeHandler handler = new(_ => throw new AssertFailedException("HTTP was called"));
-        using HttpClient httpClient = CreateHttpClient(handler, options, tokenProvider);
+        using HttpClient httpClient = CreateHttpClient(handler, options);
 
         Assert.Throws<GoodMoviesConfigurationException>(() => options.Validate());
         Assert.Throws<GoodMoviesConfigurationException>(() =>
             new TmdbMovieCatalogClient(httpClient, options)
         );
-        Assert.AreEqual(0, tokenProvider.CallCount);
         Assert.AreEqual(0, handler.Requests.Count);
     }
 
     [TestMethod]
-    public void TmdbClient_RejectsHttpClientBaseAddressBeforeTokenUse()
+    public void TmdbClient_RejectsHttpClientBaseAddress()
     {
         GoodMoviesInfrastructureOptions options = Options();
-        TrackingTokenProvider tokenProvider = new("secret");
         using FakeHandler handler = new(_ => throw new AssertFailedException("HTTP was called"));
-        TmdbBearerTokenHandler bearerHandler = new(tokenProvider) { InnerHandler = handler };
+        TmdbBearerTokenHandler bearerHandler = new(options) { InnerHandler = handler };
         using HttpClient httpClient = new(bearerHandler)
         {
             BaseAddress = new Uri("http://override.test/"),
@@ -882,19 +839,7 @@ public sealed class InfrastructureBehaviorTests
         Assert.Throws<GoodMoviesConfigurationException>(() =>
             new TmdbMovieCatalogClient(httpClient, options)
         );
-        Assert.AreEqual(0, tokenProvider.CallCount);
         Assert.AreEqual(0, handler.Requests.Count);
-    }
-
-    [TestMethod]
-    public async Task OptionsTokenProvider_UsesConfiguredTokenAsTheInfrastructureSeam()
-    {
-        GoodMoviesInfrastructureOptions options = Options();
-        OptionsGoodMoviesTokenProvider provider = new(options);
-
-        string? token = await provider.GetTokenAsync();
-
-        Assert.AreEqual(options.Token, token);
     }
 
     [TestMethod]
@@ -902,7 +847,9 @@ public sealed class InfrastructureBehaviorTests
     {
         using TestDirectory directory = new();
         ServiceCollection services = new();
-        services.AddGoodMoviesInfrastructure(options => options.StorageDirectory = directory.Path);
+        services.AddGoodMoviesInfrastructure(
+            new GoodMoviesInfrastructureOptions { StorageDirectory = directory.Path }
+        );
 
         using ServiceProvider provider = services.BuildServiceProvider();
 
@@ -912,22 +859,42 @@ public sealed class InfrastructureBehaviorTests
         Assert.IsNotNull(provider.GetRequiredService<IMovieTrailerLookup>());
     }
 
+    private static JsonMovieCatalogCache CreateCache(
+        string filePath,
+        TimeProvider? timeProvider = null,
+        IAtomicFileWriter? atomicFileWriter = null
+    )
+    {
+        GoodMoviesInfrastructureOptions options = new()
+        {
+            CatalogCacheFileName = Path.GetFileName(filePath),
+        };
+        return new JsonMovieCatalogCache(
+            new FileSystemPathProvider(Path.GetDirectoryName(filePath)!),
+            options,
+            timeProvider,
+            atomicFileWriter
+        );
+    }
+
+    private static JsonFavoritesStore CreateFavoritesStore(string filePath) =>
+        new(
+            new FileSystemPathProvider(Path.GetDirectoryName(filePath)!),
+            new GoodMoviesInfrastructureOptions { FavoritesFileName = Path.GetFileName(filePath) }
+        );
+
     private static TmdbMovieCatalogClient CreateClient(HttpMessageHandler handler)
     {
         GoodMoviesInfrastructureOptions options = Options();
-        return new TmdbMovieCatalogClient(
-            CreateHttpClient(handler, options, new StaticGoodMoviesTokenProvider(options.Token)),
-            options
-        );
+        return new TmdbMovieCatalogClient(CreateHttpClient(handler, options), options);
     }
 
     private static HttpClient CreateHttpClient(
         HttpMessageHandler handler,
-        GoodMoviesInfrastructureOptions options,
-        IGoodMoviesTokenProvider tokenProvider
+        GoodMoviesInfrastructureOptions options
     )
     {
-        TmdbBearerTokenHandler authentication = new(tokenProvider) { InnerHandler = handler };
+        TmdbBearerTokenHandler authentication = new(options) { InnerHandler = handler };
         return new HttpClient(authentication) { BaseAddress = options.ApiBaseAddress };
     }
 
@@ -937,26 +904,28 @@ public sealed class InfrastructureBehaviorTests
     private static TmdbDiscoverMovie Candidate(
         int id,
         string title,
-        DateOnly date,
         int[]? genreIds = null,
         string? overview = null,
         string? posterPath = null,
-        double popularity = 10
+        double popularity = 10,
+        string originalLanguage = "en"
     ) =>
         new()
         {
             Id = id,
             Title = title,
-            ReleaseDate = date.ToString("yyyy-MM-dd"),
             GenreIds = genreIds?.ToList() ?? new List<int>(),
             Overview = overview,
             PosterPath = posterPath,
-            OriginalLanguage = "en",
+            OriginalLanguage = originalLanguage,
             Popularity = popularity,
         };
 
-    private static string Discover(int page, int totalPages, params TmdbDiscoverMovie[] movies) =>
-        $$"""{"page":{{page}},"total_pages":{{totalPages}},"total_results":{{movies.Length}},"results":{{System.Text.Json.JsonSerializer.Serialize(movies.ToList(), GoodMoviesJsonContext.Default.ListTmdbDiscoverMovie)}}}""";
+    private static string Discover(int totalPages, params TmdbDiscoverMovie[] movies) =>
+        System.Text.Json.JsonSerializer.Serialize(
+            new TmdbDiscoverResponse { TotalPages = totalPages, Results = movies.ToList() },
+            GoodMoviesJsonContext.Default.TmdbDiscoverResponse
+        );
 
     private static string UsRelease(
         DateOnly date,
@@ -981,7 +950,7 @@ public sealed class InfrastructureBehaviorTests
             id,
             title,
             "G",
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType)
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) }
         );
 
     private sealed class FakeHandler : HttpMessageHandler
@@ -1060,11 +1029,10 @@ public sealed class InfrastructureBehaviorTests
                 return Json(
                     Discover(
                         1,
-                        1,
-                        Candidate(1, "One", Today),
-                        Candidate(2, "Two", Today.AddDays(1)),
-                        Candidate(3, "Three", Today.AddDays(2)),
-                        Candidate(4, "Four", Today.AddDays(3))
+                        Candidate(1, "One"),
+                        Candidate(2, "Two"),
+                        Candidate(3, "Three"),
+                        Candidate(4, "Four")
                     )
                 );
             }
@@ -1115,26 +1083,6 @@ public sealed class InfrastructureBehaviorTests
         }
     }
 
-    private sealed class TrackingTokenProvider : IGoodMoviesTokenProvider
-    {
-        private readonly string? _token;
-        private int _callCount;
-
-        public TrackingTokenProvider(string? token)
-        {
-            _token = token;
-        }
-
-        public int CallCount => Volatile.Read(ref _callCount);
-
-        public ValueTask<string?> GetTokenAsync(CancellationToken cancellationToken = default)
-        {
-            Interlocked.Increment(ref _callCount);
-            cancellationToken.ThrowIfCancellationRequested();
-            return ValueTask.FromResult(_token);
-        }
-    }
-
     private sealed class ListLogger<T> : ILogger<T>
     {
         public List<string> Messages { get; } = new();
@@ -1166,7 +1114,7 @@ public sealed class InfrastructureBehaviorTests
         public DateOnly Today { get; }
     }
 
-    private sealed class FixedTimeProvider : IGoodMoviesTimeProvider
+    private sealed class FixedTimeProvider : TimeProvider
     {
         public FixedTimeProvider(DateTimeOffset utcNow)
         {
@@ -1174,9 +1122,11 @@ public sealed class InfrastructureBehaviorTests
         }
 
         public DateTimeOffset UtcNow { get; }
+
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
-    private sealed class MutableTimeProvider : IGoodMoviesTimeProvider
+    private sealed class MutableTimeProvider : TimeProvider
     {
         public MutableTimeProvider(DateTimeOffset utcNow)
         {
@@ -1184,6 +1134,8 @@ public sealed class InfrastructureBehaviorTests
         }
 
         public DateTimeOffset UtcNow { get; set; }
+
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
     private sealed class ThrowingAtomicFileWriter : IAtomicFileWriter

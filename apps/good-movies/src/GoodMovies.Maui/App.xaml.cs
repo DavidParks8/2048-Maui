@@ -1,4 +1,3 @@
-using GoodMovies.Maui.Services;
 using GoodMovies.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -8,19 +7,18 @@ public partial class App : Application
 {
     private readonly Func<AppShell> _appShellFactory;
     private readonly CatalogViewModel _catalogViewModel;
-    private readonly IWordLevelSpeechService? _speechService;
-    private readonly ITrailerPlaybackController? _trailerPlaybackController;
+    private readonly IWordLevelSpeechService _speechService;
     private readonly ILogger<App> _logger;
     private readonly object _dateBoundarySync = new();
     private readonly SemaphoreSlim _catalogUpdateGate = new(1, 1);
+    private readonly Dictionary<Window, AppShell> _windowShells = new();
     private CancellationTokenSource? _dateBoundaryCancellation;
 
     public App(
         Func<AppShell> appShellFactory,
         CatalogViewModel catalogViewModel,
         ILogger<App> logger,
-        IWordLevelSpeechService? speechService = null,
-        ITrailerPlaybackController? trailerPlaybackController = null
+        IWordLevelSpeechService speechService
     )
     {
         InitializeComponent();
@@ -29,13 +27,14 @@ public partial class App : Application
         _catalogViewModel =
             catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _speechService = speechService;
-        _trailerPlaybackController = trailerPlaybackController;
+        _speechService = speechService ?? throw new ArgumentNullException(nameof(speechService));
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        Window window = new(_appShellFactory());
+        AppShell shell = _appShellFactory();
+        Window window = new(shell);
+        _windowShells.Add(window, shell);
         window.Activated += OnWindowActivated;
         window.Deactivated += OnWindowDeactivated;
         window.Resumed += OnWindowResumed;
@@ -52,7 +51,7 @@ public partial class App : Application
 
     protected override void OnResume()
     {
-        StartForegroundWork(Windows.FirstOrDefault());
+        StartForegroundWork(Windows.Count == 0 ? null : Windows[0]);
     }
 
     private void OnWindowActivated(object? sender, EventArgs e) => StartForegroundWork(sender);
@@ -73,17 +72,24 @@ public partial class App : Application
 
     private void OnWindowDestroying(object? sender, EventArgs e)
     {
-        StopMedia();
+        if (sender is Window window)
+        {
+            window.Activated -= OnWindowActivated;
+            window.Deactivated -= OnWindowDeactivated;
+            window.Resumed -= OnWindowResumed;
+            window.Stopped -= OnWindowStopped;
+            window.Destroying -= OnWindowDestroying;
+            if (_windowShells.Remove(window, out AppShell? shell))
+            {
+                shell.TearDown();
+            }
+        }
+
+        StopSpeech();
         StopDateBoundaryWatch();
     }
 
-    internal void StopSpeech() => _speechService?.Stop();
-
-    internal void StopMedia()
-    {
-        StopSpeech();
-        _trailerPlaybackController?.Stop();
-    }
+    internal void StopSpeech() => _speechService.StopSpeaking();
 
     private void StartForegroundWork(object? sender)
     {

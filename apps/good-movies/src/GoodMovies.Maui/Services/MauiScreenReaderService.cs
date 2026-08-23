@@ -2,13 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GoodMovies.Maui.Services;
 
-public interface IScreenReaderService
-{
-    void Announce(string message);
-}
-
 public sealed partial class MauiScreenReaderService(ILogger<MauiScreenReaderService> logger)
-    : IScreenReaderService
 {
     public void Announce(string message)
     {

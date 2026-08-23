@@ -8,27 +8,22 @@ public sealed class TrailerSelectionPolicyTests
     [TestMethod]
     public void Select_UsesOfficialEnglishYoutubeTrailerFirst()
     {
-        MovieTrailer officialTrailer = Trailer("official trailer", "Trailer", true, "en-US");
-        MovieTrailer regularTrailer = Trailer("regular trailer", "Trailer", false, "en");
-        MovieTrailer officialTeaser = Trailer("official teaser", "Teaser", true, "en");
+        MovieTrailer officialTrailer = Trailer("Trailer", true, "en-US");
+        MovieTrailer regularTrailer = Trailer("Trailer", false, "en");
+        MovieTrailer officialTeaser = Trailer("Teaser", true, "en");
 
         MovieTrailer? selected = TrailerSelectionPolicy.Select(
             new[] { officialTeaser, regularTrailer, officialTrailer }
         );
-        MovieTrailer? selectedThroughPolicy = new TrailerSelectionPolicy().Select(
-            new[] { officialTeaser, regularTrailer, officialTrailer }
-        );
-
         Assert.AreSame(officialTrailer, selected);
-        Assert.AreSame(officialTrailer, selectedThroughPolicy);
     }
 
     [TestMethod]
     public void Select_UsesOfficialTeaserBeforeUnofficialTrailer()
     {
-        MovieTrailer regularTrailer = Trailer("regular trailer", "Trailer", false, "en-GB");
-        MovieTrailer officialTeaser = Trailer("official teaser", "Teaser", true, "en");
-        MovieTrailer regularTeaser = Trailer("regular teaser", "Teaser", false, "en");
+        MovieTrailer regularTrailer = Trailer("Trailer", false, "en-GB");
+        MovieTrailer officialTeaser = Trailer("Teaser", true, "en");
+        MovieTrailer regularTeaser = Trailer("Teaser", false, "en");
 
         Assert.AreSame(
             officialTeaser,
@@ -39,8 +34,8 @@ public sealed class TrailerSelectionPolicyTests
     [TestMethod]
     public void Select_UsesOfficialTeaserAndRejectsUnofficialTeaser()
     {
-        MovieTrailer officialTeaser = Trailer("official teaser", "Teaser", true, "en");
-        MovieTrailer regularTeaser = Trailer("regular teaser", "Teaser", false, "en-US");
+        MovieTrailer officialTeaser = Trailer("Teaser", true, "en");
+        MovieTrailer regularTeaser = Trailer("Teaser", false, "en-US");
 
         Assert.AreSame(
             officialTeaser,
@@ -53,9 +48,9 @@ public sealed class TrailerSelectionPolicyTests
     public void Select_RejectsNonYoutubeNonEnglishAndUnsupportedTypes()
     {
         MovieTrailer vimeoTrailer = new("vimeo", "Vimeo", "Trailer", true, "en");
-        MovieTrailer spanishTrailer = Trailer("spanish", "Trailer", true, "es");
-        MovieTrailer feature = Trailer("feature", "Feature", true, "en");
-        MovieTrailer noLanguage = Trailer("no-language", "Trailer", true, null);
+        MovieTrailer spanishTrailer = Trailer("Trailer", true, "es");
+        MovieTrailer feature = Trailer("Feature", true, "en");
+        MovieTrailer noLanguage = Trailer("Trailer", true, null);
 
         Assert.IsNull(
             TrailerSelectionPolicy.Select(
@@ -67,7 +62,7 @@ public sealed class TrailerSelectionPolicyTests
     [TestMethod]
     public void Select_RejectsOfficialTrailerWithInvalidYouTubeKey()
     {
-        MovieTrailer invalid = new("short", "Trailer", "YouTube", "Trailer", true, "en");
+        MovieTrailer invalid = new("short", "YouTube", "Trailer", true, "en");
 
         Assert.IsNull(TrailerSelectionPolicy.Select(new[] { invalid }));
     }
@@ -75,20 +70,12 @@ public sealed class TrailerSelectionPolicyTests
     [TestMethod]
     public void Select_IsCaseInsensitiveAndPreservesEnglishIsoPrefix()
     {
-        MovieTrailer trailer = new(
-            "Abc_123-def",
-            "name",
-            " youtube ",
-            " trailer ",
-            true,
-            " EN-us "
-        );
+        MovieTrailer trailer = new("Abc_123-def", " youtube ", " trailer ", true, " EN-us ");
 
         Assert.IsTrue(trailer.IsYouTube);
-        Assert.IsTrue(trailer.IsEnglish);
         Assert.AreSame(trailer, TrailerSelectionPolicy.Select(new[] { trailer }));
     }
 
-    private static MovieTrailer Trailer(string key, string type, bool official, string? language) =>
-        new("Abc_123-def", key, "YouTube", type, official, language);
+    private static MovieTrailer Trailer(string type, bool official, string? language) =>
+        new("Abc_123-def", "YouTube", type, official, language);
 }

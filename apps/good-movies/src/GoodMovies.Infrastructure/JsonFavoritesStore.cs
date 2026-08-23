@@ -4,7 +4,7 @@ using GoodMovies.Core;
 
 namespace GoodMovies.Infrastructure;
 
-public sealed class FavoritesStoreException : IOException
+internal sealed class FavoritesStoreException : IOException
 {
     public FavoritesStoreException(string message)
         : base(message) { }
@@ -14,105 +14,30 @@ public sealed class FavoritesStoreException : IOException
 }
 
 /// <summary>
-/// Atomic, process-safe favorites storage. Only the ID and verified US release
+/// Favorites storage coordinated across in-process instances and written atomically. Only the ID and verified US release
 /// date are persisted, which keeps offline pruning independent of the catalog.
 /// </summary>
-public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
+internal sealed class JsonFavoritesStore : IFavoritesStore
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(
         StringComparer.OrdinalIgnoreCase
     );
 
-    private readonly IFileSystemPathProvider? _pathProvider;
-    private readonly string? _explicitPath;
+    private readonly IFileSystemPathProvider _pathProvider;
     private readonly GoodMoviesInfrastructureOptions _options;
     private readonly IAtomicFileWriter _atomicFileWriter;
-    private readonly ReleaseWindowPolicy _releaseWindowPolicy;
-    private readonly MovieSafetyPolicy _movieSafetyPolicy;
-    private readonly IClock _clock;
     private readonly SemaphoreSlim _gate;
 
     public JsonFavoritesStore(
         IFileSystemPathProvider pathProvider,
         GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
+        IAtomicFileWriter? atomicFileWriter = null
     )
     {
         _pathProvider = pathProvider ?? throw new ArgumentNullException(nameof(pathProvider));
         _options = options ?? new GoodMoviesInfrastructureOptions();
         _options.Validate();
         _atomicFileWriter = atomicFileWriter ?? new AtomicFileWriter();
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
-        _clock = clock ?? new SystemClock();
-        _gate = Gates.GetOrAdd(GetFavoritesPath(), static _ => new SemaphoreSlim(1, 1));
-    }
-
-    public JsonFavoritesStore(
-        string filePath,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : this(
-            ResolvePath(filePath, "good-movies-favorites.json"),
-            new GoodMoviesInfrastructureOptions
-            {
-                FavoritesFileName = Path.GetFileName(
-                    ResolvePath(filePath, "good-movies-favorites.json")
-                ),
-            },
-            clock,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            explicitPath: true
-        ) { }
-
-    public JsonFavoritesStore(
-        string directoryPath,
-        GoodMoviesInfrastructureOptions options,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : this(
-            ResolvePath(directoryPath, options?.FavoritesFileName ?? "good-movies-favorites.json"),
-            options ?? new GoodMoviesInfrastructureOptions(),
-            clock,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy,
-            explicitPath: true
-        ) { }
-
-    private JsonFavoritesStore(
-        string filePath,
-        GoodMoviesInfrastructureOptions options,
-        IClock? clock,
-        IAtomicFileWriter? atomicFileWriter,
-        ReleaseWindowPolicy? releaseWindowPolicy,
-        MovieSafetyPolicy? movieSafetyPolicy,
-        bool explicitPath
-    )
-    {
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            throw new ArgumentException("A favorites file path is required.", nameof(filePath));
-        }
-
-        _explicitPath = Path.GetFullPath(filePath);
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _options.Validate();
-        _atomicFileWriter = atomicFileWriter ?? new AtomicFileWriter();
-        _releaseWindowPolicy = releaseWindowPolicy ?? ReleaseWindowPolicy.Default;
-        _movieSafetyPolicy = movieSafetyPolicy ?? new MovieSafetyPolicy();
-        _clock = clock ?? new SystemClock();
         _gate = Gates.GetOrAdd(GetFavoritesPath(), static _ => new SemaphoreSlim(1, 1));
     }
 
@@ -130,14 +55,14 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
                 return FavoritesResult.Failure(read.Status, read.Error!);
             }
 
-            FavoriteEntry[] visible = FilterVisible(read.Entries, today);
+            FavoriteEntry[] visible = FilterVisible(read.Entries, today).ToArray();
             if (!read.Entries.SequenceEqual(visible))
             {
-                FavoritesResult writeResult = await WriteRawAsync(visible, cancellationToken)
+                Exception? writeError = await WriteRawAsync(visible, cancellationToken)
                     .ConfigureAwait(false);
-                if (!writeResult.Succeeded)
+                if (writeError is not null)
                 {
-                    return writeResult;
+                    return FavoritesResult.Failure(FavoritesResultStatus.Failed, writeError);
                 }
             }
 
@@ -148,25 +73,6 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
             _gate.Release();
         }
     }
-
-    public Task<FavoritesResult> ListAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => GetAsync(today, cancellationToken);
-
-    public Task<FavoritesResult> ListAsync(CancellationToken cancellationToken = default) =>
-        GetAsync(_clock.Today, cancellationToken);
-
-    public Task<FavoritesResult> GetFavoritesAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => GetAsync(today, cancellationToken);
-
-    public Task<FavoritesResult> GetFavoritesAsync(CancellationToken cancellationToken = default) =>
-        GetAsync(_clock.Today, cancellationToken);
-
-    public Task<FavoritesResult> GetAsync(CancellationToken cancellationToken = default) =>
-        GetAsync(_clock.Today, cancellationToken);
 
     public async Task<FavoriteToggleResult> ToggleAsync(
         FavoriteEntry favorite,
@@ -180,11 +86,7 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
             FavoritesRead read = await ReadRawAsync(cancellationToken).ConfigureAwait(false);
             if (!read.Succeeded)
             {
-                return new FavoriteToggleResult(
-                    FavoriteToggleStatus.Failed,
-                    favorite,
-                    error: read.Error
-                );
+                return new FavoriteToggleResult(FavoriteToggleStatus.Failed, error: read.Error);
             }
 
             List<FavoriteEntry> entries = FilterVisible(read.Entries, today).ToList();
@@ -196,14 +98,14 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
                 entries.RemoveAll(entry => entry.MovieId == favorite.MovieId);
                 status = FavoriteToggleStatus.Removed;
             }
-            else if (favorite.MovieId <= 0 || !_releaseWindowPolicy.IsVisible(favorite, today))
+            else if (favorite.MovieId <= 0 || !ReleaseWindowPolicy.IsVisible(favorite, today))
             {
                 status = FavoriteToggleStatus.Rejected;
             }
             else
             {
                 entries.Add(favorite);
-                entries = Normalize(entries).ToList();
+                entries.Sort(static (left, right) => left.MovieId.CompareTo(right.MovieId));
                 status = FavoriteToggleStatus.Added;
             }
 
@@ -212,98 +114,21 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
                 || !read.Entries.SequenceEqual(entries)
             )
             {
-                FavoritesResult writeResult = await WriteRawAsync(entries, cancellationToken)
+                Exception? writeError = await WriteRawAsync(entries, cancellationToken)
                     .ConfigureAwait(false);
-                if (!writeResult.Succeeded)
+                if (writeError is not null)
                 {
-                    return new FavoriteToggleResult(
-                        FavoriteToggleStatus.Failed,
-                        favorite,
-                        entries,
-                        writeResult.Error
-                    );
+                    return new FavoriteToggleResult(FavoriteToggleStatus.Failed, writeError);
                 }
             }
 
-            return new FavoriteToggleResult(status, favorite, entries);
+            return new FavoriteToggleResult(status);
         }
         finally
         {
             _gate.Release();
         }
     }
-
-    public Task<FavoriteToggleResult> ToggleAsync(
-        Movie movie,
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentNullException.ThrowIfNull(movie);
-        FavoriteEntry? favorite = movie.CreateFavoriteEntry();
-        return favorite is FavoriteEntry value
-            ? ToggleAsync(value, today, cancellationToken)
-            : Task.FromResult(
-                new FavoriteToggleResult(
-                    FavoriteToggleStatus.Rejected,
-                    new FavoriteEntry(movie.Id, default)
-                )
-            );
-    }
-
-    public Task<FavoriteToggleResult> ToggleAsync(
-        FavoriteEntry favorite,
-        CancellationToken cancellationToken = default
-    ) => ToggleAsync(favorite, _clock.Today, cancellationToken);
-
-    public Task<FavoriteToggleResult> ToggleAsync(
-        int movieId,
-        DateOnly releaseDate,
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => ToggleAsync(new FavoriteEntry(movieId, releaseDate), today, cancellationToken);
-
-    public Task<FavoriteToggleResult> ToggleAsync(
-        int movieId,
-        DateOnly releaseDate,
-        CancellationToken cancellationToken = default
-    ) => ToggleAsync(new FavoriteEntry(movieId, releaseDate), _clock.Today, cancellationToken);
-
-    public async Task<FavoritesResult> PruneAsync(
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            FavoritesRead read = await ReadRawAsync(cancellationToken).ConfigureAwait(false);
-            if (!read.Succeeded)
-            {
-                return FavoritesResult.Failure(read.Status, read.Error!);
-            }
-
-            FavoriteEntry[] visible = FilterVisible(read.Entries, today);
-            if (!read.Entries.SequenceEqual(visible))
-            {
-                FavoritesResult writeResult = await WriteRawAsync(visible, cancellationToken)
-                    .ConfigureAwait(false);
-                if (!writeResult.Succeeded)
-                {
-                    return writeResult;
-                }
-            }
-
-            return FavoritesResult.Success(visible);
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    public Task<FavoritesResult> PruneAsync(CancellationToken cancellationToken = default) =>
-        PruneAsync(_clock.Today, cancellationToken);
 
     public async Task<FavoritesResult> ReconcileAsync(
         IEnumerable<Movie> refreshedMovies,
@@ -322,33 +147,28 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
             }
 
             Dictionary<int, FavoriteEntry> refreshed = new();
-            foreach (Movie movie in refreshedMovies)
+            foreach (Movie? movie in refreshedMovies)
             {
-                FavoriteEntry? entry = movie?.CreateFavoriteEntry();
-                if (
-                    entry is FavoriteEntry value
-                    && _movieSafetyPolicy.IsSafe(movie)
-                    && _releaseWindowPolicy.IsVisible(value, today)
-                )
+                TheatricalRelease? release = ReleaseWindowPolicy.GetVisibleRelease(movie, today);
+                if (movie is not null && release is not null && MovieSafetyPolicy.IsSafe(movie))
                 {
-                    refreshed[value.MovieId] = value;
+                    FavoriteEntry entry = new(movie.Id, release.ReleaseDate);
+                    refreshed[entry.MovieId] = entry;
                 }
             }
 
-            FavoriteEntry[] reconciled = Normalize(
-                    FilterVisible(read.Entries, today)
-                        .Where(entry => refreshed.TryGetValue(entry.MovieId, out _))
-                        .Select(entry => refreshed[entry.MovieId])
-                )
+            FavoriteEntry[] reconciled = FilterVisible(read.Entries, today)
+                .Where(entry => refreshed.ContainsKey(entry.MovieId))
+                .Select(entry => refreshed[entry.MovieId])
                 .ToArray();
 
             if (!read.Entries.SequenceEqual(reconciled))
             {
-                FavoritesResult writeResult = await WriteRawAsync(reconciled, cancellationToken)
+                Exception? writeError = await WriteRawAsync(reconciled, cancellationToken)
                     .ConfigureAwait(false);
-                if (!writeResult.Succeeded)
+                if (writeError is not null)
                 {
-                    return writeResult;
+                    return FavoritesResult.Failure(FavoritesResultStatus.Failed, writeError);
                 }
             }
 
@@ -359,27 +179,6 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
             _gate.Release();
         }
     }
-
-    public Task<FavoritesResult> ReconcileAsync(
-        MovieCatalogSnapshot snapshot,
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-        return ReconcileAsync(snapshot.Movies, today, cancellationToken);
-    }
-
-    public Task<FavoritesResult> ReconcileAsync(
-        IEnumerable<Movie> refreshedMovies,
-        CancellationToken cancellationToken = default
-    ) => ReconcileAsync(refreshedMovies, _clock.Today, cancellationToken);
-
-    public Task<FavoritesResult> ReconcileAgainstSnapshotAsync(
-        MovieCatalogSnapshot snapshot,
-        DateOnly today,
-        CancellationToken cancellationToken = default
-    ) => ReconcileAsync(snapshot, today, cancellationToken);
 
     private async Task<FavoritesRead> ReadRawAsync(CancellationToken cancellationToken)
     {
@@ -464,14 +263,7 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
         {
             return FavoritesRead.Success(Array.Empty<FavoriteEntry>());
         }
-        catch (IOException exception)
-        {
-            return FavoritesRead.Failure(
-                FavoritesResultStatus.Failed,
-                new FavoritesStoreException("The favorites document could not be read.", exception)
-            );
-        }
-        catch (UnauthorizedAccessException exception)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return FavoritesRead.Failure(
                 FavoritesResultStatus.Failed,
@@ -480,12 +272,12 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
         }
     }
 
-    private async Task<FavoritesResult> WriteRawAsync(
+    private async Task<Exception?> WriteRawAsync(
         IEnumerable<FavoriteEntry> entries,
         CancellationToken cancellationToken
     )
     {
-        List<FavoriteFileEntry> values = Normalize(entries)
+        List<FavoriteFileEntry> values = entries
             .Select(static entry => new FavoriteFileEntry
             {
                 MovieId = entry.MovieId,
@@ -508,12 +300,7 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
                     cancellationToken
                 )
                 .ConfigureAwait(false);
-            return FavoritesResult.Success(
-                values.Select(static value => new FavoriteEntry(
-                    value.MovieId,
-                    value.UsTheatricalReleaseDate
-                ))
-            );
+            return null;
         }
         catch (OperationCanceledException)
         {
@@ -521,30 +308,19 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
         }
         catch (Exception exception)
         {
-            return new FavoritesResult(
-                FavoritesResultStatus.Failed,
-                values.Select(static value => new FavoriteEntry(
-                    value.MovieId,
-                    value.UsTheatricalReleaseDate
-                )),
-                new FavoritesStoreException(
-                    "The favorites document could not be written.",
-                    exception
-                )
+            return new FavoritesStoreException(
+                "The favorites document could not be written.",
+                exception
             );
         }
     }
 
-    private string GetFavoritesPath() =>
-        _explicitPath ?? _pathProvider!.GetPath(_options.FavoritesFileName);
+    private string GetFavoritesPath() => _pathProvider.GetPath(_options.FavoritesFileName);
 
-    private static string ResolvePath(string path, string defaultFileName) =>
-        Directory.Exists(path) || string.IsNullOrEmpty(Path.GetExtension(path))
-            ? Path.Combine(path, defaultFileName)
-            : path;
-
-    private FavoriteEntry[] FilterVisible(IEnumerable<FavoriteEntry> entries, DateOnly today) =>
-        Normalize(entries.Where(entry => _releaseWindowPolicy.IsVisible(entry, today))).ToArray();
+    private static IEnumerable<FavoriteEntry> FilterVisible(
+        IEnumerable<FavoriteEntry> entries,
+        DateOnly today
+    ) => entries.Where(entry => ReleaseWindowPolicy.IsVisible(entry, today));
 
     private static IEnumerable<FavoriteEntry> Normalize(IEnumerable<FavoriteEntry> entries) =>
         entries
@@ -558,19 +334,17 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
     private sealed class FavoritesRead
     {
         private FavoritesRead(
-            bool succeeded,
             FavoritesResultStatus status,
             IEnumerable<FavoriteEntry>? entries,
             Exception? error
         )
         {
-            Succeeded = succeeded;
             Status = status;
             Entries = (entries ?? Array.Empty<FavoriteEntry>()).ToArray();
             Error = error;
         }
 
-        public bool Succeeded { get; }
+        public bool Succeeded => Status == FavoritesResultStatus.Succeeded;
 
         public FavoritesResultStatus Status { get; }
 
@@ -579,67 +353,9 @@ public class JsonFavoritesStore : IFavoritesService, IFavoritesRepository
         public Exception? Error { get; }
 
         public static FavoritesRead Success(IEnumerable<FavoriteEntry> entries) =>
-            new(true, FavoritesResultStatus.Succeeded, entries, null);
+            new(FavoritesResultStatus.Succeeded, entries, null);
 
         public static FavoritesRead Failure(FavoritesResultStatus status, Exception error) =>
-            new(false, status, null, error);
+            new(status, null, error);
     }
-}
-
-public class FileFavoritesStore : JsonFavoritesStore
-{
-    public FileFavoritesStore(
-        IFileSystemPathProvider pathProvider,
-        GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            pathProvider,
-            options,
-            clock,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
-
-    public FileFavoritesStore(
-        string filePath,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(filePath, clock, atomicFileWriter, releaseWindowPolicy, movieSafetyPolicy) { }
-}
-
-public class FavoritesStore : JsonFavoritesStore
-{
-    public FavoritesStore(
-        IFileSystemPathProvider pathProvider,
-        GoodMoviesInfrastructureOptions? options = null,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(
-            pathProvider,
-            options,
-            clock,
-            atomicFileWriter,
-            releaseWindowPolicy,
-            movieSafetyPolicy
-        ) { }
-
-    public FavoritesStore(
-        string filePath,
-        IClock? clock = null,
-        IAtomicFileWriter? atomicFileWriter = null,
-        ReleaseWindowPolicy? releaseWindowPolicy = null,
-        MovieSafetyPolicy? movieSafetyPolicy = null
-    )
-        : base(filePath, clock, atomicFileWriter, releaseWindowPolicy, movieSafetyPolicy) { }
 }
