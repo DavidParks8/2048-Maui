@@ -22,16 +22,27 @@ public sealed class NativeYouTubeTrailerLauncher : IExternalTrailerLauncher
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out Uri uri))
+        if (
+            !YouTubeKidsTrailerUri.TryCreate(youtubeKey, out Uri kidsUri)
+            || !YouTubeTrailerUri.TryCreate(youtubeKey, out Uri youtubeUri)
+        )
         {
             return false;
         }
 
-        if (!await _uriLauncher.CanOpenAsync(uri, cancellationToken).ConfigureAwait(false))
+        foreach (Uri uri in new[] { kidsUri, youtubeUri })
         {
-            return false;
+            if (!await _uriLauncher.CanOpenAsync(uri, cancellationToken).ConfigureAwait(false))
+            {
+                continue;
+            }
+
+            if (await _uriLauncher.OpenAsync(uri, cancellationToken).ConfigureAwait(false))
+            {
+                return true;
+            }
         }
 
-        return await _uriLauncher.OpenAsync(uri, cancellationToken).ConfigureAwait(false);
+        return false;
     }
 }

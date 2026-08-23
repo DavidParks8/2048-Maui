@@ -15,6 +15,7 @@
     </array>
     <key>LSApplicationQueriesSchemes</key>
     <array>
+        <string>vnd.youtube.kids</string>
         <string>youtube</string>
     </array>
     <key>UISupportedInterfaceOrientations</key>

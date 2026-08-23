@@ -112,7 +112,7 @@
   <data name="TrailerLoading" xml:space="preserve"><value>Looking for the trailer</value></data>
   <data name="TrailerNotFound" xml:space="preserve"><value>No trailer for this movie yet.</value></data>
   <data name="TrailerMissingConfiguration" xml:space="preserve"><value>Movie data is not configured for trailers.</value></data>
-  <data name="TrailerLaunchFailed" xml:space="preserve"><value>YouTube is not available. Ask a grown-up to install or allow the YouTube app.</value></data>
+  <data name="TrailerLaunchFailed" xml:space="preserve"><value>YouTube Kids or YouTube is not available. Ask a grown-up to install or allow one of those apps.</value></data>
   <data name="TrailerOpened" xml:space="preserve"><value>Trailer opened outside Good Movies.</value></data>
   <data name="NoSynopsis" xml:space="preserve"><value>This movie has no story yet.</value></data>
   <data name="DetailAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>

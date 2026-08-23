@@ -9,25 +9,44 @@ public sealed class NativeYouTubeTrailerLauncherTests
     private const string ValidKey = "dQw4w9WgXcQ";
 
     [TestMethod]
-    public async Task LaunchAsync_YouTubeIsAvailable_OpensOnlyTheNativeAppUri()
+    public async Task LaunchAsync_YouTubeKidsIsAvailable_OpensKidsWithoutQueryingYouTube()
     {
-        Uri expectedUri = YouTubeTrailerUri.Create(ValidKey);
+        Uri kidsUri = YouTubeKidsTrailerUri.Create(ValidKey);
+        Uri youtubeUri = YouTubeTrailerUri.Create(ValidKey);
         INativeUriLauncher uriLauncher = Substitute.For<INativeUriLauncher>();
-        uriLauncher.CanOpenAsync(expectedUri, Arg.Any<CancellationToken>()).Returns(true);
-        uriLauncher.OpenAsync(expectedUri, Arg.Any<CancellationToken>()).Returns(true);
+        uriLauncher.CanOpenAsync(kidsUri, Arg.Any<CancellationToken>()).Returns(true);
+        uriLauncher.OpenAsync(kidsUri, Arg.Any<CancellationToken>()).Returns(true);
         NativeYouTubeTrailerLauncher launcher = new(uriLauncher);
 
         bool launched = await launcher.LaunchAsync(ValidKey);
 
         Assert.IsTrue(launched);
-        Assert.AreEqual("youtube", expectedUri.Scheme);
-        Assert.IsFalse(expectedUri.Scheme is "http" or "https");
-        await uriLauncher.Received(1).CanOpenAsync(expectedUri, Arg.Any<CancellationToken>());
-        await uriLauncher.Received(1).OpenAsync(expectedUri, Arg.Any<CancellationToken>());
+        Assert.AreEqual("vnd.youtube.kids", kidsUri.Scheme);
+        Assert.IsFalse(kidsUri.Scheme is "http" or "https");
+        await uriLauncher.Received(1).CanOpenAsync(kidsUri, Arg.Any<CancellationToken>());
+        await uriLauncher.Received(1).OpenAsync(kidsUri, Arg.Any<CancellationToken>());
+        await uriLauncher.DidNotReceive().CanOpenAsync(youtubeUri, Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
-    public async Task LaunchAsync_YouTubeIsUnavailable_DoesNotOpenAnyFallback()
+    public async Task LaunchAsync_YouTubeKidsIsUnavailable_OpensStandardYouTube()
+    {
+        Uri kidsUri = YouTubeKidsTrailerUri.Create(ValidKey);
+        Uri youtubeUri = YouTubeTrailerUri.Create(ValidKey);
+        INativeUriLauncher uriLauncher = Substitute.For<INativeUriLauncher>();
+        uriLauncher.CanOpenAsync(kidsUri, Arg.Any<CancellationToken>()).Returns(false);
+        uriLauncher.CanOpenAsync(youtubeUri, Arg.Any<CancellationToken>()).Returns(true);
+        uriLauncher.OpenAsync(youtubeUri, Arg.Any<CancellationToken>()).Returns(true);
+        NativeYouTubeTrailerLauncher launcher = new(uriLauncher);
+
+        bool launched = await launcher.LaunchAsync(ValidKey);
+
+        Assert.IsTrue(launched);
+        await uriLauncher.Received(1).OpenAsync(youtubeUri, Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task LaunchAsync_NoYouTubeAppIsAvailable_DoesNotOpenAnyBrowserFallback()
     {
         INativeUriLauncher uriLauncher = Substitute.For<INativeUriLauncher>();
         uriLauncher.CanOpenAsync(Arg.Any<Uri>(), Arg.Any<CancellationToken>()).Returns(false);
@@ -37,25 +56,31 @@ public sealed class NativeYouTubeTrailerLauncherTests
 
         Assert.IsFalse(launched);
         await uriLauncher.DidNotReceive().OpenAsync(Arg.Any<Uri>(), Arg.Any<CancellationToken>());
+        await uriLauncher
+            .DidNotReceive()
+            .CanOpenAsync(
+                Arg.Is<Uri>(uri => uri.Scheme == "http" || uri.Scheme == "https"),
+                Arg.Any<CancellationToken>()
+            );
     }
 
     [TestMethod]
-    public async Task LaunchAsync_NativeAppCannotOpenVideo_ReturnsFailureWithoutFallback()
+    public async Task LaunchAsync_YouTubeKidsRejectsVideo_TriesStandardYouTubeOnly()
     {
+        Uri kidsUri = YouTubeKidsTrailerUri.Create(ValidKey);
+        Uri youtubeUri = YouTubeTrailerUri.Create(ValidKey);
         INativeUriLauncher uriLauncher = Substitute.For<INativeUriLauncher>();
-        uriLauncher.CanOpenAsync(Arg.Any<Uri>(), Arg.Any<CancellationToken>()).Returns(true);
-        uriLauncher.OpenAsync(Arg.Any<Uri>(), Arg.Any<CancellationToken>()).Returns(false);
+        uriLauncher.CanOpenAsync(kidsUri, Arg.Any<CancellationToken>()).Returns(true);
+        uriLauncher.OpenAsync(kidsUri, Arg.Any<CancellationToken>()).Returns(false);
+        uriLauncher.CanOpenAsync(youtubeUri, Arg.Any<CancellationToken>()).Returns(true);
+        uriLauncher.OpenAsync(youtubeUri, Arg.Any<CancellationToken>()).Returns(true);
         NativeYouTubeTrailerLauncher launcher = new(uriLauncher);
 
         bool launched = await launcher.LaunchAsync(ValidKey);
 
-        Assert.IsFalse(launched);
-        await uriLauncher
-            .Received(1)
-            .OpenAsync(
-                Arg.Is<Uri>(uri => uri.Scheme == YouTubeTrailerUri.Scheme),
-                Arg.Any<CancellationToken>()
-            );
+        Assert.IsTrue(launched);
+        await uriLauncher.Received(1).OpenAsync(kidsUri, Arg.Any<CancellationToken>());
+        await uriLauncher.Received(1).OpenAsync(youtubeUri, Arg.Any<CancellationToken>());
     }
 
     [TestMethod]

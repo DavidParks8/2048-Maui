@@ -377,6 +377,14 @@ public sealed class CatalogViewModelTests
         Assert.AreEqual("youtube://www.youtube.com/watch?v=dQw4w9WgXcQ", uri.AbsoluteUri);
         Assert.AreEqual(YouTubeTrailerUri.Scheme, uri.Scheme);
         Assert.IsNull(YouTubeTrailerUri.Build("not-a-key"));
+
+        Assert.IsTrue(YouTubeKidsTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri kidsUri));
+        Assert.AreEqual(
+            "vnd.youtube.kids://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            kidsUri.AbsoluteUri
+        );
+        Assert.AreEqual(YouTubeKidsTrailerUri.Scheme, kidsUri.Scheme);
+        Assert.IsFalse(YouTubeKidsTrailerUri.TryCreate("not-a-key", out _));
     }
 
     [TestMethod]
