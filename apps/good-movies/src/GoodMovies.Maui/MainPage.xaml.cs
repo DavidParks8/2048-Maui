@@ -27,6 +27,8 @@ public partial class MainPage : ContentPage
     private bool _refreshWasAnnounced;
     private bool _shimmerRunning;
     private UICollectionView? _nativeMovieCollection;
+    private FeedScrollSnapshot? _visibleFeedScrollSnapshot;
+    private long _lastFeedScrollSnapshotMilliseconds;
     private FeedScrollAnchor[]? _pendingFeedScrollAnchors;
     private int _feedScrollRestoreVersion;
     private bool _restoreFeedScrollAfterRefresh;
@@ -342,10 +344,19 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        // Anchors are captured only here, immediately before the grouped source
-        // is replaced. Sampling during scrolling measured native layout on every
-        // frame and visibly stuttered the feed.
-        _pendingFeedScrollAnchors = MainThread.IsMainThread ? CaptureVisibleFeedAnchors() : null;
+        // Catalog replacement can arrive off the main thread, where native
+        // layout cannot be queried, so fall back to the last sampled anchor.
+        FeedScrollAnchor[]? captured = MainThread.IsMainThread ? CaptureVisibleFeedAnchors() : null;
+        FeedScrollSnapshot? sampled = _visibleFeedScrollSnapshot;
+        _pendingFeedScrollAnchors =
+            captured
+            ?? (
+                sampled is not null
+                && sampled.Value.Section == _viewModel.SelectedSection
+                && sampled.Value.Filter == _viewModel.SelectedRatingFilter
+                    ? new[] { sampled.Value.Anchor }
+                    : null
+            );
     }
 
     private void OnFeedReplacementCompleted(object? sender, EventArgs e)
@@ -365,13 +376,41 @@ public partial class MainPage : ContentPage
         ScheduleFeedScrollRestore();
     }
 
+    private void OnMovieCollectionScrolled(object? sender, ItemsViewScrolledEventArgs e)
+    {
+        // Sampling is throttled and measures only the topmost visible item, so
+        // scrolling stays smooth while still leaving an anchor for catalog
+        // replacements that arrive off the main thread.
+        long now = Environment.TickCount64;
+        if (now - _lastFeedScrollSnapshotMilliseconds < 250)
+        {
+            return;
+        }
+
+        _lastFeedScrollSnapshotMilliseconds = now;
+        if (CaptureTopVisibleAnchor() is { } anchor)
+        {
+            _visibleFeedScrollSnapshot = new FeedScrollSnapshot(
+                _viewModel.SelectedSection,
+                _viewModel.SelectedRatingFilter,
+                anchor
+            );
+        }
+    }
+
     private void ClearFeedScrollSnapshot()
     {
+        _visibleFeedScrollSnapshot = null;
         _pendingFeedScrollAnchors = null;
+        _lastFeedScrollSnapshotMilliseconds = 0;
         _restoreFeedScrollAfterRefresh = false;
         _feedScrollRestoreVersion++;
     }
 
+    /// <summary>
+    /// Measures every visible card. Runs once per catalog replacement, never
+    /// while scrolling, so the extra layout queries are not on a hot path.
+    /// </summary>
     private FeedScrollAnchor[]? CaptureVisibleFeedAnchors()
     {
         UICollectionView? collectionView = GetNativeMovieCollection();
@@ -381,39 +420,75 @@ public partial class MainPage : ContentPage
         }
 
         List<FeedScrollAnchor> anchors = new(collectionView.IndexPathsForVisibleItems.Length);
-        foreach (var indexPath in collectionView.IndexPathsForVisibleItems)
+        foreach (Foundation.NSIndexPath indexPath in collectionView.IndexPathsForVisibleItems)
         {
-            int groupIndex = (int)indexPath.Section;
-            int itemIndex = (int)indexPath.Item;
-            if (
-                groupIndex < 0
-                || groupIndex >= _viewModel.MovieGroups.Count
-                || itemIndex < 0
-                || itemIndex >= _viewModel.MovieGroups[groupIndex].Cards.Count
-            )
+            if (ResolveAnchor(collectionView, indexPath) is { } anchor)
             {
-                continue;
+                anchors.Add(anchor);
             }
-
-            UICollectionViewLayoutAttributes? attributes =
-                collectionView.CollectionViewLayout.LayoutAttributesForItem(indexPath);
-            if (attributes is null)
-            {
-                continue;
-            }
-
-            anchors.Add(
-                new FeedScrollAnchor(
-                    _viewModel.MovieGroups[groupIndex].Cards[itemIndex].MovieId,
-                    collectionView.ContentOffset.Y - attributes.Frame.Y,
-                    attributes.Frame.Y
-                )
-            );
         }
 
+        // OffsetFromItemTop decreases as items sit further down the viewport,
+        // so descending order puts the topmost visible card first and matches
+        // the anchor CaptureTopVisibleAnchor picks.
         return anchors.Count == 0
             ? null
-            : anchors.OrderBy(static anchor => anchor.ItemOrigin).ToArray();
+            : anchors.OrderByDescending(static anchor => anchor.OffsetFromItemTop).ToArray();
+    }
+
+    /// <summary>
+    /// Measures only the topmost visible card. One layout query keeps sampling
+    /// cheap enough to run while the feed is scrolling.
+    /// </summary>
+    private FeedScrollAnchor? CaptureTopVisibleAnchor()
+    {
+        UICollectionView? collectionView = GetNativeMovieCollection();
+        if (collectionView is null)
+        {
+            return null;
+        }
+
+        Foundation.NSIndexPath? topIndexPath = null;
+        foreach (Foundation.NSIndexPath indexPath in collectionView.IndexPathsForVisibleItems)
+        {
+            if (
+                topIndexPath is null
+                || indexPath.Section < topIndexPath.Section
+                || (indexPath.Section == topIndexPath.Section && indexPath.Item < topIndexPath.Item)
+            )
+            {
+                topIndexPath = indexPath;
+            }
+        }
+
+        return topIndexPath is null ? null : ResolveAnchor(collectionView, topIndexPath);
+    }
+
+    private FeedScrollAnchor? ResolveAnchor(
+        UICollectionView collectionView,
+        Foundation.NSIndexPath indexPath
+    )
+    {
+        int groupIndex = (int)indexPath.Section;
+        int itemIndex = (int)indexPath.Item;
+        if (
+            groupIndex < 0
+            || groupIndex >= _viewModel.MovieGroups.Count
+            || itemIndex < 0
+            || itemIndex >= _viewModel.MovieGroups[groupIndex].Cards.Count
+        )
+        {
+            return null;
+        }
+
+        UICollectionViewLayoutAttributes? attributes =
+            collectionView.CollectionViewLayout.LayoutAttributesForItem(indexPath);
+        return attributes is null
+            ? null
+            : new FeedScrollAnchor(
+                _viewModel.MovieGroups[groupIndex].Cards[itemIndex].MovieId,
+                collectionView.ContentOffset.Y - attributes.Frame.Y
+            );
     }
 
     private UICollectionView? GetNativeMovieCollection()
@@ -507,43 +582,52 @@ public partial class MainPage : ContentPage
                 continue;
             }
 
-            var indexPath = Foundation.NSIndexPath.FromItemSection(itemIndex, groupIndex);
+            Foundation.NSIndexPath indexPath = Foundation.NSIndexPath.FromItemSection(
+                itemIndex,
+                groupIndex
+            );
             UICollectionViewLayoutAttributes? attributes =
                 collectionView.CollectionViewLayout.LayoutAttributesForItem(indexPath);
-            if (attributes is null)
+            if (attributes is not null)
             {
-                break;
-            }
-
-            double minimumOffset = -collectionView.AdjustedContentInset.Top;
-            double maximumOffset = Math.Max(
-                minimumOffset,
-                collectionView.ContentSize.Height
-                    - collectionView.Bounds.Height
-                    + collectionView.AdjustedContentInset.Bottom
-            );
-            double targetOffset = Math.Clamp(
-                attributes.Frame.Y + anchor.OffsetFromItemTop,
-                minimumOffset,
-                maximumOffset
-            );
-            UIView.PerformWithoutAnimation(() =>
-                collectionView.SetContentOffset(
-                    new CGPoint(collectionView.ContentOffset.X, targetOffset),
-                    animated: false
-                )
-            );
-            if (attempt < 1)
-            {
-                // One settling pass covers self-sizing group headers that finish
-                // measuring after the reload.
-                Dispatcher.DispatchDelayed(
-                    TimeSpan.FromMilliseconds(100),
-                    () => RestoreFeedScrollPosition(anchors, section, filter, version, attempt + 1)
+                double minimumOffset = -collectionView.AdjustedContentInset.Top;
+                double maximumOffset = Math.Max(
+                    minimumOffset,
+                    collectionView.ContentSize.Height
+                        - collectionView.Bounds.Height
+                        + collectionView.AdjustedContentInset.Bottom
                 );
-            }
+                double targetOffset = Math.Clamp(
+                    attributes.Frame.Y + anchor.OffsetFromItemTop,
+                    minimumOffset,
+                    maximumOffset
+                );
+                UIView.PerformWithoutAnimation(() =>
+                    collectionView.SetContentOffset(
+                        new CGPoint(collectionView.ContentOffset.X, targetOffset),
+                        animated: false
+                    )
+                );
 
-            return;
+                if (attempt < 1)
+                {
+                    // One settling pass covers self-sizing group headers that
+                    // finish measuring after the reload.
+                    Dispatcher.DispatchDelayed(
+                        TimeSpan.FromMilliseconds(100),
+                        () =>
+                            RestoreFeedScrollPosition(
+                                anchors,
+                                section,
+                                filter,
+                                version,
+                                attempt + 1
+                            )
+                    );
+                }
+
+                return;
+            }
         }
 
         if (attempt < 4)
@@ -698,9 +782,11 @@ public partial class MainPage : ContentPage
         catch (OperationCanceledException) { }
     }
 
-    private readonly record struct FeedScrollAnchor(
-        int MovieId,
-        double OffsetFromItemTop,
-        double ItemOrigin
+    private readonly record struct FeedScrollAnchor(int MovieId, double OffsetFromItemTop);
+
+    private readonly record struct FeedScrollSnapshot(
+        CatalogSection Section,
+        MovieRatingFilter Filter,
+        FeedScrollAnchor Anchor
     );
 }
