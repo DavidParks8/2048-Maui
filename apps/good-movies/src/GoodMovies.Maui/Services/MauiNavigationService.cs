@@ -8,6 +8,7 @@ namespace GoodMovies.Maui.Services;
 public static class GoodMoviesRoutes
 {
     public const string MovieDetail = "movie-detail";
+    public const string TrailerPlayer = "trailer-player";
 }
 
 /// <summary>

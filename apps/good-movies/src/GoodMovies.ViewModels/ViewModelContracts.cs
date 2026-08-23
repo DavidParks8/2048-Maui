@@ -259,8 +259,9 @@ public sealed class TrailerPlaybackResult
 }
 
 /// <summary>
-/// Launches an already-selected YouTube key outside the ViewModels assembly.
-/// Returning false is a launch failure, not a successful launch.
+/// Presents an already-selected YouTube trailer outside the ViewModels assembly.
+/// The platform implementation decides how the in-app player is displayed.
+/// Returning false means the player could not be presented.
 /// </summary>
 public interface IExternalTrailerLauncher
 {

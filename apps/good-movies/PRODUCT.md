@@ -33,7 +33,7 @@ are excluded rather than treated as safe.
 - Also used on an iPhone in portrait.
 - Catalog data may be viewed offline from a validated local cache.
 - Search operates only within the current safe catalog.
-- Trailers prefer the installed YouTube Kids app, then the standard YouTube app; browser fallback is intentionally disabled.
+- Official trailers play in a locked-down in-app player; links, popups, and navigation away from the selected trailer are blocked.
 
 ## Capabilities and Constraints
 

@@ -25,6 +25,6 @@ public class AppDelegate : MauiUIApplicationDelegate
     public override void DidEnterBackground(UIApplication application)
     {
         base.DidEnterBackground(application);
-        (Microsoft.Maui.Controls.Application.Current as GoodMovies.Maui.App)?.StopSpeech();
+        (Microsoft.Maui.Controls.Application.Current as GoodMovies.Maui.App)?.StopMedia();
     }
 }

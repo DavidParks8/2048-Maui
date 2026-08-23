@@ -401,17 +401,14 @@ public sealed class CatalogViewModelTests
         Assert.IsFalse(YouTubeTrailerUri.IsValidKey("dQw4w9WgXc Q"));
 
         Assert.IsTrue(YouTubeTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri uri));
-        Assert.AreEqual("youtube://www.youtube.com/watch?v=dQw4w9WgXcQ", uri.AbsoluteUri);
-        Assert.AreEqual(YouTubeTrailerUri.Scheme, uri.Scheme);
-        Assert.IsNull(YouTubeTrailerUri.Build("not-a-key"));
-
-        Assert.IsTrue(YouTubeKidsTrailerUri.TryCreate("dQw4w9WgXcQ", out Uri kidsUri));
         Assert.AreEqual(
-            "vnd.youtube.kids://kids.youtube.com/watch?v=dQw4w9WgXcQ",
-            kidsUri.AbsoluteUri
+            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?playsinline=1&modestbranding=1&rel=0",
+            uri.AbsoluteUri
         );
-        Assert.AreEqual(YouTubeKidsTrailerUri.Scheme, kidsUri.Scheme);
-        Assert.IsFalse(YouTubeKidsTrailerUri.TryCreate("not-a-key", out _));
+        Assert.AreEqual(YouTubeTrailerUri.Scheme, uri.Scheme);
+        Assert.AreEqual(YouTubeTrailerUri.Host, uri.Host);
+        Assert.IsTrue(YouTubeTrailerUri.IsTrustedEmbedUri(uri));
+        Assert.IsNull(YouTubeTrailerUri.Build("not-a-key"));
     }
 
     [TestMethod]

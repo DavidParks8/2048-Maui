@@ -13,11 +13,6 @@
     <array>
         <string>arm64</string>
     </array>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>vnd.youtube.kids</string>
-        <string>youtube</string>
-    </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Storage;
 #if IOS
 using GoodMovies.Maui.Platforms.iOS;
+using GoodMovies.Maui.Controls;
 #endif
 
 #if DEBUG && GOOD_MOVIES_SAMPLE_DATA
@@ -34,6 +35,7 @@ public static class MauiProgram
                 Microsoft.Maui.Controls.CollectionView,
                 Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler
             >();
+            handlers.AddHandler<TrailerPlayerView, TrailerPlayerViewHandler>();
         });
 #endif
 
@@ -113,7 +115,6 @@ public static class MauiProgram
             serviceProvider.GetRequiredService<MauiNoopWordLevelSpeechService>()
         );
 #endif
-        builder.Services.AddSingleton<INativeUriLauncher>(_ => new MauiNativeUriLauncher());
         builder.Services.AddSingleton<MauiExternalTrailerLauncher>();
         builder.Services.AddSingleton<IExternalTrailerLauncher>(serviceProvider =>
             serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
@@ -131,6 +132,12 @@ public static class MauiProgram
             serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
         );
         builder.Services.AddSingleton<IExternalTrailerService>(serviceProvider =>
+            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
+        );
+        builder.Services.AddSingleton<ITrailerPlaybackController>(serviceProvider =>
+            serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
+        );
+        builder.Services.AddSingleton<ITrailerPlayerPageFactory>(serviceProvider =>
             serviceProvider.GetRequiredService<MauiExternalTrailerLauncher>()
         );
         builder.Services.AddTransient<AppShell>();

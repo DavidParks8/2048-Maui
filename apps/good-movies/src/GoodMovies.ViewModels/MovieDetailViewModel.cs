@@ -7,7 +7,7 @@ namespace GoodMovies.ViewModels;
 
 /// <summary>
 /// Detail state for one safe catalog movie. Platform speech, navigation, and
-/// link launching are injected so this type remains usable on net10.0.
+/// trailer presentation are injected so this type remains usable on net10.0.
 /// </summary>
 public partial class MovieDetailViewModel : ObservableObject, IDisposable
 {
@@ -752,7 +752,7 @@ public partial class MovieDetailViewModel : ObservableObject, IDisposable
                 trailer.Key,
                 launched
                     ? null
-                    : new InvalidOperationException("The trailer could not be launched.")
+                    : new InvalidOperationException("The trailer player could not be presented.")
             )
         );
     }

@@ -141,6 +141,11 @@ internal static class AppStrings
     internal static string TrailerMissingConfiguration => Get(nameof(TrailerMissingConfiguration));
     internal static string TrailerLaunchFailed => Get(nameof(TrailerLaunchFailed));
     internal static string TrailerOpened => Get(nameof(TrailerOpened));
+    internal static string TrailerPlayerTitle => Get(nameof(TrailerPlayerTitle));
+    internal static string TrailerPlayerDone => Get(nameof(TrailerPlayerDone));
+    internal static string TrailerPlayerLoading => Get(nameof(TrailerPlayerLoading));
+    internal static string TrailerPlayerErrorTitle => Get(nameof(TrailerPlayerErrorTitle));
+    internal static string TrailerPlayerErrorMessage => Get(nameof(TrailerPlayerErrorMessage));
     internal static string NoSynopsis => Get(nameof(NoSynopsis));
     internal static string DetailAccessibility => Get(nameof(DetailAccessibility));
     internal static string TodayStatus => Get(nameof(TodayStatus));

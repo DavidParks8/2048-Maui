@@ -1,7 +1,29 @@
 using GoodMovies.ViewModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.ApplicationModel;
 
 namespace GoodMovies.Maui.Services;
+
+public interface ITrailerPlaybackController
+{
+    void Stop();
+}
+
+public interface ITrailerPlayerPageFactory
+{
+    TrailerPlayerPage Create();
+}
+
+public sealed class MauiTrailerPlayerRouteFactory(ITrailerPlayerPageFactory pageFactory)
+    : RouteFactory
+{
+    private readonly ITrailerPlayerPageFactory _pageFactory =
+        pageFactory ?? throw new ArgumentNullException(nameof(pageFactory));
+
+    public override Element GetOrCreate() => _pageFactory.Create();
+
+    public override Element GetOrCreate(IServiceProvider services) => _pageFactory.Create();
+}
 
 public class MauiExternalTrailerLauncher
     : IExternalTrailerLauncher,
@@ -9,47 +31,107 @@ public class MauiExternalTrailerLauncher
         IYouTubeTrailerLauncher,
         IExternalLinkLauncher,
         IExternalLauncher,
-        IExternalTrailerService
+        IExternalTrailerService,
+        ITrailerPlaybackController,
+        ITrailerPlayerPageFactory
 {
-    private readonly NativeYouTubeTrailerLauncher _launcher;
+    private readonly ILogger<MauiExternalTrailerLauncher> _logger;
+    private readonly IScreenReaderService _screenReaderService;
+    private readonly object _sync = new();
+    private TrailerPlayerPage? _activePage;
 
-    public MauiExternalTrailerLauncher()
-        : this(new MauiNativeUriLauncher()) { }
-
-    public MauiExternalTrailerLauncher(INativeUriLauncher uriLauncher)
+    public MauiExternalTrailerLauncher(
+        ILogger<MauiExternalTrailerLauncher> logger,
+        IScreenReaderService screenReaderService
+    )
     {
-        _launcher = new NativeYouTubeTrailerLauncher(uriLauncher);
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _screenReaderService =
+            screenReaderService ?? throw new ArgumentNullException(nameof(screenReaderService));
     }
 
-    public Task<bool> LaunchAsync(
+    public async Task<bool> LaunchAsync(
         string youtubeKey,
         CancellationToken cancellationToken = default
-    ) => _launcher.LaunchAsync(youtubeKey, cancellationToken);
-}
-
-internal sealed class MauiNativeUriLauncher : INativeUriLauncher
-{
-    public async Task<bool> CanOpenAsync(Uri uri, CancellationToken cancellationToken = default)
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Task<bool> availability = MainThread.InvokeOnMainThreadAsync(() =>
-            Launcher.Default.CanOpenAsync(uri)
+        if (!YouTubeTrailerUri.TryCreate(youtubeKey, out _))
+        {
+            return false;
+        }
+
+        Task<bool> presentation = MainThread.InvokeOnMainThreadAsync(() =>
+            PresentAsync(youtubeKey, cancellationToken)
         );
-        return await availability.WaitAsync(cancellationToken).ConfigureAwait(false);
+        return await presentation.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> OpenAsync(Uri uri, CancellationToken cancellationToken = default)
+    public void Stop()
+    {
+        TrailerPlayerPage? page;
+        lock (_sync)
+        {
+            page = _activePage;
+        }
+
+        if (page is null)
+        {
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(() => page.CloseForLifecycle());
+    }
+
+    public TrailerPlayerPage Create()
+    {
+        TrailerPlayerPage page = new(_logger, _screenReaderService);
+        page.Closed += OnPlayerClosed;
+        lock (_sync)
+        {
+            _activePage = page;
+        }
+
+        return page;
+    }
+
+    private async Task<bool> PresentAsync(string youtubeKey, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Task<bool> launch = MainThread.InvokeOnMainThreadAsync(() =>
-            Launcher.Default.OpenAsync(uri)
-        );
-        return await launch.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        lock (_sync)
+        {
+            if (_activePage is not null)
+            {
+                return true;
+            }
+        }
+
+        Shell shell =
+            Shell.Current
+            ?? throw new InvalidOperationException("The Good Movies Shell is not available.");
+        ShellNavigationQueryParameters parameters = new()
+        {
+            [TrailerPlayerPage.YouTubeKeyQueryParameter] = youtubeKey,
+        };
+        await shell.GoToAsync(GoodMoviesRoutes.TrailerPlayer, parameters);
+        return true;
+    }
+
+    private void OnPlayerClosed(object? sender, EventArgs e)
+    {
+        if (sender is not TrailerPlayerPage page)
+        {
+            return;
+        }
+
+        page.Closed -= OnPlayerClosed;
+        lock (_sync)
+        {
+            if (ReferenceEquals(_activePage, page))
+            {
+                _activePage = null;
+            }
+        }
     }
 }
-
-/// <summary>
-/// Compatibility name for callers that identify the implementation by its
-/// YouTube-specific behavior.
-/// </summary>
-public sealed class YouTubeTrailerLauncher : MauiExternalTrailerLauncher { }

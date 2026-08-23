@@ -1,3 +1,4 @@
+using GoodMovies.Maui.Services;
 using GoodMovies.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,7 @@ public partial class App : Application
     private readonly Func<AppShell> _appShellFactory;
     private readonly CatalogViewModel _catalogViewModel;
     private readonly IWordLevelSpeechService? _speechService;
+    private readonly ITrailerPlaybackController? _trailerPlaybackController;
     private readonly ILogger<App> _logger;
     private readonly object _dateBoundarySync = new();
     private readonly SemaphoreSlim _catalogUpdateGate = new(1, 1);
@@ -17,7 +19,8 @@ public partial class App : Application
         Func<AppShell> appShellFactory,
         CatalogViewModel catalogViewModel,
         ILogger<App> logger,
-        IWordLevelSpeechService? speechService = null
+        IWordLevelSpeechService? speechService = null,
+        ITrailerPlaybackController? trailerPlaybackController = null
     )
     {
         InitializeComponent();
@@ -27,6 +30,7 @@ public partial class App : Application
             catalogViewModel ?? throw new ArgumentNullException(nameof(catalogViewModel));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _speechService = speechService;
+        _trailerPlaybackController = trailerPlaybackController;
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -42,7 +46,7 @@ public partial class App : Application
 
     protected override void OnSleep()
     {
-        StopSpeech();
+        StopMedia();
         StopDateBoundaryWatch();
     }
 
@@ -57,23 +61,29 @@ public partial class App : Application
 
     private void OnWindowDeactivated(object? sender, EventArgs e)
     {
-        StopSpeech();
+        StopMedia();
         StopDateBoundaryWatch();
     }
 
     private void OnWindowStopped(object? sender, EventArgs e)
     {
-        StopSpeech();
+        StopMedia();
         StopDateBoundaryWatch();
     }
 
     private void OnWindowDestroying(object? sender, EventArgs e)
     {
-        StopSpeech();
+        StopMedia();
         StopDateBoundaryWatch();
     }
 
     internal void StopSpeech() => _speechService?.Stop();
+
+    internal void StopMedia()
+    {
+        StopSpeech();
+        _trailerPlaybackController?.Stop();
+    }
 
     private void StartForegroundWork(object? sender)
     {

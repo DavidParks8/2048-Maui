@@ -3,11 +3,12 @@ using GoodMovies.Core;
 namespace GoodMovies.ViewModels;
 
 /// <summary>
-/// Builds the native iOS YouTube app link used for trailer playback.
+/// Builds the privacy-enhanced YouTube embed URL used by the in-app player.
 /// </summary>
 public static class YouTubeTrailerUri
 {
-    public const string Scheme = "youtube";
+    public const string Scheme = "https";
+    public const string Host = "www.youtube-nocookie.com";
 
     public const int VideoKeyLength = YouTubeVideoKey.Length;
 
@@ -22,7 +23,8 @@ public static class YouTubeTrailerUri
         }
 
         uri = new Uri(
-            $"{Scheme}://www.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
+            $"{Scheme}://{Host}/embed/{Uri.EscapeDataString(key!)}"
+                + "?playsinline=1&modestbranding=1&rel=0",
             UriKind.Absolute
         );
         return true;
@@ -34,36 +36,38 @@ public static class YouTubeTrailerUri
             : throw new ArgumentException("The YouTube video key is invalid.", nameof(key));
 
     public static Uri? Build(string? key) => TryCreate(key, out Uri uri) ? uri : null;
-}
 
-/// <summary>
-/// Builds the native YouTube Kids app link used for trailer playback.
-/// YouTube Kids registers this scheme on iOS and accepts the standard
-/// YouTube watch route.
-/// </summary>
-public static class YouTubeKidsTrailerUri
-{
-    public const string Scheme = "vnd.youtube.kids";
-
-    public static bool TryCreate(string? key, out Uri uri)
+    public static bool IsTrustedEmbedUri(Uri? uri)
     {
-        if (!YouTubeVideoKey.IsValid(key))
+        if (
+            uri is null
+            || !uri.IsAbsoluteUri
+            || !string.Equals(uri.Scheme, Scheme, StringComparison.Ordinal)
+            || !string.Equals(uri.Host, Host, StringComparison.OrdinalIgnoreCase)
+        )
         {
-            uri = null!;
             return false;
         }
 
-        uri = new Uri(
-            $"{Scheme}://kids.youtube.com/watch?v={Uri.EscapeDataString(key!)}",
-            UriKind.Absolute
-        );
-        return true;
+        return TryGetVideoKey(uri, out _);
     }
 
-    public static Uri Create(string key) =>
-        TryCreate(key, out Uri uri)
-            ? uri
-            : throw new ArgumentException("The YouTube video key is invalid.", nameof(key));
+    public static bool TryGetVideoKey(Uri? uri, out string key)
+    {
+        const string embedPrefix = "/embed/";
+        if (
+            uri is null
+            || !uri.AbsolutePath.StartsWith(embedPrefix, StringComparison.Ordinal)
+            || !YouTubeVideoKey.IsValid(uri.AbsolutePath[embedPrefix.Length..])
+        )
+        {
+            key = string.Empty;
+            return false;
+        }
+
+        key = uri.AbsolutePath[embedPrefix.Length..];
+        return true;
+    }
 }
 
 public static class YouTubeKeyValidator

@@ -1,4 +1,5 @@
 #if DEBUG && GOOD_MOVIES_SAMPLE_DATA
+using Foundation;
 using GoodMovies.Core;
 
 namespace GoodMovies.Maui.Development;
@@ -175,8 +176,8 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
 }
 
 /// <summary>
-/// Sample visual QA intentionally exercises the no-trailer state and never
-/// supplies a real or unrelated video URL.
+/// Sample visual QA uses an optional launch-argument key so an official trailer
+/// can exercise the complete player without committing a video ID to the app.
 /// </summary>
 public sealed class SampleTrailerLookup : IMovieTrailerLookup, IMovieTrailerService, ITrailerLookup
 {
@@ -186,7 +187,25 @@ public sealed class SampleTrailerLookup : IMovieTrailerLookup, IMovieTrailerServ
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(TrailerLookupResult.NotFound(movieId));
+        string? key = NSUserDefaults.StandardUserDefaults.StringForKey("GoodMoviesTrailerTestKey");
+        MovieTrailer? trailer = TrailerSelectionPolicy.SelectBest(
+            new[]
+            {
+                new MovieTrailer(
+                    key ?? string.Empty,
+                    "Official trailer",
+                    "YouTube",
+                    "Trailer",
+                    true,
+                    "en"
+                ),
+            }
+        );
+        return Task.FromResult(
+            trailer is null
+                ? TrailerLookupResult.NotFound(movieId)
+                : TrailerLookupResult.Found(movieId, trailer)
+        );
     }
 }
 #endif

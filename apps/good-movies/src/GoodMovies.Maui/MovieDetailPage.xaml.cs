@@ -51,9 +51,13 @@ public partial class MovieDetailPage : ContentPage, IQueryAttributable
     protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
     {
         _boundDetail?.Deactivate();
-        _catalogViewModel.CloseDetail();
-        _boundDetail = null;
-        BindingContext = null;
+        if (!Navigation.NavigationStack.Contains(this))
+        {
+            _catalogViewModel.CloseDetail();
+            _boundDetail = null;
+            BindingContext = null;
+        }
+
         base.OnNavigatedFrom(args);
     }
 
