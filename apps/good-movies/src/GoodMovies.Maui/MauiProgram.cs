@@ -22,15 +22,8 @@ public static class MauiProgram
 
         builder.UseMauiApp<App>();
 
-        // The .NET 10 grouped CollectionView handler can index a section after
-        // its group is removed. The compatibility handler does not have that
-        // crash and is safer for the favorites feed.
         builder.ConfigureMauiHandlers(handlers =>
         {
-            handlers.AddHandler<
-                Microsoft.Maui.Controls.CollectionView,
-                Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler
-            >();
             handlers.AddHandler<TrailerPlayerView, TrailerPlayerViewHandler>();
         });
 

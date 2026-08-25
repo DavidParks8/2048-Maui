@@ -170,6 +170,9 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                 + "window.goodMoviesPlayerGuardObserver.disconnect(); "
                 + "window.goodMoviesPlayerGuardObserver = null; }"
                 + "window.goodMoviesPlayerGuardInstalled = false;"
+                + "window.goodMoviesPlayerReady = false;"
+                + "window.goodMoviesPlayerPlayingReported = false;"
+                + "window.goodMoviesPlayerEndedReported = false;"
                 + "var player = document.getElementById('movie_player');"
                 + "if (player && player.stopVideo) { player.stopVideo(); }",
             null!
@@ -190,8 +193,15 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
         }
 
         ReadOnlySpan<char> playerEvent = message.AsSpan(separator + 1);
-        if (playerEvent.SequenceEqual("playing"))
+        if (playerEvent.SequenceEqual("ready") || playerEvent.SequenceEqual("playing"))
         {
+            if (playerEvent.SequenceEqual("playing"))
+            {
+                // Inline playback is disabled, so active playback is in fullscreen or PiP
+                // even when the begin-fullscreen event fired before the guard was injected.
+                _presentationActive = true;
+            }
+
             CancelLoadTimeout();
             VirtualView.ReportLoadSucceeded();
             return;
@@ -275,6 +285,9 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
             (function() {
               if (window.goodMoviesPlayerGuardInstalled) { return; }
               window.goodMoviesPlayerGuardInstalled = true;
+              window.goodMoviesPlayerReady = false;
+              window.goodMoviesPlayerPlayingReported = false;
+              window.goodMoviesPlayerEndedReported = false;
               var selectedKey = '{{videoKey}}';
               var loadVersion = {{loadVersion}};
               var restrictedUiStyle = document.createElement('style');
@@ -317,12 +330,34 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                 if (!player || !player.getVideoData) { return; }
                 attachVideoEvents(player.querySelector('video'));
                 var data = player.getVideoData();
-                if (data && data.video_id && data.video_id !== selectedKey) {
+                if (!data || !data.video_id) { return; }
+                if (data.video_id !== selectedKey) {
+                  window.goodMoviesPlayerReady = false;
+                  window.goodMoviesPlayerPlayingReported = false;
+                  window.goodMoviesPlayerEndedReported = false;
                   player.stopVideo();
                   player.cueVideoById(selectedKey);
                   return;
                 }
-                notifyNative('ready');
+                var playerState = player.getPlayerState ? player.getPlayerState() : null;
+                if (playerState === 0) {
+                  if (!window.goodMoviesPlayerEndedReported) {
+                    window.goodMoviesPlayerEndedReported = true;
+                    notifyNative('ended');
+                  }
+                  return;
+                }
+                if (playerState === 1) {
+                  if (!window.goodMoviesPlayerPlayingReported) {
+                    window.goodMoviesPlayerPlayingReported = true;
+                    notifyNative('playing');
+                  }
+                  return;
+                }
+                if (!window.goodMoviesPlayerReady) {
+                  window.goodMoviesPlayerReady = true;
+                  notifyNative('ready');
+                }
               };
               var player = document.getElementById('movie_player');
               if (player && player.addEventListener) {
@@ -331,16 +366,22 @@ public sealed class TrailerPlayerViewHandler : ViewHandler<TrailerPlayerView, WK
                   attachVideoEvents(player.querySelector('video'));
                   var data = player.getVideoData ? player.getVideoData() : null;
                   if (data && data.video_id && data.video_id !== selectedKey) {
+                    window.goodMoviesPlayerReady = false;
+                    window.goodMoviesPlayerPlayingReported = false;
+                    window.goodMoviesPlayerEndedReported = false;
                     player.stopVideo();
                     player.cueVideoById(selectedKey);
                     return;
                   }
-                  if (state === 0) {
-                    player.stopVideo();
+                  if (state === 0 && !window.goodMoviesPlayerEndedReported) {
+                    window.goodMoviesPlayerEndedReported = true;
                     notifyNative('ended');
                     return;
                   }
-                  if (state === 1) { notifyNative('playing'); }
+                  if (state === 1 && !window.goodMoviesPlayerPlayingReported) {
+                    window.goodMoviesPlayerPlayingReported = true;
+                    notifyNative('playing');
+                  }
                 });
               }
               window.goodMoviesPlayerGuardObserver = new MutationObserver(checkPlayer);

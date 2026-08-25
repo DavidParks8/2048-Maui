@@ -159,7 +159,7 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
             id,
             title,
             rating,
-            new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType),
+            releaseDate,
             new[] { new MovieGenre(0, genre) },
             overview: overview,
             posterPath: posterPath

@@ -20,6 +20,7 @@
     <!-- Explicit simulator-only opt-in: /p:GoodMoviesUseSampleData=true (Debug). -->
     <GoodMoviesUseSampleData Condition="'$(GoodMoviesUseSampleData)' == ''"
       >false</GoodMoviesUseSampleData>
+    <UserSecretsId>c44178f9-3d7f-468d-a397-7acafcf05346</UserSecretsId>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(GoodMoviesUseSampleData)' == 'true' and '$(Configuration)' == 'Debug'">
