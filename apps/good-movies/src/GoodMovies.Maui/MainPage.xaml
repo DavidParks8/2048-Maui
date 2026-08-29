@@ -345,7 +345,7 @@
             AutomationId="MovieFeed"
             IsGrouped="True"
             ItemsSource="{Binding MovieGroups}"
-            ItemSizingStrategy="MeasureFirstItem"
+            ItemSizingStrategy="MeasureAllItems"
             ItemsUpdatingScrollMode="KeepScrollOffset"
             SelectionMode="None"
             VerticalScrollBarVisibility="Never"

@@ -36,7 +36,7 @@ saved state.
 
 ## Structure
 
-- **Expanded landscape (900pt+ and wider than tall):** 262pt navigation rail, two-column
+- **Expanded landscape (1080pt+ and wider than tall):** 262pt navigation rail, two-column
   grouped movie feed, full 44pt page title.
 - **Compact:** one-column feed and three large bottom tabs. iPad portrait retains the
   44pt title; iPhone uses 32pt.

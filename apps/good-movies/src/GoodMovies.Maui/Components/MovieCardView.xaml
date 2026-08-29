@@ -7,12 +7,12 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   x:DataType="local:MovieCardView"
   x:Name="Root"
-  HeightRequest="{OnIdiom Phone=182, Default=218}"
-  MinimumHeightRequest="{OnIdiom Phone=182, Default=218}"
+  HeightRequest="{OnIdiom Phone=224, Default=250}"
+  MinimumHeightRequest="{OnIdiom Phone=224, Default=250}"
 >
   <Grid x:Name="CardRoot" RowDefinitions="*">
     <Border
-      HeightRequest="{OnIdiom Phone=176, Default=212}"
+      HeightRequest="{OnIdiom Phone=218, Default=244}"
       Background="#66000000"
       InputTransparent="True"
       Stroke="Transparent"
@@ -31,7 +31,7 @@
       Stroke="Transparent"
       StrokeShape="RoundRectangle 24"
       StrokeThickness="0"
-      HeightRequest="{OnIdiom Phone=176, Default=212}"
+      HeightRequest="{OnIdiom Phone=218, Default=244}"
       VerticalOptions="Start"
     >
       <Border.GestureRecognizers>
@@ -40,7 +40,7 @@
       <Grid
         x:Name="CardGrid"
         ColumnSpacing="{OnIdiom Phone=12, Default=16}"
-        RowDefinitions="*"
+        RowDefinitions="*,Auto"
         RowSpacing="0"
       >
         <Grid.ColumnDefinitions>
@@ -52,6 +52,7 @@
         <Border
           x:Name="PosterBorder"
           Grid.Column="0"
+          Grid.RowSpan="2"
           AutomationProperties.IsInAccessibleTree="False"
           Background="{StaticResource Surface2}"
           HeightRequest="{OnIdiom Phone=132, Default=180}"
@@ -59,6 +60,7 @@
           Stroke="Transparent"
           StrokeShape="RoundRectangle 16"
           StrokeThickness="0"
+          VerticalOptions="Center"
           WidthRequest="{OnIdiom Phone=88, Default=120}"
         >
           <Grid InputTransparent="True" RowDefinitions="*,Auto" RowSpacing="0">
@@ -103,7 +105,7 @@
           Grid.Column="1"
           AutomationProperties.IsInAccessibleTree="False"
           InputTransparent="True"
-          RowDefinitions="Auto,Auto,Auto"
+          RowDefinitions="Auto,Auto"
           RowSpacing="9"
           VerticalOptions="Center"
         >
@@ -127,57 +129,71 @@
             Text="{Binding Card, Converter={StaticResource CardStatusConverter}, Source={x:Reference Root}}"
             TextColor="{StaticResource Accent}"
           />
-          <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8" InputTransparent="True">
-            <Border
-              Padding="10,4"
-              Background="{StaticResource Accent}"
-              Stroke="Transparent"
-              StrokeShape="RoundRectangle 10"
-              StrokeThickness="0"
-            >
+        </Grid>
+
+        <FlexLayout
+          Grid.Row="1"
+          Grid.Column="1"
+          Grid.ColumnSpan="2"
+          AlignItems="Start"
+          Direction="Row"
+          InputTransparent="True"
+          Wrap="Wrap"
+        >
+          <Border
+            Margin="0,0,8,6"
+            Padding="10,4"
+            Background="{StaticResource Accent}"
+            FlexLayout.Shrink="0"
+            HorizontalOptions="Start"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+          >
+            <Label
+              FontAutoScalingEnabled="True"
+              FontAttributes="Bold"
+              FontSize="16"
+              LineBreakMode="NoWrap"
+              MaxLines="1"
+              Text="{Binding Card.Rating, Converter={StaticResource RatingLabelConverter}, Source={x:Reference Root}}"
+              TextColor="{StaticResource PageBackground}"
+            />
+          </Border>
+          <Border
+            Margin="0,0,0,6"
+            Padding="10,4"
+            Background="{StaticResource Surface2}"
+            FlexLayout.Shrink="0"
+            HorizontalOptions="Start"
+            Stroke="{StaticResource AccentMuted}"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="1"
+          >
+            <HorizontalStackLayout Spacing="6">
+              <Label
+                AutomationProperties.IsInAccessibleTree="False"
+                FontAutoScalingEnabled="True"
+                FontSize="16"
+                Text="{Binding Card.KindIcon, Source={x:Reference Root}}"
+              />
               <Label
                 FontAutoScalingEnabled="True"
-                FontAttributes="Bold"
                 FontSize="16"
-                Text="{Binding Card.Rating, Converter={StaticResource RatingLabelConverter}, Source={x:Reference Root}}"
-                TextColor="{StaticResource PageBackground}"
+                LineBreakMode="NoWrap"
+                MaxLines="1"
+                Text="{Binding Card.Kind, Converter={StaticResource KindLabelConverter}, Source={x:Reference Root}}"
+                TextColor="{StaticResource White}"
               />
-            </Border>
-            <Border
-              Grid.Column="1"
-              Padding="10,4"
-              Background="{StaticResource Surface2}"
-              HorizontalOptions="Start"
-              MaximumWidthRequest="190"
-              Stroke="{StaticResource AccentMuted}"
-              StrokeShape="RoundRectangle 10"
-              StrokeThickness="1"
-            >
-              <HorizontalStackLayout Spacing="6">
-                <Label
-                  AutomationProperties.IsInAccessibleTree="False"
-                  FontAutoScalingEnabled="True"
-                  FontSize="16"
-                  Text="{Binding Card.KindIcon, Source={x:Reference Root}}"
-                />
-                <Label
-                  FontAutoScalingEnabled="True"
-                  FontSize="16"
-                  LineBreakMode="TailTruncation"
-                  MaxLines="1"
-                  Text="{Binding Card.Kind, Converter={StaticResource KindLabelConverter}, Source={x:Reference Root}}"
-                  TextColor="{StaticResource White}"
-                />
-              </HorizontalStackLayout>
-            </Border>
-          </Grid>
-        </Grid>
+            </HorizontalStackLayout>
+          </Border>
+        </FlexLayout>
       </Grid>
     </Border>
 
     <Button
       x:Name="FavoriteButton"
-      Margin="{OnIdiom Phone='0,0,14,0', Default='0,0,16,0'}"
+      Margin="{OnIdiom Phone='0,14,14,0', Default='0,16,16,0'}"
       Padding="0"
       AutomationId="{Binding Card, Converter={StaticResource CardFavoriteAutomationIdConverter}, Source={x:Reference Root}}"
       Background="{StaticResource Surface2}"
@@ -195,7 +211,7 @@
       SemanticProperties.Hint="{Binding FavoriteAccessibilityHint, Source={x:Reference Root}}"
       Text="{Binding Card.IsFavorite, Converter={StaticResource HeartGlyphConverter}, Source={x:Reference Root}}"
       TextColor="{StaticResource Accent}"
-      VerticalOptions="Center"
+      VerticalOptions="Start"
       WidthRequest="{OnIdiom Phone=60, Default=68}"
       ZIndex="2"
     >

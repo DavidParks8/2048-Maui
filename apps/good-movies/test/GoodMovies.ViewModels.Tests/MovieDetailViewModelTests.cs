@@ -152,9 +152,8 @@ public sealed class MovieDetailViewModelTests
     {
         Movie movie = Movie(9, "Read me", Today, "One bright day.");
         IWordLevelSpeechService speech = Substitute.For<IWordLevelSpeechService>();
-        speech
-            .SpeakAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+        TaskCompletionSource speaking = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        speech.SpeakAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(speaking.Task);
         speech
             .SpeakWordAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -164,14 +163,34 @@ public sealed class MovieDetailViewModelTests
             new[] { "One", "bright", "day." },
             detail.WordTokens.Select(token => token.Text).ToArray()
         );
-        await detail.PlayReadAloudAsync();
-        Assert.IsFalse(detail.IsReading);
+        Task readAloud = detail.PlayReadAloudAsync();
+        Assert.IsTrue(detail.IsReading);
+
+        speech.SpokenRange += Raise.Event<EventHandler<SpeechRangeEventArgs>>(
+            speech,
+            new SpeechRangeEventArgs(0, movie.Overview!.Length)
+        );
+        Assert.IsTrue(detail.WordTokens[0].IsHighlighted);
+        Assert.IsFalse(detail.WordTokens[1].IsHighlighted);
+        Assert.IsFalse(detail.WordTokens[2].IsHighlighted);
+
         speech.SpokenRange += Raise.Event<EventHandler<SpeechRangeEventArgs>>(
             speech,
             new SpeechRangeEventArgs(4, 6)
         );
         Assert.IsTrue(detail.WordTokens[1].IsHighlighted);
         Assert.IsFalse(detail.WordTokens[0].IsHighlighted);
+
+        speaking.SetResult();
+        await readAloud;
+        Assert.IsFalse(detail.IsReading);
+        Assert.IsFalse(detail.WordTokens.Any(token => token.IsHighlighted));
+
+        speech.SpokenRange += Raise.Event<EventHandler<SpeechRangeEventArgs>>(
+            speech,
+            new SpeechRangeEventArgs(0, movie.Overview.Length)
+        );
+        Assert.IsFalse(detail.WordTokens.Any(token => token.IsHighlighted));
 
         await detail.SpeakWordAsync(detail.WordTokens[2]);
         await speech.Received(1).SpeakWordAsync("day.", Arg.Any<CancellationToken>());

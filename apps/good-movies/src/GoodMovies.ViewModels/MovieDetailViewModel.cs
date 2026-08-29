@@ -21,7 +21,6 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     private Task<TrailerPlaybackResult>? _trailerTask;
     private Task<TrailerPlaybackResult>? _trailerPreparationTask;
     private bool _isDeactivated;
-    private bool _acceptSpeechRanges;
     private bool _disposed;
 
     public MovieDetailViewModel(
@@ -255,7 +254,6 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
             _speechService.StopSpeaking();
         }
 
-        _acceptSpeechRanges = true;
         SpeechMessageKey = CatalogMessageKey.None;
         ClearSpokenRange();
         IsReading = true;
@@ -284,7 +282,6 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void StopReadAloud()
     {
-        _acceptSpeechRanges = false;
         _speechService?.StopSpeaking();
         IsReading = false;
         ClearSpokenRange();
@@ -306,7 +303,6 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
             IsReading = false;
         }
 
-        _acceptSpeechRanges = true;
         HighlightRange(new SpokenCharacterRange(token.Start, token.Length));
         return SpeakWordCoreAsync(token.Text, cancellationToken);
     }
@@ -617,7 +613,7 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (!_acceptSpeechRanges)
+        if (!IsReading)
         {
             return;
         }
@@ -629,15 +625,27 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     private void HighlightRange(SpokenCharacterRange? range)
     {
+        WordTokenViewModel? highlightedToken = null;
+        if (range is SpokenCharacterRange value)
+        {
+            long rangeEnd = (long)value.Start + value.Length;
+            foreach (WordTokenViewModel token in WordTokens)
+            {
+                bool intersects =
+                    value.Length > 0
+                        ? token.Start < rangeEnd && value.Start < token.End
+                        : token.Start <= value.Start && value.Start < token.End;
+                if (intersects)
+                {
+                    highlightedToken = token;
+                    break;
+                }
+            }
+        }
+
         foreach (WordTokenViewModel token in WordTokens)
         {
-            token.IsHighlighted =
-                range is SpokenCharacterRange value
-                && (
-                    value.Length > 0
-                        ? token.Start < value.End && value.Start < token.End
-                        : token.Start <= value.Start && value.Start < token.End
-                );
+            token.IsHighlighted = ReferenceEquals(token, highlightedToken);
         }
     }
 

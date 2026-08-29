@@ -13,6 +13,7 @@ namespace GoodMovies.Maui;
 
 public partial class MainPage : ContentPage
 {
+    private const double ExpandedLayoutMinimumWidth = 1080;
     private const string ShimmerAnimationName = "GoodMoviesSkeletonShimmer";
 
     private readonly CatalogViewModel _viewModel;
@@ -188,7 +189,7 @@ public partial class MainPage : ContentPage
 
     private void OnSizeChanged(object? sender, EventArgs e)
     {
-        bool isWide = Width >= 900 && Width > Height;
+        bool isWide = Width >= ExpandedLayoutMinimumWidth && Width > Height;
         if (_layoutInitialized && isWide == _isWide)
         {
             return;
