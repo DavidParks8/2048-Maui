@@ -363,7 +363,6 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
                     is TrailerPlaybackState.Ready
                         or TrailerPlaybackState.NotFound
                         or TrailerPlaybackState.MissingConfiguration
-                        or TrailerPlaybackState.Failed
             )
             {
                 return Task.FromResult(existing);

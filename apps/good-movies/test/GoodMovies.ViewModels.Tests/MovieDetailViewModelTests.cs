@@ -148,6 +148,38 @@ public sealed class MovieDetailViewModelTests
     }
 
     [TestMethod]
+    public async Task Detail_FailedTrailerLookupCanBeRetried()
+    {
+        Movie movie = Movie(8, "Retry trailer", Today, "Overview");
+        MovieTrailer trailer = new("youtube-key", "YouTube", "Trailer", true, "en");
+        IMovieTrailerLookup lookup = Substitute.For<IMovieTrailerLookup>();
+        lookup
+            .GetTrailerAsync(8, Arg.Any<CancellationToken>())
+            .Returns(
+                Task.FromResult(
+                    TrailerLookupResult.Failure(new HttpRequestException("Connection interrupted."))
+                ),
+                Task.FromResult(TrailerLookupResult.Found(trailer))
+            );
+        ITrailerLauncher launcher = Substitute.For<ITrailerLauncher>();
+        launcher.LaunchAsync(trailer.Key, Arg.Any<CancellationToken>()).Returns(true);
+        MovieDetailViewModel detail = new(
+            movie,
+            new FixedClock(Today),
+            trailerLookup: lookup,
+            trailerLauncher: launcher
+        );
+
+        TrailerPlaybackResult failed = await detail.PlayTrailerAsync();
+        TrailerPlaybackResult retried = await detail.PlayTrailerAsync();
+
+        Assert.AreEqual(TrailerPlaybackState.Failed, failed.State);
+        Assert.AreEqual(TrailerPlaybackState.Launched, retried.State);
+        await lookup.Received(2).GetTrailerAsync(8, Arg.Any<CancellationToken>());
+        await launcher.Received(1).LaunchAsync(trailer.Key, Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
     public async Task Detail_ReadAloudTokenizesHighlightsRangesAndStopsOnDeactivate()
     {
         Movie movie = Movie(9, "Read me", Today, "One bright day.");

@@ -859,6 +859,39 @@ public sealed class InfrastructureBehaviorTests
         Assert.IsNotNull(provider.GetRequiredService<IMovieTrailerLookup>());
     }
 
+    [TestMethod]
+    public async Task ServiceRegistration_RetriesTransientTrailerFailures()
+    {
+        using TestDirectory directory = new();
+        int attempts = 0;
+        using FakeHandler handler = new(_ =>
+            Interlocked.Increment(ref attempts) switch
+            {
+                1 => throw new HttpRequestException("offline"),
+                2 => ServerError(),
+                _ => Json(
+                    """{"results":[{"key":"Rtry_123456","name":"Trailer","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en"}]}"""
+                ),
+            }
+        );
+        GoodMoviesInfrastructureOptions options = Options();
+        options.StorageDirectory = directory.Path;
+        ServiceCollection services = new();
+        services.AddGoodMoviesInfrastructure(options);
+        services
+            .AddHttpClient<TmdbMovieCatalogClient>()
+            .ConfigurePrimaryHttpMessageHandler(() => handler);
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        TrailerLookupResult result = await provider
+            .GetRequiredService<IMovieTrailerLookup>()
+            .GetTrailerAsync(1);
+
+        Assert.AreEqual(TrailerLookupStatus.Found, result.Status);
+        Assert.AreEqual("Rtry_123456", result.Trailer!.Key);
+        Assert.AreEqual(3, attempts);
+    }
+
     private static JsonMovieCatalogCache CreateCache(
         string filePath,
         TimeProvider? timeProvider = null,

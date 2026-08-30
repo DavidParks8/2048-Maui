@@ -28,7 +28,8 @@ public static class GoodMoviesInfrastructureServiceCollectionExtensions
             .AddHttpClient<TmdbMovieCatalogClient>(httpClient =>
                 httpClient.BaseAddress = options.ApiBaseAddress
             )
-            .AddHttpMessageHandler<TmdbBearerTokenHandler>();
+            .AddHttpMessageHandler<TmdbBearerTokenHandler>()
+            .AddStandardResilienceHandler();
         services.AddTransient<IMovieCatalogProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<TmdbMovieCatalogClient>()
         );
