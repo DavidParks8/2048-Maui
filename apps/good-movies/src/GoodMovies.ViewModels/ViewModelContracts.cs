@@ -43,6 +43,7 @@ public enum CatalogMessageKey
     NoSearchResults,
     NoFavorites,
     NoMovies,
+    NoMoviesInTheaters,
     RefreshWarning,
     RefreshError,
     OfflineWarning,

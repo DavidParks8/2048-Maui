@@ -29,6 +29,10 @@ public sealed class GoodMoviesInfrastructureOptions
     /// </summary>
     public string? Token { get; set; }
 
+    /// <summary>
+    /// Upcoming discovery is truncated at this limit. Now Playing must fit
+    /// completely or the refresh fails without removing cached movies.
+    /// </summary>
     public int MaxPages { get; set; } = MaximumPageCount;
 
     /// <summary>

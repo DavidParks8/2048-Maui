@@ -84,7 +84,9 @@ internal sealed class MovieCatalogService : IMovieCatalogService
         CatalogFetchResult fetched;
         try
         {
-            fetched = await _provider.FetchAsync(today, cancellationToken).ConfigureAwait(false);
+            fetched = await _provider
+                .FetchAsync(today, cancellationToken, cached.Movies)
+                .ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -114,7 +116,23 @@ internal sealed class MovieCatalogService : IMovieCatalogService
             );
         }
 
-        MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(fetched.Movies, today);
+        Dictionary<int, Movie> previous = new();
+        foreach (Movie movie in cached.Movies)
+        {
+            previous.TryAdd(movie.Id, movie);
+        }
+
+        MovieCatalogSnapshot snapshot = new MovieCatalogSnapshot(
+            fetched.Movies.Select(movie =>
+                previous.TryGetValue(movie.Id, out Movie? tracked)
+                    ? movie with
+                    {
+                        HasBeenInTheaters = movie.HasBeenInTheaters || tracked.HasBeenInTheaters,
+                    }
+                    : movie
+            ),
+            today
+        );
         DateTimeOffset refreshedAt =
             fetched.RefreshedAt is DateTimeOffset value && value != default
                 ? value

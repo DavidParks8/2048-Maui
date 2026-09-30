@@ -173,7 +173,8 @@ public interface IMovieCatalogProvider
 {
     Task<CatalogFetchResult> FetchAsync(
         DateOnly today,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<Movie>? trackedMovies = null
     );
 }
 

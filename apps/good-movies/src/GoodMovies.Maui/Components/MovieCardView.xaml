@@ -119,16 +119,66 @@
             Text="{Binding Card.Title, Source={x:Reference Root}}"
             TextColor="{StaticResource White}"
           />
-          <Label
+          <Border
             Grid.Row="1"
-            FontAutoScalingEnabled="True"
-            FontAttributes="Bold"
-            FontSize="21"
-            LineBreakMode="TailTruncation"
-            MaxLines="1"
-            Text="{Binding Card, Converter={StaticResource CardStatusConverter}, Source={x:Reference Root}}"
-            TextColor="{StaticResource Accent}"
-          />
+            Padding="0"
+            Background="Transparent"
+            HorizontalOptions="Start"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+          >
+            <Border.Triggers>
+              <DataTrigger
+                Binding="{Binding Card.IsInTheaters, Source={x:Reference Root}}"
+                TargetType="Border"
+                Value="True"
+              >
+                <Setter Property="Padding" Value="8,4" />
+                <Setter Property="Background" Value="{StaticResource Accent}" />
+              </DataTrigger>
+            </Border.Triggers>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="0">
+              <Grid.Triggers>
+                <DataTrigger
+                  Binding="{Binding Card.IsInTheaters, Source={x:Reference Root}}"
+                  TargetType="Grid"
+                  Value="True"
+                >
+                  <Setter Property="ColumnSpacing" Value="6" />
+                </DataTrigger>
+              </Grid.Triggers>
+              <Label
+                Grid.Column="0"
+                AutomationProperties.IsInAccessibleTree="False"
+                FontAutoScalingEnabled="True"
+                FontSize="24"
+                IsVisible="{Binding Card.IsInTheaters, Source={x:Reference Root}}"
+                Text="{x:Static strings:AppStrings.PopcornIcon}"
+                VerticalOptions="Center"
+              />
+              <Label
+                Grid.Column="1"
+                FontAutoScalingEnabled="True"
+                FontAttributes="Bold"
+                FontSize="21"
+                Text="{Binding Card, Converter={StaticResource CardStatusConverter}, ConverterParameter=Compact, Source={x:Reference Root}}"
+                TextColor="{StaticResource Accent}"
+                VerticalOptions="Center"
+              >
+                <Label.Triggers>
+                  <DataTrigger
+                    Binding="{Binding Card.IsInTheaters, Source={x:Reference Root}}"
+                    TargetType="Label"
+                    Value="True"
+                  >
+                    <Setter Property="FontSize" Value="16" />
+                    <Setter Property="TextColor" Value="{StaticResource PageBackground}" />
+                  </DataTrigger>
+                </Label.Triggers>
+              </Label>
+            </Grid>
+          </Border>
         </Grid>
 
         <FlexLayout

@@ -14,6 +14,10 @@ internal sealed class CachedMovie
 {
     public int Id { get; set; }
 
+    public bool IsInTheaters { get; set; }
+
+    public bool HasBeenInTheaters { get; set; }
+
     public string Title { get; set; } = string.Empty;
 
     public string? Overview { get; set; }
@@ -56,20 +60,30 @@ internal sealed class FavoriteFileEntry
 
     public DateOnly UsTheatricalReleaseDate { get; set; }
 
+    public bool? HasBeenInTheaters { get; set; }
+
+    public bool IsInTheaters { get; set; }
+
     [JsonPropertyName("releaseDate")]
     public DateOnly? ReleaseDate { get; set; }
 }
 
 internal sealed class TmdbDiscoverResponse
 {
+    public int Page { get; set; }
+
+    [JsonRequired]
     [JsonPropertyName("total_pages")]
     public int TotalPages { get; set; }
 
+    [JsonRequired]
     public List<TmdbDiscoverMovie> Results { get; set; } = new();
 }
 
 internal sealed class TmdbDiscoverMovie
 {
+    public bool Adult { get; set; }
+
     public int Id { get; set; }
 
     public string? Title { get; set; }
@@ -86,6 +100,8 @@ internal sealed class TmdbDiscoverMovie
     public List<int> GenreIds { get; set; } = new();
 
     public double Popularity { get; set; }
+
+    public List<TmdbGenre> Genres { get; set; } = new();
 }
 
 internal sealed class TmdbGenreListResponse
@@ -151,6 +167,7 @@ internal sealed class TmdbVideo
 [JsonSerializable(typeof(CatalogCacheDocument))]
 [JsonSerializable(typeof(List<FavoriteFileEntry>))]
 [JsonSerializable(typeof(TmdbDiscoverResponse))]
+[JsonSerializable(typeof(TmdbDiscoverMovie))]
 [JsonSerializable(typeof(TmdbGenreListResponse))]
 [JsonSerializable(typeof(TmdbReleaseDatesResponse))]
 [JsonSerializable(typeof(TmdbVideosResponse))]

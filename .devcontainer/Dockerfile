@@ -39,10 +39,10 @@ RUN mkdir -p ${ANDROID_HOME} \
 USER vscode
 
 # Install .NET 10 SDK
-RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir /home/vscode/.dotnet
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 10.0.401 --install-dir /home/vscode/.dotnet
 
 ENV DOTNET_ROOT=/home/vscode/.dotnet
 ENV PATH="${PATH}:${DOTNET_ROOT}:${DOTNET_ROOT}/tools"
 
 # Install MAUI Android workload
-RUN /home/vscode/.dotnet/dotnet workload install maui-android --skip-sign-check
+RUN /home/vscode/.dotnet/dotnet workload install maui-android --version 10.0.401.1 --skip-sign-check

@@ -15,10 +15,14 @@ public sealed record Movie
         string? posterPath = null,
         Uri? posterUri = null,
         string? originalLanguage = null,
-        IEnumerable<int>? genreIds = null
+        IEnumerable<int>? genreIds = null,
+        bool isInTheaters = false,
+        bool hasBeenInTheaters = false
     )
     {
         Id = id;
+        IsInTheaters = isInTheaters;
+        HasBeenInTheaters = hasBeenInTheaters || isInTheaters;
         Title = title?.Trim() ?? string.Empty;
         Certification = MovieCertification.TryCreate(
             certification,
@@ -41,6 +45,12 @@ public sealed record Movie
                 .OrderBy(static release => release.ReleaseDate)
                 .ThenBy(static release => release.ReleaseType)
         );
+        UsReleases = CollectionSnapshot.Create(
+            Releases
+                .Where(static release => release is not null && release.IsUsCatalogRelease)
+                .OrderBy(static release => release.ReleaseDate)
+                .ThenBy(static release => release.ReleaseType)
+        );
     }
 
     public Movie(
@@ -53,7 +63,9 @@ public sealed record Movie
         string? posterPath = null,
         Uri? posterUri = null,
         string? originalLanguage = null,
-        IEnumerable<int>? genreIds = null
+        IEnumerable<int>? genreIds = null,
+        bool isInTheaters = false,
+        bool hasBeenInTheaters = false
     )
         : this(
             id,
@@ -72,10 +84,19 @@ public sealed record Movie
             posterPath,
             posterUri,
             originalLanguage,
-            genreIds
+            genreIds,
+            isInTheaters,
+            hasBeenInTheaters
         ) { }
 
     public int Id { get; }
+
+    /// <summary>
+    /// The last successfully fetched US Now Playing status, retained while offline.
+    /// </summary>
+    public bool IsInTheaters { get; }
+
+    public bool HasBeenInTheaters { get; init; }
 
     public string Title { get; }
 
@@ -97,6 +118,8 @@ public sealed record Movie
 
     public IReadOnlyList<TheatricalRelease> UsTheatricalReleases { get; }
 
+    public IReadOnlyList<TheatricalRelease> UsReleases { get; }
+
     public IReadOnlyList<MovieGenre> Genres { get; }
 
     public IReadOnlyList<int> GenreIds { get; }
@@ -111,6 +134,8 @@ public sealed record Movie
 
     public DateOnly? UsTheatricalReleaseDate =>
         UsTheatricalReleases.Count == 0 ? null : UsTheatricalReleases[0].ReleaseDate;
+
+    public DateOnly? UsReleaseDate => UsReleases.Count == 0 ? null : UsReleases[0].ReleaseDate;
 
     private static IReadOnlyList<int> CopyDistinctGenreIds(
         IEnumerable<int>? genreIds,

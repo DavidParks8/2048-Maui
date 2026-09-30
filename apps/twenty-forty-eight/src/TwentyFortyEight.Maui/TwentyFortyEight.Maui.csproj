@@ -1,61 +1,84 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Default targets for local development -->
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0;net10.0-ios;net10.0-android</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">net10.0-android</TargetFrameworks>
-    
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))"
+      >net10.0-windows10.0.19041.0;net10.0-ios;net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))"
+      >net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))"
+      >net10.0-android</TargetFrameworks>
+
     <!-- CI builds: use MAUI_TARGET_PLATFORM environment variable to select target -->
-    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'android'">net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'android'"
+      >net10.0-android</TargetFrameworks>
     <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'ios'">net10.0-ios</TargetFrameworks>
-    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'windows'">net10.0-windows10.0.19041.0</TargetFrameworks>
-    
+    <TargetFrameworks Condition="'$(MAUI_TARGET_PLATFORM)' == 'windows'"
+      >net10.0-windows10.0.19041.0</TargetFrameworks>
+
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
-    
+
     <!-- Display name -->
     <ApplicationTitle>2048 🎮</ApplicationTitle>
-    
+
     <!-- App Identifier -->
     <ApplicationId>com.dappermagna.twentyfortyeight</ApplicationId>
-    
+
     <!-- Versions -->
-    <ApplicationDisplayVersion Condition="'$(ApplicationDisplayVersion)' == ''">1.0.1</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion Condition="'$(ApplicationDisplayVersion)' == ''"
+      >1.0.1</ApplicationDisplayVersion>
     <ApplicationVersion Condition="'$(ApplicationVersion)' == ''">9</ApplicationVersion>
-    
+
     <!-- Android specific -->
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>
-    
+    <SupportedOSPlatformVersion
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'"
+      >34.0</SupportedOSPlatformVersion>
+
     <!-- iOS/Mac Catalyst specific -->
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">26.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">26.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'"
+      >26.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'"
+      >26.0</SupportedOSPlatformVersion>
 
     <!--
       dotnet run (and VS Code launch) expects the MacCatalyst app bundle name to match the project/assembly name.
       Using emojis/spaces in ApplicationTitle causes the produced .app folder name to differ, which breaks launching.
     -->
-    <ApplicationTitle Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">TwentyFortyEight.Maui</ApplicationTitle>
-    
+    <ApplicationTitle
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'"
+      >TwentyFortyEight.Maui</ApplicationTitle>
+
     <!-- Windows specific -->
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-    <WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
+    <SupportedOSPlatformVersion
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
+      >10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
+      >10.0.17763.0</TargetPlatformMinVersion>
+    <WindowsPackageType
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
+      >None</WindowsPackageType>
     <!-- RuntimeIdentifier required for NativeAOT to restore correct runtime packs -->
-    <RuntimeIdentifier Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">win-x64</RuntimeIdentifier>
-    
+    <RuntimeIdentifier
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
+      >win-x64</RuntimeIdentifier>
+
     <!-- AOT and compiled bindings -->
     <MauiStrictXamlCompilation>true</MauiStrictXamlCompilation>
     <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
     <EnableXamlCBindingDiagnostics>true</EnableXamlCBindingDiagnostics>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <!-- Disable NativeAOT for Android due to SkiaSharp compatibility issues -->
     <PublishAot Condition="'$(TargetFramework)' != 'net10.0-android'">true</PublishAot>
-    <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'">true</RunAOTCompilation>
+    <RunAOTCompilation Condition="'$(TargetFramework)' != 'net10.0-android'"
+      >true</RunAOTCompilation>
   </PropertyGroup>
-  
+
   <!-- Disable Fast Deployment for Android to fix manual APK installation crashes -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
@@ -63,14 +86,22 @@
 
   <!-- iOS: default to simulator RID when none specified, and disable signing for simulator builds -->
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">iossimulator-arm64</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">iossimulator-x64</RuntimeIdentifier>
+    <RuntimeIdentifier
+      Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'"
+      >iossimulator-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier
+      Condition="'$(RuntimeIdentifier)' == '' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'"
+      >iossimulator-x64</RuntimeIdentifier>
     <CodesignKey Condition="$(RuntimeIdentifier.StartsWith('iossimulator'))">-</CodesignKey>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- App Icon -->
-    <MauiIcon Include="Resources/AppIcon/appicon.svg" ForegroundFile="Resources/AppIcon/appiconfg.svg" Color="#512BD4" />
+    <MauiIcon
+      Include="Resources/AppIcon/appicon.svg"
+      ForegroundFile="Resources/AppIcon/appiconfg.svg"
+      Color="#512BD4"
+    />
 
     <!-- Splash Screen -->
     <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#512BD4" BaseSize="128,128" />

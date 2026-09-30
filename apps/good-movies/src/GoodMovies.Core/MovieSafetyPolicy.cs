@@ -2,7 +2,7 @@ namespace GoodMovies.Core;
 
 /// <summary>
 /// Accepts G/PG movies and not-yet-rated family movies with a verified U.S.
-/// limited or wide theatrical release.
+/// theatrical release or a verified digital/TV release for a redirected title.
 /// </summary>
 public static class MovieSafetyPolicy
 {
@@ -16,5 +16,5 @@ public static class MovieSafetyPolicy
                 && string.Equals(movie.OriginalLanguage, "en", StringComparison.OrdinalIgnoreCase)
             )
         )
-        && movie.UsTheatricalReleases.Count > 0;
+        && movie.UsReleases.Count > 0;
 }

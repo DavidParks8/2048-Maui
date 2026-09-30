@@ -223,6 +223,8 @@ internal sealed class JsonMovieCatalogCache : IMovieCatalogCache
         return new CachedMovie
         {
             Id = movie.Id,
+            IsInTheaters = movie.IsInTheaters,
+            HasBeenInTheaters = movie.HasBeenInTheaters,
             Title = movie.Title,
             Overview = movie.Overview,
             PosterPath = posterUri is null ? null : movie.PosterPath,
@@ -286,7 +288,9 @@ internal sealed class JsonMovieCatalogCache : IMovieCatalogCache
             safePosterPath,
             posterUri,
             cachedMovie.OriginalLanguage,
-            cachedMovie.GenreIds
+            cachedMovie.GenreIds,
+            cachedMovie.IsInTheaters,
+            cachedMovie.HasBeenInTheaters
         );
     }
 }

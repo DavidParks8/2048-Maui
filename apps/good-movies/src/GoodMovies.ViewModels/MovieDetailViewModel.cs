@@ -17,6 +17,7 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     private readonly object _trailerSync = new();
     private readonly IClock _clock;
     private DateOnly? _releaseDate;
+    private Movie _releaseMovie;
 
     private Task<TrailerPlaybackResult>? _trailerTask;
     private Task<TrailerPlaybackResult>? _trailerPreparationTask;
@@ -43,10 +44,11 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
         _trailerLookup = trailerLookup;
         _trailerLauncher = trailerLauncher;
         IsFavorite = isFavorite;
+        _releaseMovie = movie;
 
         _releaseDate = GetDisplayReleaseDate();
         StatusInfo = _releaseDate is DateOnly releaseDate
-            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today)
+            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today, IsInTheaters)
             : default;
         WordTokens = Tokenize(Overview).ToArray();
 
@@ -62,6 +64,8 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
 
     public string Title => Movie.Title;
 
+    public bool IsInTheaters => _releaseMovie.IsInTheaters;
+
     public string Rating => Movie.Certification?.Code ?? string.Empty;
 
     public string Kind { get; }
@@ -75,9 +79,11 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     public DateOnly? ReleaseDate => _releaseDate;
 
     private FavoriteEntry? FavoriteEntry =>
-        ReleaseDate is DateOnly date ? new FavoriteEntry(Movie.Id, date) : null;
+        ReleaseDate is DateOnly date
+            ? new FavoriteEntry(Movie.Id, date, _releaseMovie.HasBeenInTheaters, IsInTheaters)
+            : null;
 
-    private ReleaseStatusInfo StatusInfo { get; set; }
+    public ReleaseStatusInfo StatusInfo { get; private set; }
 
     public ReleaseStatus Status => StatusInfo.Status;
 
@@ -151,12 +157,20 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     {
         _releaseDate = GetDisplayReleaseDate();
         StatusInfo = _releaseDate is DateOnly releaseDate
-            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today)
+            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today, IsInTheaters)
             : default;
 
         OnPropertyChanged(nameof(ReleaseDate));
+        OnPropertyChanged(nameof(StatusInfo));
         OnPropertyChanged(nameof(Status));
         OnPropertyChanged(nameof(Sleeps));
+    }
+
+    internal void SetReleaseState(Movie movie)
+    {
+        _releaseMovie = movie;
+        OnPropertyChanged(nameof(IsInTheaters));
+        ReapplyCurrentDatePolicies();
     }
 
     [RelayCommand(AllowConcurrentExecutions = false)]
@@ -649,8 +663,8 @@ public sealed partial class MovieDetailViewModel : ObservableObject, IDisposable
     }
 
     private DateOnly? GetDisplayReleaseDate() =>
-        ReleaseWindowPolicy.GetVisibleRelease(Movie, _clock.Today)?.ReleaseDate
-        ?? Movie.UsTheatricalReleaseDate;
+        ReleaseWindowPolicy.GetVisibleRelease(_releaseMovie, _clock.Today)?.ReleaseDate
+        ?? _releaseMovie.UsReleaseDate;
 
     private static bool IsMissingConfigurationException(Exception exception) =>
         exception.GetType().Name.Contains("Configuration", StringComparison.OrdinalIgnoreCase)

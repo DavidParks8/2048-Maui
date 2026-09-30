@@ -14,6 +14,372 @@ public sealed class InfrastructureBehaviorTests
     private static readonly DateOnly Today = new(2026, 8, 21);
 
     [TestMethod]
+    [DataRow(TheatricalRelease.TheatricalType, true)]
+    [DataRow(TheatricalRelease.DigitalType, false)]
+    public async Task TmdbClient_PreviouslyTheatricalTitle_OnlyTheatricalRereleaseCanKeepIt(
+        int futureReleaseType,
+        bool shouldRemain
+    )
+    {
+        Movie tracked = new(1, "Returning movie", "PG", Today.AddDays(-1), isInTheaters: true);
+        using FakeHandler handler = new(request =>
+            request.RequestUri!.AbsolutePath switch
+            {
+                "/3/discover/movie" => Json(Discover(1, Candidate(1, "Returning movie"))),
+                "/3/genre/movie/list" => Json("""{"genres":[]}"""),
+                "/3/movie/1/release_dates" => Json(
+                    $$"""{"results":[{"iso_3166_1":"US","release_dates":[{"certification":"PG","release_date":"{{Today.AddDays(-1):yyyy-MM-dd}}T00:00:00Z","type":3},{"certification":"PG","release_date":"{{Today.AddDays(5):yyyy-MM-dd}}T00:00:00Z","type":{{futureReleaseType}}}]}]}"""
+                ),
+                _ => NotFound(),
+            }
+        );
+
+        CatalogFetchResult result = await CreateClient(handler)
+            .FetchAsync(Today, trackedMovies: new[] { tracked });
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(shouldRemain ? 1 : 0, result.Movies.Count);
+        if (shouldRemain)
+        {
+            Assert.AreEqual(Today.AddDays(5), result.Movies.Single().UsTheatricalReleaseDate);
+            Assert.IsTrue(result.Movies.Single().HasBeenInTheaters);
+            Assert.IsFalse(result.Movies.Single().IsInTheaters);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(TheatricalRelease.DigitalType)]
+    [DataRow(TheatricalRelease.TvType)]
+    public async Task TmdbClient_RechecksTrackedRedirectedTitle_AndUsesItsActualStreamingReleaseDate(
+        int releaseType
+    )
+    {
+        Movie tracked = new(99, "Scheduled for theaters", "PG", Today.AddDays(-2));
+        using FakeHandler handler = new(request =>
+            request.RequestUri!.AbsolutePath switch
+            {
+                "/3/discover/movie" => Json(Discover(0)),
+                "/3/genre/movie/list" => Json("""{"genres":[{"id":16,"name":"Animation"}]}"""),
+                "/3/movie/99" => Json(
+                    """{"id":99,"title":"Now on TV","original_language":"en","popularity":10,"genres":[{"id":16,"name":"Animation"}]}"""
+                ),
+                "/3/movie/99/release_dates" => Json(
+                    UsRelease(Today.AddDays(-13), "PG", releaseType)
+                ),
+                _ => NotFound(),
+            }
+        );
+        TmdbMovieCatalogClient client = CreateClient(handler);
+
+        CatalogFetchResult retained = await client.FetchAsync(
+            Today,
+            trackedMovies: new[] { tracked }
+        );
+        Assert.IsTrue(retained.Succeeded, retained.Error?.ToString());
+        Movie movie = retained.Movies.Single();
+        Assert.IsFalse(movie.IsInTheaters);
+        Assert.IsFalse(movie.HasBeenInTheaters);
+        Assert.AreEqual(0, movie.UsTheatricalReleases.Count);
+        Assert.AreEqual(releaseType, movie.UsReleases.Single().ReleaseType);
+        Assert.AreEqual(Today.AddDays(-13), movie.UsReleaseDate);
+        Assert.AreEqual("Animation", movie.Genres.Single().Name);
+
+        CatalogFetchResult expired = await client.FetchAsync(
+            Today.AddDays(1),
+            trackedMovies: new[] { movie }
+        );
+        Assert.IsTrue(expired.Succeeded, expired.Error?.ToString());
+        Assert.AreEqual(0, expired.Movies.Count);
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_TrackedRedirectedTitleWithUnsafeCertification_IsStillRejected()
+    {
+        Movie tracked = new(99, "Scheduled", "PG", Today);
+        using FakeHandler handler = new(request =>
+            request.RequestUri!.AbsolutePath switch
+            {
+                "/3/discover/movie" => Json(Discover(0)),
+                "/3/genre/movie/list" => Json("""{"genres":[]}"""),
+                "/3/movie/99" => Json("""{"id":99,"title":"Changed rating","popularity":10}"""),
+                "/3/movie/99/release_dates" => Json(
+                    UsRelease(Today, "PG-13", TheatricalRelease.TvType)
+                ),
+                _ => NotFound(),
+            }
+        );
+
+        CatalogFetchResult result = await CreateClient(handler)
+            .FetchAsync(Today, trackedMovies: new[] { tracked });
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        Assert.AreEqual(0, result.Movies.Count);
+    }
+
+    [TestMethod]
+    public async Task CatalogService_PreservesPriorTheatricalHistory_AndDoesNotGiveEndedRunFourteenMoreDays()
+    {
+        using TestDirectory directory = new();
+        JsonMovieCatalogCache cache = CreateCache(Path.Combine(directory.Path, "catalog.json"));
+        JsonFavoritesStore favorites = CreateFavoritesStore(
+            Path.Combine(directory.Path, "favorites.json")
+        );
+        Movie playing = new(1, "Short run", "G", Today.AddDays(-1), isInTheaters: true);
+        await cache.WriteAsync(
+            new MovieCatalogSnapshot(new[] { playing }, Today),
+            DateTimeOffset.UtcNow
+        );
+        await favorites.ToggleAsync(new FavoriteEntry(1, Today.AddDays(-1), true, true), Today);
+        Movie ended = new(1, "Short run", "G", Today.AddDays(-1));
+        MovieCatalogService service = new(
+            new StubCatalogProvider(
+                CatalogFetchResult.Success(new[] { ended }, DateTimeOffset.UtcNow)
+            ),
+            cache,
+            new FixedClock(Today),
+            favoritesStore: favorites
+        );
+
+        CatalogResult result = await service.RefreshAsync();
+
+        Assert.AreEqual(CatalogResultStatus.Refreshed, result.Status, result.Error?.ToString());
+        Assert.AreEqual(0, result.Movies.Count);
+        Assert.AreEqual(0, (await cache.ReadAsync(Today)).Movies.Count);
+        Assert.AreEqual(0, (await favorites.GetAsync(Today)).Entries.Count);
+    }
+
+    [TestMethod]
+    public async Task Persistence_ExpiresNeverTheatricalMovieAndFavoriteOnDayFourteen_WhileKeepingPlayingTitle()
+    {
+        using TestDirectory directory = new();
+        string catalogPath = Path.Combine(directory.Path, "catalog.json");
+        string favoritesPath = Path.Combine(directory.Path, "favorites.json");
+        JsonMovieCatalogCache cache = CreateCache(catalogPath);
+        JsonFavoritesStore favorites = CreateFavoritesStore(favoritesPath);
+        Movie streaming = new(
+            1,
+            "On TV",
+            "PG",
+            new[] { new TheatricalRelease(Today.AddDays(-13), "US", TheatricalRelease.TvType) }
+        );
+        Movie playing = new(2, "Long run", "G", Today.AddDays(-120), isInTheaters: true);
+        await cache.WriteAsync(
+            new MovieCatalogSnapshot(new[] { streaming, playing }, Today),
+            DateTimeOffset.UtcNow
+        );
+        await favorites.ToggleAsync(new FavoriteEntry(1, Today.AddDays(-13), false), Today);
+        await favorites.ToggleAsync(new FavoriteEntry(2, Today.AddDays(-120), true, true), Today);
+        Assert.AreEqual(2, (await cache.ReadAsync(Today)).Movies.Count);
+        Assert.AreEqual(2, (await favorites.GetAsync(Today)).Entries.Count);
+
+        Assert.AreEqual(2, (await cache.ReadAsync(Today.AddDays(1))).Movies.Single().Id);
+        Assert.AreEqual(2, (await favorites.GetAsync(Today.AddDays(1))).Entries.Single().MovieId);
+        Assert.AreEqual(
+            2,
+            (await CreateFavoritesStore(favoritesPath).GetAsync(Today.AddDays(1)))
+                .Entries.Single()
+                .MovieId
+        );
+        Assert.IsTrue((await cache.ReadAsync(Today.AddDays(1))).Movies.Single().HasBeenInTheaters);
+    }
+
+    [TestMethod]
+    public async Task TmdbClient_NowPlayingTraversesAllUsPages_AndKeepsOnlyVerifiedSafeTheatricalMovies()
+    {
+        using FakeHandler handler = new(
+            request =>
+                request.RequestUri!.AbsolutePath switch
+                {
+                    "/3/genre/movie/list" => Json("""{"genres":[]}"""),
+                    "/3/discover/movie" => Json(
+                        Discover(
+                            1,
+                            Candidate(1, "Duplicate"),
+                            Candidate(6, "Ended"),
+                            Candidate(7, "Upcoming")
+                        )
+                    ),
+                    "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(-90), "G", 3)),
+                    "/3/movie/2/release_dates" => Json(
+                        $$"""{"results":[{"iso_3166_1":"US","release_dates":[{"certification":"PG","release_date":"2020-01-01T00:00:00Z","type":3},{"certification":"PG","release_date":"{{Today.AddDays(-20):yyyy-MM-dd}}T00:00:00Z","type":2}]}]}"""
+                    ),
+                    "/3/movie/3/release_dates" => Json(UsRelease(Today, "PG-13", 3)),
+                    "/3/movie/4/release_dates" => Json(UsRelease(Today, "G", 3, "CA")),
+                    "/3/movie/5/release_dates" => Json(UsRelease(Today, "G", 4)),
+                    "/3/movie/6/release_dates" => Json(UsRelease(Today.AddDays(-2), "G", 3)),
+                    "/3/movie/7/release_dates" => Json(UsRelease(Today.AddDays(20), "G", 3)),
+                    _ => NotFound(),
+                },
+            nowPlayingResponder: request =>
+                Json(
+                    request.RequestUri!.Query.Contains("page=1", StringComparison.Ordinal)
+                        ? NowPlaying(1, 2, Candidate(1, "Long run"), Candidate(3, "Unsafe"))
+                        : NowPlaying(
+                            2,
+                            2,
+                            Candidate(2, "Rerelease"),
+                            Candidate(4, "Foreign"),
+                            Candidate(5, "Digital")
+                        )
+                )
+        );
+
+        CatalogFetchResult result = await CreateClient(handler).FetchAsync(Today);
+
+        Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+        CollectionAssert.AreEquivalent(
+            new[] { 1, 2, 7 },
+            result.Movies.Select(movie => movie.Id).ToArray()
+        );
+        Assert.IsTrue(result.Movies.Single(movie => movie.Id == 1).IsInTheaters);
+        Assert.AreEqual("Long run", result.Movies.Single(movie => movie.Id == 1).Title);
+        Movie rerelease = result.Movies.Single(movie => movie.Id == 2);
+        Assert.IsTrue(rerelease.IsInTheaters);
+        Assert.AreEqual(Today.AddDays(-20), rerelease.UsTheatricalReleaseDate);
+        Assert.IsFalse(result.Movies.Single(movie => movie.Id == 7).IsInTheaters);
+        HttpRequestMessage[] theaterRequests = handler
+            .Requests.Where(request => request.RequestUri!.AbsolutePath == "/3/movie/now_playing")
+            .ToArray();
+        Assert.AreEqual(2, theaterRequests.Length);
+        Assert.IsTrue(
+            theaterRequests.All(request =>
+                request.RequestUri!.Query.Contains("region=US", StringComparison.Ordinal)
+            )
+        );
+        Assert.IsTrue(
+            theaterRequests.All(request =>
+                !request.RequestUri!.Query.Contains("release_date", StringComparison.Ordinal)
+            )
+        );
+        Assert.AreEqual(
+            1,
+            handler.Requests.Count(request =>
+                request.RequestUri!.AbsolutePath == "/3/movie/1/release_dates"
+            )
+        );
+    }
+
+    [TestMethod]
+    [DataRow("""{}""", 20)]
+    [DataRow("""{"page":1,"total_pages":21,"results":[]}""", 20)]
+    [DataRow("""{"page":1,"total_pages":2,"results":[]}""", 1)]
+    [DataRow("""{"page":0,"total_pages":0,"results":[]}""", 20)]
+    [DataRow("""{"page":1,"total_pages":0,"results":[{"id":1}]}""", 20)]
+    public async Task TmdbClient_IncompleteNowPlayingResponse_FailsWithoutPartialCatalog(
+        string response,
+        int maxPages
+    )
+    {
+        using FakeHandler handler = new(
+            _ =>
+                throw new AssertFailedException(
+                    "Discovery must not run with incomplete theater status."
+                ),
+            nowPlayingResponder: _ => Json(response)
+        );
+        GoodMoviesInfrastructureOptions options = Options();
+        options.MaxPages = maxPages;
+        using HttpClient httpClient = CreateHttpClient(handler, options);
+        TmdbMovieCatalogClient client = new(httpClient, options);
+
+        CatalogFetchResult result = await client.FetchAsync(Today);
+
+        Assert.AreEqual(CatalogFetchStatus.Failed, result.Status);
+        Assert.AreEqual(0, result.Movies.Count);
+        Assert.IsNotNull(result.Error);
+    }
+
+    [TestMethod]
+    [DataRow(2, 3)]
+    [DataRow(1, 2)]
+    public async Task TmdbClient_InconsistentNowPlayingPagination_FailsWithoutPartialCatalog(
+        int returnedPage,
+        int totalPages
+    )
+    {
+        using FakeHandler handler = new(
+            _ =>
+                throw new AssertFailedException(
+                    "Discovery must not run with incomplete theater status."
+                ),
+            nowPlayingResponder: request =>
+                Json(
+                    request.RequestUri!.Query.Contains("page=1", StringComparison.Ordinal)
+                        ? NowPlaying(1, 2, Candidate(1, "Partial"))
+                        : NowPlaying(returnedPage, totalPages)
+                )
+        );
+
+        CatalogFetchResult result = await CreateClient(handler).FetchAsync(Today);
+
+        Assert.AreEqual(CatalogFetchStatus.Failed, result.Status);
+        Assert.AreEqual(0, result.Movies.Count);
+    }
+
+    [TestMethod]
+    public async Task CatalogService_RemovesReleasedMovieAndFavoriteOnlyAfterCompleteSuccessfulTheaterRefresh()
+    {
+        using TestDirectory directory = new();
+        int refreshMode = 0;
+        using FakeHandler handler = new(
+            request =>
+                request.RequestUri!.AbsolutePath switch
+                {
+                    "/3/discover/movie" => Json(Discover(0)),
+                    "/3/genre/movie/list" => Json("""{"genres":[]}"""),
+                    "/3/movie/1/release_dates" => Json(UsRelease(Today.AddDays(-90), "PG", 3)),
+                    _ => NotFound(),
+                },
+            nowPlayingResponder: request =>
+            {
+                if (refreshMode == 2)
+                {
+                    return Json(NowPlaying(1, 0));
+                }
+
+                if (request.RequestUri!.Query.Contains("page=1", StringComparison.Ordinal))
+                {
+                    return Json(NowPlaying(1, 2, Candidate(1, "Long run")));
+                }
+
+                return refreshMode == 1 ? ServerError() : Json(NowPlaying(2, 2));
+            }
+        );
+        JsonMovieCatalogCache cache = CreateCache(Path.Combine(directory.Path, "catalog.json"));
+        JsonFavoritesStore favorites = CreateFavoritesStore(
+            Path.Combine(directory.Path, "favorites.json")
+        );
+        MovieCatalogService service = new(
+            CreateClient(handler),
+            cache,
+            new FixedClock(Today),
+            favoritesStore: favorites
+        );
+        CatalogResult first = await service.RefreshAsync();
+        Assert.AreEqual(CatalogResultStatus.Refreshed, first.Status, first.Error?.ToString());
+        Movie playing = first.Movies.Single();
+        Assert.IsTrue(playing.IsInTheaters);
+        await favorites.ToggleAsync(
+            new FavoriteEntry(playing.Id, playing.UsTheatricalReleaseDate!.Value, true, true),
+            Today
+        );
+
+        refreshMode = 1;
+        CatalogResult failed = await service.RefreshAsync();
+        Assert.AreEqual(CatalogResultStatus.RefreshFailed, failed.Status);
+        Assert.IsTrue(failed.Movies.Single().IsInTheaters);
+        Assert.AreEqual(1, (await cache.ReadAsync(Today.AddDays(30))).Movies.Count);
+        Assert.AreEqual(1, (await favorites.GetAsync(Today.AddDays(30))).Entries.Count);
+
+        refreshMode = 2;
+        CatalogResult ended = await service.RefreshAsync();
+        Assert.AreEqual(CatalogResultStatus.Refreshed, ended.Status, ended.Error?.ToString());
+        Assert.AreEqual(0, ended.Movies.Count);
+        Assert.AreEqual(0, (await cache.ReadAsync(Today)).Movies.Count);
+        Assert.AreEqual(0, (await favorites.GetAsync(Today)).Entries.Count);
+    }
+
+    [TestMethod]
     public async Task TmdbClient_UsesExactDiscoverFilters_AndTraversesEveryPage()
     {
         using FakeHandler handler = new(request =>
@@ -59,14 +425,11 @@ public sealed class InfrastructureBehaviorTests
             ratedQuery.Contains("sort_by=primary_release_date.asc", StringComparison.Ordinal)
         );
         Assert.IsTrue(
-            ratedQuery.Contains(
-                $"primary_release_date.gte={Today.AddDays(-13):yyyy-MM-dd}",
-                StringComparison.Ordinal
-            )
+            ratedQuery.Contains($"release_date.gte={Today:yyyy-MM-dd}", StringComparison.Ordinal)
         );
         Assert.IsTrue(
             ratedQuery.Contains(
-                $"primary_release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
+                $"release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
                 StringComparison.Ordinal
             )
         );
@@ -100,7 +463,7 @@ public sealed class InfrastructureBehaviorTests
         Assert.IsFalse(familyQuery.Contains("certification.lte", StringComparison.Ordinal));
         Assert.IsTrue(
             familyQuery.Contains(
-                $"primary_release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
+                $"release_date.lte={Today.AddMonths(12):yyyy-MM-dd}",
                 StringComparison.Ordinal
             )
         );
@@ -607,7 +970,8 @@ public sealed class InfrastructureBehaviorTests
             "/poster.jpg",
             new Uri("https://image.tmdb.org/t/p/w500/poster.jpg"),
             "en",
-            new[] { 16 }
+            new[] { 16 },
+            isInTheaters: true
         );
 
         await cache.WriteAsync(new MovieCatalogSnapshot(new[] { original }, today), time.UtcNow);
@@ -622,6 +986,11 @@ public sealed class InfrastructureBehaviorTests
         Assert.AreEqual(1, stale.Movies.Count);
         Assert.AreEqual("A synopsis", stale.Movies[0].Overview);
         Assert.AreEqual("Animation", stale.Movies[0].Genres[0].Name);
+        Assert.IsTrue(stale.Movies[0].IsInTheaters);
+        Assert.IsTrue(stale.Movies[0].HasBeenInTheaters);
+        CatalogCacheReadResult muchLater = await cache.ReadAsync(today.AddMonths(3));
+        Assert.AreEqual(1, muchLater.Movies.Count);
+        Assert.IsTrue(muchLater.Movies[0].IsInTheaters);
 
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "catalog.json"), "{");
         CatalogCacheReadResult corrupt = await cache.ReadAsync(today);
@@ -630,7 +999,7 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public async Task CatalogCache_ReFiltersUnsafeAndExpiredMoviesOnRead()
+    public async Task CatalogCache_FiltersUnsafeAndExpiredNeverTheatricalMovies_ButKeepsPlayingMovies()
     {
         using TestDirectory directory = new();
         string path = Path.Combine(directory.Path, "catalog.json");
@@ -643,7 +1012,8 @@ public sealed class InfrastructureBehaviorTests
                 {"id":1,"title":"Safe","certification":"G","releases":[{"releaseDate":"2026-08-21","countryCode":"US","releaseType":3}]},
                 {"id":2,"title":"Expired","certification":"PG","releases":[{"releaseDate":"2026-08-07","countryCode":"US","releaseType":3}]},
                 {"id":3,"title":"Unsafe","certification":"PG-13","releases":[{"releaseDate":"2026-08-21","countryCode":"US","releaseType":3}]},
-                {"id":4,"title":"Foreign","certification":"G","releases":[{"releaseDate":"2026-08-21","countryCode":"CA","releaseType":3}]}
+                {"id":4,"title":"Foreign","certification":"G","releases":[{"releaseDate":"2026-08-21","countryCode":"CA","releaseType":3}]},
+                {"id":5,"title":"Playing","certification":"G","isInTheaters":true,"releases":[{"releaseDate":"2026-05-01","countryCode":"US","releaseType":3}]}
               ]
             }
             """
@@ -653,8 +1023,11 @@ public sealed class InfrastructureBehaviorTests
         CatalogCacheReadResult result = await cache.ReadAsync(Today);
 
         Assert.AreEqual(CatalogCacheStatus.Available, result.Status);
-        Assert.AreEqual(1, result.Movies.Count);
-        Assert.AreEqual(1, result.Movies[0].Id);
+        CollectionAssert.AreEquivalent(
+            new[] { 1, 5 },
+            result.Movies.Select(movie => movie.Id).ToArray()
+        );
+        Assert.IsTrue(result.Movies.Single(movie => movie.Id == 5).HasBeenInTheaters);
     }
 
     [TestMethod]
@@ -683,19 +1056,19 @@ public sealed class InfrastructureBehaviorTests
     }
 
     [TestMethod]
-    public async Task FavoritesStore_TogglesPersistsPrunesAndReconciles()
+    public async Task FavoritesStore_TogglesPersistsAndReconciles_WithoutAgeBasedPruning()
     {
         using TestDirectory directory = new();
         string path = Path.Combine(directory.Path, "favorites.json");
         JsonFavoritesStore store = CreateFavoritesStore(path);
         FavoriteEntry retained = new(1, Today.AddDays(-13));
-        FavoriteEntry expired = new(2, Today.AddDays(-14));
+        FavoriteEntry older = new(2, Today.AddDays(-90));
 
         FavoriteToggleResult added = await store.ToggleAsync(retained, Today);
         Assert.AreEqual(FavoriteToggleStatus.Added, added.Status, added.Error?.ToString());
-        await store.ToggleAsync(expired, Today);
+        Assert.AreEqual(FavoriteToggleStatus.Added, (await store.ToggleAsync(older, Today)).Status);
         FavoritesResult listed = await store.GetAsync(Today);
-        Assert.AreEqual(1, listed.Entries.Count);
+        Assert.AreEqual(2, listed.Entries.Count);
         Assert.AreEqual(1, listed.Entries[0].MovieId);
         Assert.IsTrue(
             (await File.ReadAllTextAsync(path)).Contains(
@@ -960,6 +1333,17 @@ public sealed class InfrastructureBehaviorTests
             GoodMoviesJsonContext.Default.TmdbDiscoverResponse
         );
 
+    private static string NowPlaying(int page, int totalPages, params TmdbDiscoverMovie[] movies) =>
+        System.Text.Json.JsonSerializer.Serialize(
+            new TmdbDiscoverResponse
+            {
+                Page = page,
+                TotalPages = totalPages,
+                Results = movies.ToList(),
+            },
+            GoodMoviesJsonContext.Default.TmdbDiscoverResponse
+        );
+
     private static string UsRelease(
         DateOnly date,
         string certification,
@@ -989,10 +1373,15 @@ public sealed class InfrastructureBehaviorTests
     private sealed class FakeHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _nowPlayingResponder;
 
-        public FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        public FakeHandler(
+            Func<HttpRequestMessage, HttpResponseMessage> responder,
+            Func<HttpRequestMessage, HttpResponseMessage>? nowPlayingResponder = null
+        )
         {
             _responder = responder;
+            _nowPlayingResponder = nowPlayingResponder ?? (_ => Json(NowPlaying(1, 0)));
         }
 
         public ConcurrentBag<HttpRequestMessage> Requests { get; } = new();
@@ -1004,7 +1393,11 @@ public sealed class InfrastructureBehaviorTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             Requests.Add(request);
-            return Task.FromResult(_responder(request));
+            return Task.FromResult(
+                request.RequestUri!.AbsolutePath == "/3/movie/now_playing"
+                    ? _nowPlayingResponder(request)
+                    : _responder(request)
+            );
         }
     }
 
@@ -1055,6 +1448,11 @@ public sealed class InfrastructureBehaviorTests
             if (path == "/3/genre/movie/list")
             {
                 return Json("""{"genres":[]}""");
+            }
+
+            if (path == "/3/movie/now_playing")
+            {
+                return Json(NowPlaying(1, 0));
             }
 
             if (path == "/3/discover/movie")
@@ -1191,7 +1589,8 @@ public sealed class InfrastructureBehaviorTests
 
         public Task<CatalogFetchResult> FetchAsync(
             DateOnly today,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            IReadOnlyList<Movie>? trackedMovies = null
         ) => Task.FromResult(_result);
     }
 
@@ -1213,7 +1612,8 @@ public sealed class InfrastructureBehaviorTests
 
         public Task<CatalogFetchResult> FetchAsync(
             DateOnly today,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            IReadOnlyList<Movie>? trackedMovies = null
         )
         {
             Task<CatalogFetchResult> result;

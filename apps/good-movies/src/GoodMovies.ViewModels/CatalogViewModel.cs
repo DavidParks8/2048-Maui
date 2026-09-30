@@ -98,6 +98,9 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
     private MovieRatingFilter _selectedRatingFilter = MovieRatingFilter.All;
 
     [ObservableProperty]
+    private bool _showInTheatersOnly;
+
+    [ObservableProperty]
     private string _query = string.Empty;
 
     [ObservableProperty]
@@ -175,7 +178,8 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Re-applies local expiration rules without requiring a network refresh.
+    /// Updates countdowns and never-theatrical expiration without aging out
+    /// movies whose last known status is still in theaters.
     /// Used when the local calendar day changes while the app stays open.
     /// </summary>
     public async Task ReapplyCurrentDatePoliciesAsync(CancellationToken cancellationToken = default)
@@ -189,6 +193,12 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
         ReplaceCatalog(_catalogMovies, _hasCatalogData, preserveFeedPosition: true);
         long favoriteVersion = Interlocked.Increment(ref _favoriteVersion);
         await LoadFavoritesAsync(favoriteVersion, cancellationToken);
+        await UpdateOpenDetailAsync(cancellationToken);
+        UpdatePresentationState();
+    }
+
+    private async Task UpdateOpenDetailAsync(CancellationToken cancellationToken)
+    {
         if (SelectedMovieDetail is { } detail && !_cardsByMovieId.ContainsKey(detail.MovieId))
         {
             detail.ReapplyCurrentDatePolicies();
@@ -207,10 +217,14 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
         }
         else
         {
-            SelectedMovieDetail?.ReapplyCurrentDatePolicies();
+            if (
+                SelectedMovieDetail is { } currentDetail
+                && _cardsByMovieId.TryGetValue(currentDetail.MovieId, out MovieCardViewModel? card)
+            )
+            {
+                currentDetail.SetReleaseState(card.Movie);
+            }
         }
-
-        UpdatePresentationState();
     }
 
     [RelayCommand(AllowConcurrentExecutions = false)]
@@ -270,6 +284,9 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
 
         SelectedSection = section;
     }
+
+    [RelayCommand]
+    public void ToggleInTheatersFilter() => ShowInTheatersOnly = !ShowInTheatersOnly;
 
     [RelayCommand]
     public void SelectRatingFilter(MovieRatingFilter filter)
@@ -400,7 +417,7 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
 
         long favoriteVersion = Volatile.Read(ref _favoriteVersion);
         await LoadFavoritesAsync(favoriteVersion, cancellationToken);
-        if (_hasCatalogData && IsCurrentVersion(initialVersion))
+        if (loaded.Status == CatalogResultStatus.Refreshed && IsCurrentVersion(initialVersion))
         {
             await ReconcileFavoritesAsync(initialVersion, cancellationToken);
         }
@@ -488,6 +505,7 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
                 ErrorKey = CatalogMessageKey.None;
 
                 await ReconcileFavoritesAsync(version, cancellationToken);
+                await UpdateOpenDetailAsync(cancellationToken);
             }
             else
             {
@@ -582,6 +600,7 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
                 WarningKey = IsWarning ? CatalogMessageKey.RefreshWarning : CatalogMessageKey.None;
                 ErrorKey = CatalogMessageKey.None;
                 await ReconcileFavoritesAsync(version, cancellationToken);
+                await UpdateOpenDetailAsync(cancellationToken);
             }
             else if (cacheReadSucceeded)
             {
@@ -998,6 +1017,7 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
         };
 
         MovieCardViewModel[] selectedCards = selected
+            .Where(card => !ShowInTheatersOnly || card.IsInTheaters)
             .OrderBy(static card => card.ReleaseDate ?? DateOnly.MaxValue)
             .ThenBy(static card => card.Title, StringComparer.OrdinalIgnoreCase)
             .ThenBy(static card => card.Title, StringComparer.Ordinal)
@@ -1084,15 +1104,17 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
         else if (SelectedSection == CatalogSection.FindAMovie && MovieCards.Count == 0)
         {
             nextState = CatalogViewState.NoResults;
-            nextMessage = CatalogMessageKey.NoSearchResults;
+            nextMessage = ShowInTheatersOnly
+                ? CatalogMessageKey.NoMoviesInTheaters
+                : CatalogMessageKey.NoSearchResults;
         }
         else if (MovieCards.Count == 0)
         {
             nextState = CatalogViewState.Empty;
             nextMessage =
-                SelectedSection == CatalogSection.MyFavorites
-                    ? CatalogMessageKey.NoFavorites
-                    : CatalogMessageKey.NoMovies;
+                ShowInTheatersOnly ? CatalogMessageKey.NoMoviesInTheaters
+                : SelectedSection == CatalogSection.MyFavorites ? CatalogMessageKey.NoFavorites
+                : CatalogMessageKey.NoMovies;
         }
         else if (IsWarning)
         {
@@ -1324,6 +1346,8 @@ public sealed partial class CatalogViewModel : ObservableObject, IDisposable
             BuildCurrentView();
         }
     }
+
+    partial void OnShowInTheatersOnlyChanged(bool value) => BuildCurrentView();
 
     partial void OnQueryChanged(string value)
     {

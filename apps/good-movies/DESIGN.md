@@ -49,6 +49,11 @@ saved state.
 - Navigation tiles are equal, large blocks. Selected state flips to lilac/dark-purple.
 - Movie cards use poster, title, release status, a G/PG or rating-pending badge, one kind
   chip, and a separate favorite target.
+- A popcorn icon paired with the theater label identifies currently playing movies
+  on cards, details, group headers, and the theater-only filter. Keep the words so
+  early readers can associate the picture with the label.
+- Theater and rating filters share one horizontal strip of large buttons under
+  "Show me." The theater button toggles independently and can combine with a rating.
 - Date headers group the feed and carry a count/status pill.
 - Detail uses native Shell navigation, poster-first content, trailer handoff,
   read-aloud, favorite, and a tappable-word story.

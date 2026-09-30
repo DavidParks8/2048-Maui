@@ -5,7 +5,7 @@ public enum ReleaseStatus
     Future,
     Today,
     InTheatersNow,
-    Expired,
+    Released,
 }
 
 public readonly record struct ReleaseStatusInfo(ReleaseStatus Status, int Sleeps);

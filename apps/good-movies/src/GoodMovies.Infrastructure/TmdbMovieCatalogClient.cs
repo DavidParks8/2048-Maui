@@ -39,12 +39,30 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
 
     public async Task<CatalogFetchResult> FetchAsync(
         DateOnly today,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<Movie>? trackedMovies = null
     )
     {
         try
         {
-            List<TmdbDiscoverMovie> candidates = await LoadCandidatesAsync(today, cancellationToken)
+            List<TmdbDiscoverMovie> nowPlaying = await LoadCandidatePagesAsync(
+                    today,
+                    today,
+                    familyPass: false,
+                    cancellationToken,
+                    nowPlayingPass: true
+                )
+                .ConfigureAwait(false);
+            HashSet<int> nowPlayingIds = nowPlaying
+                .Where(static candidate => candidate.Id > 0)
+                .Select(static candidate => candidate.Id)
+                .ToHashSet();
+            List<TmdbDiscoverMovie> candidates = await LoadCandidatesAsync(
+                    today,
+                    nowPlaying,
+                    trackedMovies ?? Array.Empty<Movie>(),
+                    cancellationToken
+                )
                 .ConfigureAwait(false);
             if (candidates.Count == 0)
             {
@@ -57,6 +75,10 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
                     candidates,
                     genres,
                     today,
+                    nowPlayingIds,
+                    (trackedMovies ?? Array.Empty<Movie>())
+                        .GroupBy(static movie => movie.Id)
+                        .ToDictionary(static group => group.Key, static group => group.First()),
                     cancellationToken
                 )
                 .ConfigureAwait(false);
@@ -158,15 +180,25 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
 
     private async Task<List<TmdbDiscoverMovie>> LoadCandidatesAsync(
         DateOnly today,
+        List<TmdbDiscoverMovie> nowPlaying,
+        IReadOnlyList<Movie> trackedMovies,
         CancellationToken cancellationToken
     )
     {
-        DateOnly earliestDate = ReleaseWindowPolicy.EarliestVisibleDate(today);
+        DateOnly earliestDate = today;
         DateOnly latestDate = ReleaseWindowPolicy.LatestVisibleDate(today);
         // The API can repeat a movie across pages and across both passes. Keep
         // the first complete candidate in deterministic sequence and verify each
         // ID once.
         Dictionary<int, TmdbDiscoverMovie> unique = new();
+        foreach (TmdbDiscoverMovie candidate in nowPlaying)
+        {
+            if (candidate.Id > 0)
+            {
+                unique.TryAdd(candidate.Id, candidate);
+            }
+        }
+
         for (int pass = 0; pass < 2; pass++)
         {
             List<TmdbDiscoverMovie> candidates = await LoadCandidatePagesAsync(
@@ -185,6 +217,30 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
             }
         }
 
+        // A title redirected to TV disappears from theatrical discovery. Recheck
+        // tracked titles individually until they play in theaters or age out.
+        foreach (Movie movie in trackedMovies)
+        {
+            if (movie.HasBeenInTheaters || unique.ContainsKey(movie.Id))
+            {
+                continue;
+            }
+
+            TmdbDiscoverMovie details = await GetJsonAsync(
+                    BuildUri($"3/movie/{movie.Id}", "language=en-US"),
+                    GoodMoviesJsonContext.Default.TmdbDiscoverMovie,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+            if (details.Id != movie.Id)
+            {
+                throw new TmdbProtocolException("TMDB returned details for the wrong movie.");
+            }
+
+            details.GenreIds = details.Genres.Select(static genre => genre.Id).ToList();
+            unique.TryAdd(details.Id, details);
+        }
+
         return unique.Values.OrderBy(static candidate => candidate.Id).ToList();
     }
 
@@ -192,11 +248,12 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
         DateOnly earliestDate,
         DateOnly latestDate,
         bool familyPass,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        bool nowPlayingPass = false
     )
     {
         TmdbDiscoverResponse firstPage = await GetJsonAsync(
-                BuildDiscoverUri(1, earliestDate, latestDate, familyPass),
+                PageUri(1),
                 GoodMoviesJsonContext.Default.TmdbDiscoverResponse,
                 cancellationToken
             )
@@ -208,6 +265,14 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
             throw new TmdbProtocolException("TMDB returned a negative page count.");
         }
 
+        if (
+            nowPlayingPass
+            && (firstPage.Page != 1 || (totalPages == 0 && firstPage.Results.Count > 0))
+        )
+        {
+            throw new TmdbProtocolException("TMDB returned an invalid US Now Playing page.");
+        }
+
         if (totalPages == 0)
         {
             totalPages = 1;
@@ -217,6 +282,13 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
         // whole refresh, so the cap clamps instead of throwing.
         if (totalPages > _options.MaxPages)
         {
+            if (nowPlayingPass)
+            {
+                throw new TmdbProtocolException(
+                    "The US Now Playing list exceeds the page limit; theater status is incomplete."
+                );
+            }
+
             totalPages = _options.MaxPages;
         }
 
@@ -225,7 +297,7 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
         {
             cancellationToken.ThrowIfCancellationRequested();
             TmdbDiscoverResponse response = await GetJsonAsync(
-                    BuildDiscoverUri(page, earliestDate, latestDate, familyPass),
+                    PageUri(page),
                     GoodMoviesJsonContext.Default.TmdbDiscoverResponse,
                     cancellationToken
                 )
@@ -237,24 +309,35 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
             }
 
             if (
-                response.TotalPages > 0
-                && response.TotalPages < totalPages
-                && response.TotalPages < _options.MaxPages
+                nowPlayingPass
+                    ? response.Page != page || response.TotalPages != totalPages
+                    : response.TotalPages > 0
+                        && response.TotalPages < totalPages
+                        && response.TotalPages < _options.MaxPages
             )
             {
-                throw new TmdbProtocolException("TMDB changed the page count during a refresh.");
+                throw new TmdbProtocolException(
+                    "TMDB returned inconsistent pagination during a refresh."
+                );
             }
 
             candidates.AddRange(response.Results);
         }
 
         return candidates;
+
+        Uri PageUri(int page) =>
+            nowPlayingPass
+                ? BuildUri("3/movie/now_playing", $"region=US&language=en-US&page={page}")
+                : BuildDiscoverUri(page, earliestDate, latestDate, familyPass);
     }
 
     private async Task<List<Movie>> VerifyCandidatesAsync(
         List<TmdbDiscoverMovie> candidates,
         IReadOnlyDictionary<int, string> genres,
         DateOnly today,
+        IReadOnlySet<int> nowPlayingIds,
+        IReadOnlyDictionary<int, Movie> trackedMovies,
         CancellationToken cancellationToken
     )
     {
@@ -273,6 +356,8 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
                             candidates[index],
                             genres,
                             today,
+                            nowPlayingIds.Contains(candidates[index].Id),
+                            trackedMovies.GetValueOrDefault(candidates[index].Id),
                             token
                         )
                         .ConfigureAwait(false);
@@ -287,9 +372,16 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
         TmdbDiscoverMovie candidate,
         IReadOnlyDictionary<int, string> genres,
         DateOnly today,
+        bool isInTheaters,
+        Movie? trackedMovie,
         CancellationToken cancellationToken
     )
     {
+        if (candidate.Adult)
+        {
+            return null;
+        }
+
         TmdbReleaseDatesResponse response = await GetJsonAsync(
                 BuildReleaseDatesUri(candidate.Id),
                 GoodMoviesJsonContext.Default.TmdbReleaseDatesResponse,
@@ -297,7 +389,7 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
             )
             .ConfigureAwait(false);
 
-        VerifiedRelease? selected = null;
+        List<VerifiedRelease> releases = new();
         bool hasDisallowedCertification = false;
         foreach (TmdbReleaseCountry country in response.Results)
         {
@@ -326,29 +418,39 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
                 }
 
                 if (
-                    !TheatricalRelease.IsAllowedTheatricalType(release.Type)
+                    (
+                        !TheatricalRelease.IsAllowedTheatricalType(release.Type)
+                        && (
+                            trackedMovie is not { HasBeenInTheaters: false }
+                            || isInTheaters
+                            || release.Type
+                                is not (TheatricalRelease.DigitalType or TheatricalRelease.TvType)
+                        )
+                    )
                     || !TryParseReleaseDate(release.ReleaseDate, out DateOnly releaseDate)
                     || !ReleaseWindowPolicy.IsVisible(releaseDate, today)
+                    || (!isInTheaters && trackedMovie is null && releaseDate < today)
                 )
                 {
                     continue;
                 }
 
-                VerifiedRelease value = new(releaseDate, release.Type, certification);
-                if (
-                    selected is null
-                    || value.ReleaseDate < selected.ReleaseDate
-                    || (
-                        value.ReleaseDate == selected.ReleaseDate
-                        && value.ReleaseType < selected.ReleaseType
-                    )
-                )
-                {
-                    selected = value;
-                }
+                releases.Add(new VerifiedRelease(releaseDate, release.Type, certification));
             }
         }
 
+        // A rerelease may have an old original release date. Prefer the latest
+        // started US run for Now Playing, and the earliest upcoming run otherwise.
+        VerifiedRelease? selected = releases
+            .OrderBy(GetReleasePriority)
+            .ThenBy(release =>
+                (isInTheaters || !TheatricalRelease.IsAllowedTheatricalType(release.ReleaseType))
+                && release.ReleaseDate <= today
+                    ? -release.ReleaseDate.DayNumber
+                    : release.ReleaseDate.DayNumber
+            )
+            .ThenBy(static release => release.ReleaseType)
+            .FirstOrDefault();
         if (selected is null || hasDisallowedCertification)
         {
             return null;
@@ -392,8 +494,29 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
             safePosterPath,
             posterUri,
             candidate.OriginalLanguage,
-            candidate.GenreIds
+            candidate.GenreIds,
+            isInTheaters,
+            trackedMovie?.HasBeenInTheaters == true
         );
+
+        int GetReleasePriority(VerifiedRelease release)
+        {
+            if (isInTheaters)
+            {
+                return release.ReleaseDate <= today ? 0 : 1;
+            }
+
+            if (trackedMovie is { HasBeenInTheaters: true })
+            {
+                return release.ReleaseDate > today ? 0 : 1;
+            }
+
+            return
+                release.ReleaseDate <= today
+                && release.ReleaseType is TheatricalRelease.DigitalType or TheatricalRelease.TvType
+                ? 0
+                : 1;
+        }
     }
 
     private async Task<T> GetJsonAsync<T>(
@@ -452,8 +575,8 @@ internal sealed class TmdbMovieCatalogClient : IMovieCatalogProvider, IMovieTrai
                 + $"&include_adult=false"
                 + $"&language={Escape("en-US")}"
                 + $"&sort_by={Escape("primary_release_date.asc")}"
-                + $"&primary_release_date.gte={earliestDate:yyyy-MM-dd}"
-                + $"&primary_release_date.lte={latestDate:yyyy-MM-dd}"
+                + $"&release_date.gte={earliestDate:yyyy-MM-dd}"
+                + $"&release_date.lte={latestDate:yyyy-MM-dd}"
                 + $"&with_release_type={Escape("2|3")}"
                 + (
                     familyPass

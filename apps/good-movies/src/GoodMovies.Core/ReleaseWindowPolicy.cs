@@ -1,53 +1,97 @@
 namespace GoodMovies.Core;
 
 /// <summary>
-/// The shared catalog window: thirteen retained days in the past and twelve
-/// calendar months in the future, both inclusive.
+/// Upcoming releases extend twelve calendar months ahead. Movies that played in
+/// theaters expire when their run ends; never-theatrical releases expire after 14 days.
 /// </summary>
 public static class ReleaseWindowPolicy
 {
-    public const int RetainedPastDays = 13;
     public const int FutureMonths = 12;
-
-    public static DateOnly EarliestVisibleDate(DateOnly today) => today.AddDays(-RetainedPastDays);
+    public const int NonTheatricalRetentionDays = 14;
 
     public static DateOnly LatestVisibleDate(DateOnly today) => today.AddMonths(FutureMonths);
 
     public static bool IsVisible(DateOnly releaseDate, DateOnly today) =>
-        releaseDate >= EarliestVisibleDate(today) && releaseDate <= LatestVisibleDate(today);
+        releaseDate != default && releaseDate <= LatestVisibleDate(today);
 
     public static bool IsVisible(TheatricalRelease? release, DateOnly today) =>
-        release is not null && release.IsUsTheatrical && IsVisible(release.ReleaseDate, today);
+        release is not null && release.IsUsCatalogRelease && IsVisible(release.ReleaseDate, today);
 
     public static bool IsVisible(Movie? movie, DateOnly today) =>
-        GetVisibleRelease(movie, today) is not null;
+        movie is not null
+        && GetVisibleRelease(movie, today) is { } release
+        && IsRetained(release.ReleaseDate, today, movie.IsInTheaters, movie.HasBeenInTheaters);
 
     public static TheatricalRelease? GetVisibleRelease(Movie? movie, DateOnly today)
     {
+        TheatricalRelease? pastRelease = null;
         if (movie is not null)
         {
-            foreach (TheatricalRelease release in movie.UsTheatricalReleases)
+            foreach (TheatricalRelease release in movie.UsReleases)
             {
                 if (IsVisible(release.ReleaseDate, today))
                 {
-                    return release;
+                    if (release.ReleaseDate < today)
+                    {
+                        pastRelease = release;
+                    }
+                    else
+                    {
+                        return movie.IsInTheaters && pastRelease is not null
+                            ? pastRelease
+                            : release;
+                    }
                 }
             }
         }
 
-        return null;
+        return pastRelease;
     }
 
     public static bool IsVisible(FavoriteEntry favorite, DateOnly today) =>
-        IsVisible(favorite.UsTheatricalReleaseDate, today);
+        favorite.MovieId > 0
+        && IsRetained(
+            favorite.UsTheatricalReleaseDate,
+            today,
+            favorite.IsInTheaters,
+            favorite.HasBeenInTheaters
+        );
 
-    public static ReleaseStatusInfo GetStatusInfo(DateOnly releaseDate, DateOnly today)
+    private static bool IsRetained(
+        DateOnly releaseDate,
+        DateOnly today,
+        bool isInTheaters,
+        bool? hasBeenInTheaters
+    ) =>
+        IsVisible(releaseDate, today)
+        && (
+            isInTheaters
+            || releaseDate > today
+            || hasBeenInTheaters is null
+            || (
+                !hasBeenInTheaters.Value
+                && today.DayNumber - releaseDate.DayNumber < NonTheatricalRetentionDays
+            )
+        );
+
+    public static ReleaseStatusInfo GetStatusInfo(
+        DateOnly releaseDate,
+        DateOnly today,
+        bool isInTheaters = false
+    )
     {
-        ReleaseStatus status =
-            releaseDate > today ? ReleaseStatus.Future
-            : releaseDate == today ? ReleaseStatus.Today
-            : releaseDate < EarliestVisibleDate(today) ? ReleaseStatus.Expired
-            : ReleaseStatus.InTheatersNow;
-        return new ReleaseStatusInfo(status, Math.Max(0, releaseDate.DayNumber - today.DayNumber));
+        ReleaseStatus status = isInTheaters
+            ? releaseDate == today
+                ? ReleaseStatus.Today
+                : ReleaseStatus.InTheatersNow
+            : releaseDate > today
+                ? ReleaseStatus.Future
+                : ReleaseStatus.Released;
+        return new ReleaseStatusInfo(
+            status,
+            status == ReleaseStatus.Future
+                ? Math.Max(0, releaseDate.DayNumber - today.DayNumber)
+                : 0
+        );
     }
 }

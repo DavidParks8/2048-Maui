@@ -57,11 +57,12 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
             CreateMovie(
                 9001,
                 "Moonlight Marsh",
-                today.AddDays(-2),
+                today.AddDays(-45),
                 "G",
                 "Adventure",
                 "A friendly moon moth helps two campers find their way home.",
-                "sample_poster_01.png"
+                "sample_poster_01.png",
+                isInTheaters: true
             ),
             CreateMovie(
                 9002,
@@ -70,7 +71,8 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
                 "PG",
                 "Comedy",
                 "A careful crew packs sandwiches for a very small trip to space.",
-                "sample_poster_02.png"
+                "sample_poster_02.png",
+                isInTheaters: true
             ),
             CreateMovie(
                 9003,
@@ -153,7 +155,8 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
         string rating,
         string genre,
         string overview,
-        string posterPath
+        string posterPath,
+        bool isInTheaters = false
     ) =>
         new(
             id,
@@ -162,7 +165,8 @@ public sealed class SampleMovieCatalogService : IMovieCatalogService
             releaseDate,
             new[] { new MovieGenre(0, genre) },
             overview: overview,
-            posterPath: posterPath
+            posterPath: posterPath,
+            isInTheaters: isInTheaters
         );
 }
 

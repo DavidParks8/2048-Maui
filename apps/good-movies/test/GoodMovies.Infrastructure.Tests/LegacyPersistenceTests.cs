@@ -14,10 +14,6 @@ public sealed class LegacyPersistenceTests
         + "{\"movieId\":2,\"releaseDate\":\"2026-08-07\"},"
         + "{\"movieId\":3,\"usTheatricalReleaseDate\":\"2026-08-21\"}]";
 
-    private const string PrunedCurrentFavoritesJson =
-        "[{\"movieId\":1,\"usTheatricalReleaseDate\":\"2026-08-08\"},"
-        + "{\"movieId\":3,\"usTheatricalReleaseDate\":\"2026-08-21\"}]";
-
     private const string LegacyCatalogJson =
         "{\"refreshedAt\":\"2026-08-21T12:00:00+00:00\",\"movies\":["
         + "{\"id\":1,\"title\":\"Legacy Safe\",\"overview\":\"Legacy overview\","
@@ -33,7 +29,7 @@ public sealed class LegacyPersistenceTests
         + "{\"id\":5,\"title\":\"Legacy Date\",\"certification\":\"G\",\"usTheatricalReleaseDate\":\"2026-08-22\"}]}";
 
     [TestMethod]
-    public async Task Favorites_LoadsLegacyAndCurrentDates_AndPrunesExpiredEntries()
+    public async Task Favorites_LoadsLegacyAndCurrentDates_WithoutPruningPastEntriesOffline()
     {
         using TestDirectory directory = new();
         string path = Path.Combine(directory.Path, "favorites.json");
@@ -47,12 +43,12 @@ public sealed class LegacyPersistenceTests
 
         Assert.AreEqual(FavoritesResultStatus.Succeeded, result.Status, result.Error?.ToString());
         CollectionAssert.AreEqual(
-            new[] { 1, 3 },
+            new[] { 1, 2, 3 },
             result.Entries.Select(entry => entry.MovieId).ToArray()
         );
         Assert.AreEqual(Today.AddDays(-13), result.Entries[0].UsTheatricalReleaseDate);
-        Assert.AreEqual(Today, result.Entries[1].UsTheatricalReleaseDate);
-        Assert.AreEqual(PrunedCurrentFavoritesJson, await File.ReadAllTextAsync(path));
+        Assert.AreEqual(Today, result.Entries[2].UsTheatricalReleaseDate);
+        Assert.AreEqual(LegacyFavoritesJson, await File.ReadAllTextAsync(path));
     }
 
     [TestMethod]
@@ -90,6 +86,7 @@ public sealed class LegacyPersistenceTests
         CollectionAssert.AreEqual(new[] { 16 }, legacy.GenreIds.ToArray());
         Assert.AreEqual("Animation", legacy.Genres.Single().Name);
         Assert.AreEqual(Today, legacy.UsTheatricalReleaseDate);
+        Assert.IsFalse(legacy.IsInTheaters);
 
         Movie dateOnlyLegacy = result.Movies.Single(movie => movie.Id == 5);
         Assert.AreEqual(Today.AddDays(1), dateOnlyLegacy.UsTheatricalReleaseDate);

@@ -1,54 +1,63 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-   xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
-   xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
-   xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
-   x:Class="TwentyFortyEight.Maui.SettingsPage"
-   x:DataType="vm:SettingsViewModel"
-   Title="{x:Static strings:AppStrings.SettingsPageTitle}"
-   Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+  xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
+  xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+  x:Class="TwentyFortyEight.Maui.SettingsPage"
+  x:DataType="vm:SettingsViewModel"
+  Title="{x:Static strings:AppStrings.SettingsPageTitle}"
+  Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+>
+  <ScrollView Padding="16">
+    <VerticalStackLayout Spacing="28">
+      <!-- Gameplay Section -->
+      <components:NativeListSection Header="{x:Static strings:AppStrings.GameplaySection}">
+        <components:NativeListSection.Items>
+          <components:SettingToggleRow
+            x:Name="CoachToggleRow"
+            Label="{x:Static strings:AppStrings.EnableCoach}"
+            Description="{x:Static strings:AppStrings.EnableCoachDescription}"
+            IsToggled="{Binding CoachEnabled}"
+            AutomationId="CoachEnabledSwitch"
+            SemanticHint="{x:Static strings:AppStrings.EnableCoachHint}"
+          />
 
-   <ScrollView Padding="16">
-      <VerticalStackLayout Spacing="28">
+          <components:SettingToggleRow
+            x:Name="CoachNudgesToggleRow"
+            Label="{x:Static strings:AppStrings.EnableCoachNudges}"
+            Description="{x:Static strings:AppStrings.CoachNudgesDescription}"
+            IsToggled="{Binding CoachNudgesEnabled}"
+            AutomationId="CoachNudgesEnabledSwitch"
+            SemanticHint="{x:Static strings:AppStrings.EnableCoachNudgesHint}"
+          />
 
-         <!-- Gameplay Section -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.GameplaySection}">
-            <components:NativeListSection.Items>
-               <components:SettingToggleRow x:Name="CoachToggleRow"
-                  Label="{x:Static strings:AppStrings.EnableCoach}"
-                  Description="{x:Static strings:AppStrings.EnableCoachDescription}"
-                  IsToggled="{Binding CoachEnabled}"
-                  AutomationId="CoachEnabledSwitch"
-                  SemanticHint="{x:Static strings:AppStrings.EnableCoachHint}" />
+          <components:SettingToggleRow
+            x:Name="UndoButtonToggleRow"
+            Label="{x:Static strings:AppStrings.ShowUndoButton}"
+            IsToggled="{Binding UndoButtonVisible}"
+            AutomationId="UndoButtonVisibleSwitch"
+            SemanticHint="{x:Static strings:AppStrings.ShowUndoButtonHint}"
+          />
+        </components:NativeListSection.Items>
+      </components:NativeListSection>
 
-               <components:SettingToggleRow x:Name="CoachNudgesToggleRow"
-                  Label="{x:Static strings:AppStrings.EnableCoachNudges}"
-                  Description="{x:Static strings:AppStrings.CoachNudgesDescription}"
-                  IsToggled="{Binding CoachNudgesEnabled}"
-                  AutomationId="CoachNudgesEnabledSwitch"
-                  SemanticHint="{x:Static strings:AppStrings.EnableCoachNudgesHint}" />
-
-               <components:SettingToggleRow x:Name="UndoButtonToggleRow"
-                  Label="{x:Static strings:AppStrings.ShowUndoButton}"
-                  IsToggled="{Binding UndoButtonVisible}"
-                  AutomationId="UndoButtonVisibleSwitch"
-                  SemanticHint="{x:Static strings:AppStrings.ShowUndoButtonHint}" />
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
-
-         <!-- Haptics Section (conditionally visible) -->
-         <components:NativeListSection Header="{x:Static strings:AppStrings.HapticsSection}" IsVisible="{Binding IsHapticsSupported}">
-            <components:NativeListSection.Items>
-               <components:SettingToggleRow x:Name="HapticsToggleRow"
-                  Label="{x:Static strings:AppStrings.EnableHaptics}"
-                  IsToggled="{Binding HapticsEnabled}"
-                  AutomationId="HapticsEnabledSwitch"
-                  SemanticHint="{x:Static strings:AppStrings.EnableHapticsHint}" />
-            </components:NativeListSection.Items>
-         </components:NativeListSection>
-
-      </VerticalStackLayout>
-   </ScrollView>
+      <!-- Haptics Section (conditionally visible) -->
+      <components:NativeListSection
+        Header="{x:Static strings:AppStrings.HapticsSection}"
+        IsVisible="{Binding IsHapticsSupported}"
+      >
+        <components:NativeListSection.Items>
+          <components:SettingToggleRow
+            x:Name="HapticsToggleRow"
+            Label="{x:Static strings:AppStrings.EnableHaptics}"
+            IsToggled="{Binding HapticsEnabled}"
+            AutomationId="HapticsEnabledSwitch"
+            SemanticHint="{x:Static strings:AppStrings.EnableHapticsHint}"
+          />
+        </components:NativeListSection.Items>
+      </components:NativeListSection>
+    </VerticalStackLayout>
+  </ScrollView>
 </ContentPage>

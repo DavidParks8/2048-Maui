@@ -206,22 +206,12 @@
       </Grid>
 
       <Grid
-        x:Name="RatingFilterPanel"
+        x:Name="FilterPanel"
         Grid.Row="2"
-        IsVisible="False"
         Padding="6,0"
         RowDefinitions="Auto,Auto"
         RowSpacing="8"
       >
-        <Grid.Triggers>
-          <DataTrigger
-            Binding="{Binding SelectedSection}"
-            TargetType="Grid"
-            Value="{x:Static vm:CatalogSection.ComingSoon}"
-          >
-            <Setter Property="IsVisible" Value="True" />
-          </DataTrigger>
-        </Grid.Triggers>
         <Label
           Grid.Row="0"
           FontAttributes="Bold"
@@ -239,59 +229,83 @@
         >
           <HorizontalStackLayout Spacing="10">
             <Button
-              x:Name="AllRatingFilterButton"
-              AutomationId="RatingFilterAll"
-              Background="{StaticResource Accent}"
-              BorderColor="{StaticResource Accent}"
-              BorderWidth="3"
-              Command="{Binding SelectRatingFilterCommand}"
-              CommandParameter="{x:Static vm:MovieRatingFilter.All}"
-              FontSize="20"
-              MinimumHeightRequest="60"
-              SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
-              Text="{x:Static strings:AppStrings.RatingFilterAll}"
-              TextColor="{StaticResource PageBackground}"
-              WidthRequest="150"
-            />
-            <Button
-              x:Name="GRatingFilterButton"
-              AutomationId="RatingFilterG"
+              x:Name="InTheatersFilterButton"
+              AutomationId="InTheatersFilter"
               BorderColor="{StaticResource Surface2}"
               BorderWidth="3"
-              Command="{Binding SelectRatingFilterCommand}"
-              CommandParameter="{x:Static vm:MovieRatingFilter.G}"
+              Command="{Binding ToggleInTheatersFilterCommand}"
+              FontAutoScalingEnabled="True"
               FontSize="20"
               MinimumHeightRequest="60"
-              SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
-              Text="{x:Static strings:AppStrings.RatingFilterG}"
-              WidthRequest="150"
+              MinimumWidthRequest="210"
+              SemanticProperties.Hint="{x:Static strings:AppStrings.InTheatersFilterHint}"
+              Text="{x:Static strings:AppStrings.InTheatersShort}"
             />
-            <Button
-              x:Name="PgRatingFilterButton"
-              AutomationId="RatingFilterPG"
-              BorderColor="{StaticResource Surface2}"
-              BorderWidth="3"
-              Command="{Binding SelectRatingFilterCommand}"
-              CommandParameter="{x:Static vm:MovieRatingFilter.PG}"
-              FontSize="20"
-              MinimumHeightRequest="60"
-              SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
-              Text="{x:Static strings:AppStrings.RatingFilterPG}"
-              WidthRequest="150"
-            />
-            <Button
-              x:Name="RatingSoonFilterButton"
-              AutomationId="RatingFilterSoon"
-              BorderColor="{StaticResource Surface2}"
-              BorderWidth="3"
-              Command="{Binding SelectRatingFilterCommand}"
-              CommandParameter="{x:Static vm:MovieRatingFilter.RatingSoon}"
-              FontSize="20"
-              MinimumHeightRequest="60"
-              SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
-              Text="{x:Static strings:AppStrings.RatingComingSoon}"
-              WidthRequest="190"
-            />
+            <HorizontalStackLayout IsVisible="False" Spacing="10">
+              <HorizontalStackLayout.Triggers>
+                <DataTrigger
+                  Binding="{Binding SelectedSection}"
+                  TargetType="HorizontalStackLayout"
+                  Value="{x:Static vm:CatalogSection.ComingSoon}"
+                >
+                  <Setter Property="IsVisible" Value="True" />
+                </DataTrigger>
+              </HorizontalStackLayout.Triggers>
+              <Button
+                x:Name="AllRatingFilterButton"
+                AutomationId="RatingFilterAll"
+                Background="{StaticResource Accent}"
+                BorderColor="{StaticResource Accent}"
+                BorderWidth="3"
+                Command="{Binding SelectRatingFilterCommand}"
+                CommandParameter="{x:Static vm:MovieRatingFilter.All}"
+                FontSize="20"
+                MinimumHeightRequest="60"
+                SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+                Text="{x:Static strings:AppStrings.RatingFilterAll}"
+                TextColor="{StaticResource PageBackground}"
+                WidthRequest="100"
+              />
+              <Button
+                x:Name="GRatingFilterButton"
+                AutomationId="RatingFilterG"
+                BorderColor="{StaticResource Surface2}"
+                BorderWidth="3"
+                Command="{Binding SelectRatingFilterCommand}"
+                CommandParameter="{x:Static vm:MovieRatingFilter.G}"
+                FontSize="20"
+                MinimumHeightRequest="60"
+                SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+                Text="{x:Static strings:AppStrings.RatingFilterG}"
+                WidthRequest="80"
+              />
+              <Button
+                x:Name="PgRatingFilterButton"
+                AutomationId="RatingFilterPG"
+                BorderColor="{StaticResource Surface2}"
+                BorderWidth="3"
+                Command="{Binding SelectRatingFilterCommand}"
+                CommandParameter="{x:Static vm:MovieRatingFilter.PG}"
+                FontSize="20"
+                MinimumHeightRequest="60"
+                SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+                Text="{x:Static strings:AppStrings.RatingFilterPG}"
+                WidthRequest="80"
+              />
+              <Button
+                x:Name="RatingSoonFilterButton"
+                AutomationId="RatingFilterSoon"
+                BorderColor="{StaticResource Surface2}"
+                BorderWidth="3"
+                Command="{Binding SelectRatingFilterCommand}"
+                CommandParameter="{x:Static vm:MovieRatingFilter.RatingSoon}"
+                FontSize="20"
+                MinimumHeightRequest="60"
+                SemanticProperties.Hint="{x:Static strings:AppStrings.RatingFilterHint}"
+                Text="{x:Static strings:AppStrings.RatingComingSoon}"
+                WidthRequest="170"
+              />
+            </HorizontalStackLayout>
           </HorizontalStackLayout>
         </ScrollView>
       </Grid>

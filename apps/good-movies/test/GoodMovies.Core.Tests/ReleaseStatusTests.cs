@@ -10,15 +10,23 @@ public sealed class ReleaseStatusTests
     [TestMethod]
     public void GetStatus_ReleaseDay_IsInTheatersToday()
     {
-        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today, Today);
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(
+            Today,
+            Today,
+            isInTheaters: true
+        );
 
         Assert.AreEqual(ReleaseStatus.Today, status.Status);
     }
 
     [TestMethod]
-    public void GetStatus_PastRetainedRelease_IsInTheatersNow()
+    public void GetStatus_OldMovieStillPlaying_IsInTheatersNow()
     {
-        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(-13), Today);
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(
+            Today.AddDays(-90),
+            Today,
+            isInTheaters: true
+        );
 
         Assert.AreEqual(ReleaseStatus.InTheatersNow, status.Status);
     }
@@ -36,10 +44,27 @@ public sealed class ReleaseStatusTests
     }
 
     [TestMethod]
-    public void GetStatus_ExpiredPastRelease_IsNotReportedAsInTheatersNow()
+    public void GetStatus_ReleaseDateAlone_DoesNotClaimMovieIsInTheaters()
     {
         ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(Today.AddDays(-14), Today);
 
-        Assert.AreEqual(ReleaseStatus.Expired, status.Status);
+        Assert.AreEqual(ReleaseStatus.Released, status.Status);
+        Assert.AreEqual(
+            ReleaseStatus.Released,
+            ReleaseWindowPolicy.GetStatusInfo(Today, Today).Status
+        );
+    }
+
+    [TestMethod]
+    public void GetStatus_PlayingBeforePublishedReleaseDate_DoesNotShowCountdown()
+    {
+        ReleaseStatusInfo status = ReleaseWindowPolicy.GetStatusInfo(
+            Today.AddDays(2),
+            Today,
+            isInTheaters: true
+        );
+
+        Assert.AreEqual(ReleaseStatus.InTheatersNow, status.Status);
+        Assert.AreEqual(0, status.Sleeps);
     }
 }

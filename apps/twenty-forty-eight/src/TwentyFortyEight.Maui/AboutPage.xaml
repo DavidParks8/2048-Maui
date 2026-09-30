@@ -1,91 +1,98 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-   xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
-   xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
-   x:Class="TwentyFortyEight.Maui.AboutPage"
-   Title="{x:Static strings:AppStrings.AboutPageTitle}"
-   Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+  xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+  x:Class="TwentyFortyEight.Maui.AboutPage"
+  Title="{x:Static strings:AppStrings.AboutPageTitle}"
+  Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+>
+  <ScrollView Padding="16">
+    <VerticalStackLayout Spacing="20">
+      <!-- Main Message Section -->
+      <components:NativeSection ContentPadding="20,24">
+        <components:NativeSection.SectionContent>
+          <VerticalStackLayout Spacing="20">
+            <Label
+              Text="{x:Static strings:AppStrings.ForTaliaTitle}"
+              FontSize="28"
+              FontAttributes="Bold"
+              HorizontalOptions="Center"
+            />
 
-   <ScrollView Padding="16">
-      <VerticalStackLayout Spacing="20">
+            <Label FontSize="17" LineHeight="1.5" HorizontalTextAlignment="Center">
+              <Label.FormattedText>
+                <FormattedString>
+                  <Span Text="{x:Static strings:AppStrings.AboutMessagePart1}" />
+                  <Span Text="&#x0a;&#x0a;" />
+                  <Span Text="{x:Static strings:AppStrings.AboutMessagePart2}" />
+                  <Span Text="&#x0a;&#x0a;" />
+                  <Span Text="{x:Static strings:AppStrings.AboutMessagePart3}" />
+                  <Span Text="&#x0a;&#x0a;" />
+                  <Span
+                    Text="{x:Static strings:AppStrings.AboutMessageSignature}"
+                    FontAttributes="Italic"
+                  />
+                </FormattedString>
+              </Label.FormattedText>
+            </Label>
+          </VerticalStackLayout>
+        </components:NativeSection.SectionContent>
+      </components:NativeSection>
 
-         <!-- Main Message Section -->
-         <components:NativeSection ContentPadding="20,24">
-            <components:NativeSection.SectionContent>
-               <VerticalStackLayout Spacing="20">
-                  <Label
-                     Text="{x:Static strings:AppStrings.ForTaliaTitle}"
-                     FontSize="28"
-                     FontAttributes="Bold"
-                     HorizontalOptions="Center" />
+      <!-- App Info Section -->
+      <components:NativeSection
+        Header="{x:Static strings:AppStrings.AboutTheAppSection}"
+        ContentPadding="16"
+      >
+        <components:NativeSection.SectionContent>
+          <VerticalStackLayout Spacing="8">
+            <Label
+              Text="{x:Static strings:AppStrings.AppNameForTalia}"
+              FontSize="17"
+              FontAttributes="Bold"
+            />
 
-                  <Label
-                     FontSize="17"
-                     LineHeight="1.5"
-                     HorizontalTextAlignment="Center">
-                     <Label.FormattedText>
-                        <FormattedString>
-                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart1}" />
-                           <Span Text="&#x0a;&#x0a;" />
-                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart2}" />
-                           <Span Text="&#x0a;&#x0a;" />
-                           <Span Text="{x:Static strings:AppStrings.AboutMessagePart3}" />
-                           <Span Text="&#x0a;&#x0a;" />
-                           <Span Text="{x:Static strings:AppStrings.AboutMessageSignature}" FontAttributes="Italic" />
-                        </FormattedString>
-                     </Label.FormattedText>
-                  </Label>
-               </VerticalStackLayout>
-            </components:NativeSection.SectionContent>
-         </components:NativeSection>
+            <Label
+              Text="{x:Static strings:AppStrings.AppDescription}"
+              FontSize="15"
+              LineHeight="1.4"
+            />
+          </VerticalStackLayout>
+        </components:NativeSection.SectionContent>
+      </components:NativeSection>
 
-         <!-- App Info Section -->
-         <components:NativeSection Header="{x:Static strings:AppStrings.AboutTheAppSection}" ContentPadding="16">
-            <components:NativeSection.SectionContent>
-               <VerticalStackLayout Spacing="8">
-                  <Label
-                     Text="{x:Static strings:AppStrings.AppNameForTalia}"
-                     FontSize="17"
-                     FontAttributes="Bold" />
+      <!-- Support Section -->
+      <components:NativeSection
+        Header="{x:Static strings:AppStrings.SupportSection}"
+        ContentPadding="16"
+      >
+        <components:NativeSection.SectionContent>
+          <VerticalStackLayout Spacing="16">
+            <Label Text="{x:Static strings:AppStrings.NeedHelpOrBug}" FontSize="15" />
 
-                  <Label
-                     Text="{x:Static strings:AppStrings.AppDescription}"
-                     FontSize="15"
-                     LineHeight="1.4" />
-               </VerticalStackLayout>
-            </components:NativeSection.SectionContent>
-         </components:NativeSection>
+            <Button
+              x:Name="GitHubIssuesButton"
+              Text="{x:Static strings:AppStrings.ReportAnIssue}"
+              FontSize="17"
+              FontAttributes="Bold"
+              CornerRadius="8"
+              Padding="16,12"
+              Clicked="OnGitHubIssuesClicked"
+              SemanticProperties.Description="{x:Static strings:AppStrings.ReportAnIssueDescription}"
+            />
+          </VerticalStackLayout>
+        </components:NativeSection.SectionContent>
+      </components:NativeSection>
 
-         <!-- Support Section -->
-         <components:NativeSection Header="{x:Static strings:AppStrings.SupportSection}" ContentPadding="16">
-            <components:NativeSection.SectionContent>
-               <VerticalStackLayout Spacing="16">
-                  <Label
-                     Text="{x:Static strings:AppStrings.NeedHelpOrBug}"
-                     FontSize="15" />
-
-                  <Button
-                     x:Name="GitHubIssuesButton"
-                     Text="{x:Static strings:AppStrings.ReportAnIssue}"
-                     FontSize="17"
-                     FontAttributes="Bold"
-                     CornerRadius="8"
-                     Padding="16,12"
-                     Clicked="OnGitHubIssuesClicked"
-                     SemanticProperties.Description="{x:Static strings:AppStrings.ReportAnIssueDescription}" />
-               </VerticalStackLayout>
-            </components:NativeSection.SectionContent>
-         </components:NativeSection>
-
-         <!-- Footer -->
-         <Label
-            Text="{x:Static strings:AppStrings.MadeWithLove}"
-            FontSize="12"
-            HorizontalOptions="Center"
-            Margin="0,10,0,20" />
-
-      </VerticalStackLayout>
-   </ScrollView>
+      <!-- Footer -->
+      <Label
+        Text="{x:Static strings:AppStrings.MadeWithLove}"
+        FontSize="12"
+        HorizontalOptions="Center"
+        Margin="0,10,0,20"
+      />
+    </VerticalStackLayout>
+  </ScrollView>
 </ContentPage>

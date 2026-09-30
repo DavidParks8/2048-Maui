@@ -24,7 +24,9 @@ older-audience titles or needing to decode dense movie metadata.
 ## Positioning
 
 The catalog is safety-filtered before display. Every title must have a verified U.S.
-limited or wide theatrical release. It must either carry an exact G or PG certification,
+limited or wide theatrical release when discovered. Already-tracked titles redirected
+to digital or TV release remain eligible with a verified U.S. release date. Every title
+must either carry an exact G or PG certification,
 or have no published certification yet and pass the stricter English-language,
 family/animation genre, and popularity checks. Titles with any known rating above PG are
 excluded.
@@ -39,8 +41,20 @@ excluded.
 
 ## Capabilities and Constraints
 
-- Show releases from 13 days ago through 12 calendar months ahead.
-- Remove a title and its favorite entry at local midnight 14 days after release.
+- Show upcoming releases through 12 calendar months ahead and safe movies on TMDB's
+  U.S. Now Playing list, regardless of how long ago they opened.
+- Offer an In theaters only filter alongside the existing rating filters, favorites,
+  and search. Theater status appears on movie cards and details.
+- Persist whether each movie has actually appeared on the U.S. Now Playing list.
+  Remove it and its favorite after a successful, complete refresh confirms its
+  theatrical run has ended.
+- Keep already-tracked movies that never enter theaters through day 13 after their
+  U.S. release; expire the movie and its favorite at local midnight on day 14.
+  Redirected digital/TV titles use their verified digital/TV release date.
+- Keep the last fetched theater status while offline. Local midnight updates
+  countdowns and expires never-theatrical releases, but does not age out movies
+  still known to be in theaters. A failed/incomplete refresh cannot invent a theater exit.
+- Discovery remains theater-focused; the app does not discover new streaming-only titles.
 - Three top-level sections: Coming soon, My favorites, and Find a movie.
 - Persist favorites locally.
 - Show posters, details, release status, and a simple genre label.
@@ -65,7 +79,7 @@ placeholders; no testimonials, ratings claims, or commercial proof exist.
 1. Prove safety; never infer it from missing data.
 2. Pictures carry meaning first and words reinforce them.
 3. Every important action is large, direct, and recoverable.
-4. Cached content remains useful offline without weakening expiration rules.
+4. Cached content remains useful offline without inventing current theater status.
 5. Plain language beats movie-industry metadata.
 
 ## Accessibility & Inclusion
