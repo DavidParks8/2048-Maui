@@ -29,21 +29,29 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET 10.0.401 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or a later servicing patch
 - .NET MAUI workload
 
 Platform notes:
 
-- iOS / Mac Catalyst: requires macOS + Xcode
+- iOS / Mac Catalyst: requires macOS 26.6+ and Xcode 27.0
 - Android: requires Android SDK + emulators/device
+
+Icon and splash lettering is stored as SVG outlines so resource generation does
+not depend on platform fonts or the SVG renderer's variable-font APIs.
+Apple targets register MAUI's scene lifecycle while retaining single-window
+behavior, as required by iOS 27.
 
 ## Setup
 
 1. Install .NET MAUI workload:
 
    ```bash
-   dotnet workload install maui
+   dotnet workload install maui --version 10.0.401.1
    ```
+
+   `global.json` pins the SDK feature band and workload set. Existing installations
+   can use `dotnet workload update --version 10.0.401.1` after updating the SDK.
 
 2. Restore dependencies:
 

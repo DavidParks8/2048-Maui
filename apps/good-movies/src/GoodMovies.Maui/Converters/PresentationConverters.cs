@@ -51,6 +51,7 @@ public static class GoodMoviesTextFormatter
             ),
             ReleaseStatus.Today => AppStrings.InTheatersToday,
             ReleaseStatus.InTheatersNow => AppStrings.InTheatersNow,
+            ReleaseStatus.Released => AppStrings.ReleasedStatus,
             _ => string.Empty,
         };
     }
@@ -90,9 +91,6 @@ public static class GoodMoviesTextFormatter
     public static string FormatFavoriteStatus(bool isFavorite) =>
         isFavorite ? AppStrings.SavedToFavorites : AppStrings.TapHeartToSave;
 
-    public static string FormatDetailStatus(MovieDetailViewModel detail) =>
-        FormatStatus(detail.Status, detail.Sleeps);
-
     public static string GetMessageTitle(CatalogMessageKey key) =>
         key switch
         {
@@ -101,6 +99,7 @@ public static class GoodMoviesTextFormatter
             CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsTitle,
             CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesTitle,
             CatalogMessageKey.NoMovies => AppStrings.NoMoviesTitle,
+            CatalogMessageKey.NoMoviesInTheaters => AppStrings.NoMoviesInTheatersTitle,
             CatalogMessageKey.MissingToken => AppStrings.MissingTokenTitle,
             CatalogMessageKey.RefreshError => AppStrings.RefreshErrorTitle,
             CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningTitle,
@@ -145,6 +144,7 @@ public static class GoodMoviesTextFormatter
             CatalogMessageKey.NoSearchResults => AppStrings.NoSearchResultsMessage,
             CatalogMessageKey.NoFavorites => AppStrings.NoFavoritesMessage,
             CatalogMessageKey.NoMovies => AppStrings.NoMoviesMessage,
+            CatalogMessageKey.NoMoviesInTheaters => AppStrings.NoMoviesInTheatersMessage,
             CatalogMessageKey.MissingToken => AppStrings.MissingTokenMessage,
             CatalogMessageKey.RefreshError => AppStrings.RefreshErrorMessage,
             CatalogMessageKey.RefreshWarning => AppStrings.RefreshWarningMessage,
@@ -282,7 +282,9 @@ public sealed class CardStatusConverter : OneWayValueConverter
         CultureInfo culture
     ) =>
         value is MovieCardViewModel card
-            ? GoodMoviesTextFormatter.FormatStatus(card.Status, card.Sleeps)
+            ? card.IsInTheaters && parameter is "Compact"
+                ? AppStrings.InTheatersShort
+                : GoodMoviesTextFormatter.FormatStatus(card.Status, card.Sleeps)
             : string.Empty;
 }
 
@@ -294,8 +296,8 @@ public sealed class DetailStatusConverter : OneWayValueConverter
         object? parameter,
         CultureInfo culture
     ) =>
-        value is MovieDetailViewModel detail
-            ? GoodMoviesTextFormatter.FormatDetailStatus(detail)
+        value is ReleaseStatusInfo status
+            ? GoodMoviesTextFormatter.FormatStatus(status.Status, status.Sleeps)
             : string.Empty;
 }
 

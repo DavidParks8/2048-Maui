@@ -1,48 +1,59 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:TwentyFortyEight.Maui.Components"
-             x:Class="TwentyFortyEight.Maui.Components.IconButton"
-             x:Name="Root"
-             x:DataType="local:IconButton">
-    <Border
-            x:Name="TappableBorder"
-            Stroke="Transparent"
-            StrokeThickness="0"
-            WidthRequest="{Binding ButtonSize, Source={x:Reference Root}}"
-            HeightRequest="{Binding ButtonSize, Source={x:Reference Root}}"
-            Padding="12,8"
-            StrokeShape="{Binding ButtonStrokeShape, Source={x:Reference Root}}"
-            Opacity="{Binding IsButtonEnabled, Source={x:Reference Root}, Converter={StaticResource BoolToOpacityConverter}}"
-            IsEnabled="{Binding IsButtonEnabled, Source={x:Reference Root}}">
-        <Border.GestureRecognizers>
-            <TapGestureRecognizer Command="{Binding Command, Source={x:Reference Root}}"
-                                  CommandParameter="{Binding CommandParameter, Source={x:Reference Root}}" />
-        </Border.GestureRecognizers>
-        <VerticalStackLayout Spacing="4"
-                             VerticalOptions="Center"
-                             HorizontalOptions="Center">
-            <Image Source="{Binding IconImageSource, Source={x:Reference Root}}"
-                   HeightRequest="24"
-                   WidthRequest="24"
-                   HorizontalOptions="Center"
-                   IsVisible="{Binding HasIconImageSource, Source={x:Reference Root}}" />
-            <Label Text="{Binding Icon, Source={x:Reference Root}}"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center"
-                   IsVisible="{Binding HasIconText, Source={x:Reference Root}}" />
-            <Label Text="{Binding ButtonText, Source={x:Reference Root}}"
-                   FontSize="12"
-                   HorizontalOptions="Center">
-                <Label.Triggers>
-                    <DataTrigger TargetType="Label"
-                                 Binding="{Binding ButtonText, Source={x:Reference Root}}"
-                                 Value="">
-                        <Setter Property="IsVisible" Value="False" />
-                    </DataTrigger>
-                </Label.Triggers>
-            </Label>
-        </VerticalStackLayout>
-    </Border>
+<ContentView
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:local="clr-namespace:TwentyFortyEight.Maui.Components"
+  x:Class="TwentyFortyEight.Maui.Components.IconButton"
+  x:Name="Root"
+  x:DataType="local:IconButton"
+>
+  <Border
+    x:Name="TappableBorder"
+    Stroke="Transparent"
+    StrokeThickness="0"
+    WidthRequest="{Binding ButtonSize, Source={x:Reference Root}}"
+    HeightRequest="{Binding ButtonSize, Source={x:Reference Root}}"
+    Padding="12,8"
+    StrokeShape="{Binding ButtonStrokeShape, Source={x:Reference Root}}"
+    Opacity="{Binding IsButtonEnabled, Source={x:Reference Root}, Converter={StaticResource BoolToOpacityConverter}}"
+    IsEnabled="{Binding IsButtonEnabled, Source={x:Reference Root}}"
+  >
+    <Border.GestureRecognizers>
+      <TapGestureRecognizer
+        Command="{Binding Command, Source={x:Reference Root}}"
+        CommandParameter="{Binding CommandParameter, Source={x:Reference Root}}"
+      />
+    </Border.GestureRecognizers>
+    <VerticalStackLayout Spacing="4" VerticalOptions="Center" HorizontalOptions="Center">
+      <Image
+        Source="{Binding IconImageSource, Source={x:Reference Root}}"
+        HeightRequest="24"
+        WidthRequest="24"
+        HorizontalOptions="Center"
+        IsVisible="{Binding HasIconImageSource, Source={x:Reference Root}}"
+      />
+      <Label
+        Text="{Binding Icon, Source={x:Reference Root}}"
+        FontSize="24"
+        FontAttributes="Bold"
+        HorizontalOptions="Center"
+        IsVisible="{Binding HasIconText, Source={x:Reference Root}}"
+      />
+      <Label
+        Text="{Binding ButtonText, Source={x:Reference Root}}"
+        FontSize="12"
+        HorizontalOptions="Center"
+      >
+        <Label.Triggers>
+          <DataTrigger
+            TargetType="Label"
+            Binding="{Binding ButtonText, Source={x:Reference Root}}"
+            Value=""
+          >
+            <Setter Property="IsVisible" Value="False" />
+          </DataTrigger>
+        </Label.Triggers>
+      </Label>
+    </VerticalStackLayout>
+  </Border>
 </ContentView>

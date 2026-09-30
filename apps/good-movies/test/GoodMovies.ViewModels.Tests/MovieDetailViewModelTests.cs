@@ -275,7 +275,7 @@ public sealed class MovieDetailViewModelTests
     }
 
     [TestMethod]
-    public void Detail_ReappliesReleaseStatusWhenTheLocalDateChanges()
+    public void Detail_ReappliesCountdownWithoutInferringTheaterStatusFromTheDate()
     {
         MutableClock clock = new(Today);
         MovieDetailViewModel detail = new(
@@ -288,7 +288,8 @@ public sealed class MovieDetailViewModelTests
         clock.Today = Today.AddDays(1);
         detail.ReapplyCurrentDatePolicies();
 
-        Assert.AreEqual(ReleaseStatus.Today, detail.Status);
+        Assert.AreEqual(ReleaseStatus.Released, detail.Status);
+        Assert.IsFalse(detail.IsInTheaters);
         Assert.AreEqual(0, detail.Sleeps);
     }
 
@@ -301,7 +302,12 @@ public sealed class MovieDetailViewModelTests
     }
 
     private static FavoriteEntry Favorite(Movie movie) =>
-        new(movie.Id, movie.UsTheatricalReleaseDate!.Value);
+        new(
+            movie.Id,
+            ReleaseWindowPolicy.GetVisibleRelease(movie, Today)!.ReleaseDate,
+            movie.HasBeenInTheaters,
+            movie.IsInTheaters
+        );
 
     private static Movie Movie(int id, string title, DateOnly date, string overview) =>
         new(

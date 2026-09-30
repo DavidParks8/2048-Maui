@@ -11,6 +11,179 @@ public sealed class CatalogViewModelTests
     private static readonly DateOnly Today = new(2026, 8, 21);
 
     [TestMethod]
+    public async Task TheaterFilterCommand_TogglesIndependentlyWithoutChangingTheSelectedRating()
+    {
+        Movie playing = MovieWithRelease(1, "Playing", Today, isInTheaters: true);
+        Movie upcoming = MovieWithRelease(2, "Upcoming", Today.AddDays(3));
+        CatalogViewModel viewModel = CreateViewModel(FreshService(playing, upcoming));
+        await viewModel.InitializeAsync();
+        viewModel.SelectRatingFilter(MovieRatingFilter.G);
+
+        viewModel.ToggleInTheatersFilterCommand.Execute(null);
+
+        Assert.IsTrue(viewModel.ShowInTheatersOnly);
+        Assert.AreEqual(MovieRatingFilter.G, viewModel.SelectedRatingFilter);
+        Assert.AreEqual(playing.Id, viewModel.MovieCards.Single().MovieId);
+
+        viewModel.ToggleInTheatersFilterCommand.Execute(null);
+
+        Assert.IsFalse(viewModel.ShowInTheatersOnly);
+        Assert.AreEqual(MovieRatingFilter.G, viewModel.SelectedRatingFilter);
+        Assert.AreEqual(2, viewModel.MovieCards.Count);
+    }
+
+    [TestMethod]
+    public async Task ReapplyCurrentDatePolicies_RemovesNeverTheatricalMovieAndFavoriteOnDayFourteenOffline()
+    {
+        Movie streaming = new(
+            1,
+            "TV movie",
+            "PG",
+            new[] { new TheatricalRelease(Today.AddDays(-13), "US", TheatricalRelease.TvType) }
+        );
+        FavoriteEntry favorite = Favorite(streaming);
+        MutableClock clock = new(Today);
+        IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
+        favorites
+            .GetAsync(Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
+        IMovieCatalogService service = FreshService(streaming);
+        CatalogViewModel viewModel = new(service, favorites, clock: clock);
+        await viewModel.InitializeAsync();
+        await viewModel.OpenDetailAsync(viewModel.MovieCards.Single());
+        Assert.IsFalse(viewModel.MovieCards.Single().IsInTheaters);
+        Assert.AreEqual(1, viewModel.FavoriteCount);
+
+        clock.Today = Today.AddDays(1);
+        await viewModel.ReapplyCurrentDatePoliciesAsync();
+
+        Assert.AreEqual(0, viewModel.MovieCards.Count);
+        Assert.AreEqual(0, viewModel.FavoriteCount);
+        Assert.IsNull(viewModel.SelectedMovieDetail);
+        await service.DidNotReceive().RefreshAsync(Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task Refresh_UpdatesOpenDetailsReleaseDateForRedirectedStreamingTitle()
+    {
+        Movie upcoming = MovieWithRelease(1, "Movie", Today.AddDays(1));
+        Movie redirected = new(
+            1,
+            "Movie",
+            "G",
+            new[] { new TheatricalRelease(Today.AddDays(-3), "US", TheatricalRelease.DigitalType) }
+        );
+        IMovieCatalogService service = FreshService(upcoming);
+        service
+            .RefreshAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Refreshed(redirected)));
+        CatalogViewModel viewModel = CreateViewModel(service);
+        await viewModel.InitializeAsync();
+        await viewModel.OpenDetailAsync(viewModel.MovieCards.Single());
+
+        await viewModel.RefreshAsync();
+        await viewModel.ReapplyCurrentDatePoliciesAsync();
+
+        Assert.AreEqual(Today.AddDays(-3), viewModel.SelectedMovieDetail!.ReleaseDate);
+        Assert.AreEqual(ReleaseStatus.Released, viewModel.SelectedMovieDetail.Status);
+        Assert.IsFalse(viewModel.SelectedMovieDetail.IsInTheaters);
+    }
+
+    [TestMethod]
+    public async Task TheaterFilter_ComposesWithRatingsFavoritesAndSearch_AndCanBeCleared()
+    {
+        Movie playingG = MovieWithRelease(1, "G Movie", Today.AddDays(-45), isInTheaters: true);
+        Movie playingPg = new(2, "PG Movie", "PG", Today.AddDays(-60), isInTheaters: true);
+        Movie upcoming = new(3, "Upcoming Movie", "PG", Today.AddDays(10));
+        Movie unconfirmed = MovieWithRelease(4, "Unconfirmed Movie", Today.AddDays(-1));
+        IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
+        favorites
+            .GetAsync(Today, Arg.Any<CancellationToken>())
+            .Returns(
+                Task.FromResult(
+                    FavoritesResult.Success(new[] { Favorite(playingG), Favorite(upcoming) })
+                )
+            );
+        CatalogViewModel viewModel = CreateViewModel(
+            FreshService(playingG, playingPg, upcoming, unconfirmed),
+            favorites,
+            searchDebounce: TimeSpan.Zero
+        );
+        await viewModel.InitializeAsync();
+        Assert.IsFalse(viewModel.ShowInTheatersOnly);
+        Assert.AreEqual(4, viewModel.CurrentCount);
+
+        viewModel.ShowInTheatersOnly = true;
+        CollectionAssert.AreEquivalent(
+            new[] { 1, 2 },
+            viewModel.MovieCards.Select(card => card.MovieId).ToArray()
+        );
+        Assert.AreEqual(2, viewModel.CurrentCount);
+        Assert.IsTrue(viewModel.MovieGroups.Single().IsInTheatersNow);
+        viewModel.SelectRatingFilter(MovieRatingFilter.G);
+        Assert.AreEqual(1, viewModel.MovieCards.Single().MovieId);
+
+        viewModel.SwitchSection(CatalogSection.MyFavorites);
+        Assert.AreEqual(1, viewModel.MovieCards.Single().MovieId);
+        Assert.AreEqual(2, viewModel.FavoriteCount);
+        viewModel.SwitchSection(CatalogSection.FindAMovie);
+        viewModel.Query = "Movie";
+        await viewModel.SearchDebounceTask;
+        Assert.AreEqual(2, viewModel.MovieCards.Count);
+        viewModel.ShowInTheatersOnly = false;
+        Assert.AreEqual(4, viewModel.MovieCards.Count);
+
+        viewModel.SwitchSection(CatalogSection.ComingSoon);
+        viewModel.ShowInTheatersOnly = true;
+        viewModel.SelectRatingFilter(MovieRatingFilter.RatingSoon);
+        Assert.AreEqual(CatalogViewState.Empty, viewModel.State);
+        Assert.AreEqual(CatalogMessageKey.NoMoviesInTheaters, viewModel.MessageKey);
+    }
+
+    [TestMethod]
+    public async Task Refresh_UpdatesTheaterIndicatorOnAnAlreadyOpenDetail()
+    {
+        Movie upcoming = MovieWithRelease(1, "Movie", Today.AddDays(1));
+        Movie playing = MovieWithRelease(1, "Movie", Today.AddDays(1), isInTheaters: true);
+        IMovieCatalogService service = FreshService(upcoming);
+        service
+            .RefreshAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Refreshed(playing)));
+        CatalogViewModel viewModel = CreateViewModel(service);
+        await viewModel.InitializeAsync();
+        await viewModel.OpenDetailAsync(viewModel.MovieCards.Single());
+        MovieDetailViewModel detail = viewModel.SelectedMovieDetail!;
+        Assert.IsFalse(detail.IsInTheaters);
+        Assert.AreEqual(ReleaseStatus.Future, detail.Status);
+        List<string?> notifications = new();
+        detail.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+
+        await viewModel.RefreshAsync();
+
+        Assert.AreSame(detail, viewModel.SelectedMovieDetail);
+        Assert.IsTrue(detail.IsInTheaters);
+        Assert.AreEqual(ReleaseStatus.InTheatersNow, detail.Status);
+        CollectionAssert.Contains(notifications, nameof(MovieDetailViewModel.StatusInfo));
+        Assert.IsTrue(viewModel.MovieCards.Single().IsInTheaters);
+    }
+
+    [TestMethod]
+    public void Grouping_UnconfirmedPastReleaseIsNotGroupedAsInTheaters()
+    {
+        MovieCardViewModel unconfirmed = new(
+            MovieWithRelease(1, "Unconfirmed", Today.AddDays(-1)),
+            new FixedClock(Today)
+        );
+        MovieGroupViewModel group = MovieGroupViewModel
+            .CreateGroups(new[] { unconfirmed })
+            .Single();
+
+        Assert.IsFalse(group.IsInTheatersNow);
+        Assert.AreEqual(Today.AddDays(-1), group.ReleaseDate);
+        Assert.AreSame(unconfirmed, group.Cards.Single());
+    }
+
+    [TestMethod]
     public async Task Initialize_StaleCacheIsPublishedBeforeRefreshCompletes()
     {
         Movie cached = MovieWithRelease(1, "Cached", Today.AddDays(2));
@@ -72,7 +245,7 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public async Task Initialize_ReconcilesFavoritesAgainstTheCachedCatalog()
+    public async Task Initialize_DoesNotPruneFavoritesAgainstTheCachedCatalog()
     {
         Movie cached = MovieWithRelease(1, "Cached", Today.AddDays(1));
         FavoriteEntry present = Favorite(cached);
@@ -90,12 +263,8 @@ public sealed class CatalogViewModelTests
 
         Assert.AreEqual(1, viewModel.FavoriteCount);
         await favorites
-            .Received(1)
-            .ReconcileAsync(
-                Arg.Is<IEnumerable<Movie>>(movies => movies.Single().Id == cached.Id),
-                Today,
-                Arg.Any<CancellationToken>()
-            );
+            .DidNotReceive()
+            .ReconcileAsync(Arg.Any<IEnumerable<Movie>>(), Today, Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -117,7 +286,7 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public async Task CheckForUpdates_PrunesFavoritesForTheNewLocalDate()
+    public async Task CheckForUpdates_ReloadsFavoriteState()
     {
         Movie movie = MovieWithRelease(1, "Fresh", Today);
         IMovieCatalogService service = Substitute.For<IMovieCatalogService>();
@@ -146,9 +315,9 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public async Task ReapplyCurrentDatePolicies_RemovesDayFourteenMovieAndFavoriteOffline()
+    public async Task ReapplyCurrentDatePolicies_RetainsMovieFavoriteAndDetailPastDayFourteenOffline()
     {
-        Movie expiring = MovieWithRelease(1, "Last day", Today.AddDays(-13));
+        Movie expiring = MovieWithRelease(1, "Long run", Today.AddDays(-13), isInTheaters: true);
         FavoriteEntry favorite = Favorite(expiring);
         MutableClock clock = new(Today);
         IMovieCatalogService service = Substitute.For<IMovieCatalogService>();
@@ -158,15 +327,7 @@ public sealed class CatalogViewModelTests
         IFavoritesStore favorites = Substitute.For<IFavoritesStore>();
         favorites
             .GetAsync(Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo =>
-                Task.FromResult(
-                    FavoritesResult.Success(
-                        callInfo.Arg<DateOnly>() == Today
-                            ? new[] { favorite }
-                            : Array.Empty<FavoriteEntry>()
-                    )
-                )
-            );
+            .Returns(Task.FromResult(FavoritesResult.Success(new[] { favorite })));
         INavigationService navigation = Substitute.For<INavigationService>();
         navigation
             .NavigateToMovieDetailAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -187,11 +348,13 @@ public sealed class CatalogViewModelTests
         clock.Today = Today.AddDays(1);
         await viewModel.ReapplyCurrentDatePoliciesAsync();
 
-        Assert.AreEqual(0, viewModel.MovieCards.Count);
-        Assert.AreEqual(0, viewModel.FavoriteCount);
+        Assert.AreEqual(1, viewModel.MovieCards.Count);
+        Assert.AreEqual(1, viewModel.FavoriteCount);
+        Assert.IsTrue(viewModel.MovieCards.Single().IsInTheaters);
         await favorites.Received().GetAsync(Today.AddDays(1), Arg.Any<CancellationToken>());
-        Assert.IsNull(viewModel.SelectedMovieDetail);
-        await navigation.Received(1).NavigateBackAsync(Arg.Any<CancellationToken>());
+        Assert.IsNotNull(viewModel.SelectedMovieDetail);
+        Assert.IsTrue(viewModel.SelectedMovieDetail.IsInTheaters);
+        await navigation.DidNotReceive().NavigateBackAsync(Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -263,7 +426,7 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public async Task ResumeCheck_ReappliesTodayStatusToAnOpenDetail()
+    public async Task ResumeCheck_ReleaseDateAloneDoesNotClaimOpenDetailIsInTheaters()
     {
         Movie movie = MovieWithRelease(1, "Tomorrow", Today.AddDays(1));
         MutableClock clock = new(Today);
@@ -292,17 +455,22 @@ public sealed class CatalogViewModelTests
         clock.Today = Today.AddDays(1);
         await viewModel.CheckForUpdatesAndReapplyDateAsync();
 
-        Assert.AreEqual(ReleaseStatus.Today, viewModel.SelectedMovieDetail!.Status);
+        Assert.AreEqual(ReleaseStatus.Released, viewModel.SelectedMovieDetail!.Status);
         clock.Today = Today.AddDays(2);
         await viewModel.CheckForUpdatesAndReapplyDateAsync();
-        Assert.AreEqual(ReleaseStatus.InTheatersNow, viewModel.SelectedMovieDetail!.Status);
+        Assert.AreEqual(ReleaseStatus.Released, viewModel.SelectedMovieDetail!.Status);
         await service.Received(2).GetCatalogAsync(false, Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
-    public async Task ResumeCheck_RemovesExpiredContentBeforePendingNetworkRefresh()
+    public async Task ResumeCheck_RetainsCachedTheaterStatusWhileNetworkRefreshIsPending()
     {
-        Movie expiring = MovieWithRelease(1, "Expired now", Today.AddDays(-13));
+        Movie expiring = MovieWithRelease(
+            1,
+            "Still playing",
+            Today.AddDays(-90),
+            isInTheaters: true
+        );
         MutableClock clock = new(Today);
         TaskCompletionSource<CatalogResult> refresh = Pending<CatalogResult>();
         TaskCompletionSource refreshStarted = new(
@@ -339,18 +507,23 @@ public sealed class CatalogViewModelTests
         await refreshStarted.Task;
 
         Assert.IsFalse(update.IsCompleted);
+        Assert.AreEqual(1, viewModel.MovieCards.Count);
+        Assert.IsNotNull(viewModel.SelectedMovieDetail);
+        Assert.IsTrue(viewModel.SelectedMovieDetail.IsInTheaters);
+        await navigation.DidNotReceive().NavigateBackAsync(Arg.Any<CancellationToken>());
+        refresh.SetResult(new CatalogResult(CatalogResultStatus.Refreshed));
+        await update;
         Assert.AreEqual(0, viewModel.MovieCards.Count);
         Assert.IsNull(viewModel.SelectedMovieDetail);
-        refresh.SetResult(new CatalogResult(CatalogResultStatus.FreshCache));
-        await update;
     }
 
     [TestMethod]
-    public async Task ReapplyCurrentDatePolicies_KeepsExpiredDetailUntilBackNavigationSucceeds()
+    public async Task Refresh_EndedMovieKeepsDetailUntilBackNavigationSucceeds()
     {
         Movie expiring = MovieWithRelease(1, "Last day", Today.AddDays(-13));
         MutableClock clock = new(Today);
         IMovieCatalogService service = FreshService(expiring);
+        service.RefreshAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(Refreshed()));
         INavigationService navigation = Substitute.For<INavigationService>();
         navigation
             .NavigateToMovieDetailAsync(1, Arg.Any<CancellationToken>())
@@ -369,9 +542,7 @@ public sealed class CatalogViewModelTests
         await viewModel.OpenDetailAsync(viewModel.MovieCards.Single());
 
         clock.Today = Today.AddDays(1);
-        await Assert.ThrowsAsync<IOException>(async () =>
-            await viewModel.ReapplyCurrentDatePoliciesAsync()
-        );
+        await Assert.ThrowsAsync<IOException>(async () => await viewModel.RefreshAsync());
 
         Assert.IsNotNull(viewModel.SelectedMovieDetail);
         navigation.NavigateBackAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
@@ -545,7 +716,7 @@ public sealed class CatalogViewModelTests
     }
 
     [TestMethod]
-    public async Task Catalog_DefenseInDepthRemovesUnsafeAndExpiredMovies()
+    public async Task Catalog_DefenseInDepthRemovesUnsafeAndExpiredNeverTheatricalMovies()
     {
         Movie safe = MovieWithRelease(1, "Safe", Today);
         Movie expired = MovieWithRelease(2, "Expired", Today.AddDays(-14));
@@ -870,9 +1041,9 @@ public sealed class CatalogViewModelTests
                 new[]
                 {
                     MovieWithRelease(4, "Future B", Today.AddDays(3)),
-                    MovieWithRelease(1, "Past", Today.AddDays(-13)),
+                    MovieWithRelease(1, "Past", Today.AddDays(-90), isInTheaters: true),
                     MovieWithRelease(3, "Future A", Today.AddDays(3)),
-                    MovieWithRelease(2, "Today", Today),
+                    MovieWithRelease(2, "Today", Today, isInTheaters: true),
                 }.Select(movie => new MovieCardViewModel(movie, clock))
             )
             .ToArray();
@@ -966,14 +1137,25 @@ public sealed class CatalogViewModelTests
         new(CatalogResultStatus.Refreshed, movies);
 
     private static FavoriteEntry Favorite(Movie movie) =>
-        new(movie.Id, movie.UsTheatricalReleaseDate!.Value);
+        new(
+            movie.Id,
+            ReleaseWindowPolicy.GetVisibleRelease(movie, Today)!.ReleaseDate,
+            movie.HasBeenInTheaters,
+            movie.IsInTheaters
+        );
 
-    private static Movie MovieWithRelease(int id, string title, DateOnly releaseDate) =>
+    private static Movie MovieWithRelease(
+        int id,
+        string title,
+        DateOnly releaseDate,
+        bool isInTheaters = false
+    ) =>
         new(
             id,
             title,
             "G",
-            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) }
+            new[] { new TheatricalRelease(releaseDate, "US", TheatricalRelease.TheatricalType) },
+            isInTheaters: isInTheaters
         );
 
     private static Movie MovieWithGenre(int id, string title, DateOnly releaseDate, string genre) =>

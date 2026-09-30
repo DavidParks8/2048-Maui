@@ -1,6 +1,12 @@
 namespace GoodMovies.Core;
 
 /// <summary>
-/// The minimal data needed to retain or prune a favorite while offline.
+/// A saved movie, verified US release date, and last known theater history.
+/// Null history identifies legacy entries awaiting catalog reconciliation.
 /// </summary>
-public readonly record struct FavoriteEntry(int MovieId, DateOnly UsTheatricalReleaseDate);
+public readonly record struct FavoriteEntry(
+    int MovieId,
+    DateOnly UsTheatricalReleaseDate,
+    bool? HasBeenInTheaters = null,
+    bool IsInTheaters = false
+);

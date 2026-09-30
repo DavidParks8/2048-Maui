@@ -81,6 +81,10 @@ internal static class AppStrings
     internal static string ManyMoviesInGroup => Get(nameof(ManyMoviesInGroup));
     internal static string InTheatersNow => Get(nameof(InTheatersNow));
     internal static string InTheatersToday => Get(nameof(InTheatersToday));
+    internal static string InTheatersShort => Get(nameof(InTheatersShort));
+    internal static string InTheatersFilter => Get(nameof(InTheatersFilter));
+    internal static string InTheatersFilterHint => Get(nameof(InTheatersFilterHint));
+    internal static string ReleasedStatus => Get(nameof(ReleasedStatus));
     internal static string OneSleepStatus => Get(nameof(OneSleepStatus));
     internal static string ManySleepsStatus => Get(nameof(ManySleepsStatus));
     internal static string MovieCardAccessibility => Get(nameof(MovieCardAccessibility));
@@ -106,6 +110,8 @@ internal static class AppStrings
     internal static string NoFavoritesMessage => Get(nameof(NoFavoritesMessage));
     internal static string NoMoviesTitle => Get(nameof(NoMoviesTitle));
     internal static string NoMoviesMessage => Get(nameof(NoMoviesMessage));
+    internal static string NoMoviesInTheatersTitle => Get(nameof(NoMoviesInTheatersTitle));
+    internal static string NoMoviesInTheatersMessage => Get(nameof(NoMoviesInTheatersMessage));
     internal static string MissingTokenTitle => Get(nameof(MissingTokenTitle));
     internal static string MissingTokenMessage => Get(nameof(MissingTokenMessage));
     internal static string RefreshErrorTitle => Get(nameof(RefreshErrorTitle));

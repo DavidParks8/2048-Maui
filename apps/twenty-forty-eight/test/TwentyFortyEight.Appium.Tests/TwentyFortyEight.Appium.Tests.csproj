@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- Appium WebDriver Client -->
     <PackageReference Include="Appium.WebDriver" />
-    
+
     <!-- Selenium for WebDriver support -->
     <PackageReference Include="Selenium.WebDriver" />
   </ItemGroup>

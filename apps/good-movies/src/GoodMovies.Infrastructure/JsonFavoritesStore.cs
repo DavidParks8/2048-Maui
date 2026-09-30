@@ -15,7 +15,8 @@ internal sealed class FavoritesStoreException : IOException
 
 /// <summary>
 /// Favorites storage coordinated across in-process instances and written atomically. Only the ID and verified US release
-/// date are persisted, which keeps offline pruning independent of the catalog.
+/// date and theater history are persisted. Theater exits require a successful
+/// refresh; never-theatrical releases can expire by age while offline.
 /// </summary>
 internal sealed class JsonFavoritesStore : IFavoritesStore
 {
@@ -150,15 +151,25 @@ internal sealed class JsonFavoritesStore : IFavoritesStore
             foreach (Movie? movie in refreshedMovies)
             {
                 TheatricalRelease? release = ReleaseWindowPolicy.GetVisibleRelease(movie, today);
-                if (movie is not null && release is not null && MovieSafetyPolicy.IsSafe(movie))
+                if (
+                    movie is not null
+                    && release is not null
+                    && MovieSafetyPolicy.IsSafe(movie)
+                    && ReleaseWindowPolicy.IsVisible(movie, today)
+                )
                 {
-                    FavoriteEntry entry = new(movie.Id, release.ReleaseDate);
+                    FavoriteEntry entry = new(
+                        movie.Id,
+                        release.ReleaseDate,
+                        movie.HasBeenInTheaters,
+                        movie.IsInTheaters
+                    );
                     refreshed[entry.MovieId] = entry;
                 }
             }
 
-            FavoriteEntry[] reconciled = FilterVisible(read.Entries, today)
-                .Where(entry => refreshed.ContainsKey(entry.MovieId))
+            FavoriteEntry[] reconciled = read
+                .Entries.Where(entry => refreshed.ContainsKey(entry.MovieId))
                 .Select(entry => refreshed[entry.MovieId])
                 .ToArray();
 
@@ -240,7 +251,14 @@ internal sealed class JsonFavoritesStore : IFavoritesStore
                     );
                 }
 
-                entries.Add(new FavoriteEntry(value.MovieId, releaseDate));
+                entries.Add(
+                    new FavoriteEntry(
+                        value.MovieId,
+                        releaseDate,
+                        value.HasBeenInTheaters,
+                        value.IsInTheaters
+                    )
+                );
             }
 
             return FavoritesRead.Success(Normalize(entries));
@@ -282,6 +300,8 @@ internal sealed class JsonFavoritesStore : IFavoritesStore
             {
                 MovieId = entry.MovieId,
                 UsTheatricalReleaseDate = entry.UsTheatricalReleaseDate,
+                HasBeenInTheaters = entry.HasBeenInTheaters,
+                IsInTheaters = entry.IsInTheaters,
             })
             .ToList();
 

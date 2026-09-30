@@ -8,13 +8,13 @@ public sealed class MovieCatalogSnapshotTests
     private static readonly DateOnly Today = new(2026, 8, 21);
 
     [TestMethod]
-    public void Create_RemovesUnsafeExpiredAndOutOfWindowMovies_AndSortsDeterministically()
+    public void Create_RemovesUnsafeAndOutOfWindowMovies_ButDoesNotAgeOutPastReleases()
     {
         Movie laterTitle = Movie(1, "Zebra", Today.AddDays(2), "G");
         Movie earlierTitle = Movie(2, "Alpha", Today.AddDays(2), "PG");
         Movie sameTitleDifferentId = Movie(3, "Alpha", Today.AddDays(2), "PG");
         Movie oldestVisible = Movie(4, "Old", Today.AddDays(-13), "G");
-        Movie expired = Movie(5, "Expired", Today.AddDays(-14), "G");
+        Movie stillPlaying = new(5, "Still playing", "G", Today.AddDays(-90), isInTheaters: true);
         Movie tooFarAhead = Movie(6, "Too Far", Today.AddMonths(12).AddDays(1), "PG");
         Movie unsafeMovie = Movie(7, "Unsafe", Today, "R");
         Movie foreign = new(
@@ -32,18 +32,20 @@ public sealed class MovieCatalogSnapshotTests
                 tooFarAhead,
                 sameTitleDifferentId,
                 foreign,
-                expired,
+                stillPlaying,
                 earlierTitle,
                 oldestVisible,
             },
             Today
         );
 
-        Assert.AreEqual(4, snapshot.Movies.Count);
-        Assert.AreEqual("Old", snapshot.Movies[0].Title);
-        Assert.AreEqual(2, snapshot.Movies[1].Id);
-        Assert.AreEqual(3, snapshot.Movies[2].Id);
-        Assert.AreEqual("Zebra", snapshot.Movies[3].Title);
+        Assert.AreEqual(5, snapshot.Movies.Count);
+        Assert.AreEqual(stillPlaying.Id, snapshot.Movies[0].Id);
+        Assert.IsTrue(snapshot.Movies[0].IsInTheaters);
+        Assert.AreEqual("Old", snapshot.Movies[1].Title);
+        Assert.AreEqual(2, snapshot.Movies[2].Id);
+        Assert.AreEqual(3, snapshot.Movies[3].Id);
+        Assert.AreEqual("Zebra", snapshot.Movies[4].Title);
     }
 
     [TestMethod]

@@ -54,6 +54,10 @@
   <data name="ManyMoviesInGroup" xml:space="preserve"><value>{0} movies</value></data>
   <data name="InTheatersNow" xml:space="preserve"><value>In theaters now</value></data>
   <data name="InTheatersToday" xml:space="preserve"><value>In theaters today</value></data>
+  <data name="InTheatersShort" xml:space="preserve"><value>In theaters</value></data>
+  <data name="InTheatersFilter" xml:space="preserve"><value>In theaters only</value></data>
+  <data name="InTheatersFilterHint" xml:space="preserve"><value>Shows only movies currently in U.S. theaters</value></data>
+  <data name="ReleasedStatus" xml:space="preserve"><value>Released</value></data>
   <data name="OneSleepStatus" xml:space="preserve"><value>1 sleep to go</value></data>
   <data name="ManySleepsStatus" xml:space="preserve"><value>{0} sleeps to go</value></data>
   <data name="MovieCardAccessibility" xml:space="preserve"><value>{0}. {1}. Rated {2}. {3}.</value></data>
@@ -79,6 +83,8 @@
   <data name="NoFavoritesMessage" xml:space="preserve"><value>Tap a heart on any movie to save it here.</value></data>
   <data name="NoMoviesTitle" xml:space="preserve"><value>No movies right now</value></data>
   <data name="NoMoviesMessage" xml:space="preserve"><value>Try again later to find a new movie day.</value></data>
+  <data name="NoMoviesInTheatersTitle" xml:space="preserve"><value>No matching movies in theaters</value></data>
+  <data name="NoMoviesInTheatersMessage" xml:space="preserve"><value>Turn off In theaters only to see more movies, or try again later.</value></data>
   <data name="MissingTokenTitle" xml:space="preserve"><value>Movie data is not configured</value></data>
   <data name="MissingTokenMessage" xml:space="preserve"><value>Ask a grown up to add movie data, then try again.</value></data>
   <data name="RefreshErrorTitle" xml:space="preserve"><value>Could not refresh</value></data>

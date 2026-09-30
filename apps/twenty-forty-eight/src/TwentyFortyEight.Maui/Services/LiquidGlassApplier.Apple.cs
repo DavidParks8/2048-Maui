@@ -120,14 +120,12 @@ internal sealed class LiquidGlassApplier(IAccessibilitySettingsService accessibi
         // Insert glass below content but above any backing layers MAUI may have added
         root.InsertSubview(effectView, 0);
 
-        NSLayoutConstraint.ActivateConstraints(
-            [
-                effectView.TopAnchor.ConstraintEqualTo(root.TopAnchor),
-                effectView.LeadingAnchor.ConstraintEqualTo(root.LeadingAnchor),
-                effectView.TrailingAnchor.ConstraintEqualTo(root.TrailingAnchor),
-                effectView.BottomAnchor.ConstraintEqualTo(root.BottomAnchor),
-            ]
-        );
+        NSLayoutConstraint.ActivateConstraints([
+            effectView.TopAnchor.ConstraintEqualTo(root.TopAnchor),
+            effectView.LeadingAnchor.ConstraintEqualTo(root.LeadingAnchor),
+            effectView.TrailingAnchor.ConstraintEqualTo(root.TrailingAnchor),
+            effectView.BottomAnchor.ConstraintEqualTo(root.BottomAnchor),
+        ]);
 
         _effects.Add(root, effectView);
         return effectView;

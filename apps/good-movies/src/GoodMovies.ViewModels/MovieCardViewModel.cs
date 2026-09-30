@@ -35,7 +35,7 @@ public sealed partial class MovieCardViewModel : ObservableObject
 
         ReleaseDate = GetDisplayReleaseDate();
         StatusInfo = ReleaseDate is DateOnly releaseDate
-            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today)
+            ? ReleaseWindowPolicy.GetStatusInfo(releaseDate, _clock.Today, Movie.IsInTheaters)
             : default;
     }
 
@@ -44,6 +44,8 @@ public sealed partial class MovieCardViewModel : ObservableObject
     public int MovieId => Movie.Id;
 
     public string Title => Movie.Title;
+
+    public bool IsInTheaters => Movie.IsInTheaters;
 
     public string Rating => Movie.Certification?.Code ?? string.Empty;
 
@@ -56,7 +58,9 @@ public sealed partial class MovieCardViewModel : ObservableObject
     public DateOnly? ReleaseDate { get; }
 
     internal FavoriteEntry? FavoriteEntry =>
-        ReleaseDate is DateOnly date ? new FavoriteEntry(Movie.Id, date) : null;
+        ReleaseDate is DateOnly date
+            ? new FavoriteEntry(Movie.Id, date, Movie.HasBeenInTheaters, Movie.IsInTheaters)
+            : null;
 
     private ReleaseStatusInfo StatusInfo { get; }
 
@@ -75,5 +79,5 @@ public sealed partial class MovieCardViewModel : ObservableObject
 
     private DateOnly? GetDisplayReleaseDate() =>
         ReleaseWindowPolicy.GetVisibleRelease(Movie, _clock.Today)?.ReleaseDate
-        ?? Movie.UsTheatricalReleaseDate;
+        ?? Movie.UsReleaseDate;
 }

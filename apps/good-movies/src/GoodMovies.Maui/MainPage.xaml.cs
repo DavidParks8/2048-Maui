@@ -59,7 +59,7 @@ public partial class MainPage : ContentPage
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SizeChanged += OnSizeChanged;
         UpdateNavigationState();
-        UpdateRatingFilterState();
+        UpdateFilterState();
     }
 
     protected override void OnAppearing()
@@ -324,7 +324,13 @@ public partial class MainPage : ContentPage
         if (e.PropertyName == nameof(CatalogViewModel.SelectedRatingFilter))
         {
             ClearFeedScrollSnapshot();
-            UpdateRatingFilterState();
+            UpdateFilterState();
+        }
+
+        if (e.PropertyName == nameof(CatalogViewModel.ShowInTheatersOnly))
+        {
+            ClearFeedScrollSnapshot();
+            UpdateFilterState();
         }
     }
 
@@ -608,33 +614,44 @@ public partial class MainPage : ContentPage
         CompactSearchTile.AccessibilityLabel = SearchTile.AccessibilityLabel;
     }
 
-    private void UpdateRatingFilterState()
+    private void UpdateFilterState()
     {
-        SetRatingFilterButtonState(
+        SetFilterButtonState(
+            InTheatersFilterButton,
+            _viewModel.ShowInTheatersOnly,
+            AppStrings.InTheatersFilter,
+            string.Concat(AppStrings.PopcornIcon, " ", AppStrings.InTheatersShort)
+        );
+        SetFilterButtonState(
             AllRatingFilterButton,
-            MovieRatingFilter.All,
+            _viewModel.SelectedRatingFilter == MovieRatingFilter.All,
             AppStrings.RatingFilterAll
         );
-        SetRatingFilterButtonState(
+        SetFilterButtonState(
             GRatingFilterButton,
-            MovieRatingFilter.G,
+            _viewModel.SelectedRatingFilter == MovieRatingFilter.G,
             AppStrings.RatingFilterG
         );
-        SetRatingFilterButtonState(
+        SetFilterButtonState(
             PgRatingFilterButton,
-            MovieRatingFilter.PG,
+            _viewModel.SelectedRatingFilter == MovieRatingFilter.PG,
             AppStrings.RatingFilterPG
         );
-        SetRatingFilterButtonState(
+        SetFilterButtonState(
             RatingSoonFilterButton,
-            MovieRatingFilter.RatingSoon,
+            _viewModel.SelectedRatingFilter == MovieRatingFilter.RatingSoon,
             AppStrings.RatingComingSoon
         );
     }
 
-    private void SetRatingFilterButtonState(Button button, MovieRatingFilter filter, string label)
+    private static void SetFilterButtonState(
+        Button button,
+        bool isSelected,
+        string label,
+        string? displayLabel = null
+    )
     {
-        bool isSelected = _viewModel.SelectedRatingFilter == filter;
+        displayLabel ??= label;
 
         // Assign the resolved colors directly. SetDynamicResource cannot convert
         // a Color resource into the Background brush, so it would silently leave
@@ -650,9 +667,9 @@ public partial class MainPage : ContentPage
             ? string.Format(
                 CultureInfo.CurrentCulture,
                 AppStrings.SelectedRatingFilterFormat,
-                label
+                displayLabel
             )
-            : label;
+            : displayLabel;
         SemanticProperties.SetDescription(
             button,
             isSelected

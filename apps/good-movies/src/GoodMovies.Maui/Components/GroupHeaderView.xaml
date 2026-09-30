@@ -43,7 +43,17 @@
           Text="{x:Static strings:AppStrings.CalendarIcon}"
           TextColor="{StaticResource Accent}"
           VerticalOptions="Center"
-        />
+        >
+          <Label.Triggers>
+            <DataTrigger
+              Binding="{Binding Group.IsInTheatersNow, Source={x:Reference Root}}"
+              TargetType="Label"
+              Value="True"
+            >
+              <Setter Property="Text" Value="{x:Static strings:AppStrings.PopcornIcon}" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
         <Label
           x:Name="TitleLabel"
           Grid.Column="1"

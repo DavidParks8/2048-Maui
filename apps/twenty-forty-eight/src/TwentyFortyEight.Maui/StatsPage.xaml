@@ -1,146 +1,176 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-   xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
-   xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
-   xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
-   x:Class="TwentyFortyEight.Maui.StatsPage"
-   x:DataType="vm:StatsViewModel"
-   Title="{x:Static strings:AppStrings.StatisticsPageTitle}"
-   Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}">
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+  xmlns:vm="clr-namespace:TwentyFortyEight.ViewModels;assembly=TwentyFortyEight.ViewModels"
+  xmlns:components="clr-namespace:TwentyFortyEight.Maui.Components"
+  x:Class="TwentyFortyEight.Maui.StatsPage"
+  x:DataType="vm:StatsViewModel"
+  Title="{x:Static strings:AppStrings.StatisticsPageTitle}"
+  Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+>
+  <ScrollView>
+    <VerticalStackLayout Spacing="16" Padding="0,16">
+      <!-- Flex container for stats sections -->
+      <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignContent="Start" AlignItems="Start">
+        <!-- Mode Scope Section -->
+        <VerticalStackLayout
+          Spacing="8"
+          FlexLayout.Basis="320"
+          FlexLayout.Grow="1"
+          FlexLayout.Shrink="1"
+          MaximumWidthRequest="400"
+          Margin="6,0,6,12"
+        >
+          <components:NativeListSection Header="{x:Static strings:AppStrings.ModeSection}">
+            <components:NativeListSection.Items>
+              <components:NativeListRow
+                x:Name="BoardSizeRow"
+                Label="{x:Static strings:AppStrings.BoardSize}"
+                Value="{Binding BoardSizeDisplay}"
+              />
+            </components:NativeListSection.Items>
+          </components:NativeListSection>
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="16" Padding="0,16">
-            <!-- Flex container for stats sections -->
-            <FlexLayout
-                Wrap="Wrap"
-                JustifyContent="Center"
-                AlignContent="Start"
-                AlignItems="Start">
-
-                <!-- Mode Scope Section -->
-                <VerticalStackLayout Spacing="8"
-                    FlexLayout.Basis="320"
-                    FlexLayout.Grow="1"
-                    FlexLayout.Shrink="1"
-                    MaximumWidthRequest="400"
-                    Margin="6,0,6,12">
-                    <components:NativeListSection Header="{x:Static strings:AppStrings.ModeSection}">
-                        <components:NativeListSection.Items>
-                            <components:NativeListRow x:Name="BoardSizeRow"
-                                Label="{x:Static strings:AppStrings.BoardSize}"
-                                Value="{Binding BoardSizeDisplay}" />
-                        </components:NativeListSection.Items>
-                    </components:NativeListSection>
-
-                    <Label x:Name="ModeScopeHintLabel"
-                        Text="{x:Static strings:AppStrings.ModeHelperText}"
-                        FontSize="12"
-                        TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-                        Margin="8,0,0,0" />
-                </VerticalStackLayout>
-
-                <!-- Games Section -->
-                <components:NativeListSection Header="{x:Static strings:AppStrings.GamesSection}"
-                    FlexLayout.Basis="320"
-                    FlexLayout.Grow="1"
-                    FlexLayout.Shrink="1"
-                    MaximumWidthRequest="400"
-                    Margin="6,0,6,12">
-                    <components:NativeListSection.Items>
-                        <components:NativeListRow x:Name="GamesPlayedRow"
-                            Label="{x:Static strings:AppStrings.GamesPlayed}"
-                            Value="{Binding GamesPlayed}" />
-
-                        <components:NativeListRow x:Name="GamesWonRow"
-                            Label="{x:Static strings:AppStrings.GamesWon}"
-                            Value="{Binding GamesWon}" />
-
-                        <components:NativeListRow x:Name="WinRateRow"
-                            Label="{x:Static strings:AppStrings.WinRate}"
-                            Value="{Binding WinRate}" />
-                    </components:NativeListSection.Items>
-                </components:NativeListSection>
-
-                <!-- Scores Section -->
-                <components:NativeListSection Header="{x:Static strings:AppStrings.ScoresSection}"
-                    FlexLayout.Basis="320"
-                    FlexLayout.Grow="1"
-                    FlexLayout.Shrink="1"
-                    MaximumWidthRequest="400"
-                    Margin="6,0,6,12">
-                    <components:NativeListSection.Items>
-                        <components:NativeListRow x:Name="BestScoreRow"
-                            Label="{x:Static strings:AppStrings.BestScoreLabel}"
-                            Value="{Binding BestScore}" />
-
-                        <components:NativeListRow x:Name="AverageScoreRow"
-                            Label="{x:Static strings:AppStrings.AverageScore}"
-                            Value="{Binding AverageScore}" />
-
-                        <components:NativeListRow x:Name="HighestTileRow"
-                            Label="{x:Static strings:AppStrings.HighestTile}"
-                            Value="{Binding HighestTile}" />
-                    </components:NativeListSection.Items>
-                </components:NativeListSection>
-
-                <!-- Moves Section -->
-                <components:NativeSection Header="{x:Static strings:AppStrings.MovesSection}" ContentPadding="16,20"
-                    FlexLayout.Basis="320"
-                    FlexLayout.Grow="1"
-                    FlexLayout.Shrink="1"
-                    MaximumWidthRequest="400"
-                    Margin="6,0,6,12">
-                    <components:NativeSection.SectionContent>
-                        <VerticalStackLayout Spacing="8">
-                            <Label x:Name="TotalMovesLabel"
-                                Text="{x:Static strings:AppStrings.TotalMoves}"
-                                FontSize="15"
-                                HorizontalOptions="Center" />
-                            <Label x:Name="TotalMovesValue"
-                                Text="{Binding TotalMoves}"
-                                FontSize="32"
-                                FontAttributes="Bold"
-                                HorizontalOptions="Center" />
-                        </VerticalStackLayout>
-                    </components:NativeSection.SectionContent>
-                </components:NativeSection>
-
-                <!-- Streaks Section -->
-                <components:NativeListSection Header="{x:Static strings:AppStrings.StreaksSection}"
-                    FlexLayout.Basis="320"
-                    FlexLayout.Grow="1"
-                    FlexLayout.Shrink="1"
-                    MaximumWidthRequest="400"
-                    Margin="6,0,6,12">
-                    <components:NativeListSection.Items>
-                        <components:NativeListRow x:Name="CurrentStreakRow"
-                            Label="{x:Static strings:AppStrings.Current}"
-                            Value="{Binding CurrentStreak}" />
-
-                        <components:NativeListRow x:Name="BestStreakRow"
-                            Label="{x:Static strings:AppStrings.BestLabel}"
-                            Value="{Binding BestStreak}" />
-                    </components:NativeListSection.Items>
-                </components:NativeListSection>
-
-            </FlexLayout>
-
-            <!-- Reset Statistics Button -->
-            <Grid Padding="12,0">
-                <Button x:Name="ResetStatisticsButton"
-                    AutomationId="ResetStatisticsButton"
-                    Text="{x:Static strings:AppStrings.ResetStatistics}"
-                    Command="{Binding ResetStatisticsCommand}"
-                    FontSize="17"
-                    FontAttributes="Bold"
-                    HeightRequest="50"
-                    CornerRadius="10"
-                    HorizontalOptions="Center"
-                    MaximumWidthRequest="386" />
-            </Grid>
+          <Label
+            x:Name="ModeScopeHintLabel"
+            Text="{x:Static strings:AppStrings.ModeHelperText}"
+            FontSize="12"
+            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+            Margin="8,0,0,0"
+          />
         </VerticalStackLayout>
-    </ScrollView>
 
+        <!-- Games Section -->
+        <components:NativeListSection
+          Header="{x:Static strings:AppStrings.GamesSection}"
+          FlexLayout.Basis="320"
+          FlexLayout.Grow="1"
+          FlexLayout.Shrink="1"
+          MaximumWidthRequest="400"
+          Margin="6,0,6,12"
+        >
+          <components:NativeListSection.Items>
+            <components:NativeListRow
+              x:Name="GamesPlayedRow"
+              Label="{x:Static strings:AppStrings.GamesPlayed}"
+              Value="{Binding GamesPlayed}"
+            />
+
+            <components:NativeListRow
+              x:Name="GamesWonRow"
+              Label="{x:Static strings:AppStrings.GamesWon}"
+              Value="{Binding GamesWon}"
+            />
+
+            <components:NativeListRow
+              x:Name="WinRateRow"
+              Label="{x:Static strings:AppStrings.WinRate}"
+              Value="{Binding WinRate}"
+            />
+          </components:NativeListSection.Items>
+        </components:NativeListSection>
+
+        <!-- Scores Section -->
+        <components:NativeListSection
+          Header="{x:Static strings:AppStrings.ScoresSection}"
+          FlexLayout.Basis="320"
+          FlexLayout.Grow="1"
+          FlexLayout.Shrink="1"
+          MaximumWidthRequest="400"
+          Margin="6,0,6,12"
+        >
+          <components:NativeListSection.Items>
+            <components:NativeListRow
+              x:Name="BestScoreRow"
+              Label="{x:Static strings:AppStrings.BestScoreLabel}"
+              Value="{Binding BestScore}"
+            />
+
+            <components:NativeListRow
+              x:Name="AverageScoreRow"
+              Label="{x:Static strings:AppStrings.AverageScore}"
+              Value="{Binding AverageScore}"
+            />
+
+            <components:NativeListRow
+              x:Name="HighestTileRow"
+              Label="{x:Static strings:AppStrings.HighestTile}"
+              Value="{Binding HighestTile}"
+            />
+          </components:NativeListSection.Items>
+        </components:NativeListSection>
+
+        <!-- Moves Section -->
+        <components:NativeSection
+          Header="{x:Static strings:AppStrings.MovesSection}"
+          ContentPadding="16,20"
+          FlexLayout.Basis="320"
+          FlexLayout.Grow="1"
+          FlexLayout.Shrink="1"
+          MaximumWidthRequest="400"
+          Margin="6,0,6,12"
+        >
+          <components:NativeSection.SectionContent>
+            <VerticalStackLayout Spacing="8">
+              <Label
+                x:Name="TotalMovesLabel"
+                Text="{x:Static strings:AppStrings.TotalMoves}"
+                FontSize="15"
+                HorizontalOptions="Center"
+              />
+              <Label
+                x:Name="TotalMovesValue"
+                Text="{Binding TotalMoves}"
+                FontSize="32"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+              />
+            </VerticalStackLayout>
+          </components:NativeSection.SectionContent>
+        </components:NativeSection>
+
+        <!-- Streaks Section -->
+        <components:NativeListSection
+          Header="{x:Static strings:AppStrings.StreaksSection}"
+          FlexLayout.Basis="320"
+          FlexLayout.Grow="1"
+          FlexLayout.Shrink="1"
+          MaximumWidthRequest="400"
+          Margin="6,0,6,12"
+        >
+          <components:NativeListSection.Items>
+            <components:NativeListRow
+              x:Name="CurrentStreakRow"
+              Label="{x:Static strings:AppStrings.Current}"
+              Value="{Binding CurrentStreak}"
+            />
+
+            <components:NativeListRow
+              x:Name="BestStreakRow"
+              Label="{x:Static strings:AppStrings.BestLabel}"
+              Value="{Binding BestStreak}"
+            />
+          </components:NativeListSection.Items>
+        </components:NativeListSection>
+      </FlexLayout>
+
+      <!-- Reset Statistics Button -->
+      <Grid Padding="12,0">
+        <Button
+          x:Name="ResetStatisticsButton"
+          AutomationId="ResetStatisticsButton"
+          Text="{x:Static strings:AppStrings.ResetStatistics}"
+          Command="{Binding ResetStatisticsCommand}"
+          FontSize="17"
+          FontAttributes="Bold"
+          HeightRequest="50"
+          CornerRadius="10"
+          HorizontalOptions="Center"
+          MaximumWidthRequest="386"
+        />
+      </Grid>
+    </VerticalStackLayout>
+  </ScrollView>
 </ContentPage>

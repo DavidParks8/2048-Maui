@@ -7,6 +7,8 @@ public sealed record TheatricalRelease
 {
     public const int LimitedTheatricalType = 2;
     public const int TheatricalType = 3;
+    public const int DigitalType = 4;
+    public const int TvType = 6;
 
     public TheatricalRelease(DateOnly releaseDate, string countryCode, int releaseType)
     {
@@ -23,6 +25,9 @@ public sealed record TheatricalRelease
 
     public bool IsUsTheatrical =>
         CountryCode == "US" && ReleaseType is LimitedTheatricalType or TheatricalType;
+
+    public bool IsUsCatalogRelease =>
+        IsUsTheatrical || (CountryCode == "US" && ReleaseType is DigitalType or TvType);
 
     public static bool IsAllowedTheatricalType(int releaseType) =>
         releaseType is LimitedTheatricalType or TheatricalType;

@@ -85,6 +85,7 @@ public sealed class MovieGroupViewModel : IEnumerable<MovieCardViewModel>
                     inTheaters.Add(card);
                     break;
                 case ReleaseStatus.Future:
+                case ReleaseStatus.Released:
                     if (!future.TryGetValue(date, out List<MovieCardViewModel>? group))
                     {
                         group = new List<MovieCardViewModel>();
