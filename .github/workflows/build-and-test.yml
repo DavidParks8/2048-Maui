@@ -70,7 +70,7 @@ jobs:
         path: 'TestResults/*.cobertura.xml'
 
   twenty-forty-eight-ios:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: read
     env:
@@ -244,7 +244,7 @@ jobs:
       run: dotnet test --project apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj --configuration Release -f net10.0
 
   good-movies-ios-simulator:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: read
 
