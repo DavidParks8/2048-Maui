@@ -65,7 +65,7 @@
     <value>You Win!</value>
   </data>
   <data name="GameTitle" xml:space="preserve">
-    <value>2048</value>
+    <value>2048 Duo</value>
   </data>
   <data name="Score" xml:space="preserve">
     <value>SCORE</value>
@@ -442,9 +442,6 @@ Keep combining tiles to reach the 2048 tile and win the game!
   </data>
   <data name="AboutTheAppSection" xml:space="preserve">
     <value>ABOUT THE APP</value>
-  </data>
-  <data name="AppNameForTalia" xml:space="preserve">
-    <value>2048 for Talia</value>
   </data>
   <data name="AppDescription" xml:space="preserve">
     <value>A classic puzzle game built with love using .NET MAUI</value>

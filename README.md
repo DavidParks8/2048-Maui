@@ -1,6 +1,6 @@
-# 2048-Maui
+# 2048 Duo
 
-The classic 2048 game built with .NET MAUI.
+The classic 2048 game built with .NET MAUI, with adaptive layouts for iPhone Duo.
 
 ## Overview
 
@@ -26,15 +26,17 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 - 🎮 Gamepad support (where supported)
 - 👆 Touch gestures (swipe to move)
 - 📱 Responsive layout for phones, tablets, and desktops
+- 📖 iPhone Duo support: live resizing, landscape layouts, and fold-aware placement
+- 🟨 Warm 2048 surface with a scoreboard, light and dark tile palettes, and a folded-tile app icon
 
 ## Prerequisites
 
-- [.NET 10.0.401 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or a later servicing patch
+- [.NET 10.0.402 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or a later servicing patch
 - .NET MAUI workload
 
 Platform notes:
 
-- iOS / Mac Catalyst: requires macOS 26.6+ and Xcode 27.0
+- iOS / Mac Catalyst: requires macOS 26.6+, Xcode 27.1 and workload set 10.0.402.1 (pinned in `global.json`)
 - Android: requires Android SDK + emulators/device
 
 Icon and splash lettering is stored as SVG outlines so resource generation does
@@ -115,6 +117,48 @@ Note: Building for iOS requires a Mac with Xcode installed.
 dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
 dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
 ```
+
+### iPhone Duo
+
+Use Xcode 27.1 with its iOS 27.1 SDK and the matching .NET workload to use
+the full inner and outer displays. For an iOS-only development environment:
+
+```bash
+dotnet workload install maui-ios
+MAUI_TARGET_PLATFORM=ios dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+```
+
+The board sizes itself from its actual safe-area viewport, including after
+opening, closing, rotating, or resizing a window. Narrow windows, including the
+closed Duo, stack the mode card (board size and mode) and scores above the board
+and undo below it, all aligned to the board's edges. Wide windows, including a
+fully open Duo, center the board between two matching columns: score and best on
+the left, mode and undo on the right. Whichever arrangement gives the larger
+board wins, so larger text falls back gracefully without shrinking touch
+targets. On iOS 27.1 and later, an active
+fold places the board and its console (scores,
+mode, undo, and accessibility controls) on opposite sides, with no controls in
+the crease. If the console cannot fit, the game uses the largest clear region.
+Camera occlusions are also avoided. The win dialog stays with the board and
+the Mode sheet stays with the console. A short slide-and-resize transition moves
+the board when the fold activates or clears; Reduce Motion uses an immediate
+layout change. Active swipes are cancelled before repositioning. Changing
+layouts does not start a new game.
+
+In Xcode's iPhone Duo simulator, check both displays, partially folded poses,
+both orientations, light/dark appearance, swipe input, and a resize during a
+move. Also check mode selection, Settings, and returning to the game.
+See [Apple's Duo preparation guide](https://developer.apple.com/iphone-duo/prepare/).
+
+Release validation still needs real-device appearance checks: with the current
+.NET MAUI 10.0.110 / iOS 27.1 simulator, changing system appearance can update
+native bars without updating the MAUI page theme. The app retains its existing
+light/dark resources; it does not force a theme to work around the SDK behavior.
+
+The rebrand retains the bundle ID `com.dappermagna.twentyfortyeight`, preference
+keys, saved games, scores, and Game Center identifiers. App Store Connect's
+listing name and Duo screenshots must be updated separately before release.
+The personal dedication on the About page is unchanged.
 
 ## Game Center Setup (iOS / Mac Catalyst)
 

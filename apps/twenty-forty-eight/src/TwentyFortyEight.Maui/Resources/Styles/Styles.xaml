@@ -73,10 +73,16 @@
   <Style TargetType="Shell" ApplyToDerivedTypes="True">
     <Setter
       Property="Shell.BackgroundColor"
-      Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Gray950}}"
+      Value="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
     />
-    <Setter Property="Shell.ForegroundColor" Value="{StaticResource White}" />
-    <Setter Property="Shell.TitleColor" Value="{StaticResource White}" />
+    <Setter
+      Property="Shell.ForegroundColor"
+      Value="{AppThemeBinding Light={StaticResource NativeAccentLight}, Dark={StaticResource NativeAccentDark}}"
+    />
+    <Setter
+      Property="Shell.TitleColor"
+      Value="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+    />
     <Setter
       Property="Shell.DisabledColor"
       Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray950}}"

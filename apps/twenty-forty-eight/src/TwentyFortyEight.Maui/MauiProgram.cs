@@ -31,6 +31,9 @@ public static class MauiProgram
             .ConfigureFonts(_ => { })
             .ConfigureMauiHandlers(handlers =>
             {
+#if IOS
+                handlers.AddHandler<AdaptiveGameLayout, Platforms.iOS.AdaptiveGameLayoutHandler>();
+#endif
 #if ANDROID
                 handlers.AddHandler<BottomBar, BottomBarHandler>();
                 handlers.AddHandler<Switch, CustomSwitchHandler>();

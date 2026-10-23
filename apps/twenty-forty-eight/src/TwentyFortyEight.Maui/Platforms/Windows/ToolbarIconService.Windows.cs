@@ -10,6 +10,8 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => CreatePngGlyph("undo", "\uE7A7");
 
+    private static partial ImageSource CreateNewGame() => CreatePngGlyph("newgame", "\uE72C");
+
     static ImageSource CreatePngGlyph(string key, string glyph)
     {
         var themeSuffix = Application.Current?.RequestedTheme == AppTheme.Dark ? "dark" : "light";
