@@ -15,6 +15,9 @@ public partial class HeaderStatCard : ContentView
     [AutoBindable]
     private readonly string _valueDescription = string.Empty;
 
+    [AutoBindable]
+    private readonly bool _isEmphasized;
+
 #pragma warning restore CS0169
 
     public HeaderStatCard()

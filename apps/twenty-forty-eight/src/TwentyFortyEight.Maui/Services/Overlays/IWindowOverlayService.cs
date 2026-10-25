@@ -19,6 +19,12 @@ public interface IWindowOverlayService
     void HideBottomSheet();
 
     /// <summary>
+    /// Restricts the sheet to a clear window region while retaining its full-window scrim.
+    /// Pass null to restore normal presentation.
+    /// </summary>
+    void SetBottomSheetBounds(Rect? bounds);
+
+    /// <summary>
     /// Gets whether a bottom sheet is currently visible.
     /// </summary>
     bool IsBottomSheetVisible { get; }

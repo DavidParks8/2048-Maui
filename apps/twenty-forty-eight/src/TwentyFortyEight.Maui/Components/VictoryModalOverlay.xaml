@@ -12,101 +12,103 @@
   InputTransparent="False"
 >
   <Grid>
-    <!-- Modal card -->
-    <Grid
-      x:Name="ModalCard"
-      HorizontalOptions="Center"
-      VerticalOptions="Center"
-      Scale="0.96"
-      Opacity="0"
-    >
-      <!-- Modal container (glass on iOS/macOS, solid elsewhere) -->
-      <Border
-        x:Name="ModalContentHost"
-        StrokeThickness="1"
-        StrokeShape="RoundRectangle 16"
-        Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
-        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
-        Padding="32"
+    <ScrollView x:Name="ModalViewport" VerticalScrollBarVisibility="Never">
+      <!-- Modal card -->
+      <Grid
+        x:Name="ModalCard"
         HorizontalOptions="Center"
         VerticalOptions="Center"
-        components:LiquidGlass.EffectType="Regular"
-        components:LiquidGlass.CornerRadius="16"
+        Scale="0.96"
+        Opacity="0"
       >
-        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
-          <Label
-            Text="{x:Static resx:AppStrings.VictoryTrophyEmoji}"
-            FontSize="64"
-            HorizontalOptions="Center"
-          />
+        <!-- Modal container (glass on iOS/macOS, solid elsewhere) -->
+        <Border
+          x:Name="ModalContentHost"
+          StrokeThickness="1"
+          StrokeShape="RoundRectangle 16"
+          Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
+          Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+          Padding="32"
+          HorizontalOptions="Center"
+          VerticalOptions="Center"
+          components:LiquidGlass.EffectType="Regular"
+          components:LiquidGlass.CornerRadius="16"
+        >
+          <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+            <Label
+              Text="{x:Static resx:AppStrings.VictoryTrophyEmoji}"
+              FontSize="64"
+              HorizontalOptions="Center"
+            />
 
-          <Label
-            Text="{x:Static resx:AppStrings.VictoryTitle}"
-            FontSize="28"
-            FontAttributes="Bold"
-            TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
-            HorizontalOptions="Center"
-            SemanticProperties.HeadingLevel="Level1"
-          />
+            <Label
+              Text="{x:Static resx:AppStrings.VictoryTitle}"
+              FontSize="28"
+              FontAttributes="Bold"
+              TextColor="{AppThemeBinding Light={StaticResource NativeTextPrimaryLight}, Dark={StaticResource NativeTextPrimaryDark}}"
+              HorizontalOptions="Center"
+              SemanticProperties.HeadingLevel="Level1"
+            />
 
-          <Label
-            Text="{Binding VictorySubtitleText}"
-            FontSize="18"
-            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-            HorizontalOptions="Center"
-          />
+            <Label
+              Text="{Binding VictorySubtitleText}"
+              FontSize="18"
+              TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+              HorizontalOptions="Center"
+            />
 
-          <Label
-            x:Name="ScoreLabel"
-            Text="{Binding ScoreDisplayText}"
-            FontSize="16"
-            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-            HorizontalOptions="Center"
-          />
+            <Label
+              x:Name="ScoreLabel"
+              Text="{Binding ScoreDisplayText}"
+              FontSize="16"
+              TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+              HorizontalOptions="Center"
+            />
 
-          <Label
-            x:Name="UndoLabel"
-            Text="{Binding UndoCountDisplayText}"
-            FontSize="14"
-            TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
-            HorizontalOptions="Center"
-          >
-            <Label.Triggers>
-              <DataTrigger TargetType="Label" Binding="{Binding State.UndoCount}" Value="0">
-                <Setter Property="IsVisible" Value="False" />
-              </DataTrigger>
-            </Label.Triggers>
-          </Label>
-
-          <HorizontalStackLayout Spacing="16" HorizontalOptions="Center" Margin="0,16,0,0">
-            <Button
-              x:Name="KeepPlayingButton"
-              Text="{x:Static resx:AppStrings.KeepPlaying}"
-              Command="{Binding KeepPlayingCommand}"
-              SemanticProperties.Hint="{x:Static resx:AppStrings.KeepPlayingHint}"
+            <Label
+              x:Name="UndoLabel"
+              Text="{Binding UndoCountDisplayText}"
+              FontSize="14"
+              TextColor="{AppThemeBinding Light={StaticResource NativeTextSecondaryLight}, Dark={StaticResource NativeTextSecondaryDark}}"
+              HorizontalOptions="Center"
             >
-              <Button.Triggers>
-                <DataTrigger
-                  TargetType="Button"
-                  Binding="{Binding State.IsAdversarialMode}"
-                  Value="True"
-                >
+              <Label.Triggers>
+                <DataTrigger TargetType="Label" Binding="{Binding State.UndoCount}" Value="0">
                   <Setter Property="IsVisible" Value="False" />
                 </DataTrigger>
-              </Button.Triggers>
-            </Button>
+              </Label.Triggers>
+            </Label>
 
-            <Button
-              x:Name="NewGameButton"
-              Text="{x:Static resx:AppStrings.NewGame}"
-              Command="{Binding NewGameCommand}"
-              Background="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
-              TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-              SemanticProperties.Hint="{x:Static resx:AppStrings.NewGameHint}"
-            />
-          </HorizontalStackLayout>
-        </VerticalStackLayout>
-      </Border>
-    </Grid>
+            <HorizontalStackLayout Spacing="16" HorizontalOptions="Center" Margin="0,16,0,0">
+              <Button
+                x:Name="KeepPlayingButton"
+                Text="{x:Static resx:AppStrings.KeepPlaying}"
+                Command="{Binding KeepPlayingCommand}"
+                SemanticProperties.Hint="{x:Static resx:AppStrings.KeepPlayingHint}"
+              >
+                <Button.Triggers>
+                  <DataTrigger
+                    TargetType="Button"
+                    Binding="{Binding State.IsAdversarialMode}"
+                    Value="True"
+                  >
+                    <Setter Property="IsVisible" Value="False" />
+                  </DataTrigger>
+                </Button.Triggers>
+              </Button>
+
+              <Button
+                x:Name="NewGameButton"
+                Text="{x:Static resx:AppStrings.NewGame}"
+                Command="{Binding NewGameCommand}"
+                Background="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                SemanticProperties.Hint="{x:Static resx:AppStrings.NewGameHint}"
+              />
+            </HorizontalStackLayout>
+          </VerticalStackLayout>
+        </Border>
+      </Grid>
+    </ScrollView>
   </Grid>
 </ContentView>

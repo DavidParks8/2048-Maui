@@ -22,6 +22,26 @@
   <Color x:Key="PageBackgroundLight">#F2F2F7</Color>
   <Color x:Key="PageBackgroundDark">#000000</Color>
 
+  <!-- 2048 Duo game surface: warm paper, ink and scoreboard roles around the classic tiles. -->
+  <Color x:Key="GameSurfaceLight">#FAF8EF</Color>
+  <Color x:Key="GameSurfaceDark">#1C1A17</Color>
+  <Color x:Key="GameInkLight">#5C534A</Color>
+  <Color x:Key="GameInkDark">#EEE4DA</Color>
+  <Color x:Key="GameMutedInkLight">#776E65</Color>
+  <Color x:Key="GameMutedInkDark">#B3A89D</Color>
+  <Color x:Key="GameScoreFillLight">#6E655C</Color>
+  <Color x:Key="GameScoreFillDark">#5C534A</Color>
+  <Color x:Key="GameScoreLabelLight">#F9F6F2</Color>
+  <Color x:Key="GameScoreLabelDark">#EEE4DA</Color>
+  <Color x:Key="GameCardOutlineLight">#DDD3C8</Color>
+  <Color x:Key="GameCardOutlineDark">#3F3933</Color>
+  <Color x:Key="GameModeFillLight">#EEE4DA</Color>
+  <Color x:Key="GameModeFillDark">#33302B</Color>
+  <Color x:Key="GameModeInkLight">#5C534A</Color>
+  <Color x:Key="GameModeInkDark">#EEE4DA</Color>
+  <Color x:Key="GameShadowLight">#5C534A</Color>
+  <Color x:Key="GameShadowDark">#000000</Color>
+
   <Color x:Key="GamePanelBackgroundLight">#bbada0</Color>
   <Color x:Key="GamePanelBackgroundDark">#3c3a32</Color>
 

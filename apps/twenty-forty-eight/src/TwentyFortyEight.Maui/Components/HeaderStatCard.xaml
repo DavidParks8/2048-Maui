@@ -11,40 +11,77 @@
   <ContentView.Resources>
     <converters:ValueLengthToFontSizeConverter
       x:Key="ValueLengthToFontSizeConverter"
-      BaseFontSize="20"
-      MinFontSize="12"
+      BaseFontSize="24"
+      MinFontSize="14"
       ScaleThreshold="4"
     />
   </ContentView.Resources>
 
-  <Grid MinimumWidthRequest="90">
-    <Border
-      Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
-      Stroke="Transparent"
-      StrokeThickness="0"
-      Padding="20,10"
-      HeightRequest="60"
-      StrokeShape="RoundRectangle 5"
-    >
-      <VerticalStackLayout Spacing="0">
-        <Label
-          Text="{Binding Title, Source={x:Reference this}}"
-          FontSize="12"
-          FontAttributes="Bold"
-          TextColor="{AppThemeBinding Light=#eee4da, Dark=#cdc1b4}"
-          HorizontalOptions="Center"
-          LineBreakMode="NoWrap"
+  <!-- Score is the filled scoreboard; Best is the quieter outlined companion. -->
+  <Border
+    MinimumWidthRequest="96"
+    MinimumHeightRequest="60"
+    Padding="14,8"
+    StrokeShape="RoundRectangle 12"
+    StrokeThickness="1.5"
+    Stroke="{AppThemeBinding Light={StaticResource GameCardOutlineLight}, Dark={StaticResource GameCardOutlineDark}}"
+    Background="Transparent"
+  >
+    <Border.Triggers>
+      <DataTrigger
+        TargetType="Border"
+        Binding="{Binding IsEmphasized, Source={x:Reference this}}"
+        Value="True"
+      >
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter
+          Property="Background"
+          Value="{AppThemeBinding Light={StaticResource GameScoreFillLight}, Dark={StaticResource GameScoreFillDark}}"
         />
-        <Label
-          Text="{Binding Value, Source={x:Reference this}}"
-          FontSize="{Binding Value, Source={x:Reference this}, Converter={StaticResource ValueLengthToFontSizeConverter}}"
-          FontAttributes="Bold"
-          TextColor="White"
-          HorizontalOptions="Center"
-          LineBreakMode="NoWrap"
-          SemanticProperties.Description="{Binding ValueDescription, Source={x:Reference this}}"
-        />
-      </VerticalStackLayout>
-    </Border>
-  </Grid>
+      </DataTrigger>
+    </Border.Triggers>
+    <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+      <Label
+        Text="{Binding Title, Source={x:Reference this}}"
+        FontSize="11"
+        FontAttributes="Bold"
+        CharacterSpacing="1.2"
+        TextColor="{AppThemeBinding Light={StaticResource GameMutedInkLight}, Dark={StaticResource GameMutedInkDark}}"
+        HorizontalOptions="Center"
+        LineBreakMode="NoWrap"
+      >
+        <Label.Triggers>
+          <DataTrigger
+            TargetType="Label"
+            Binding="{Binding IsEmphasized, Source={x:Reference this}}"
+            Value="True"
+          >
+            <Setter
+              Property="TextColor"
+              Value="{AppThemeBinding Light={StaticResource GameScoreLabelLight}, Dark={StaticResource GameScoreLabelDark}}"
+            />
+          </DataTrigger>
+        </Label.Triggers>
+      </Label>
+      <Label
+        Text="{Binding Value, Source={x:Reference this}}"
+        FontSize="{Binding Value, Source={x:Reference this}, Converter={StaticResource ValueLengthToFontSizeConverter}}"
+        FontAttributes="Bold"
+        TextColor="{AppThemeBinding Light={StaticResource GameInkLight}, Dark={StaticResource GameInkDark}}"
+        HorizontalOptions="Center"
+        LineBreakMode="NoWrap"
+        SemanticProperties.Description="{Binding ValueDescription, Source={x:Reference this}}"
+      >
+        <Label.Triggers>
+          <DataTrigger
+            TargetType="Label"
+            Binding="{Binding IsEmphasized, Source={x:Reference this}}"
+            Value="True"
+          >
+            <Setter Property="TextColor" Value="White" />
+          </DataTrigger>
+        </Label.Triggers>
+      </Label>
+    </VerticalStackLayout>
+  </Border>
 </ContentView>

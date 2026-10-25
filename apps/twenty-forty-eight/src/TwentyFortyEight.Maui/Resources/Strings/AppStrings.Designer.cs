@@ -151,15 +151,6 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 2048 for Talia.
-        /// </summary>
-        internal static string AppNameForTalia {
-            get {
-                return ResourceManager.GetString("AppNameForTalia", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Average Score.
         /// </summary>
         internal static string AverageScore {
@@ -628,7 +619,7 @@ namespace TwentyFortyEight.Maui.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 2048.
+        ///   Looks up a localized string similar to 2048 Duo.
         /// </summary>
         internal static string GameTitle {
             get {

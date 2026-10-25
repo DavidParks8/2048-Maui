@@ -40,6 +40,9 @@ public partial class MainPage : ContentPage
     private EventHandler<AppThemeChangedEventArgs>? _themeChangedHandler;
     private CancellationTokenSource? _animationCts;
     private Task _activeTileAnimationTask = Task.CompletedTask;
+    private GameLayoutKind? _layoutKind;
+    private bool _scoresVertical;
+    private bool _isLayoutQueued;
 
     private bool _isModeSheetVisible;
     private bool _revertModeSelectionOnDismiss;
@@ -65,6 +68,10 @@ public partial class MainPage : ContentPage
     )
     {
         InitializeComponent();
+        ModeCard.MeasureInvalidated += OnConsoleMeasureInvalidated;
+        ScoreCard.MeasureInvalidated += OnConsoleMeasureInvalidated;
+        BestCard.MeasureInvalidated += OnConsoleMeasureInvalidated;
+        ControlsGrid.MeasureInvalidated += OnConsoleMeasureInvalidated;
 
         _viewModel = viewModel;
         _victoryViewModel = victoryViewModel;
@@ -93,8 +100,7 @@ public partial class MainPage : ContentPage
         _victoryViewModel.NewGameRequested += OnNewGameRequested;
 
         // Native/system icons (set in code-behind to keep XAML platform-agnostic)
-        UndoButton.IconImageSource = _toolbarIconService.Undo;
-        ToolbarModeButton.IconImageSource = _toolbarIconService.Mode;
+        UpdateToolbarIcons();
 
         // Subscribe to tiles updated event for animations
         _viewModel.TilesUpdated += OnTilesUpdated;
@@ -115,13 +121,11 @@ public partial class MainPage : ContentPage
         // Show deterministic direction targets only when OS Voice Control is enabled.
         UpdateVoiceControlMoveButtonsVisibility();
 
-        GameBoard.SizeChanged += OnGameBoardSizeChanged;
-
         // Keep wall colors legible across theme changes.
         var app = Application.Current;
         if (app != null)
         {
-            _themeChangedHandler = (_, _) => UpdateWallOverlay(_viewModel.Wall);
+            _themeChangedHandler = OnAppThemeChanged;
             app.RequestedThemeChanged += _themeChangedHandler;
         }
 
@@ -145,7 +149,27 @@ public partial class MainPage : ContentPage
 
     private void OnAccessibilitySettingsChanged(object? sender, EventArgs e)
     {
-        MainThread.BeginInvokeOnMainThread(UpdateVoiceControlMoveButtonsVisibility);
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateVoiceControlMoveButtonsVisibility();
+            if (_isBoardPostureTransitioning && _accessibilitySettingsService.ShouldReduceMotion())
+            {
+                EndBoardPostureTransition();
+            }
+        });
+    }
+
+    private void UpdateToolbarIcons()
+    {
+        UndoButton.IconImageSource = _toolbarIconService.Undo;
+        ToolbarNewGameButton.IconImageSource = _toolbarIconService.NewGame;
+        ToolbarModeButton.IconImageSource = _toolbarIconService.Mode;
+    }
+
+    private void OnAppThemeChanged(object? sender, AppThemeChangedEventArgs e)
+    {
+        UpdateWallOverlay(_viewModel.Wall);
+        UpdateToolbarIcons();
     }
 
     private void UpdateVoiceControlMoveButtonsVisibility()
@@ -248,6 +272,7 @@ public partial class MainPage : ContentPage
         // Max movements on an NxN board is roughly N*N (every tile could move).
         _animationService.InvalidateCache();
         _animationService.WarmUpOverlayPool(_viewModel.BoardSize * _viewModel.BoardSize);
+        UpdateBoardSize();
     }
 
     private void OnNewGameRequested(object? sender, EventArgs e)
@@ -262,12 +287,26 @@ public partial class MainPage : ContentPage
 
     private void OnDirectionInputReceived(object? sender, Direction direction)
     {
-        _viewModel.MoveCommand.Execute(direction);
+        if (!_isBoardPostureTransitioning)
+        {
+            _viewModel.MoveCommand.Execute(direction);
+        }
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        ConnectDisplayRegions();
+        UpdateDisplayRegions();
+        GameBoard.SizeChanged -= OnGameBoardSizeChanged;
+        GameBoard.SizeChanged += OnGameBoardSizeChanged;
+        UpdateBoardAccessibilityDescription();
+        BoardContainer.Handler?.UpdateValue(nameof(IView.Semantics));
+        if (_themeChangedHandler == null && Application.Current is { } app)
+        {
+            _themeChangedHandler = OnAppThemeChanged;
+            app.RequestedThemeChanged += _themeChangedHandler;
+        }
 
         // Re-subscribe to events (they are unsubscribed in OnDisappearing)
         // Unsubscribe first to prevent duplicate handlers if OnAppearing is called multiple times
@@ -299,6 +338,9 @@ public partial class MainPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        EndBoardPostureTransition();
+        DisconnectDisplayRegions();
+        _windowOverlayService.SetBottomSheetBounds(null);
 
         _accessibilitySettingsService.AccessibilitySettingsChanged -=
             OnAccessibilitySettingsChanged;
@@ -380,44 +422,165 @@ public partial class MainPage : ContentPage
             _viewModel.BoardSize,
             _tileBorders,
             _viewModel.BoardScaleFactor,
-            _inputCoordinationService.IsInputBlocked,
+            _inputCoordinationService.IsInputBlocked || _isBoardPostureTransitioning,
             _isModeSheetVisible,
             IsTileAnimationRunning: !_activeTileAnimationTask.IsCompleted
         );
     }
 
-    protected override void OnSizeAllocated(double width, double height)
+    protected override void OnHandlerChanged()
     {
-        base.OnSizeAllocated(width, height);
-
-        if (width <= 0 || height <= 0)
-            return;
-
-        UpdateBoardSize(width, height);
-        UpdateMoveButtonsAlignment(width);
+        base.OnHandlerChanged();
+        ConnectDisplayRegions();
     }
 
-    private void UpdateMoveButtonsAlignment(double pageWidth)
+    protected override void OnHandlerChanging(HandlerChangingEventArgs args)
     {
-        // On narrow screens, align movement buttons to start to avoid overlapping with undo button
-        const double narrowScreenThreshold = 450;
+        EndBoardPostureTransition();
+        DisconnectDisplayRegions();
+        base.OnHandlerChanging(args);
+    }
 
-        if (MoveButtonsContainer != null)
+    partial void ConnectDisplayRegions();
+
+    partial void DisconnectDisplayRegions();
+
+    partial void UpdateDisplayRegions();
+
+    partial void GetDisplayRegions(ref Rect bounds, ref Rect? fold);
+
+    partial void UpdateBottomSheetBounds(Rect? bounds);
+
+    private void OnConsoleMeasureInvalidated(object? sender, EventArgs e)
+    {
+        // Text, Dynamic Type and visibility changes resize groups without moving their bounds.
+        if (_isLayoutQueued)
         {
-            MoveButtonsContainer.HorizontalOptions =
-                pageWidth < narrowScreenThreshold ? LayoutOptions.Start : LayoutOptions.Center;
+            return;
         }
+
+        _isLayoutQueued = true;
+        Dispatcher.Dispatch(() =>
+        {
+            _isLayoutQueued = false;
+            UpdateResponsiveLayout();
+        });
     }
 
-    private void UpdateBoardSize(double pageWidth, double pageHeight)
+    private void OnNativeLayoutUpdated(object? sender, EventArgs e)
     {
-        // Cancel any ongoing animations during resize
+        ConnectDisplayRegions();
+        UpdateDisplayRegions();
+    }
+
+    private void OnRootLayoutSizeChanged(object? sender, EventArgs e)
+    {
         _animationCts?.Cancel();
+        _swipePreviewInteractionService.Reset();
+        EndBoardPostureTransition();
+        UpdateResponsiveLayout();
+    }
 
-        // Calculate responsive board dimensions using extracted helper
-        double boardSize = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
+    private void UpdateResponsiveLayout()
+    {
+        if (RootLayout.Width <= 32 || RootLayout.Height <= 32)
+        {
+            return;
+        }
 
-        // Apply to GameBoard
+        Rect bounds = new(16, 16, RootLayout.Width - 32, RootLayout.Height - 32);
+        Rect? fold = null;
+        GetDisplayRegions(ref bounds, ref fold);
+
+        Size mode = ModeCard.Measure(double.PositiveInfinity, double.PositiveInfinity);
+        Size score = ScoreCard.Measure(double.PositiveInfinity, double.PositiveInfinity);
+        Size best = BestCard.Measure(double.PositiveInfinity, double.PositiveInfinity);
+        Size card = new(Math.Max(score.Width, best.Width), Math.Max(score.Height, best.Height));
+        Size actions = ControlsGrid.Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+        var layout = BoardLayoutCalculator.Arrange(bounds, fold, mode, card, actions, _layoutKind);
+        if (layout.ConsolePane == null && fold is Rect reserved)
+        {
+            layout = BoardLayoutCalculator.Arrange(
+                BoardLayoutCalculator.ExcludeReservedRegion(bounds, reserved),
+                null,
+                mode,
+                card,
+                actions,
+                _layoutKind
+            );
+        }
+
+        _layoutKind = layout.Kind;
+        SetScoresVertical(layout.ScoresVertical);
+        AbsoluteLayout.SetLayoutBounds(ModeCard, layout.Mode);
+        AbsoluteLayout.SetLayoutBounds(ScoresPanel, layout.Scores);
+        AbsoluteLayout.SetLayoutBounds(BoardViewport, layout.Board);
+        AbsoluteLayout.SetLayoutBounds(ControlsGrid, layout.Actions);
+
+        VictoryModalOverlay.SetContentInsets(
+            layout.BoardPane is Rect pane
+                ? new Thickness(
+                    pane.Left,
+                    pane.Top,
+                    RootLayout.Width - pane.Right,
+                    RootLayout.Height - pane.Bottom
+                )
+                : new Thickness(0)
+        );
+        UpdateBottomSheetBounds(layout.ConsolePane);
+    }
+
+    private void SetScoresVertical(bool vertical)
+    {
+        if (_scoresVertical == vertical && ScoresPanel.ColumnDefinitions.Count > 0)
+        {
+            return;
+        }
+
+        _scoresVertical = vertical;
+        ScoresPanel.ColumnDefinitions = vertical
+            ? [new ColumnDefinition(GridLength.Star)]
+            : [new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Star)];
+        ScoresPanel.RowDefinitions = vertical
+            ? [new RowDefinition(GridLength.Star), new RowDefinition(GridLength.Star)]
+            : [new RowDefinition(GridLength.Star)];
+        Grid.SetColumn(BestCard, vertical ? 0 : 1);
+        Grid.SetRow(BestCard, vertical ? 1 : 0);
+    }
+
+    private void OnBoardViewportSizeChanged(object? sender, EventArgs e) => UpdateBoardSize();
+
+    private void UpdateBoardSize()
+    {
+        double outer = Math.Min(BoardViewport.Width, BoardViewport.Height);
+        if (outer <= 0)
+        {
+            return;
+        }
+
+        // Board padding matches the tile gutter, as on a physical 2048 tray.
+        double tileSpacing = Math.Max(5, outer / 42);
+        double boardSize = Math.Clamp(
+            outer - 2 * tileSpacing,
+            0,
+            BoardLayoutCalculator.MaxBoardSize
+        );
+        _viewModel.BoardScaleFactor = BoardLayoutCalculator.CalculateScaleFactor(
+            boardSize,
+            _viewModel.BoardSize
+        );
+
+        if (GameBoard.WidthRequest == boardSize && GameBoard.HeightRequest == boardSize)
+        {
+            return;
+        }
+
+        _animationCts?.Cancel();
+        _swipePreviewInteractionService.Reset();
+        TileAnimationService.ResetTileStates(GameBoard, _tileBorders);
+        _animationService.InvalidateCache();
+        BoardContainer.Padding = tileSpacing;
         GameBoard.WidthRequest = boardSize;
         GameBoard.HeightRequest = boardSize;
 
@@ -425,14 +588,6 @@ public partial class MainPage : ContentPage
         WallOverlayLayer.WidthRequest = boardSize;
         WallOverlayLayer.HeightRequest = boardSize;
 
-        // Calculate and update scale factor for font sizes
-        _viewModel.BoardScaleFactor = BoardLayoutCalculator.CalculateScaleFactor(
-            boardSize,
-            _viewModel.BoardSize
-        );
-
-        // Scale tile spacing for very small boards
-        double tileSpacing = BoardLayoutCalculator.CalculateTileSpacing(boardSize);
         GameBoard.ColumnSpacing = tileSpacing;
         GameBoard.RowSpacing = tileSpacing;
 
@@ -493,6 +648,7 @@ public partial class MainPage : ContentPage
             {
                 if (
                     _viewModel.IsAdversarialMode
+                    && !_isBoardPostureTransitioning
                     && _viewModel.TapEmptyCellCommand.CanExecute(tileIndex)
                 )
                 {
@@ -642,9 +798,9 @@ public partial class MainPage : ContentPage
 
             SemanticProperties.SetDescription(BoardContainer, builder.ToString());
         }
-        catch
+        catch (Exception ex)
         {
-            // Accessibility description should never crash the game.
+            LogBoardAccessibilityUpdateFailed(_logger, ex);
         }
     }
 
@@ -676,7 +832,7 @@ public partial class MainPage : ContentPage
         }
         else if (e.PropertyName == nameof(GameViewModel.BoardSize))
         {
-            UpdateBoardSize(Width, Height);
+            UpdateBoardSize();
         }
         else if (e.PropertyName == nameof(GameViewModel.IsSocialGamingAvailable))
         {
@@ -886,4 +1042,11 @@ public partial class MainPage : ContentPage
 
     [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Animation error")]
     private static partial void LogAnimationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Warning,
+        Message = "Board accessibility update failed"
+    )]
+    private static partial void LogBoardAccessibilityUpdateFailed(ILogger logger, Exception ex);
 }

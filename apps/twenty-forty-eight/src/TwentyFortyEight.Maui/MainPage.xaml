@@ -11,7 +11,11 @@
   xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
   x:Class="TwentyFortyEight.Maui.MainPage"
   x:DataType="local:GameViewModel"
-  Background="{AppThemeBinding Light={StaticResource PageBackgroundLight}, Dark={StaticResource PageBackgroundDark}}"
+  SafeAreaEdges="Container"
+  Background="{AppThemeBinding Light={StaticResource GameSurfaceLight}, Dark={StaticResource GameSurfaceDark}}"
+  Shell.BackgroundColor="{AppThemeBinding Light={StaticResource GameSurfaceLight}, Dark={StaticResource GameSurfaceDark}}"
+  Shell.TitleColor="{AppThemeBinding Light={StaticResource GameInkLight}, Dark={StaticResource GameInkDark}}"
+  Shell.ForegroundColor="{AppThemeBinding Light={StaticResource GameInkLight}, Dark={StaticResource GameInkDark}}"
 >
   <ContentPage.Resources>
     <converters:FontSizeScaleConverter x:Key="FontSizeScaleConverter" />
@@ -95,98 +99,98 @@
   </ContentPage.ToolbarItems>
 
   <Grid>
-    <Grid x:Name="RootLayout" Padding="16" RowSpacing="10">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="*" />
-        <RowDefinition Height="Auto" />
-      </Grid.RowDefinitions>
+    <components:AdaptiveGameLayout
+      x:Name="RootLayout"
+      SizeChanged="OnRootLayoutSizeChanged"
+      NativeLayoutUpdated="OnNativeLayoutUpdated"
+    >
+      <!-- Mode and board size: one card that opens the Mode sheet. -->
+      <Border
+        x:Name="ModeCard"
+        MinimumHeightRequest="60"
+        Padding="16,10"
+        StrokeThickness="0"
+        StrokeShape="RoundRectangle 12"
+        Background="{AppThemeBinding Light={StaticResource GameModeFillLight}, Dark={StaticResource GameModeFillDark}}"
+        AutomationProperties.IsInAccessibleTree="True"
+        SemanticProperties.Description="{x:Static strings:AppStrings.ModeTitle}"
+      >
+        <Border.GestureRecognizers>
+          <TapGestureRecognizer Tapped="OnModeClicked" />
+        </Border.GestureRecognizers>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14" VerticalOptions="Center">
+          <VerticalStackLayout Spacing="1" VerticalOptions="Center">
+            <Label
+              Text="{Binding BoardSize, StringFormat='{}{0} × {0}'}"
+              FontSize="11"
+              FontAttributes="Bold"
+              CharacterSpacing="1.2"
+              TextColor="{AppThemeBinding Light={StaticResource GameModeInkLight}, Dark={StaticResource GameModeInkDark}}"
+              LineBreakMode="NoWrap"
+            />
+            <Label
+              Text="{Binding GameMode, Converter={StaticResource GameModeToDisplayNameConverter}}"
+              FontSize="18"
+              FontAttributes="Bold"
+              TextColor="{AppThemeBinding Light={StaticResource GameModeInkLight}, Dark={StaticResource GameModeInkDark}}"
+              LineBreakMode="NoWrap"
+              MaxLines="1"
+            />
+          </VerticalStackLayout>
+          <Path
+            Grid.Column="1"
+            Data="M0,0 L5,5 L10,0"
+            Stroke="{AppThemeBinding Light={StaticResource GameModeInkLight}, Dark={StaticResource GameModeInkDark}}"
+            StrokeThickness="2.2"
+            StrokeLineCap="Round"
+            StrokeLineJoin="Round"
+            WidthRequest="12"
+            HeightRequest="8"
+            VerticalOptions="Center"
+          />
+        </Grid>
+      </Border>
 
-      <!-- Header with Title and Score -->
-      <Grid x:Name="HeaderGrid" Grid.Row="0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
+      <Grid x:Name="ScoresPanel" ColumnSpacing="8" RowSpacing="8">
         <components:HeaderStatCard
-          Grid.Column="0"
-          Margin="0,0,10,0"
-          Title="{x:Static strings:AppStrings.Size}"
-          Value="{Binding BoardSize, StringFormat='{}{0}x{0}'}"
-          ValueDescription="{x:Static strings:AppStrings.BoardSize}"
-        />
-
-        <components:HeaderStatCard
-          Grid.Column="2"
-          Margin="10,0"
+          x:Name="ScoreCard"
+          IsEmphasized="True"
           Title="{x:Static strings:AppStrings.Score}"
           Value="{Binding Score}"
           ValueDescription="{x:Static strings:AppStrings.CurrentScoreDescription}"
         />
-
         <components:HeaderStatCard
-          Grid.Column="3"
+          x:Name="BestCard"
           Title="{x:Static strings:AppStrings.Best}"
           Value="{Binding BestScore}"
           ValueDescription="{x:Static strings:AppStrings.BestScoreDescription}"
         />
       </Grid>
 
-      <!-- Game Board with attached mode indicator -->
-      <Grid Grid.Row="2" HorizontalOptions="Center" VerticalOptions="Center">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- Game Mode Chip - positioned above board, left-aligned -->
-        <Border
-          Grid.Row="0"
-          HorizontalOptions="Start"
-          VerticalOptions="End"
-          Margin="0,0,0,8"
-          Padding="10,4"
-          StrokeThickness="1"
-          StrokeShape="RoundRectangle 12"
-          Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
-          Background="Transparent"
-          AutomationProperties.IsInAccessibleTree="True"
-          SemanticProperties.Description="{x:Static strings:AppStrings.ModeTitle}"
-        >
-          <Border.GestureRecognizers>
-            <TapGestureRecognizer Tapped="OnModeClicked" />
-          </Border.GestureRecognizers>
-          <Label
-            Text="{Binding GameMode, Converter={StaticResource GameModeToDisplayNameConverter}}"
-            FontSize="14"
-            FontAttributes="None"
-            LineBreakMode="NoWrap"
-            MaxLines="1"
-            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
-            VerticalOptions="Center"
-            HorizontalOptions="Center"
-          />
-        </Border>
-
+      <Grid x:Name="BoardViewport" SizeChanged="OnBoardViewportSizeChanged">
         <Border
           x:Name="BoardContainer"
-          Grid.Row="1"
+          AutomationId="GameBoard"
           Background="{AppThemeBinding Light={StaticResource GamePanelBackgroundLight}, Dark={StaticResource GamePanelBackgroundDark}}"
           Stroke="Transparent"
           StrokeThickness="0"
-          Padding="10"
+          Padding="12"
           VerticalOptions="Center"
           HorizontalOptions="Center"
           MaximumWidthRequest="820"
           MaximumHeightRequest="820"
-          StrokeShape="RoundRectangle 10"
+          StrokeShape="RoundRectangle 14"
           AutomationProperties.IsInAccessibleTree="True"
           SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}"
         >
+          <Border.Shadow>
+            <Shadow
+              Brush="{AppThemeBinding Light={StaticResource GameShadowLight}, Dark={StaticResource GameShadowDark}}"
+              Offset="0,10"
+              Radius="28"
+              Opacity="0.22"
+            />
+          </Border.Shadow>
           <Border.Behaviors>
             <behaviors:VictoryOverlayBehavior />
           </Border.Behaviors>
@@ -200,7 +204,7 @@
               SemanticProperties.Description="{x:Static strings:AppStrings.GameBoardDescription}"
             >
               <!-- Tiles will be added programmatically in code-behind -->
-              <!-- WidthRequest and HeightRequest are set dynamically in OnSizeAllocated for responsive scaling -->
+              <!-- The board is sized from BoardViewport after layout. -->
             </Grid>
 
             <!-- Walltastrophy wall overlay (fills the divider spacing between cells) -->
@@ -226,20 +230,20 @@
           </Grid>
         </Border>
       </Grid>
-      <Grid Grid.Row="3">
+      <Grid x:Name="ControlsGrid" ColumnDefinitions="*,Auto" ColumnSpacing="12">
         <!-- Movement buttons (centered with board) -->
         <HorizontalStackLayout
           x:Name="MoveButtonsContainer"
           Spacing="8"
-          HorizontalOptions="Center"
+          HorizontalOptions="Start"
           VerticalOptions="Center"
           MaximumWidthRequest="820"
         >
           <!-- Left -->
           <Border
             x:Name="MoveLeftContainer"
-            WidthRequest="56"
-            HeightRequest="56"
+            WidthRequest="48"
+            HeightRequest="48"
             StrokeThickness="1"
             StrokeShape="RoundRectangle 28"
             Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
@@ -253,7 +257,7 @@
               ButtonText=""
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Left}"
-              ButtonSize="56"
+              ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveLeftDescription}"
             />
           </Border>
@@ -261,8 +265,8 @@
           <!-- Up -->
           <Border
             x:Name="MoveUpContainer"
-            WidthRequest="56"
-            HeightRequest="56"
+            WidthRequest="48"
+            HeightRequest="48"
             StrokeThickness="1"
             StrokeShape="RoundRectangle 28"
             Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
@@ -276,7 +280,7 @@
               ButtonText=""
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Up}"
-              ButtonSize="56"
+              ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveUpDescription}"
             />
           </Border>
@@ -284,8 +288,8 @@
           <!-- Down -->
           <Border
             x:Name="MoveDownContainer"
-            WidthRequest="56"
-            HeightRequest="56"
+            WidthRequest="48"
+            HeightRequest="48"
             StrokeThickness="1"
             StrokeShape="RoundRectangle 28"
             Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
@@ -299,7 +303,7 @@
               ButtonText=""
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Down}"
-              ButtonSize="56"
+              ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveDownDescription}"
             />
           </Border>
@@ -307,8 +311,8 @@
           <!-- Right -->
           <Border
             x:Name="MoveRightContainer"
-            WidthRequest="56"
-            HeightRequest="56"
+            WidthRequest="48"
+            HeightRequest="48"
             StrokeThickness="1"
             StrokeShape="RoundRectangle 28"
             Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
@@ -322,16 +326,16 @@
               ButtonText=""
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Right}"
-              ButtonSize="56"
+              ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveRightDescription}"
             />
           </Border>
         </HorizontalStackLayout>
 
-        <!-- Undo (at right edge of screen) -->
         <Border
-          WidthRequest="56"
-          HeightRequest="56"
+          Grid.Column="1"
+          WidthRequest="48"
+          HeightRequest="48"
           StrokeThickness="1"
           StrokeShape="RoundRectangle 28"
           Background="{AppThemeBinding Light={StaticResource ModalBackgroundLight}, Dark={StaticResource ModalBackgroundDark}}"
@@ -348,12 +352,12 @@
             ButtonText=""
             Command="{Binding UndoCommand}"
             IsButtonEnabled="{Binding CanUndo}"
-            ButtonSize="56"
+            ButtonSize="48"
             SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}"
           />
         </Border>
       </Grid>
-    </Grid>
+    </components:AdaptiveGameLayout>
 
     <!-- Victory warp overlay - spans entire page, behind other content when inactive -->
     <components:LoopingLottieOverlay

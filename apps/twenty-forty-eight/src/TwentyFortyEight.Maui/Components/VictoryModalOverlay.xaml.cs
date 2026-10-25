@@ -25,6 +25,8 @@ public partial class VictoryModalOverlay : ContentView
 
     private readonly IScreenReaderService _screenReaderService;
 
+    public void SetContentInsets(Thickness insets) => ModalViewport.Margin = insets;
+
     public VictoryModalOverlay()
         : this(ResolveViewModel(), ResolveScreenReaderService()) { }
 
