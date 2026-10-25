@@ -76,6 +76,10 @@ behavior, as required by iOS 27.
    dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests -f net10.0 -p:TargetFrameworks=net10.0
    ```
 
+   On a fresh SDK without mobile workloads, set `MSBuildEnableWorkloadResolver=false`
+   when running these tests. The Linux unit-test CI jobs do this so the pinned
+   mobile workload set is not required; application builds keep workload resolution enabled.
+
 ## Running the App
 
 ### VS Code (recommended)

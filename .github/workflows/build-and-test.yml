@@ -39,6 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      MSBuildEnableWorkloadResolver: 'false'
 
     steps:
     - name: Checkout code
@@ -224,6 +226,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      MSBuildEnableWorkloadResolver: 'false'
 
     steps:
     - name: Checkout code

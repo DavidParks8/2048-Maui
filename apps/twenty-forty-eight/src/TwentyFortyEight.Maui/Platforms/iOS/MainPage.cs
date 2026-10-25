@@ -6,6 +6,9 @@ namespace TwentyFortyEight.Maui;
 
 public partial class MainPage
 {
+    private Rect? _clearDisplayBounds;
+    private Rect? _activeFoldBounds;
+    private bool _hasFoldableDisplay;
     private UIHingeInteraction? _hingeInteraction;
     private IUITraitChangeRegistration? _contentSizeRegistration;
     private UIView? _displayRegionView;
@@ -122,6 +125,16 @@ public partial class MainPage
     {
         _displayRegionView?.SetNeedsLayout();
         _displayRegionView?.LayoutIfNeeded();
+    }
+
+    partial void GetDisplayRegions(ref Rect bounds, ref Rect? fold)
+    {
+        if (_clearDisplayBounds is Rect clear)
+        {
+            bounds = bounds.Intersect(clear);
+        }
+
+        fold = _activeFoldBounds;
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("ios27.1")]

@@ -43,9 +43,6 @@ public partial class MainPage : ContentPage
     private GameLayoutKind? _layoutKind;
     private bool _scoresVertical;
     private bool _isLayoutQueued;
-    private Rect? _clearDisplayBounds;
-    private Rect? _activeFoldBounds;
-    private bool _hasFoldableDisplay;
 
     private bool _isModeSheetVisible;
     private bool _revertModeSelectionOnDismiss;
@@ -450,6 +447,8 @@ public partial class MainPage : ContentPage
 
     partial void UpdateDisplayRegions();
 
+    partial void GetDisplayRegions(ref Rect bounds, ref Rect? fold);
+
     partial void UpdateBottomSheetBounds(Rect? bounds);
 
     private void OnConsoleMeasureInvalidated(object? sender, EventArgs e)
@@ -490,10 +489,8 @@ public partial class MainPage : ContentPage
         }
 
         Rect bounds = new(16, 16, RootLayout.Width - 32, RootLayout.Height - 32);
-        if (_clearDisplayBounds is Rect clear)
-        {
-            bounds = bounds.Intersect(clear);
-        }
+        Rect? fold = null;
+        GetDisplayRegions(ref bounds, ref fold);
 
         Size mode = ModeCard.Measure(double.PositiveInfinity, double.PositiveInfinity);
         Size score = ScoreCard.Measure(double.PositiveInfinity, double.PositiveInfinity);
@@ -501,15 +498,8 @@ public partial class MainPage : ContentPage
         Size card = new(Math.Max(score.Width, best.Width), Math.Max(score.Height, best.Height));
         Size actions = ControlsGrid.Measure(double.PositiveInfinity, double.PositiveInfinity);
 
-        var layout = BoardLayoutCalculator.Arrange(
-            bounds,
-            _activeFoldBounds,
-            mode,
-            card,
-            actions,
-            _layoutKind
-        );
-        if (layout.ConsolePane == null && _activeFoldBounds is Rect reserved)
+        var layout = BoardLayoutCalculator.Arrange(bounds, fold, mode, card, actions, _layoutKind);
+        if (layout.ConsolePane == null && fold is Rect reserved)
         {
             layout = BoardLayoutCalculator.Arrange(
                 BoardLayoutCalculator.ExcludeReservedRegion(bounds, reserved),
