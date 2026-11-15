@@ -58,7 +58,7 @@ public abstract class AppiumTestBase
                 "TwentyFortyEight.Maui",
                 "bin",
                 "Debug",
-                "net10.0-ios",
+                "net11.0-ios",
                 "iossimulator-arm64",
                 "TwentyFortyEight.Maui.app"
             )

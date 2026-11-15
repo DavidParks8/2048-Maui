@@ -31,29 +31,41 @@ This is a fully-featured implementation of the classic 2048 puzzle game, built w
 
 ## Prerequisites
 
-- [.NET 10.0.402 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or a later servicing patch
+- [.NET 11.0.100 SDK](https://dotnet.microsoft.com/download/dotnet/11.0) or a later servicing patch
 - .NET MAUI workload
 
 Platform notes:
 
-- iOS / Mac Catalyst: requires macOS 26.6+, Xcode 27.1 and workload set 10.0.402.1 (pinned in `global.json`)
-- Android: requires Android SDK + emulators/device
+- iOS / Mac Catalyst: requires macOS 26.6+, Xcode 27.2 and workload set 11.0.100.1 (pinned in `global.json`)
+- Android: requires the matching Android SDK, JDK 21, and emulators/device
+
+The Android ViewModels library targets API 24 or later, as required by .NET 11
+CoreCLR. The Android app's existing API 34 minimum is unchanged.
 
 Icon and splash lettering is stored as SVG outlines so resource generation does
 not depend on platform fonts or the SVG renderer's variable-font APIs.
 Apple targets register MAUI's scene lifecycle while retaining single-window
 behavior, as required by iOS 27.
 
+MAUI 11 XAML source generation remains enabled for pages. Components that bind
+to field-based `AutoBindable` properties retain per-file XamlC compilation to
+keep their bindings compiled and NativeAOT-safe. Literal values on these
+properties use typed property elements (`x:Boolean`, `x:String`, or `Thickness`)
+or typed `x:Static` values, so page source generation does not need to inspect
+another source generator's output.
+
 ## Setup
 
 1. Install .NET MAUI workload:
 
    ```bash
-   dotnet workload install maui --version 10.0.401.1
+   dotnet workload install maui
    ```
 
    `global.json` pins the SDK feature band and workload set. Existing installations
-   can use `dotnet workload update --version 10.0.401.1` after updating the SDK.
+   can use `dotnet workload update` from the repository after updating the SDK.
+   Both commands use workload set 11.0.100.1 from `global.json`; do not pass
+   `--version` when a workload version is already pinned there.
 
 2. Restore dependencies:
 
@@ -67,13 +79,13 @@ behavior, as required by iOS 27.
    dotnet build apps/twenty-forty-eight/TwentyFortyEight.slnx
    ```
 
-   Tip: MAUI builds can be slow if you build multiple platforms. For a faster loop, build a specific target framework (examples in the next section), or set `MAUI_TARGET_PLATFORM` when building the solution (this is what CI uses).
+   Tip: MAUI builds can be slow if you build multiple platforms. For a faster loop, build a specific target framework (examples in the next section), or set `MAUI_TARGET_PLATFORM` to `android`, `ios`, `maccatalyst`, or `windows` when building the solution (this is what CI uses). The selection applies to both the app and its ViewModels library.
 
 4. Run tests:
 
    ```bash
-   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests -f net10.0
-   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests -f net10.0 -p:TargetFrameworks=net10.0
+   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests -f net11.0
+   dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests -f net11.0 -p:TargetFrameworks=net11.0
    ```
 
    On a fresh SDK without mobile workloads, set `MSBuildEnableWorkloadResolver=false`
@@ -95,22 +107,22 @@ See `.vscode/launch.json` and `.vscode/tasks.json`.
 ### Windows
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
-dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-windows10.0.19041.0
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-windows10.0.19041.0
 ```
 
 ### Android
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
-dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-android
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-android
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-android
 ```
 
 ### Mac Catalyst
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
-dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-maccatalyst -c Debug
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-maccatalyst -c Debug
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-maccatalyst -c Debug
 ```
 
 ### iOS
@@ -118,18 +130,18 @@ dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFor
 Note: Building for iOS requires a Mac with Xcode installed.
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
-dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-ios -c Debug
+dotnet run --project apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-ios -c Debug
 ```
 
 ### iPhone Duo
 
-Use Xcode 27.1 with its iOS 27.1 SDK and the matching .NET workload to use
+Use Xcode 27.2 with its iOS 27.2 SDK and the matching .NET workload to use
 the full inner and outer displays. For an iOS-only development environment:
 
 ```bash
 dotnet workload install maui-ios
-MAUI_TARGET_PLATFORM=ios dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+MAUI_TARGET_PLATFORM=ios dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-ios -c Debug
 ```
 
 The board sizes itself from its actual safe-area viewport, including after
@@ -154,9 +166,9 @@ both orientations, light/dark appearance, swipe input, and a resize during a
 move. Also check mode selection, Settings, and returning to the game.
 See [Apple's Duo preparation guide](https://developer.apple.com/iphone-duo/prepare/).
 
-Release validation still needs real-device appearance checks: with the current
-.NET MAUI 10.0.110 / iOS 27.1 simulator, changing system appearance can update
-native bars without updating the MAUI page theme. The app retains its existing
+Release validation still needs real-device appearance checks: earlier simulator
+testing found that changing system appearance could update native bars without
+updating the MAUI page theme. Recheck this after framework updates. The app retains its existing
 light/dark resources; it does not force a theme to work around the SDK behavior.
 
 The rebrand retains the bundle ID `com.dappermagna.twentyfortyeight`, preference
@@ -288,7 +300,7 @@ Comprehensive test suite using MSTest covering:
 
 ## Project Structure
 
-- slnx format: New XML-based solution file format for .NET 10
+- slnx format: XML-based solution file format
 - Central Package Management (CPM): package versions in `Directory.Packages.props`
 - Consolidated props: common build properties in `Directory.Build.props`
 - src/
@@ -301,7 +313,7 @@ Comprehensive test suite using MSTest covering:
 
 ## Technologies
 
-- .NET 10
+- .NET 11
 - .NET MAUI
 - MSTest
 - CommunityToolkit.Mvvm

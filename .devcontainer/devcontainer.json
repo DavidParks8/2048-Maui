@@ -4,8 +4,14 @@
     "dockerfile": "Dockerfile"
   },
   "containerEnv": {
+    "USER": "vscode",
     "ANDROID_HOME": "/opt/android-sdk",
-    "ANDROID_SDK_ROOT": "/opt/android-sdk"
+    "ANDROID_SDK_ROOT": "/opt/android-sdk",
+    "JAVA_HOME": "/home/vscode/.jdk",
+    "MAUI_TARGET_PLATFORM": "android"
+  },
+  "remoteEnv": {
+    "PATH": "/home/vscode/.jdk/bin:/opt/android-sdk/cmdline-tools/21.0/bin:${containerEnv:PATH}"
   },
   "postCreateCommand": ".devcontainer/post-create.sh",
   "customizations": {

@@ -20,13 +20,24 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
         
     - name: Install .NET MAUI workload
       run: dotnet workload install maui
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: microsoft
+        java-version: '21'
       
     - name: Restore dependencies
       run: dotnet restore apps/twenty-forty-eight/TwentyFortyEight.slnx
+      env:
+        MAUI_TARGET_PLATFORM: android
+
+    - name: Install Android dependencies
+      run: dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -t:InstallAndroidDependencies -f net11.0-android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AcceptAndroidSdkLicenses=True
       env:
         MAUI_TARGET_PLATFORM: android
       
@@ -49,13 +60,13 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
 
     - name: Test TwentyFortyEight.Core
-      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests/TwentyFortyEight.Core.Tests.csproj --configuration Release -f net10.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
+      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.Core.Tests/TwentyFortyEight.Core.Tests.csproj --configuration Release -f net11.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
 
     - name: Test TwentyFortyEight.ViewModels
-      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests/TwentyFortyEight.ViewModels.Tests.csproj --configuration Release -f net10.0 -p:TargetFrameworks=net10.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
+      run: dotnet test --project apps/twenty-forty-eight/test/TwentyFortyEight.ViewModels.Tests/TwentyFortyEight.ViewModels.Tests.csproj --configuration Release -f net11.0 -p:TargetFrameworks=net11.0 --results-directory TestResults --report-trx --coverage --coverage-output-format cobertura
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -85,12 +96,12 @@ jobs:
     - name: Select Xcode version
       uses: maxim-lobanov/setup-xcode@v1.6.0
       with:
-        xcode-version: '27.1'
+        xcode-version: '27.2'
       
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
         
     - name: Install .NET MAUI workload
       run: dotnet workload install maui
@@ -166,7 +177,7 @@ jobs:
         set -euo pipefail
         dotnet publish apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj \
           -c Release \
-          -f net10.0-ios \
+          -f net11.0-ios \
           -p:RuntimeIdentifier=ios-arm64 \
           -p:BuildIpa=true \
           -p:PublishAot=false \
@@ -187,7 +198,7 @@ jobs:
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       uses: apple-actions/upload-testflight-build@v5.2.1
       with:
-        app-path: apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Release/net10.0-ios/ios-arm64/publish/TwentyFortyEight.Maui.ipa
+        app-path: apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Release/net11.0-ios/ios-arm64/publish/TwentyFortyEight.Maui.ipa
         issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
         api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
         api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
@@ -207,7 +218,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
         
     - name: Install .NET MAUI workload
       run: dotnet workload install maui
@@ -236,16 +247,16 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
 
     - name: Test GoodMovies.Core
-      run: dotnet test --project apps/good-movies/test/GoodMovies.Core.Tests/GoodMovies.Core.Tests.csproj --configuration Release -f net10.0
+      run: dotnet test --project apps/good-movies/test/GoodMovies.Core.Tests/GoodMovies.Core.Tests.csproj --configuration Release -f net11.0
 
     - name: Test GoodMovies.Infrastructure
-      run: dotnet test --project apps/good-movies/test/GoodMovies.Infrastructure.Tests/GoodMovies.Infrastructure.Tests.csproj --configuration Release -f net10.0
+      run: dotnet test --project apps/good-movies/test/GoodMovies.Infrastructure.Tests/GoodMovies.Infrastructure.Tests.csproj --configuration Release -f net11.0
 
     - name: Test GoodMovies.ViewModels
-      run: dotnet test --project apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj --configuration Release -f net10.0
+      run: dotnet test --project apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj --configuration Release -f net11.0
 
   good-movies-ios-simulator:
     runs-on: xcode-27
@@ -259,12 +270,12 @@ jobs:
     - name: Select Xcode version
       uses: maxim-lobanov/setup-xcode@v1.6.0
       with:
-        xcode-version: '27.1'
+        xcode-version: '27.2'
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '11.0.100'
 
     - name: Install .NET MAUI iOS workload
       run: dotnet workload install maui-ios
@@ -283,11 +294,11 @@ jobs:
       run: dotnet restore apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj -p:RuntimeIdentifier=$IOS_SIM_RID
 
     - name: Build Good Movies iOS simulator
-      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release --no-restore -f net10.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=false
+      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release --no-restore -f net11.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=false
 
     - name: Verify Good Movies scene lifecycle registration
       run: |
-        PLIST="apps/good-movies/src/GoodMovies.Maui/bin/Release/net10.0-ios/$IOS_SIM_RID/GoodMovies.Maui.app/Info.plist"
+        PLIST="apps/good-movies/src/GoodMovies.Maui/bin/Release/net11.0-ios/$IOS_SIM_RID/GoodMovies.Maui.app/Info.plist"
         test "$(plutil -extract UIApplicationSceneManifest.UISceneConfigurations.UIWindowSceneSessionRoleApplication.0.UISceneDelegateClassName raw -o - "$PLIST")" = "SceneDelegate"
         test "$(plutil -extract UIApplicationSceneManifest.UIApplicationSupportsMultipleScenes raw -o - "$PLIST")" = "false"
 
@@ -295,4 +306,4 @@ jobs:
       if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
       env:
         TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
-      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release -f net10.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=true
+      run: dotnet build apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj --configuration Release -f net11.0-ios -p:RuntimeIdentifier=$IOS_SIM_RID -p:CodesignKey=- -p:GoodMoviesUseSampleData=false -p:RequireTmdbToken=true

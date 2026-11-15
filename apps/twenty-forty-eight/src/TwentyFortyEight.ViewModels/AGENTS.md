@@ -5,8 +5,8 @@ This project contains ViewModels and MVVM abstractions that can be unit tested i
 ## Architecture
 
 This is a .NET MAUI Class Library that targets both:
-- `net10.0` - for unit testing with MSTest
-- `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows` - for MAUI applications
+- `net11.0` - for unit testing with MSTest
+- `net11.0-android`, `net11.0-ios`, `net11.0-maccatalyst`, `net11.0-windows` - for MAUI applications
 
 ## Unit Testing
 
@@ -58,7 +58,7 @@ public Color BackgroundColor => GetTileBackgroundColor(Value);
 #endif
 ```
 
-When targeting `net10.0` for testing, these properties are excluded, allowing the model to be tested without MAUI dependencies.
+When targeting `net11.0` for testing, these properties are excluded, allowing the model to be tested without MAUI dependencies.
 
 ## Guidelines
 

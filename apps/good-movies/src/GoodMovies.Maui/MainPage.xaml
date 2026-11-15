@@ -48,9 +48,12 @@
         AutomationId="ComingSoonNavigation"
         CommandParameter="{x:Static vm:CatalogSection.ComingSoon}"
         Icon="{x:Static strings:AppStrings.MovieIcon}"
-        IsSelected="True"
         Label="{x:Static strings:AppStrings.NavComingLabel}"
-      />
+      >
+        <components:NavigationTile.IsSelected>
+          <x:Boolean>True</x:Boolean>
+        </components:NavigationTile.IsSelected>
+      </components:NavigationTile>
       <components:NavigationTile
         x:Name="FavoritesTile"
         Grid.Row="2"
@@ -460,10 +463,15 @@
         AutomationId="CompactComingSoonNavigation"
         CommandParameter="{x:Static vm:CatalogSection.ComingSoon}"
         Icon="{x:Static strings:AppStrings.MovieIcon}"
-        IsCompact="True"
-        IsSelected="True"
         Label="{x:Static strings:AppStrings.ComingSoon}"
-      />
+      >
+        <components:NavigationTile.IsCompact>
+          <x:Boolean>True</x:Boolean>
+        </components:NavigationTile.IsCompact>
+        <components:NavigationTile.IsSelected>
+          <x:Boolean>True</x:Boolean>
+        </components:NavigationTile.IsSelected>
+      </components:NavigationTile>
       <components:NavigationTile
         x:Name="CompactFavoritesTile"
         Grid.Column="1"
@@ -471,9 +479,12 @@
         AutomationId="CompactFavoritesNavigation"
         CommandParameter="{x:Static vm:CatalogSection.MyFavorites}"
         Icon="{x:Static strings:AppStrings.HeartIcon}"
-        IsCompact="True"
         Label="{x:Static strings:AppStrings.MyFavorites}"
-      />
+      >
+        <components:NavigationTile.IsCompact>
+          <x:Boolean>True</x:Boolean>
+        </components:NavigationTile.IsCompact>
+      </components:NavigationTile>
       <components:NavigationTile
         x:Name="CompactSearchTile"
         Grid.Column="2"
@@ -481,9 +492,12 @@
         AutomationId="CompactSearchNavigation"
         CommandParameter="{x:Static vm:CatalogSection.FindAMovie}"
         Icon="{x:Static strings:AppStrings.SearchIcon}"
-        IsCompact="True"
         Label="{x:Static strings:AppStrings.FindAMovie}"
-      />
+      >
+        <components:NavigationTile.IsCompact>
+          <x:Boolean>True</x:Boolean>
+        </components:NavigationTile.IsCompact>
+      </components:NavigationTile>
       <Grid
         x:Name="CompactNavigationSkeleton"
         Grid.ColumnSpan="3"
