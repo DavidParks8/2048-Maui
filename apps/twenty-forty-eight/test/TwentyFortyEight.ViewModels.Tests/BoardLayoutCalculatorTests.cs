@@ -1,3 +1,4 @@
+using Microsoft.Maui.Graphics;
 using TwentyFortyEight.ViewModels.Helpers;
 
 namespace TwentyFortyEight.ViewModels.Tests;
@@ -8,17 +9,16 @@ public class BoardLayoutCalculatorTests
     #region CalculateBoardSize Tests
 
     [TestMethod]
-    public void CalculateBoardSize_SmallScreen_ReturnsMinSize()
+    public void CalculateBoardSize_SmallViewport_FitsAvailableSpace()
     {
-        // Arrange - screen smaller than min board size after subtracting reserved space
+        // A fold or landscape window may leave less space than a typical phone.
         double pageWidth = 300;
         double pageHeight = 400;
 
         // Act
         double result = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
 
-        // Assert - should clamp to minimum
-        Assert.AreEqual(BoardLayoutCalculator.MinBoardSize, result);
+        Assert.AreEqual(300, result);
     }
 
     [TestMethod]
@@ -38,14 +38,19 @@ public class BoardLayoutCalculatorTests
     [TestMethod]
     public void CalculateBoardSize_MediumScreen_ReturnsCalculatedSize()
     {
-        // Arrange - medium screen where calculated size is between min and max
+        // Arrange
         double pageWidth = 500;
         double pageHeight = 700;
         double horizontalReserved = 50;
         double verticalReserved = 260;
 
         // Act
-        double result = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
+        double result = BoardLayoutCalculator.CalculateBoardSize(
+            pageWidth,
+            pageHeight,
+            horizontalReserved,
+            verticalReserved
+        );
 
         // Assert - should be the smaller of available dimensions
         double expectedWidth = pageWidth - horizontalReserved; // 450
@@ -64,8 +69,7 @@ public class BoardLayoutCalculatorTests
         // Act
         double result = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
 
-        // Assert - width is constraining factor (400 - 50 = 350)
-        Assert.AreEqual(350, result);
+        Assert.AreEqual(400, result);
     }
 
     [TestMethod]
@@ -78,8 +82,7 @@ public class BoardLayoutCalculatorTests
         // Act
         double result = BoardLayoutCalculator.CalculateBoardSize(pageWidth, pageHeight);
 
-        // Assert - height is constraining (500 - 260 = 240, but min is 280)
-        Assert.AreEqual(BoardLayoutCalculator.MinBoardSize, result);
+        Assert.AreEqual(500, result);
     }
 
     [TestMethod]
@@ -106,6 +109,239 @@ public class BoardLayoutCalculatorTests
     }
 
     #endregion
+
+    [TestMethod]
+    [DataRow(240, 180, 160)]
+    [DataRow(800, 240, 220)]
+    [DataRow(320, 600, 300)]
+    [DataRow(800, 700, 680)]
+    [DataRow(1200, 1100, 800)]
+    [DataRow(10, 10, 0)]
+    public void CalculateBoardSize_WithBorderPadding_NeverExceedsViewport(
+        int width,
+        int height,
+        int expected
+    )
+    {
+        double size = BoardLayoutCalculator.CalculateBoardSize(width, height, 20, 20);
+
+        Assert.AreEqual(expected, size);
+        if (size > 0)
+        {
+            Assert.IsLessThanOrEqualTo(width, size + 20);
+            Assert.IsLessThanOrEqualTo(height, size + 20);
+        }
+    }
+
+    private static readonly Size Mode = new(130, 56);
+    private static readonly Size Card = new(96, 56);
+    private static readonly Size Undo = new(48, 48);
+
+    [TestMethod]
+    public void Arrange_ClosedPhone_StacksStatusBoardAndActions()
+    {
+        Rect bounds = new(16, 16, 350, 600);
+
+        var layout = BoardLayoutCalculator.Arrange(bounds, null, Mode, Card, Undo);
+
+        Assert.AreEqual(GameLayoutKind.Stacked, layout.Kind);
+        Assert.AreEqual(350, layout.Board.Width);
+        Assert.IsLessThanOrEqualTo(layout.Board.Top, layout.Scores.Bottom);
+        Assert.IsGreaterThanOrEqualTo(layout.Board.Bottom, layout.Actions.Top);
+        Assert.AreEqual(layout.Board.Left, layout.Mode.Left);
+        Assert.AreEqual(layout.Board.Right, layout.Scores.Right);
+        AssertComposed(bounds, layout);
+    }
+
+    [TestMethod]
+    public void Arrange_OpenDuo_FlanksCenteredBoardWithSymmetricWings()
+    {
+        Rect bounds = new(16, 98, 835, 521);
+
+        var layout = BoardLayoutCalculator.Arrange(bounds, null, Mode, Card, Undo);
+
+        Assert.AreEqual(GameLayoutKind.Wings, layout.Kind);
+        Assert.AreEqual(521, layout.Board.Width);
+        Assert.AreEqual(bounds.Center, layout.Board.Center);
+        Assert.AreEqual(
+            layout.Board.Left - layout.Scores.Left,
+            layout.Mode.Right - layout.Board.Right
+        );
+        Assert.IsTrue(layout.ScoresVertical);
+        Assert.AreEqual(layout.Board.Bottom, layout.Actions.Bottom);
+        AssertComposed(bounds, layout);
+    }
+
+    [TestMethod]
+    public void Arrange_OpenDuo_UsesMoreBoardThanStackedLayout()
+    {
+        Rect bounds = new(16, 98, 835, 521);
+        var wings = BoardLayoutCalculator.Arrange(bounds, null, Mode, Card, Undo);
+        var stackedOnly = BoardLayoutCalculator.Arrange(bounds, null, new(400, 56), Card, Undo);
+
+        Assert.AreEqual(GameLayoutKind.Stacked, stackedOnly.Kind);
+        Assert.IsGreaterThan(stackedOnly.Board.Width * 1.25, wings.Board.Width);
+    }
+
+    [TestMethod]
+    [DataRow(350, 0, 24, 600, GameLayoutKind.SplitVertical)]
+    [DataRow(0, 280, 800, 24, GameLayoutKind.SplitHorizontal)]
+    public void Arrange_ActiveFold_PutsBoardAndConsoleOnOppositeSides(
+        int x,
+        int y,
+        int width,
+        int height,
+        GameLayoutKind expected
+    )
+    {
+        Rect bounds = new(0, 0, 800, 600);
+        Rect fold = new(x, y, width, height);
+
+        var layout = BoardLayoutCalculator.Arrange(bounds, fold, Mode, Card, Undo);
+
+        Assert.AreEqual(expected, layout.Kind);
+        Assert.IsTrue(layout.BoardPane!.Value.Contains(layout.Board));
+        foreach (var group in new[] { layout.Mode, layout.Scores, layout.Actions })
+        {
+            Assert.IsTrue(layout.ConsolePane!.Value.Contains(group));
+            Assert.IsTrue(group.Intersect(fold).IsEmpty);
+        }
+        Assert.IsTrue(layout.Board.Intersect(fold).IsEmpty);
+        AssertComposed(bounds, layout);
+    }
+
+    [TestMethod]
+    [DataRow(700, 0, 24, 600)]
+    [DataRow(0, 560, 800, 24)]
+    public void Arrange_FoldWithoutConsoleRoom_FallsBackToSinglePane(
+        int x,
+        int y,
+        int width,
+        int height
+    )
+    {
+        var layout = BoardLayoutCalculator.Arrange(
+            new Rect(0, 0, 800, 600),
+            new Rect(x, y, width, height),
+            Mode,
+            Card,
+            Undo
+        );
+
+        Assert.IsNull(layout.ConsolePane);
+    }
+
+    [TestMethod]
+    public void Arrange_NearCrossover_KeepsPreviousLayout()
+    {
+        // Wings and stacked yield nearly the same board here.
+        Rect bounds = new(0, 0, 640, 480);
+        var fresh = BoardLayoutCalculator.Arrange(bounds, null, Mode, Card, Undo);
+        var kept = BoardLayoutCalculator.Arrange(
+            bounds,
+            null,
+            Mode,
+            Card,
+            Undo,
+            GameLayoutKind.Wings
+        );
+
+        Assert.AreEqual(GameLayoutKind.Stacked, fresh.Kind);
+        Assert.AreEqual(GameLayoutKind.Wings, kept.Kind);
+    }
+
+    [TestMethod]
+    [DataRow(350, 600, 220, 120, 84)]
+    [DataRow(835, 521, 260, 150, 84)]
+    [DataRow(320, 480, 300, 140, 0)]
+    [DataRow(1000, 700, 140, 96, 216)]
+    public void Arrange_LargeTextAndVoiceControls_NeverOverlap(
+        int width,
+        int height,
+        int modeWidth,
+        int cardWidth,
+        int actionsWidth
+    )
+    {
+        Rect bounds = new(0, 0, width, height);
+        Size actions = actionsWidth > 0 ? new(actionsWidth, 54) : Size.Zero;
+
+        var layout = BoardLayoutCalculator.Arrange(
+            bounds,
+            null,
+            new Size(modeWidth, 72),
+            new Size(cardWidth, 72),
+            actions
+        );
+
+        AssertComposed(bounds, layout);
+    }
+
+    private static void AssertComposed(Rect bounds, GameLayout layout)
+    {
+        var groups = new List<Rect> { layout.Board, layout.Mode, layout.Scores };
+        if (layout.Actions.Height > 0)
+        {
+            groups.Add(layout.Actions);
+        }
+
+        foreach (var group in groups)
+        {
+            Assert.IsTrue(bounds.Inflate(0.5, 0.5).Contains(group), $"{group} is outside {bounds}");
+        }
+
+        Assert.AreEqual(layout.Board.Width, layout.Board.Height);
+        for (int i = 0; i < groups.Count; i++)
+        {
+            for (int j = i + 1; j < groups.Count; j++)
+            {
+                var overlap = groups[i].Intersect(groups[j]);
+                Assert.IsTrue(
+                    overlap.Width <= 0.01 || overlap.Height <= 0.01,
+                    $"{groups[i]} overlaps {groups[j]}"
+                );
+            }
+        }
+    }
+
+    [TestMethod]
+    [DataRow(0, 300, 800, 24, 0, 0, 800, 300)]
+    [DataRow(0, 280, 800, 24, 0, 304, 800, 296)]
+    [DataRow(300, 0, 24, 600, 324, 0, 476, 600)]
+    [DataRow(0, 0, 40, 40, 40, 0, 760, 600)]
+    [DataRow(900, 0, 40, 600, 0, 0, 800, 600)]
+    public void ExcludeReservedRegion_ReturnsLargestClearArea(
+        int x,
+        int y,
+        int width,
+        int height,
+        int expectedX,
+        int expectedY,
+        int expectedWidth,
+        int expectedHeight
+    )
+    {
+        Rect bounds = new(0, 0, 800, 600);
+        Rect region = new(x, y, width, height);
+
+        var available = BoardLayoutCalculator.ExcludeReservedRegion(bounds, region);
+
+        Assert.AreEqual(new Rect(expectedX, expectedY, expectedWidth, expectedHeight), available);
+        Assert.IsTrue(bounds.Contains(available));
+        Assert.IsTrue(available.Intersect(region).IsEmpty);
+    }
+
+    [TestMethod]
+    public void ExcludeReservedRegion_UnfoldingRestoresFullArea()
+    {
+        Rect bounds = new(0, 0, 800, 600);
+        Rect fold = new(300, 0, 24, 600);
+        var folded = BoardLayoutCalculator.ExcludeReservedRegion(bounds, fold);
+        var unfolded = BoardLayoutCalculator.ExcludeReservedRegion(bounds, Rect.Zero);
+
+        Assert.IsLessThan(bounds.Width, folded.Width);
+        Assert.AreEqual(bounds, unfolded);
+    }
 
     #region CalculateScaleFactor Tests
 

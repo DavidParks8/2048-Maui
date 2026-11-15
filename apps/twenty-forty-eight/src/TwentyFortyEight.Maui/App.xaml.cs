@@ -36,11 +36,7 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        Window window = new(new AppShell())
-        {
-            MinimumWidth = 360, // Min board (280) + padding (40) + margins (40)
-            MinimumHeight = 700, // Ensures full UI visibility with adequate margins
-        };
+        Window window = new(new AppShell()) { MinimumWidth = 320, MinimumHeight = 320 };
 
         window.Stopped += OnWindowStopped;
         window.Destroying += OnWindowDestroying;

@@ -8,6 +8,9 @@ namespace TwentyFortyEight.Maui.Services;
 
 public partial class ToolbarIconService
 {
+    private static partial ImageSource CreateNewGame() =>
+        FromSystemDrawable(global::Android.Resource.Drawable.IcMenuRotate);
+
     private static partial ImageSource CreateUndo() =>
         FromSystemDrawable(global::Android.Resource.Drawable.IcMenuRevert);
 

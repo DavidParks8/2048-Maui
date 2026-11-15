@@ -4,12 +4,14 @@
 <dict>
 	<!--
 		Keep the bundle/folder name stable for dotnet run / VS Code launching,
-		while retaining the user-facing name with emoji.
+		while retaining the user-facing app name.
 	-->
 	<key>CFBundleName</key>
-	<string>2048 🎮</string>
+	<string>2048 Duo</string>
 	<key>CFBundleDisplayName</key>
-	<string>2048 🎮</string>
+	<string>2048 Duo</string>
+	<key>XSAppIconAssets</key>
+	<string>Assets.xcassets/appicon.appiconset</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -27,7 +29,5 @@
 			</array>
 		</dict>
 	</dict>
-	<key>XSAppIconAssets</key>
-	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>
 </plist>

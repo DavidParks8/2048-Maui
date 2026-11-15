@@ -12,6 +12,7 @@ public partial class WindowOverlayService : IWindowOverlayService
     private readonly IAccessibilitySettingsService _accessibilitySettingsService;
     private bool? _previousInputBlocked;
     private bool _isHiding;
+    private Rect? _bottomSheetBounds;
 
     public bool IsBottomSheetVisible => _currentSheet?.IsVisible == true;
 
@@ -46,6 +47,7 @@ public partial class WindowOverlayService : IWindowOverlayService
                 ReduceMotionEnabled = _accessibilitySettingsService.ShouldReduceMotion(),
                 IsVisible = true,
             };
+            _currentSheet.SetPresentationBounds(_bottomSheetBounds);
 
             bool presented = TryShowOverlayNative() || ShowOverlayInPage();
 
@@ -169,6 +171,17 @@ public partial class WindowOverlayService : IWindowOverlayService
     public void HideBottomSheet()
     {
         _ = HideBottomSheetInternalAsync(animate: true);
+    }
+
+    public void SetBottomSheetBounds(Rect? bounds)
+    {
+        if (_bottomSheetBounds == bounds)
+        {
+            return;
+        }
+
+        _bottomSheetBounds = bounds;
+        _currentSheet?.SetPresentationBounds(bounds);
     }
 
     private void HideBottomSheetInternal(bool animate)

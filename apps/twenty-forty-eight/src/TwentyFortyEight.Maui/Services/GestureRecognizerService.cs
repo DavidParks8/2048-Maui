@@ -32,6 +32,7 @@ public class GestureRecognizerService : IGestureRecognizerService
     // _pointerLastKnownPoint for completion since e.GetPosition() may return the
     // position of a different finger.
     private bool _multitouchOccurred;
+    private bool _isCurrentGestureCancelled;
 
     private enum ActiveInput
     {
@@ -99,6 +100,12 @@ public class GestureRecognizerService : IGestureRecognizerService
         _multitouchOccurred = false;
         _activeInput = ActiveInput.None;
         _activeView = null;
+        _isCurrentGestureCancelled = false;
+    }
+
+    public void CancelCurrentGesture()
+    {
+        _isCurrentGestureCancelled = _activeInput != ActiveInput.None;
     }
 
     private void OnPointerPressed(object? sender, PointerEventArgs e)
@@ -137,6 +144,9 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
+        if (_isCurrentGestureCancelled)
+            return;
+
         // Only process movement for the initial pointer
         if (_activeInput != ActiveInput.Pointer || _activePointerCount != 1)
             return;
@@ -167,6 +177,15 @@ public class GestureRecognizerService : IGestureRecognizerService
         if (_activePointerCount > 0)
         {
             _activePointerCount--;
+        }
+
+        if (_isCurrentGestureCancelled)
+        {
+            if (_activeInput == ActiveInput.Pointer && _activePointerCount == 0)
+            {
+                ResetTrackingState();
+            }
+            return;
         }
 
         // Only complete the gesture when all pointers are released
@@ -244,6 +263,22 @@ public class GestureRecognizerService : IGestureRecognizerService
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
     {
+        if (_isCurrentGestureCancelled)
+        {
+            if (e.StatusType is GestureStatus.Completed or GestureStatus.Canceled)
+            {
+                ResetTrackingState();
+                return;
+            }
+            if (
+                e.StatusType != GestureStatus.Started
+                || (_activeInput == ActiveInput.Pointer && _activePointerCount > 0)
+            )
+            {
+                return;
+            }
+        }
+
         // For GestureStatus.Started, always allow it to proceed - the OS is definitively
         // telling us a new pan gesture is beginning. This resets any stale pointer state.
         // For other states, block if a pointer gesture is actively in progress.

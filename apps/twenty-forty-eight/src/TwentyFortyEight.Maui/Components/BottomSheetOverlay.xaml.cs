@@ -53,11 +53,38 @@ public partial class BottomSheetOverlay : ContentView
     private bool _isInitialized;
     private bool _showAnimationStarted;
     private readonly PanVelocityTracker _velocityTracker = new();
+    private Rect? _presentationBounds;
 
     public BottomSheetOverlay()
     {
         InitializeComponent();
     }
+
+    public void SetPresentationBounds(Rect? bounds)
+    {
+        _presentationBounds = bounds;
+        UpdatePresentationBounds();
+    }
+
+    private void UpdatePresentationBounds()
+    {
+        if (Width <= 0 || Height <= 0)
+        {
+            return;
+        }
+
+        SheetViewport.Margin = _presentationBounds is Rect bounds
+            ? new Thickness(
+                bounds.Left,
+                bounds.Top,
+                Math.Max(0, Width - bounds.Right),
+                Math.Max(0, Height - bounds.Bottom)
+            )
+            : new Thickness(0);
+    }
+
+    private void OnSheetViewportSizeChanged(object? sender, EventArgs e) =>
+        UpdateSheetSize(SheetViewport.Width, SheetViewport.Height);
 
     private void OnTitleChanged(string oldValue, string newValue)
     {
@@ -335,7 +362,12 @@ public partial class BottomSheetOverlay : ContentView
     protected override void OnSizeAllocated(double width, double height)
     {
         base.OnSizeAllocated(width, height);
+        UpdatePresentationBounds();
+        UpdateSheetSize(_presentationBounds?.Width ?? width, _presentationBounds?.Height ?? height);
+    }
 
+    private void UpdateSheetSize(double width, double height)
+    {
         var previousWindowWidth = _windowWidth;
         var previousTopInset = _topInset;
         var previousBottomInset = _bottomInset;
@@ -662,6 +694,14 @@ public partial class BottomSheetOverlay : ContentView
 
     private double GetFullWindowHeight()
     {
+        if (_presentationBounds is Rect bounds)
+        {
+            _windowWidth = bounds.Width;
+            _topInset = 0;
+            _bottomInset = 0;
+            return bounds.Height;
+        }
+
         // Try to get the actual window/screen height
 #if IOS || MACCATALYST
         var viewController = Microsoft.Maui.ApplicationModel.Platform.GetCurrentUIViewController();

@@ -49,8 +49,8 @@ public static class TileColorHelper
     private static readonly Dictionary<int, Color> DarkThemeColors = new()
     {
         [0] = Color.FromArgb("#524b44"),
-        [2] = Color.FromArgb("#5c6b7a"),
-        [4] = Color.FromArgb("#7a6b5c"),
+        [2] = Color.FromArgb("#7a6a5a"),
+        [4] = Color.FromArgb("#94775a"),
         [8] = Color.FromArgb("#f2b179"),
         [16] = Color.FromArgb("#f59563"),
         [32] = Color.FromArgb("#f67c5f"),

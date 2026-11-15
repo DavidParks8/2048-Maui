@@ -49,7 +49,7 @@
         <components:NativeSection.SectionContent>
           <VerticalStackLayout Spacing="8">
             <Label
-              Text="{x:Static strings:AppStrings.AppNameForTalia}"
+              Text="{x:Static strings:AppStrings.GameTitle}"
               FontSize="17"
               FontAttributes="Bold"
             />

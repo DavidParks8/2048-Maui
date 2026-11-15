@@ -30,4 +30,9 @@ public interface IGestureRecognizerService
     /// </summary>
     /// <param name="view">The view to detach recognizers from.</param>
     void DetachSwipeRecognizers(View view);
+
+    /// <summary>
+    /// Ignores the remainder of an active touch without replacing its native recognizers.
+    /// </summary>
+    void CancelCurrentGesture();
 }

@@ -8,6 +8,8 @@ public partial class ToolbarIconService
 {
     private static partial ImageSource CreateUndo() => FromSystemImage("arrow.uturn.backward");
 
+    private static partial ImageSource CreateNewGame() => FromSystemImage("arrow.clockwise");
+
     static ImageSource FromSystemImage(string symbolName)
     {
         UIImage? image = UIImage.GetSystemImage(symbolName);
