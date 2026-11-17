@@ -9,7 +9,7 @@ public partial class AboutPage : ContentPage
         InitializeComponent();
     }
 
-    private async void OnGitHubIssuesClicked(object sender, EventArgs e)
+    private async void OnGitHubIssuesClicked(object? sender, EventArgs e)
     {
         try
         {

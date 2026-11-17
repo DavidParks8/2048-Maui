@@ -105,13 +105,15 @@
         <!-- Moves Section -->
         <components:NativeSection
           Header="{x:Static strings:AppStrings.MovesSection}"
-          ContentPadding="16,20"
           FlexLayout.Basis="320"
           FlexLayout.Grow="1"
           FlexLayout.Shrink="1"
           MaximumWidthRequest="400"
           Margin="6,0,6,12"
         >
+          <components:NativeSection.ContentPadding>
+            <Thickness>16,20</Thickness>
+          </components:NativeSection.ContentPadding>
           <components:NativeSection.SectionContent>
             <VerticalStackLayout Spacing="8">
               <Label

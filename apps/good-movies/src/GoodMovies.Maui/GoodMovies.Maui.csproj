@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-ios</TargetFramework>
+    <TargetFramework>net11.0-ios</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>GoodMovies.Maui</RootNamespace>
     <AssemblyName>GoodMovies.Maui</AssemblyName>
@@ -134,6 +134,11 @@
       <AutoGen>False</AutoGen>
       <DependentUpon>AppStrings.resx</DependentUpon>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ponytail: XamlC for field-generated bindings; remove when SourceGen supports AutoBindable. -->
+    <MauiXaml Update="Components/*.xaml" Inflator="XamlC" />
   </ItemGroup>
 
   <ItemGroup>

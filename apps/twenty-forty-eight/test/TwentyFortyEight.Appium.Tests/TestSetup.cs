@@ -191,7 +191,7 @@ public class TestSetup
         var projectPath = GetProjectPath();
         var result = await RunCommandAsync(
             "dotnet",
-            $"build \"{projectPath}\" -f net10.0-ios -c Debug",
+            $"build \"{projectPath}\" -f net11.0-ios -c Debug",
             throwOnError: true,
             timeoutSeconds: 300
         );
@@ -213,7 +213,7 @@ public class TestSetup
                 "TwentyFortyEight.Maui",
                 "bin",
                 "Debug",
-                "net10.0-ios",
+                "net11.0-ios",
                 "iossimulator-arm64",
                 "TwentyFortyEight.Maui.app"
             )

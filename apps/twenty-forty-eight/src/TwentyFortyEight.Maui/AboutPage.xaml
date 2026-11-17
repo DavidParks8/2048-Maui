@@ -11,7 +11,10 @@
   <ScrollView Padding="16">
     <VerticalStackLayout Spacing="20">
       <!-- Main Message Section -->
-      <components:NativeSection ContentPadding="20,24">
+      <components:NativeSection>
+        <components:NativeSection.ContentPadding>
+          <Thickness>20,24</Thickness>
+        </components:NativeSection.ContentPadding>
         <components:NativeSection.SectionContent>
           <VerticalStackLayout Spacing="20">
             <Label
@@ -42,10 +45,10 @@
       </components:NativeSection>
 
       <!-- App Info Section -->
-      <components:NativeSection
-        Header="{x:Static strings:AppStrings.AboutTheAppSection}"
-        ContentPadding="16"
-      >
+      <components:NativeSection Header="{x:Static strings:AppStrings.AboutTheAppSection}">
+        <components:NativeSection.ContentPadding>
+          <Thickness>16</Thickness>
+        </components:NativeSection.ContentPadding>
         <components:NativeSection.SectionContent>
           <VerticalStackLayout Spacing="8">
             <Label
@@ -64,10 +67,10 @@
       </components:NativeSection>
 
       <!-- Support Section -->
-      <components:NativeSection
-        Header="{x:Static strings:AppStrings.SupportSection}"
-        ContentPadding="16"
-      >
+      <components:NativeSection Header="{x:Static strings:AppStrings.SupportSection}">
+        <components:NativeSection.ContentPadding>
+          <Thickness>16</Thickness>
+        </components:NativeSection.ContentPadding>
         <components:NativeSection.SectionContent>
           <VerticalStackLayout Spacing="16">
             <Label Text="{x:Static strings:AppStrings.NeedHelpOrBug}" FontSize="15" />

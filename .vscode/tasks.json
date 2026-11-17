@@ -9,7 +9,7 @@
         "build",
         "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
-        "net10.0-windows10.0.19041.0"
+        "net11.0-windows10.0.19041.0"
       ],
       "group": "build",
       "problemMatcher": "$msCompile"
@@ -22,7 +22,7 @@
         "build",
         "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
-        "net10.0-maccatalyst",
+        "net11.0-maccatalyst",
         "-c",
         "Debug"
       ],
@@ -37,7 +37,7 @@
         "build",
         "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
-        "net10.0-android",
+        "net11.0-android",
         "-c",
         "Debug"
       ],
@@ -52,7 +52,7 @@
         "build",
         "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj",
         "-f",
-        "net10.0-ios",
+        "net11.0-ios",
         "-c",
         "Debug"
       ],
@@ -67,7 +67,7 @@
         "build",
         "apps/good-movies/src/GoodMovies.Maui/GoodMovies.Maui.csproj",
         "-f",
-        "net10.0-ios",
+        "net11.0-ios",
         "-c",
         "Debug",
         "-p:GoodMoviesUseSampleData=true"
@@ -84,7 +84,7 @@
         "--project",
         "apps/good-movies/test/GoodMovies.Core.Tests/GoodMovies.Core.Tests.csproj",
         "-f",
-        "net10.0"
+        "net11.0"
       ],
       "group": "test",
       "problemMatcher": "$msCompile"
@@ -98,7 +98,7 @@
         "--project",
         "apps/good-movies/test/GoodMovies.Infrastructure.Tests/GoodMovies.Infrastructure.Tests.csproj",
         "-f",
-        "net10.0"
+        "net11.0"
       ],
       "group": "test",
       "problemMatcher": "$msCompile"
@@ -112,7 +112,7 @@
         "--project",
         "apps/good-movies/test/GoodMovies.ViewModels.Tests/GoodMovies.ViewModels.Tests.csproj",
         "-f",
-        "net10.0"
+        "net11.0"
       ],
       "group": "test",
       "problemMatcher": "$msCompile"

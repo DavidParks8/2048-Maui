@@ -4,8 +4,8 @@ This devcontainer provides a complete Android development environment for .NET M
 
 ## Features
 
-- .NET 10 SDK with MAUI Android workload
-- Android SDK (API 35)
+- .NET 11.0.100 SDK with MAUI Android workload set 11.0.100.1
+- Android SDK and JDK dependencies installed for the project's target API
 - Android Emulator with x86_64 system image
 - VNC/Web desktop for viewing the emulator (slow on Windows, see below)
 
@@ -39,12 +39,12 @@ The Android emulator inside Docker on Windows **will be slow** because:
 ### Build for Android
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net10.0-android
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net11.0-android
 ```
 
 The APK will be at:
 ```
-apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
+apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net11.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Start the emulator (optional, slow on Windows)
@@ -62,13 +62,13 @@ Then open http://localhost:6080 in your browser (password: `vscode`)
 adb devices
 
 # Install the APK
-adb install apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-android/com.dappermagna.twentyfortyeight-Signed.apk
+adb install apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net11.0-android/com.dappermagna.twentyfortyeight-Signed.apk
 ```
 
 ### Build and run directly
 
 ```bash
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net10.0-android -t:Run
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui -f net11.0-android -t:Run
 ```
 
 ## Connecting Windows Emulator from Container

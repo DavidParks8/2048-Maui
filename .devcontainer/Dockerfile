@@ -1,7 +1,7 @@
 # Dockerfile for .NET MAUI Android development
-FROM mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm
+FROM mcr.microsoft.com/devcontainers/base:bookworm
 
-# Install Java 17 (required for Android SDK)
+# Bootstrap Android command-line tools; post-create installs the required JDK.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         openjdk-17-jdk \
@@ -28,21 +28,19 @@ RUN mkdir -p ${ANDROID_HOME} \
     && mkdir -p ${ANDROID_HOME}/cmdline-tools \
     && mv cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest \
     && rm cmdline-tools.zip \
-    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true \
+    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 \
     && ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install \
         "platform-tools" \
-        "platforms;android-35" \
-        "build-tools;35.0.0" \
     && chown -R vscode:vscode ${ANDROID_HOME}
 
 # Switch to vscode user for .NET operations
 USER vscode
 
-# Install .NET 10 SDK
-RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 10.0.401 --install-dir /home/vscode/.dotnet
+# Install .NET 11 SDK
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 11.0.100 --install-dir /home/vscode/.dotnet
 
 ENV DOTNET_ROOT=/home/vscode/.dotnet
-ENV PATH="${PATH}:${DOTNET_ROOT}:${DOTNET_ROOT}/tools"
+ENV PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
 
 # Install MAUI Android workload
-RUN /home/vscode/.dotnet/dotnet workload install maui-android --version 10.0.401.1 --skip-sign-check
+RUN /home/vscode/.dotnet/dotnet workload install maui-android --version 11.0.100.1 --skip-sign-check

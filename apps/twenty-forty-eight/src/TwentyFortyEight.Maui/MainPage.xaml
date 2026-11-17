@@ -8,6 +8,7 @@
   xmlns:converters="clr-namespace:TwentyFortyEight.Maui.Converters"
   xmlns:core="clr-namespace:TwentyFortyEight.Core;assembly=TwentyFortyEight.Core"
   xmlns:strings="clr-namespace:TwentyFortyEight.Maui.Resources.Strings"
+  xmlns:sys="clr-namespace:System;assembly=System.Runtime"
   xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
   x:Class="TwentyFortyEight.Maui.MainPage"
   x:DataType="local:GameViewModel"
@@ -154,11 +155,14 @@
       <Grid x:Name="ScoresPanel" ColumnSpacing="8" RowSpacing="8">
         <components:HeaderStatCard
           x:Name="ScoreCard"
-          IsEmphasized="True"
           Title="{x:Static strings:AppStrings.Score}"
           Value="{Binding Score}"
           ValueDescription="{x:Static strings:AppStrings.CurrentScoreDescription}"
-        />
+        >
+          <components:HeaderStatCard.IsEmphasized>
+            <x:Boolean>True</x:Boolean>
+          </components:HeaderStatCard.IsEmphasized>
+        </components:HeaderStatCard>
         <components:HeaderStatCard
           x:Name="BestCard"
           Title="{x:Static strings:AppStrings.Best}"
@@ -253,13 +257,16 @@
           >
             <components:IconButton
               AutomationId="MoveLeftButton"
-              Icon="←"
-              ButtonText=""
+              ButtonText="{x:Static sys:String.Empty}"
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Left}"
               ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveLeftDescription}"
-            />
+            >
+              <components:IconButton.Icon>
+                <x:String>←</x:String>
+              </components:IconButton.Icon>
+            </components:IconButton>
           </Border>
 
           <!-- Up -->
@@ -276,13 +283,16 @@
           >
             <components:IconButton
               AutomationId="MoveUpButton"
-              Icon="↑"
-              ButtonText=""
+              ButtonText="{x:Static sys:String.Empty}"
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Up}"
               ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveUpDescription}"
-            />
+            >
+              <components:IconButton.Icon>
+                <x:String>↑</x:String>
+              </components:IconButton.Icon>
+            </components:IconButton>
           </Border>
 
           <!-- Down -->
@@ -299,13 +309,16 @@
           >
             <components:IconButton
               AutomationId="MoveDownButton"
-              Icon="↓"
-              ButtonText=""
+              ButtonText="{x:Static sys:String.Empty}"
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Down}"
               ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveDownDescription}"
-            />
+            >
+              <components:IconButton.Icon>
+                <x:String>↓</x:String>
+              </components:IconButton.Icon>
+            </components:IconButton>
           </Border>
 
           <!-- Right -->
@@ -322,13 +335,16 @@
           >
             <components:IconButton
               AutomationId="MoveRightButton"
-              Icon="→"
-              ButtonText=""
+              ButtonText="{x:Static sys:String.Empty}"
               Command="{Binding MoveCommand}"
               CommandParameter="{x:Static core:Direction.Right}"
               ButtonSize="48"
               SemanticProperties.Description="{x:Static strings:AppStrings.MoveRightDescription}"
-            />
+            >
+              <components:IconButton.Icon>
+                <x:String>→</x:String>
+              </components:IconButton.Icon>
+            </components:IconButton>
           </Border>
         </HorizontalStackLayout>
 
@@ -348,13 +364,16 @@
         >
           <components:IconButton
             x:Name="UndoButton"
-            Icon="↩"
-            ButtonText=""
+            ButtonText="{x:Static sys:String.Empty}"
             Command="{Binding UndoCommand}"
             IsButtonEnabled="{Binding CanUndo}"
             ButtonSize="48"
             SemanticProperties.Description="{x:Static strings:AppStrings.UndoDescription}"
-          />
+          >
+            <components:IconButton.Icon>
+              <x:String>↩</x:String>
+            </components:IconButton.Icon>
+          </components:IconButton>
         </Border>
       </Grid>
     </components:AdaptiveGameLayout>

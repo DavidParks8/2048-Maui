@@ -2,7 +2,7 @@
 
 When doing a quick build check, try not to build android unless specifically attempting to do so. The android build is very slow. Dotnet build will by default build a bunch of platforms, including android.
 
-The repo uses .net 10 Maui
+The repo uses .NET 11 MAUI
 
 ## MAUI Development Guidelines
 
@@ -13,6 +13,15 @@ Always use source generator attributes when working with MAUI projects:
 - **ViewModels**: Use `[ObservableProperty]` from `CommunityToolkit.Mvvm` for observable properties
 - **ContentView Components**: Use `[AutoBindable]` from `M.BindableProperty.Generator` for bindable properties
 - **Commands**: Use `[RelayCommand]` from `CommunityToolkit.Mvvm` for commands
+
+MAUI 11 XAML source generation is enabled by default. For literals assigned to
+field-based `[AutoBindable]` properties, use typed property elements
+(`x:Boolean`, `x:String`, `Thickness`) or typed `x:Static` values. Untyped
+attribute literals can fail with `MAUIG1001` because generators cannot see each
+other's output. XAML event handlers must match nullable delegate parameters.
+Components that bind to these generated properties retain per-file XamlC
+compilation for compiled bindings and NativeAOT compatibility; keep this
+exception scoped rather than disabling source generation or trimming globally.
 
 ### Localization
 
@@ -403,13 +412,13 @@ Use Appium for UI testing and validation on iOS simulators. This is useful for v
 
 ```bash
 # Build for iOS simulator (use the build task or command)
-dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net10.0-ios -c Debug
+dotnet build apps/twenty-forty-eight/src/TwentyFortyEight.Maui/TwentyFortyEight.Maui.csproj -f net11.0-ios -c Debug
 
 # Get bundle ID from built app
-defaults read "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app/Info.plist" CFBundleIdentifier
+defaults read "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net11.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app/Info.plist" CFBundleIdentifier
 
 # Install on simulator
-xcrun simctl install <UDID> "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net10.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app"
+xcrun simctl install <UDID> "apps/twenty-forty-eight/src/TwentyFortyEight.Maui/bin/Debug/net11.0-ios/iossimulator-arm64/TwentyFortyEight.Maui.app"
 
 # Launch app
 xcrun simctl launch <UDID> com.dappermagna.twentyfortyeight
